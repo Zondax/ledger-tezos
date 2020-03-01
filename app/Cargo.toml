@@ -1,0 +1,32 @@
+[package]
+authors = ["Zondax GmbH <info@zondax.ch>"]
+name = "rslib"
+version = "0.1.0"
+edition = "2018"
+readme = "README.md"
+
+[lib]
+name = "rslib"
+crate-type = ["staticlib"]
+
+[dependencies.nom]
+version = "6.1.2"
+default-features = false
+
+[dependencies.arrayvec]
+version = "0.5.1"
+default-features = false
+
+[target.thumbv6m-none-eabi.dev-dependencies]
+panic-halt = "0.2.0"
+
+[dev-dependencies]
+
+[profile.release]
+lto = false
+codegen-units = 1
+debug = true
+opt-level = "s"
+
+[profile.dev]
+panic = "abort"
