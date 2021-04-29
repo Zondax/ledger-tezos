@@ -17,6 +17,11 @@ default-features = false
 version = "0.5.1"
 default-features = false
 
+[dependencies.git-testament]
+version = "0.1.9"
+default-features = false
+features = ["no-std"]
+
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"
 

@@ -76,4 +76,20 @@ describe('Standard', function () {
             await sim.close();
         }
     });
+
+    test.each(models)('get git app', async function(m) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name});
+            const app = new TezosApp(sim.getTransport());
+            const resp = await app.getGit();
+
+            console.log(resp);
+            expect(resp.returnCode).toEqual(0x900);
+            expect(resp.errorMessage).toEqual("No errors");
+            expect(resp).toHaveProperty("commit_hash");
+        } finally {
+            await sim.close();
+        }
+    })
 });

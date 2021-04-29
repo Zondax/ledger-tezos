@@ -21,3 +21,7 @@ pub fn assert_error_code(tx: &u32, apdu_buffer: &[u8], error: ApduError) {
     let pos: usize = *tx as usize;
     assert_eq!(apdu_buffer[pos - 2..pos], (error as u16).to_be_bytes());
 }
+
+git_testament::git_testament_macros!(git);
+
+pub const GIT_COMMIT_HASH: &str = git_commit_hash!();

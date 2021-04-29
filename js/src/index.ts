@@ -16,7 +16,7 @@
  ******************************************************************************* */
 import Transport from "@ledgerhq/hw-transport";
 import { serializePath } from "./helper";
-import { ResponseAddress, ResponseAppInfo, ResponseSign, ResponseVersion } from "./types";
+import { ResponseAddress, ResponseAppInfo, ResponseSign, ResponseVersion, ResponseGit } from "./types";
 import {
   CHUNK_SIZE,
   CLA,
@@ -88,6 +88,19 @@ export default class TezosApp {
 
   async getVersion(): Promise<ResponseVersion> {
     return getVersion(this.transport).catch(err => processErrorResponse(err));
+  }
+
+  async getGit(): Promise<ResponseGit> {
+    return this.transport.send(CLA, INS.GET_GIT, 0, 0).then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        commit_hash: response.slice(0, -2).join("")
+      }
+    }, processErrorResponse)
   }
 
   async getAppInfo(): Promise<ResponseAppInfo> {

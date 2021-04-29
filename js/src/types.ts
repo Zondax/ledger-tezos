@@ -31,3 +31,7 @@ export interface ResponseAppInfo extends ResponseBase {
 export interface ResponseSign extends ResponseBase {
   signature: Buffer;
 }
+
+export interface ResponseGit extends ResponseBase {
+  commit_hash: string;
+}
