@@ -85,7 +85,7 @@ describe('Standard', function () {
             const resp = await app.getGit();
 
             console.log(resp);
-            expect(resp.returnCode).toEqual(0x900);
+            expect(resp.returnCode).toEqual(0x9000);
             expect(resp.errorMessage).toEqual("No errors");
             expect(resp).toHaveProperty("commit_hash");
         } finally {

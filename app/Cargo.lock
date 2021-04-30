@@ -33,18 +33,17 @@ dependencies = [
 
 [[package]]
 name = "git-testament"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60f131003265744033e147a3b1614cf953edc315d3350377442d8ad3df699103"
+version = "0.2.0"
+source = "git+https://github.com/becominginsane/git-testament#3709ca16978d64b7c94706cd9d6acdbbfce8e932"
 dependencies = [
  "git-testament-derive",
+ "no-std-compat",
 ]
 
 [[package]]
 name = "git-testament-derive"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "526ad4c79ca35ec046176e89787409f1d75d9cd51fa9258c01ca206d4fba9340"
+version = "0.1.11"
+source = "git+https://github.com/becominginsane/git-testament#3709ca16978d64b7c94706cd9d6acdbbfce8e932"
 dependencies = [
  "chrono",
  "log",
@@ -73,6 +72,12 @@ name = "memchr"
 version = "2.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ee1c47aaa256ecabcaea351eae4a9b01ef39ed810004e298d2511ed284b1525"
+
+[[package]]
+name = "no-std-compat"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
 
 [[package]]
 name = "nom"

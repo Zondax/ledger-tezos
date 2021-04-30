@@ -18,9 +18,9 @@ version = "0.5.1"
 default-features = false
 
 [dependencies.git-testament]
-version = "0.1.9"
+version = "0.2.0"
+git = "https://github.com/becominginsane/git-testament"
 default-features = false
-features = ["no-std"]
 
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"
@@ -35,3 +35,6 @@ opt-level = "s"
 
 [profile.dev]
 panic = "abort"
+
+[workspace]
+resolver = "2"
