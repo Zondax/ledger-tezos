@@ -19,7 +19,7 @@
     "test": "jest --detectOpenHandles"
   },
   "dependencies": {
-    "@zondax/ledger-tezos": "file:../js",
+    "@zondax/ledger-tezos": "link:../js",
     "@zondax/zemu": "^0.12.2"
   },
   "devDependencies": {

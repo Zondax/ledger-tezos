@@ -98,7 +98,7 @@ export default class TezosApp {
       return {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
-        commit_hash: response.slice(0, -2).join("")
+        commit_hash: response.slice(0, -2).toString('ascii'),
       }
     }, processErrorResponse)
   }
