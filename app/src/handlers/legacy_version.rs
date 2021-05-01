@@ -22,6 +22,14 @@ pub struct LegacyGetVersion {}
 
 pub struct LegacyGit {}
 
+impl LegacyGit {
+    pub const COMMIT_HASH_LEN: usize = 8;
+
+    pub const fn commit_hash() -> &'static [u8] {
+        &crate::utils::GIT_COMMIT_HASH.as_bytes()
+    }
+}
+
 impl ApduHandler for LegacyGetVersion {
     fn handle(
         _flags: &mut u32,
@@ -55,9 +63,15 @@ impl ApduHandler for LegacyGit {
             return Err(InsNotSupported);
         }
 
+        let commit = &Self::commit_hash()[..Self::COMMIT_HASH_LEN];
+
+        if apdu_buffer.len() < commit.len() {
+            return Err(ApduError::OutputBufferTooSmall);
+        }
+
         // Reference: https://github.com/obsidiansystems/ledger-app-tezos/blob/58797b2f9606c5a30dd1ccc9e5b9962e45e10356/src/apdu.c#L30
-        // TODO: return commit hash
-        *tx = 0;
+        apdu_buffer[..Self::COMMIT_HASH_LEN].copy_from_slice(&commit);
+        *tx = Self::COMMIT_HASH_LEN as u32;
 
         Ok(())
     }
@@ -65,8 +79,9 @@ impl ApduHandler for LegacyGit {
 
 #[cfg(test)]
 mod tests {
+    use super::LegacyGit;
     use crate::constants::ApduError::Success;
-    use crate::dispatcher::{handle_apdu, CLA, INS_LEGACY_GET_VERSION};
+    use crate::dispatcher::{handle_apdu, CLA, INS_LEGACY_GET_VERSION, INS_LEGACY_GIT};
     use crate::handlers::version::{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
     use crate::utils::assert_error_code;
 
@@ -92,5 +107,24 @@ mod tests {
         assert_eq!(buffer[1], VERSION_MAJOR);
         assert_eq!(buffer[2], VERSION_MINOR);
         assert_eq!(buffer[3], VERSION_PATCH);
+    }
+
+    #[test]
+    fn apdu_get_git() {
+        let mut flags = 0;
+        let mut tx = 0;
+        let rx = 5;
+        let mut buffer = [0; 260];
+
+        let len = LegacyGit::COMMIT_HASH_LEN;
+
+        buffer[..5].copy_from_slice(&[CLA, INS_LEGACY_GIT, 0, 0, 0]);
+        handle_apdu(&mut flags, &mut tx, rx, &mut buffer);
+
+        assert_eq!(tx as usize, len + 2);
+        assert_error_code(&tx, &buffer, Success);
+
+        let commit_hash = LegacyGit::commit_hash();
+        assert_eq!(&buffer[..len], &commit_hash[..len]);
     }
 }
