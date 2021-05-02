@@ -62,7 +62,9 @@ dkms.conf
 \app/.cargo/registry
 \app/output
 \app/pkg
+\app/.cargo/git
 \zemu/snapshots-tmp
 
 
 .DS_Store
+node_modules/.yarn-integrity
