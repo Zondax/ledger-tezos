@@ -11,7 +11,7 @@ impl<const N: usize> NVM<N> {
         let len = slice.len();
         //if the write wouldn't fit
         // then return error
-        if from+len > N {
+        if from + len > N {
             return Err(());
         }
 

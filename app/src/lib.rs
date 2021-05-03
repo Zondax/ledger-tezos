@@ -31,9 +31,9 @@ cfg_if::cfg_if! {
     }
 }
 
+mod bolos;
 pub mod constants;
 pub mod dispatcher;
-mod bolos;
 mod handlers;
 mod utils;
 
