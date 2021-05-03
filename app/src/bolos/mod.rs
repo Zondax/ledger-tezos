@@ -44,25 +44,70 @@ pub(crate) fn check_canary() {
     }
 }
 
-#[cfg(not(test))]
-pub fn pic_internal<T: Sized>(obj: &T) -> &T {
-    let ptr = obj as *const _;
-    let ptr_usize = ptr as *const () as u32;
-    unsafe {
-        let link = pic(ptr_usize);
-        let ptr = link as *const T;
-        &*ptr
+//https://github.com/LedgerHQ/ledger-nanos-sdk/blob/master/src/lib.rs#L179
+/// This struct is to be used when dealing with code memory spaces
+/// as the memory is mapped differently once the app is installed.
+///
+/// This struct should then be used when accessing `static` memory or
+/// function pointers (const in rust is optimized at compile-time)
+///
+/// # Example
+/// ```
+/// //BUFFER is a `static` so we need to wrap it with PIC so it would
+/// //be accessible when running under BOLOS
+/// static BUFFER: Pic<[u8; 1024]> = PIC::new([0; 1024])
+///
+/// assert_eq!(&[0; 1024], BUFFER);
+/// ```
+pub struct PIC<T> {
+    data: T,
+}
+
+impl<T> PIC<T> {
+    pub const fn new(data: T) -> Self {
+        Self { data }
+    }
+
+    pub fn get_ref(&self) -> &T {
+        cfg_if::cfg_if! {
+            if #[cfg(not(test))] {
+                let ptr = unsafe { pic(&self.data as *const T as u32) as *const T };
+                unsafe { &*ptr }
+            } else {
+                &self.data
+            }
+        }
+    }
+
+    /// Warning: this should be used only in conjunction with `nvm_write`
+    pub fn get_mut(&mut self) -> &mut T {
+        cfg_if::cfg_if! {
+            if #[cfg(not(test))] {
+                let ptr = unsafe { pic(&mut self.data as *mut T as u32) as *mut T };
+                unsafe { &mut *ptr }
+            } else {
+                &mut self.data
+            }
+        }
     }
 }
 
-#[macro_export]
-macro_rules! pic {
-    ($obj:expr) => {{
-        #[cfg(not(test))]
-        {
-            use crate::pic_internal;
-            pic_internal(&$obj)
-        }
-        return $obj;
-    }};
+impl<T> core::ops::Deref for PIC<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.get_ref()
+    }
+}
+
+impl<T> core::ops::DerefMut for PIC<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.get_mut()
+    }
+}
+
+impl<T: Default> Default for PIC<T> {
+    fn default() -> Self {
+        PIC::new(T::default())
+    }
 }

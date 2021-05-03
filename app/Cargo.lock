@@ -137,6 +137,7 @@ name = "rslib"
 version = "0.1.0"
 dependencies = [
  "arrayvec",
+ "cfg-if",
  "git-testament",
  "nom",
  "panic-halt",
