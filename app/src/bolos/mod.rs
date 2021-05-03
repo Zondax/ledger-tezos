@@ -16,13 +16,13 @@
 // FIXME: Refactor so zemu and bolos-FFI are clearly separated as xxx-sys crates
 #![allow(dead_code)]
 
-mod buffer;
-pub use buffer::*;
+pub mod swapping_buffer;
 
 mod pic;
 pub use pic::PIC;
 
 mod nvm;
+pub use nvm::NVM;
 
 pub(self) mod bindings {
     extern "C" {
