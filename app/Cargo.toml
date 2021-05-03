@@ -9,20 +9,13 @@ readme = "README.md"
 name = "rslib"
 crate-type = ["staticlib"]
 
-[dependencies.nom]
-version = "6.1.2"
-default-features = false
-
-[dependencies.arrayvec]
-version = "0.5.1"
-default-features = false
-
-[dependencies.git-testament]
-version = "0.2.0"
-git = "https://github.com/becominginsane/git-testament"
-default-features = false
+[features]
+dev = []
 
 [dependencies]
+nom = { version = "6.1.2", default-features = false }
+arrayvec = { version = "0.5.1", default-features = false }
+git-testament = { version = "0.2", default-features = false, git = "https://github.com/becominginsane/git-testament" }
 cfg-if = "1.0.0"
 
 [target.thumbv6m-none-eabi.dev-dependencies]
