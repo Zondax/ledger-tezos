@@ -16,6 +16,11 @@
 // FIXME: Refactor so zemu and bolos-FFI are clearly separated as xxx-sys crates
 #![allow(dead_code)]
 
+mod buffer;
+pub use buffer::*;
+
+mod nvm;
+
 extern "C" {
     #[cfg(not(test))]
     #[link_name = "zemu_log"]
@@ -27,6 +32,10 @@ extern "C" {
 
     #[cfg(not(test))]
     fn pic(link_address: u32) -> u32;
+
+    #[cfg(not(test))]
+    #[link_name = "nvm_write"]
+    pub fn c_nvm_write(dest: *mut u8, src: *const u8, len: u32);
 }
 
 pub fn zemu_log(_s: &str) {
