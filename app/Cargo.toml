@@ -11,17 +11,20 @@ crate-type = ["staticlib"]
 
 [features]
 dev = []
+default = ["dev"]
 
 [dependencies]
 nom = { version = "6.1.2", default-features = false }
 arrayvec = { version = "0.5.1", default-features = false }
 git-testament = { version = "0.2", default-features = false, git = "https://github.com/becominginsane/git-testament" }
 cfg-if = "1.0.0"
+no-std-compat = { version = "0.4" }
 
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"
 
 [dev-dependencies]
+no-std-compat = { version = "0.4", features = ["std"] }
 
 [profile.release]
 lto = false

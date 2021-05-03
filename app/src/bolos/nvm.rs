@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 pub struct NVM<const N: usize>([u8; N]);
 
 impl<const N: usize> NVM<N> {
@@ -5,9 +7,11 @@ impl<const N: usize> NVM<N> {
         Self([0; N])
     }
 
-    pub fn write(&mut self, slice: &[u8]) -> Result<(), ()> {
+    pub fn write(&mut self, from: usize, slice: &[u8]) -> Result<(), ()> {
         let len = slice.len();
-        if len > N {
+        //if the write wouldn't fit
+        // then return error
+        if from+len > N {
             return Err(());
         }
 
@@ -16,10 +20,12 @@ impl<const N: usize> NVM<N> {
                 //safety: we got the only possible mutable pointer to this location since
                 // we own the location
                 unsafe {
-                    super::c_nvm_write(self.0.as_mut_ptr(), slice.as_ptr(), len as u32);
+                    super::bindings::nvm_write(self.0[from..].as_mut_ptr(), slice.as_ptr(), len as u32);
+
+                    debug_assert_eq!(&self.0[from..], &slice[..]);
                 }
             } else {
-                self.0[..len].copy_from_slice(slice)
+                self.0[from..from+len].copy_from_slice(slice)
             }
         }
 
@@ -27,7 +33,7 @@ impl<const N: usize> NVM<N> {
     }
 }
 
-impl<const N: usize> core::ops::Deref for NVM<N> {
+impl<const N: usize> Deref for NVM<N> {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {

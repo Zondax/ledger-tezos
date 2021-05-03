@@ -17,28 +17,28 @@
 #![no_builtins]
 #![macro_use]
 
-extern crate core;
-#[cfg(test)]
-extern crate std;
+extern crate no_std_compat as std;
+use std::prelude::v1::*;
 
-#[cfg(not(test))]
-use core::panic::PanicInfo;
+cfg_if::cfg_if! {
+    if #[cfg(not(test))] {
+        use core::panic::PanicInfo;
 
-use dispatcher::handle_apdu;
+        #[panic_handler]
+        fn panic(_info: &PanicInfo) -> ! {
+            loop {}
+        } // TODO: we should reset the device here
+    }
+}
 
-use crate::bolos::{check_canary, zemu_log};
-
-#[cfg(not(test))]
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
-} // TODO: we should reset the device here
-
-mod bolos;
 pub mod constants;
 pub mod dispatcher;
+mod bolos;
 mod handlers;
 mod utils;
+
+use bolos::{check_canary, zemu_log};
+use dispatcher::handle_apdu;
 
 /// # Safety
 ///
@@ -53,7 +53,7 @@ pub unsafe extern "C" fn rs_handle_apdu(
 ) {
     let flags = _flags.as_mut().unwrap();
     let tx = _tx.as_mut().unwrap();
-    let data = core::slice::from_raw_parts_mut(buffer, buffer_len as usize);
+    let data = std::slice::from_raw_parts_mut(buffer, buffer_len as usize);
     zemu_log("rs_handle_apdu\n\x00");
 
     handle_apdu(flags, tx, rx, data);
