@@ -137,15 +137,16 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
 }
 
 #[macro_export]
-macro_rules! new {
+macro_rules! new_swapping_buffer {
     ($ram:expr, $flash:expr) => {{
-        use super::*;
-        static mut RAM: PIC<[u8; $ram]> = PIC::new([0; $ram]);
+        use crate::bolos::{swapping_buffer::SwappingBuffer, NVM, PIC};
 
-        #[link_section = ".nvram_data"]
-        static mut FLASH: PIC<NVM<$flash>> = PIC::new(NVM::new());
+        static mut __RAM: PIC<[u8; $ram]> = PIC::new([0; $ram]);
 
-        unsafe { SwappingBuffer::new(&mut RAM, &mut FLASH) }
+        #[cfg_attr(not(test), link_section = ".nvram_data")]
+        static mut __FLASH: PIC<NVM<$flash>> = PIC::new(NVM::new());
+
+        unsafe { SwappingBuffer::new(&mut __RAM, &mut __FLASH) }
     }};
 }
 
@@ -156,7 +157,7 @@ mod tests {
 
     #[test]
     fn macro_works() {
-        let buffer = new!(1, 2);
+        let buffer = new_swapping_buffer!(1, 2);
 
         assert_eq!((1, 2), buffer.sizes());
         assert!(buffer.state.is_ram());
@@ -164,7 +165,7 @@ mod tests {
 
     #[test]
     fn no_ram() {
-        let mut buffer = new!(0, 8);
+        let mut buffer = new_swapping_buffer!(0, 8);
 
         //should be able to write
         buffer.write(MSG).unwrap();
@@ -179,7 +180,7 @@ mod tests {
 
     #[test]
     fn no_flash() {
-        let mut buffer = new!(8, 0);
+        let mut buffer = new_swapping_buffer!(8, 0);
 
         buffer.write(MSG).unwrap();
         assert!(buffer.state.is_ram()); //should all be in ram
@@ -193,7 +194,7 @@ mod tests {
 
     #[test]
     fn incremental_ram() {
-        let mut buffer = new!(16, 0);
+        let mut buffer = new_swapping_buffer!(16, 0);
 
         buffer.write(MSG).unwrap();
         assert!(buffer.state.is_ram());
@@ -213,7 +214,7 @@ mod tests {
 
     #[test]
     fn incremental_flash() {
-        let mut buffer = new!(0, 16);
+        let mut buffer = new_swapping_buffer!(0, 16);
 
         buffer.write(MSG).unwrap();
         assert!(buffer.state.is_flash());
@@ -229,7 +230,7 @@ mod tests {
 
     #[test]
     fn transition() {
-        let mut buffer = new!(4, 8);
+        let mut buffer = new_swapping_buffer!(4, 8);
 
         //write 8 bytes
         buffer.write(MSG).unwrap();
@@ -243,7 +244,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn not_enough_space() {
-        let mut buffer = new!(4, 7);
+        let mut buffer = new_swapping_buffer!(4, 7);
 
         //writing 8 bytes will try to write to second buffer
         // but will fail since no space there either
@@ -252,7 +253,7 @@ mod tests {
 
     #[test]
     fn reset() {
-        let mut buffer = new!(8, 16);
+        let mut buffer = new_swapping_buffer!(8, 16);
 
         buffer.write(MSG).unwrap();
         assert!(buffer.state.is_ram());

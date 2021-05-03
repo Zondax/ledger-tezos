@@ -10,7 +10,7 @@ name = "rslib"
 crate-type = ["staticlib"]
 
 [features]
-dev = []
+dev = ["sha2", "once_cell"]
 default = ["dev"]
 
 [dependencies]
@@ -19,6 +19,10 @@ arrayvec = { version = "0.5.1", default-features = false }
 git-testament = { version = "0.2", default-features = false, git = "https://github.com/becominginsane/git-testament" }
 cfg-if = "1.0.0"
 no-std-compat = { version = "0.4" }
+
+#dev
+sha2 = { version = "0.9", default-features = false, optional = true }
+once_cell = { version = "1", default-features = false, optional = true }
 
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"

@@ -16,6 +16,7 @@
 // FIXME: Refactor so zemu and bolos-FFI are clearly separated as xxx-sys crates
 #![allow(dead_code)]
 
+#[macro_use]
 pub mod swapping_buffer;
 
 mod pic;
