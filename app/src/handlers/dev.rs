@@ -1,13 +1,14 @@
 use std::{convert::TryFrom, prelude::v1::*};
 
+use once_cell::unsync::Lazy;
+use sha2::digest::Digest;
+
 use crate::{
     bolos::{swapping_buffer::SwappingBuffer, PIC},
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_HASH},
     new_swapping_buffer,
 };
-
-use once_cell::unsync::Lazy;
 
 const RAM: usize = 0xFF;
 const FLASH: usize = 0xFFFF;
@@ -80,9 +81,8 @@ impl ApduHandler for Dev {
                     .write(&apdu_buffer[5..5 + len])
                     .map_err(|_| Error::DataInvalid)?;
 
-                use sha2::digest::Digest;
-
-                let digest = sha2::Sha256::digest(BUFFER.read());
+                //only read_exact because we don't care about what's in the rest of the buffer
+                let digest = sha2::Sha256::digest(BUFFER.read_exact());
                 let digest = digest.as_slice();
 
                 if apdu_buffer.len() < digest.len() {
@@ -92,6 +92,8 @@ impl ApduHandler for Dev {
                 apdu_buffer[..digest.len()].copy_from_slice(digest);
                 *tx = digest.len() as u32;
 
+                //reset the buffer for next message
+                BUFFER.reset();
                 Ok(())
             },
         }
@@ -156,7 +158,30 @@ mod tests {
         handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
         assert_error_code(&tx, &buffer, Error::Success);
 
-        use sha2::digest::Digest;
+        let expected = sha2::Sha256::digest(&MSG[..]);
+        let digest = &buffer[..tx as usize - 2];
+        assert_eq!(digest, expected.as_slice());
+    }
+
+    #[test]
+    fn apdu_dev_hash_short() {
+        const MSG: &[u8] = b"francesco@zondax.ch";
+        let len = MSG.len();
+
+        let mut flags = 0;
+        let mut tx = 0;
+        let mut buffer = [0; 260];
+
+        //Init
+        buffer[0] = CLA;
+        buffer[1] = INS_DEV_HASH;
+        buffer[2] = PacketType::Last.into();
+        buffer[3] = 0;
+        buffer[4] = len as u8;
+        buffer[5..5 + len].copy_from_slice(&MSG[..]);
+
+        handle_apdu(&mut flags, &mut tx, 5 + len as u32, &mut buffer);
+        assert_error_code(&tx, &buffer, Error::Success);
 
         let expected = sha2::Sha256::digest(&MSG[..]);
         let digest = &buffer[..tx as usize - 2];
