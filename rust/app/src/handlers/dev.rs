@@ -4,10 +4,9 @@ use once_cell::unsync::Lazy;
 use sha2::digest::Digest;
 
 use crate::{
-    bolos::{swapping_buffer::SwappingBuffer, PIC},
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_HASH},
-    new_swapping_buffer,
+    sys::{new_swapping_buffer, swapping_buffer::SwappingBuffer, PIC},
 };
 
 const RAM: usize = 0xFF;

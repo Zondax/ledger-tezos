@@ -16,7 +16,7 @@ impl<const N: usize> NVM<N> {
         }
 
         cfg_if::cfg_if! {
-            if #[cfg(not(test))] {
+            if #[cfg(bolos_sdk)] {
                 //safety: we got the only possible mutable pointer to this location since
                 // we own the location
                 unsafe {

@@ -18,7 +18,7 @@
 #pragma once
 
 #include "inttypes.h"
-#include "../../deps/ledger-zxlib/include/zxmacros.h"
+#include "../../../deps/ledger-zxlib/include/zxmacros.h"
 
 // Based on ISO7816
 

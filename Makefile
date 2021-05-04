@@ -26,12 +26,12 @@ ifeq ($(BOLOS_SDK),)
 	include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
 
 lint:
-	cd app && cargo fmt
+	cd rust && cargo fmt
 
 else
 default:
-	$(MAKE) -C app
+	$(MAKE) -C rust/app
 %:
 	$(info "Calling app Makefile for target $@")
-	COIN=$(COIN) $(MAKE) -C app $@
+	COIN=$(COIN) $(MAKE) -C rust/app $@
 endif

@@ -26,7 +26,7 @@ impl<T> PIC<T> {
 
     pub fn get_ref(&self) -> &T {
         cfg_if::cfg_if! {
-            if #[cfg(not(test))] {
+            if #[cfg(bolos_sdk)] {
                 let ptr = unsafe { super::bindings::pic(&self.data as *const T as u32) as *const T };
                 unsafe { &*ptr }
             } else {
@@ -38,7 +38,7 @@ impl<T> PIC<T> {
     /// Warning: this should be used only in conjunction with `nvm_write`
     pub fn get_mut(&mut self) -> &mut T {
         cfg_if::cfg_if! {
-            if #[cfg(not(test))] {
+            if #[cfg(bolos_sdk)] {
                 let ptr = unsafe { super::bindings::pic(&mut self.data as *mut T as u32) as *mut T };
                 unsafe { &mut *ptr }
             } else {

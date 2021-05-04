@@ -31,14 +31,14 @@ cfg_if::cfg_if! {
     }
 }
 
-mod bolos;
 pub mod constants;
 pub mod dispatcher;
 mod handlers;
+mod sys;
 mod utils;
 
-use bolos::{check_canary, zemu_log};
 use dispatcher::handle_apdu;
+use sys::{check_canary, zemu_log};
 
 /// # Safety
 ///

@@ -14,6 +14,9 @@ dev = ["sha2", "once_cell"]
 default = ["dev"]
 
 [dependencies]
+bolos-sys = { path = "../bolos" }
+zemu-sys = { path = "../zemu" }
+
 nom = { version = "6.1.2", default-features = false }
 arrayvec = { version = "0.5.1", default-features = false }
 git-testament = { version = "0.2", default-features = false, git = "https://github.com/becominginsane/git-testament" }
@@ -39,6 +42,3 @@ opt-level = "s"
 
 [profile.dev]
 panic = "abort"
-
-[workspace]
-resolver = "2"

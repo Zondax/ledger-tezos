@@ -55,14 +55,14 @@ dkms.conf
 
 # Others
 \.idea
-\app/target
-\app/bin
-\app/debug
-\app/glyphs
-\app/.cargo/registry
-\app/output
-\app/pkg
-\app/.cargo/git
+rust/target
+rust/app/bin
+rust/app/debug
+rust/app/glyphs
+rust/app/.cargo/registry
+rust/app/output
+rust/app/pkg
+rust/app/.cargo/git
 \zemu/snapshots-tmp
 
 

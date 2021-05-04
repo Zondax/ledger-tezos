@@ -139,11 +139,11 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
 #[macro_export]
 macro_rules! new_swapping_buffer {
     ($ram:expr, $flash:expr) => {{
-        use crate::bolos::{swapping_buffer::SwappingBuffer, NVM, PIC};
+        use $crate::{swapping_buffer::SwappingBuffer, NVM, PIC};
 
         static mut __RAM: PIC<[u8; $ram]> = PIC::new([0; $ram]);
 
-        #[cfg_attr(not(test), link_section = ".nvram_data")]
+        #[cfg_attr(bolos_sdk, link_section = ".nvram_data")]
         static mut __FLASH: PIC<NVM<$flash>> = PIC::new(NVM::new());
 
         unsafe { SwappingBuffer::new(&mut __RAM, &mut __FLASH) }

@@ -1,0 +1,9 @@
+[package]
+name = "bolos-sys"
+version = "0.1.0"
+authors = ["becominginsane <francesco@zondax.ch>"]
+edition = "2018"
+
+[dependencies]
+cfg-if = "1.0.0"
+no-std-compat = { version = "0.4" }
