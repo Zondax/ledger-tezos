@@ -108,7 +108,10 @@ mod tests {
         utils::assert_error_code,
     };
 
+    use serial_test::serial;
+
     #[test]
+    #[serial(dev_hash)]
     fn apdu_dev_hash() {
         const MSG: [u8; 0xFF] = [42; 0xFF];
 
@@ -164,6 +167,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(dev_hash)]
     fn apdu_dev_hash_short() {
         const MSG: &[u8] = b"francesco@zondax.ch";
         let len = MSG.len();
