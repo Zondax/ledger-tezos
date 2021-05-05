@@ -62,7 +62,7 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
     pub fn read(&self) -> &[u8] {
         match self.state {
             BufferState::WritingToRam(_) => &self.ram[..],
-            BufferState::WritingToFlash(_) => self.flash,
+            BufferState::WritingToFlash(_) => &self.flash[..],
         }
     }
 
@@ -142,7 +142,7 @@ macro_rules! new_swapping_buffer {
         static mut __RAM: [u8; $ram] = [0; $ram];
 
         #[$crate::nvm]
-        static mut __FLASH: [u8; $flash] = [0; 1];
+        static mut __FLASH: [u8; $flash];
 
         unsafe { $crate::SwappingBuffer::new(&mut __RAM, &mut __FLASH) }
     }};
