@@ -1,5 +1,7 @@
 [workspace]
-members = ["app", "bolos", "zemu"]
+members = ["app",
+            "bolos", "bolos-derive",
+            "zemu"]
 
 resolver = "2"
 

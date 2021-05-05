@@ -17,12 +17,17 @@
 #![no_builtins]
 
 //! This crate provides bindings for Ledger's BOLOS, as well as wrappers and utilities
+#[cfg(test)]
+extern crate self as bolos_sys;
 
 extern crate no_std_compat as std;
 use std::prelude::v1::*;
 
+pub use bolos_derive::*;
+
 #[macro_use]
 pub mod swapping_buffer;
+pub use swapping_buffer::SwappingBuffer;
 
 mod pic;
 pub use pic::PIC;

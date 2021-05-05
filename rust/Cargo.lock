@@ -28,9 +28,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bolos-derive"
+version = "0.1.0"
+dependencies = [
+ "bolos-sys",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "bolos-sys"
 version = "0.1.0"
 dependencies = [
+ "bolos-derive",
  "cfg-if",
  "no-std-compat",
 ]
