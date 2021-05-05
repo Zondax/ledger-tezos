@@ -8,25 +8,25 @@ jobs:
       - run:
           name: rustfmt
           command: |
-            cd ~/project/app
+            cd ~/project/rust
             cargo fmt --version
             cargo fmt -- --check
       - run:
           name: clippy
           command: |
-            cd ~/project/app
+            cd ~/project/rust
             cargo clippy --version
             cargo clippy --all-features --all-targets || true
       - run:
           name: audit
           command: |
-            cd ~/project/app
+            cd ~/project/rust
             cargo audit --version
             cargo audit
       - run:
           name: run tests
           command: |
-            cd ~/project/app
+            cd ~/project/rust
             cargo test
 
   build_ledger:
