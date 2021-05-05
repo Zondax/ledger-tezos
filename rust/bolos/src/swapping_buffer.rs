@@ -136,18 +136,36 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
     }
 }
 
-#[macro_export]
-macro_rules! new_swapping_buffer {
-    ($ram:expr, $flash:expr) => {{
-        use $crate::{swapping_buffer::SwappingBuffer, NVM, PIC};
+cfg_if::cfg_if! {
+    if #[cfg(bolos_sdk)] {
+        #[macro_export]
+        macro_rules! new_swapping_buffer {
+            ($ram:expr, $flash:expr) => {{
+                use $crate::{swapping_buffer::SwappingBuffer, NVM, PIC};
 
-        static mut __RAM: PIC<[u8; $ram]> = PIC::new([0; $ram]);
+                static mut __RAM: PIC<[u8; $ram]> = PIC::new([0; $ram]);
 
-        #[cfg_attr(bolos_sdk, link_section = ".nvram_data")]
-        static mut __FLASH: PIC<NVM<$flash>> = PIC::new(NVM::new());
+                #[link_section = ".rodata.N_"]
+                static mut __FLASH: PIC<NVM<$flash>> = PIC::new(NVM::new());
 
-        unsafe { SwappingBuffer::new(&mut __RAM, &mut __FLASH) }
-    }};
+                unsafe { SwappingBuffer::new(&mut __RAM, &mut __FLASH) }
+            }};
+        }
+    } else {
+        //macro without special link section (for testing for example)
+        #[macro_export]
+        macro_rules! new_swapping_buffer {
+            ($ram:expr, $flash:expr) => {{
+                use $crate::{swapping_buffer::SwappingBuffer, NVM, PIC};
+
+                static mut __RAM: PIC<[u8; $ram]> = PIC::new([0; $ram]);
+
+                static mut __FLASH: PIC<NVM<$flash>> = PIC::new(NVM::new());
+
+                unsafe { SwappingBuffer::new(&mut __RAM, &mut __FLASH) }
+            }};
+        }
+    }
 }
 
 #[cfg(test)]
