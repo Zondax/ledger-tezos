@@ -71,7 +71,8 @@ impl ApduHandler for LegacyGit {
 
         // Reference: https://github.com/obsidiansystems/ledger-app-tezos/blob/58797b2f9606c5a30dd1ccc9e5b9962e45e10356/src/apdu.c#L30
         apdu_buffer[..Self::COMMIT_HASH_LEN].copy_from_slice(&commit);
-        *tx = Self::COMMIT_HASH_LEN as u32;
+        apdu_buffer[Self::COMMIT_HASH_LEN] = 0; //null terminate the string
+        *tx = 1 + Self::COMMIT_HASH_LEN as u32;
 
         Ok(())
     }
@@ -121,7 +122,7 @@ mod tests {
         buffer[..5].copy_from_slice(&[CLA, INS_LEGACY_GIT, 0, 0, 0]);
         handle_apdu(&mut flags, &mut tx, rx, &mut buffer);
 
-        assert_eq!(tx as usize, len + 2);
+        assert_eq!(tx as usize, len + 1 + 2);
         assert_error_code(&tx, &buffer, Success);
 
         let commit_hash = LegacyGit::commit_hash();
