@@ -21,6 +21,10 @@
 TESTS_JS_PACKAGE = "@zondax/ledger-tezos"
 TESTS_JS_DIR = $(CURDIR)/js
 
+DOCKER_LEGACY_BOLOS_SDKS=/project/deps/legacy-nanos-secure-sdk
+DOCKER_LEGACY_APP_SRC=/project/legacy
+DOCKER_LEGACY_APP_BIN=$(DOCKER_LEGACY_APP_SRC)/bin/app.elf
+
 ifeq ($(BOLOS_SDK),)
 	# TODO: use earthly here
 	include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
@@ -31,6 +35,14 @@ lint:
 both:
 	$(MAKE)
 	BAKING=tezos_baking $(MAKE)
+
+.PHONY: legacyS
+legacyS:
+	$(call run_docker,$(DOCKER_LEGACY_BOLOS_SDKS),make -j $(NPROC) -C $(DOCKER_LEGACY_APP_SRC))
+
+.PHONY: clean_legacy
+clean_legacy:
+	$(call run_docker,$(DOCKER_LEGACY_BOLOS_SDKS), make -C $(DOCKER_LEGACY_APP_SRC) clean)
 
 else
 default:
