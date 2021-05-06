@@ -16,53 +16,39 @@
 // FIXME: Refactor so zemu and bolos-FFI are clearly separated as xxx-sys crates
 #![allow(dead_code)]
 
-extern "C" {
-    #[cfg(not(test))]
-    #[link_name = "zemu_log"]
-    pub fn c_zemu_log(buffer: *const u8);
+#[macro_use]
+pub mod swapping_buffer;
 
-    #[cfg(not(test))]
-    #[link_name = "check_canary"]
-    fn c_check_canary();
+mod pic;
+pub use pic::PIC;
 
-    #[cfg(not(test))]
-    fn pic(link_address: u32) -> u32;
+mod nvm;
+pub use nvm::NVM;
+
+pub(self) mod bindings {
+    extern "C" {
+        cfg_if::cfg_if! {
+            if #[cfg(not(test))] {
+                pub fn zemu_log(buffer: *const u8);
+                pub fn check_canary();
+                pub fn pic(link_address: u32) -> u32;
+                pub fn nvm_write(dest: *mut u8, src: *const u8, len: u32);
+            }
+        }
+    }
 }
 
 pub fn zemu_log(_s: &str) {
     #[cfg(not(test))]
     unsafe {
         let p = _s.as_bytes().as_ptr();
-        c_zemu_log(p)
+        bindings::zemu_log(p)
     }
 }
 
 pub(crate) fn check_canary() {
     #[cfg(not(test))]
     unsafe {
-        c_check_canary();
+        bindings::check_canary();
     }
-}
-
-#[cfg(not(test))]
-pub fn pic_internal<T: Sized>(obj: &T) -> &T {
-    let ptr = obj as *const _;
-    let ptr_usize = ptr as *const () as u32;
-    unsafe {
-        let link = pic(ptr_usize);
-        let ptr = link as *const T;
-        &*ptr
-    }
-}
-
-#[macro_export]
-macro_rules! pic {
-    ($obj:expr) => {{
-        #[cfg(not(test))]
-        {
-            use crate::pic_internal;
-            pic_internal(&$obj)
-        }
-        return $obj;
-    }};
 }

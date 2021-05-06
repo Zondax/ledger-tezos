@@ -14,6 +14,8 @@
 *  limitations under the License.
 ********************************************************************************/
 
+use cfg_if::cfg_if;
+
 use crate::constants::ApduError::{ClaNotSupported, CommandNotAllowed, Success, WrongLength};
 use crate::constants::{ApduError, APDU_INDEX_CLA, APDU_INDEX_INS, APDU_MIN_LENGTH};
 use crate::handlers::legacy_public_key::LegacyGetPublicKey;
@@ -44,6 +46,14 @@ pub const INS_GET_VERSION: u8 = 0x10;
 pub const INS_GET_ADDRESS: u8 = 0x11;
 pub const INS_SIGN: u8 = 0x12;
 
+cfg_if! {
+    if #[cfg(feature = "dev")] {
+        use crate::handlers::dev::Dev;
+
+        pub const INS_DEV_HASH: u8 = 0xF0;
+    }
+}
+
 pub trait ApduHandler {
     fn handle(
         _flags: &mut u32,
@@ -73,6 +83,15 @@ pub fn apdu_dispatch(
     let ins = apdu_buffer[APDU_INDEX_INS];
 
     // Reference for legacy API https://github.com/obsidiansystems/ledger-app-tezos/blob/58797b2f9606c5a30dd1ccc9e5b9962e45e10356/src/main.c#L16-L31
+
+    cfg_if! {
+        if #[cfg(feature = "dev")] {
+            match ins {
+                INS_DEV_HASH => return Dev::handle(flags, tx, rx, apdu_buffer),
+                _ => {}
+            }
+        }
+    }
 
     // FIXME: Unify using the trait
     match ins {
