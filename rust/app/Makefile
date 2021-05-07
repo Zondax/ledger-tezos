@@ -89,6 +89,16 @@ OUTPUT_ELF:= $(CURDIR)/output/app_x.elf
 OUTPUT_INSTALLER:= $(CURDIR)/pkg/installer_x.sh
 endif
 
+ifdef BAKING
+RUST_FEATURES=--features="baking"
+OUTPUT_ELF:=$(subst .elf,_baking.elf,$(OUTPUT_ELF))
+BAKING=true
+else
+RUST_FEATURES=--features="wallet"
+BAKING=false
+endif
+
+$(info BAKING = [$(BAKING)])
 $(info TARGET_NAME  = [$(TARGET_NAME)])
 $(info ICONNAME  = [$(ICONNAME)])
 
@@ -192,7 +202,7 @@ SDK_SOURCE_PATH += lib_ux
 
 .PHONY: rust
 rust:
-	CARGO_HOME="$(CURDIR)/.cargo" cargo build --target thumbv6m-none-eabi --release
+	CARGO_HOME="$(CURDIR)/.cargo" cargo build --target thumbv6m-none-eabi --release $(RUST_FEATURES)
 
 .PHONY: rust_clean
 rust_clean:

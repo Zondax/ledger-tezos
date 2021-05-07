@@ -15,13 +15,21 @@
 ********************************************************************************/
 #![allow(dead_code)]
 
-use crate::constants::ApduError;
-
-pub fn assert_error_code(tx: &u32, apdu_buffer: &[u8], error: ApduError) {
-    let pos: usize = *tx as usize;
-    assert_eq!(apdu_buffer[pos - 2..pos], (error as u16).to_be_bytes());
+#[macro_export]
+macro_rules! assert_error_code {
+    ($tx:expr, $buffer:ident, $expected:expr) => {
+        let pos: usize = $tx as _;
+        let actual: crate::constants::ApduError = (&$buffer[pos - 2..pos]).try_into().unwrap();
+        assert_eq!(actual, $expected);
+    };
 }
 
 git_testament::git_testament_macros!(git);
 
 pub const GIT_COMMIT_HASH: &str = git_commit_hash!();
+
+pub const BAKING: bool = if cfg!(feature = "baking") {
+    true
+} else {
+    false
+};
