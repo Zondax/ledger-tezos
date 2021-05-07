@@ -103,8 +103,8 @@ impl ApduHandler for Dev {
 mod tests {
     use super::*;
     use crate::{
-        dispatcher::{handle_apdu, CLA},
         assert_error_code,
+        dispatcher::{handle_apdu, CLA},
     };
     use std::convert::TryInto;
 

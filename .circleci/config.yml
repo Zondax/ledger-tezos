@@ -1,8 +1,13 @@
-version: 2
+version: 2.1
 jobs:
   build:
+    parameters:
+      baking:
+        type: string
     docker:
       - image: zondax/rust-ci:latest
+    environment:
+      BAKING: << parameters.baking >>
     steps:
       - checkout
       - run:
@@ -24,18 +29,22 @@ jobs:
             cargo audit --version
             cargo audit
       - run:
-          name: run tests
+          name: run rust tests
           command: |
-            cd ~/project/rust
-            cargo test
+            cd ~/project
+            make rust_test
 
   build_ledger:
+    parameters:
+      baking:
+        type: string
     docker:
       - image: zondax/builder-bolos:latest
     working_directory: ~/project
     environment:
       BOLOS_SDK: /home/zondax/project/deps/nanos-secure-sdk
       BOLOS_ENV: /opt/bolos
+      BAKING: << parameters.baking >>
     steps:
       - checkout
       # Docker entrypoint is not considered
@@ -48,12 +57,16 @@ jobs:
       # FIXME: build baker app
 
   test_zemu:
+    parameters:
+      baking:
+        type: string
     machine:
       image: ubuntu-2004:202101-01
     resource_class: large
     working_directory: ~/repo
     environment:
       BASH_ENV: "/opt/circleci/.nvm/nvm.sh"
+      BAKING: << parameters.baking >>
     steps:
       - checkout
       - run: git submodule update --init --recursive
@@ -89,11 +102,15 @@ jobs:
             make zemu_test
 
   build_package:
+    parameters:
+      baking:
+        type: string
     docker:
       - image: zondax/builder-bolos:latest
     environment:
       BOLOS_SDK: /home/zondax/project/deps/nanos-secure-sdk
       BOLOS_ENV: /opt/bolos
+      BAKING: << parameters.baking >>
     steps:
       - checkout
       - run: git submodule update --init --recursive
@@ -110,14 +127,26 @@ workflows:
 
   default:
     jobs:
-      - build
-      - build_ledger
-      - test_zemu
+      - build:
+          matrix:
+            parameters:
+              baking: ["", "baking"]
+      - build_ledger:
+          matrix:
+            parameters:
+              baking: ["", "baking"]
+      - test_zemu:
+          matrix:
+            parameters:
+              baking: ["", "baking"]
       - build_package:
           requires:
             - build
             - build_ledger
             - test_zemu
+          matrix:
+            parameters:
+              baking: [""]
           filters:
             branches:
               only:
