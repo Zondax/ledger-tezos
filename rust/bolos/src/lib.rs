@@ -13,11 +13,21 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-// FIXME: Refactor so zemu and bolos-FFI are clearly separated as xxx-sys crates
-#![allow(dead_code)]
+#![no_std]
+#![no_builtins]
+
+//! This crate provides bindings for Ledger's BOLOS, as well as wrappers and utilities
+#[cfg(test)]
+extern crate self as bolos_sys;
+
+extern crate no_std_compat as std;
+use std::prelude::v1::*;
+
+pub use bolos_derive::*;
 
 #[macro_use]
 pub mod swapping_buffer;
+pub use swapping_buffer::SwappingBuffer;
 
 mod pic;
 pub use pic::PIC;
@@ -28,27 +38,10 @@ pub use nvm::NVM;
 pub(self) mod bindings {
     extern "C" {
         cfg_if::cfg_if! {
-            if #[cfg(not(test))] {
-                pub fn zemu_log(buffer: *const u8);
-                pub fn check_canary();
+            if #[cfg(bolos_sdk)] {
                 pub fn pic(link_address: u32) -> u32;
                 pub fn nvm_write(dest: *mut u8, src: *const u8, len: u32);
             }
         }
-    }
-}
-
-pub fn zemu_log(_s: &str) {
-    #[cfg(not(test))]
-    unsafe {
-        let p = _s.as_bytes().as_ptr();
-        bindings::zemu_log(p)
-    }
-}
-
-pub(crate) fn check_canary() {
-    #[cfg(not(test))]
-    unsafe {
-        bindings::check_canary();
     }
 }

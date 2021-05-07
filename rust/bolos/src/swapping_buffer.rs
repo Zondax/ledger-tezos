@@ -62,7 +62,7 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
     pub fn read(&self) -> &[u8] {
         match self.state {
             BufferState::WritingToRam(_) => &self.ram[..],
-            BufferState::WritingToFlash(_) => self.flash,
+            BufferState::WritingToFlash(_) => &self.flash[..],
         }
     }
 
@@ -135,18 +135,16 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
         self.state
     }
 }
-
 #[macro_export]
 macro_rules! new_swapping_buffer {
     ($ram:expr, $flash:expr) => {{
-        use crate::bolos::{swapping_buffer::SwappingBuffer, NVM, PIC};
+        #[$crate::pic]
+        static mut __RAM: [u8; $ram] = [0; $ram];
 
-        static mut __RAM: PIC<[u8; $ram]> = PIC::new([0; $ram]);
+        #[$crate::nvm]
+        static mut __FLASH: [u8; $flash];
 
-        #[cfg_attr(not(test), link_section = ".nvram_data")]
-        static mut __FLASH: PIC<NVM<$flash>> = PIC::new(NVM::new());
-
-        unsafe { SwappingBuffer::new(&mut __RAM, &mut __FLASH) }
+        unsafe { $crate::SwappingBuffer::new(&mut __RAM, &mut __FLASH) }
     }};
 }
 

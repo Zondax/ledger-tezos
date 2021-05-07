@@ -16,7 +16,7 @@ impl<const N: usize> NVM<N> {
         }
 
         cfg_if::cfg_if! {
-            if #[cfg(not(test))] {
+            if #[cfg(bolos_sdk)] {
                 //safety: we got the only possible mutable pointer to this location since
                 // we own the location
                 unsafe {
@@ -31,12 +31,16 @@ impl<const N: usize> NVM<N> {
 
         Ok(())
     }
+
+    pub fn read(&self) -> &[u8; N] {
+        &self.0
+    }
 }
 
 impl<const N: usize> Deref for NVM<N> {
-    type Target = [u8];
+    type Target = [u8; N];
 
     fn deref(&self) -> &Self::Target {
-        &self.0[..]
+        &self.0
     }
 }

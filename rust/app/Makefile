@@ -32,7 +32,7 @@ all: bin/app.elf
 	@echo "APPHEX=\"" >> $(OUTPUT_INSTALLER)
 	@cat $(CURDIR)/bin/app.hex >> $(OUTPUT_INSTALLER)
 	@echo "\"" >> $(OUTPUT_INSTALLER)
-	@cat $(CURDIR)/../deps/ledger-zxlib/scripts/template.sh >> $(OUTPUT_INSTALLER)
+	@cat $(CURDIR)/../../deps/ledger-zxlib/scripts/template.sh >> $(OUTPUT_INSTALLER)
 	@chmod +x $(OUTPUT_INSTALLER)
 	@cp $(CURDIR)/bin/* $(CURDIR)/output
 	@cp $(CURDIR)/output/app.elf ${OUTPUT_ELF}
@@ -52,7 +52,7 @@ endif
 
 APPVERSION_M=0
 APPVERSION_N=0
-APPVERSION_P=2
+APPVERSION_P=3
 
 $(info COIN  = [$(COIN)])
 ifeq ($(COIN),XTZ)
@@ -175,7 +175,7 @@ LD       := $(GCCPATH)arm-none-eabi-gcc
 LDFLAGS  += -O3 -Os
 LDLIBS   += -lrslib
 LDLIBS   += -lm -lgcc -lc
-LDLIBS   += -Ltarget/thumbv6m-none-eabi/release
+LDLIBS   += -L../target/thumbv6m-none-eabi/release
 
 ##########################
 GLYPH_SRC_DIR = glyphs
@@ -184,8 +184,8 @@ include $(BOLOS_SDK)/Makefile.glyphs
 
 APP_SOURCE_PATH += $(MY_DIR)/c
 APP_SOURCE_PATH += $(MY_DIR)/refactor
-APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/include
-APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/src
+APP_SOURCE_PATH += $(MY_DIR)/../../deps/ledger-zxlib/include
+APP_SOURCE_PATH += $(MY_DIR)/../../deps/ledger-zxlib/src
 
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
 SDK_SOURCE_PATH += lib_ux
