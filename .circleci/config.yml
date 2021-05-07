@@ -35,16 +35,12 @@ jobs:
             make rust_test
 
   build_ledger:
-    parameters:
-      baking:
-        type: string
     docker:
       - image: zondax/builder-bolos:latest
     working_directory: ~/project
     environment:
       BOLOS_SDK: /home/zondax/project/deps/nanos-secure-sdk
       BOLOS_ENV: /opt/bolos
-      BAKING: << parameters.baking >>
     steps:
       - checkout
       # Docker entrypoint is not considered
@@ -54,19 +50,21 @@ jobs:
           command: |
             source /home/zondax/.cargo/env
             make
-      # FIXME: build baker app
+      - run:
+          name: Build baker app
+          environment:
+            BAKING: yes
+          command: |
+            source /home/zondax/.cargo/env
+            make
 
   test_zemu:
-    parameters:
-      baking:
-        type: string
     machine:
       image: ubuntu-2004:202101-01
     resource_class: large
     working_directory: ~/repo
     environment:
       BASH_ENV: "/opt/circleci/.nvm/nvm.sh"
-      BAKING: << parameters.baking >>
     steps:
       - checkout
       - run: git submodule update --init --recursive
@@ -89,6 +87,12 @@ jobs:
           command: |
             make
       - run:
+          name: Build Ledger app (Baking)
+          environment:
+            BAKING: yes
+          command: |
+            make
+      - run:
           name: Build/Install build js deps
           command: |
             nvm use 14.4.0
@@ -102,15 +106,11 @@ jobs:
             make zemu_test
 
   build_package:
-    parameters:
-      baking:
-        type: string
     docker:
       - image: zondax/builder-bolos:latest
     environment:
       BOLOS_SDK: /home/zondax/project/deps/nanos-secure-sdk
       BOLOS_ENV: /opt/bolos
-      BAKING: << parameters.baking >>
     steps:
       - checkout
       - run: git submodule update --init --recursive
@@ -120,7 +120,33 @@ jobs:
             source /home/zondax/.cargo/env
             cd /home/zondax/project
             make
-      - run: /home/zondax/go/bin/ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete $(/home/zondax/project/app/pkg/installer_s.sh version) /home/zondax/project/app/pkg/installer_s.sh
+      - run:
+          name: Copy artifacts
+          command: |
+            /home/zondax/go/bin/ghr -t ${GITHUB_TOKEN} \
+                                    -u ${CIRCLE_PROJECT_USERNAME} \
+                                    -r ${CIRCLE_PROJECT_REPONAME} \
+                                    -c ${CIRCLE_SHA1} \
+                                    -delete $(/home/zondax/project/app/pkg/installer_s.sh version) \
+                                    /home/zondax/project/app/pkg/installer_s.sh
+      - run:
+          name: Build Baking
+          environment:
+            BAKING: yes
+          command: |
+            source /home/zondax/.cargo/env
+            cd /home/zondax/project
+            make
+      - run:
+          name: Copy baking artifacts
+          command: |
+            mv /home/zondax/project/app/pkg/installer_s.sh /home/zondax/project/app/pkg/installer_baking_s.sh
+            /home/zondax/go/bin/ghr -t ${GITHUB_TOKEN} \
+                                    -u ${CIRCLE_PROJECT_USERNAME} \
+                                    -r ${CIRCLE_PROJECT_REPONAME} \
+                                    -c ${CIRCLE_SHA1} \
+                                    -delete $(/home/zondax/project/app/pkg/installer_baking_s.sh version) \
+                                    /home/zondax/project/app/pkg/installer_baking_s.sh
 
 workflows:
   version: 2
@@ -131,22 +157,13 @@ workflows:
           matrix:
             parameters:
               baking: ["", "baking"]
-      - build_ledger:
-          matrix:
-            parameters:
-              baking: ["", "baking"]
-      - test_zemu:
-          matrix:
-            parameters:
-              baking: ["", "baking"]
+      - build_ledger
+      - test_zemu
       - build_package:
           requires:
             - build
             - build_ledger
             - test_zemu
-          matrix:
-            parameters:
-              baking: [""]
           filters:
             branches:
               only:
