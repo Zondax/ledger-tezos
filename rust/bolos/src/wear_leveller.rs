@@ -26,9 +26,7 @@ impl<const S: usize> NVMWearSlotRam<S> {
     fn as_slice(&self) -> &[u8] {
         let s = (&self.counter[..]).as_ptr();
 
-        unsafe {
-            std::slice::from_raw_parts(s, S + USIZE)
-        }
+        unsafe { std::slice::from_raw_parts(s, S + USIZE) }
     }
 }
 
@@ -87,7 +85,7 @@ impl<const S: usize> NVMWearSlot<S> {
         // so we can use this later to write to ourselves thru nvm
         let mut src: NVMWearSlotRam<S> = (&*self).into();
         src.counter = counter;
-        src.slot[from..from+len].copy_from_slice(slice);
+        src.slot[from..from + len].copy_from_slice(slice);
 
         //safety: this is safe because we only use the mutable ref inside ManualNVM
         // where it's meant to be used
@@ -97,9 +95,7 @@ impl<const S: usize> NVMWearSlot<S> {
         let mut nvm = crate::nvm::ManualNVM::new(p, USIZE + S);
 
         //safety: this is safe because it comes from NVM in the first place (self)
-        unsafe {
-            nvm.write(0, src.as_slice())
-        }
+        unsafe { nvm.write(0, src.as_slice()) }
     }
 
     /// Write `slice` to the inner slot, starting at `from`.

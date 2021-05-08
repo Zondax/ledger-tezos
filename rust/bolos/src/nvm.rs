@@ -1,5 +1,5 @@
-use std::ops::Deref;
 use cfg_if::cfg_if;
+use std::ops::Deref;
 
 use crate::{exceptions::catch_exception, SyscallError};
 
