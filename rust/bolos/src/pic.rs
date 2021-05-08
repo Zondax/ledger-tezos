@@ -12,11 +12,14 @@ use std::ops::{Deref, DerefMut};
 /// # use bolos_sys::PIC;
 /// //BUFFER is a `static` so we need to wrap it with PIC so it would
 /// //be accessible when running under BOLOS
-/// static BUFFER: PIC<[u8; 1024]> = PIC::new([0; 1024]);
+/// #[bolos_sys::pic]
+/// static BUFFER: [u8; 1024] = [0; 1024];
 ///
+/// let _: &PIC<[u8; 1024]> = &BUFFER;
 /// assert_eq!(&[0; 1024], &*BUFFER);
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
 pub struct PIC<T> {
     data: T,
 }

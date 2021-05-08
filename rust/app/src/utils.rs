@@ -28,8 +28,4 @@ git_testament::git_testament_macros!(git);
 
 pub const GIT_COMMIT_HASH: &str = git_commit_hash!();
 
-pub const BAKING: bool = if cfg!(feature = "baking") {
-    true
-} else {
-    false
-};
+pub const BAKING: bool = cfg!(feature = "baking");

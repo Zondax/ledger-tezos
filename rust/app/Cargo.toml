@@ -10,7 +10,7 @@ name = "rslib"
 crate-type = ["staticlib"]
 
 [features]
-baking = []
+baking = ["once_cell"]
 wallet = []
 dev = ["sha2", "once_cell", "bolos-sys/exception-throw"]
 default = []

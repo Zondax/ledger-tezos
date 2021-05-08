@@ -25,13 +25,16 @@ extern crate cfg_if;
 extern crate self as bolos_sys;
 
 extern crate no_std_compat as std;
-use std::prelude::v1::*;
 
 pub use bolos_derive::*;
 
 #[macro_use]
 pub mod swapping_buffer;
 pub use swapping_buffer::SwappingBuffer;
+
+#[macro_use]
+pub mod wear_leveller;
+pub use wear_leveller::Wear;
 
 mod pic;
 pub use pic::PIC;

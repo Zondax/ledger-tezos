@@ -18,7 +18,6 @@
 #![macro_use]
 
 extern crate no_std_compat as std;
-use std::prelude::v1::*;
 
 cfg_if::cfg_if! {
     if #[cfg(not(test))] {

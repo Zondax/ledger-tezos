@@ -116,12 +116,13 @@ pub fn apdu_dispatch(
         if #[cfg(feature = "baking")] {
             //baking-only instructions
             match ins {
-                INS_LEGACY_AUTHORIZE_BAKING => return Err(CommandNotAllowed),
                 INS_LEGACY_RESET => return Err(CommandNotAllowed),
-                INS_LEGACY_QUERY_AUTH_KEY => return Err(CommandNotAllowed),
                 INS_LEGACY_QUERY_MAIN_HWM => return Err(CommandNotAllowed),
-                INS_LEGACY_SETUP => return Err(CommandNotAllowed),
                 INS_LEGACY_QUERY_ALL_HWM => return Err(CommandNotAllowed),
+
+                INS_LEGACY_AUTHORIZE_BAKING => return Err(CommandNotAllowed),
+                INS_LEGACY_QUERY_AUTH_KEY => return Err(CommandNotAllowed),
+                INS_LEGACY_SETUP => return Err(CommandNotAllowed),
                 INS_LEGACY_DEAUTHORIZE => return Err(CommandNotAllowed),
                 INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => return Err(CommandNotAllowed),
                 INS_LEGACY_HMAC => return Err(CommandNotAllowed),

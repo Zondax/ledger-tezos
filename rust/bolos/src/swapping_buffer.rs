@@ -140,6 +140,7 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
         self.state
     }
 }
+
 #[macro_export]
 macro_rules! new_swapping_buffer {
     ($ram:expr, $flash:expr) => {{
