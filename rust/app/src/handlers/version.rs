@@ -59,10 +59,11 @@ impl ApduHandler for GetVersion {
 
 #[cfg(test)]
 mod tests {
+    use crate::assert_error_code;
     use crate::constants::ApduError::Success;
     use crate::dispatcher::{handle_apdu, CLA, INS_GET_VERSION};
     use crate::handlers::version::{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
-    use crate::utils::assert_error_code;
+    use std::convert::TryInto;
 
     #[test]
     fn apdu_get_version() {
@@ -80,7 +81,7 @@ mod tests {
         handle_apdu(flags, tx, rx, buffer);
 
         assert_eq!(*tx, 1 + 4 + 4 + 2);
-        assert_error_code(tx, buffer, Success);
+        assert_error_code!(*tx, buffer, Success);
 
         assert_eq!(buffer[1], VERSION_MAJOR);
         assert_eq!(buffer[2], VERSION_MINOR);

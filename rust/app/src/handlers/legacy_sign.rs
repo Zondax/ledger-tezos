@@ -15,9 +15,7 @@
 ********************************************************************************/
 use crate::constants::ApduError::InsNotSupported;
 use crate::constants::{ApduError, APDU_INDEX_INS};
-use crate::dispatcher::{
-    ApduHandler, INS_LEGACY_SIGN, INS_LEGACY_SIGN_UNSAFE, INS_LEGACY_SIGN_WITH_HASH,
-};
+use crate::dispatcher::{ApduHandler, INS_LEGACY_SIGN, INS_LEGACY_SIGN_WITH_HASH};
 
 pub struct LegacySign {}
 
@@ -31,9 +29,10 @@ impl ApduHandler for LegacySign {
         // Reference: https://github.com/obsidiansystems/ledger-app-tezos/blob/58797b2f9606c5a30dd1ccc9e5b9962e45e10356/src/apdu_sign.c#L641-L651
 
         let (_enable_hashing, _enable_parsing) = match apdu_buffer[APDU_INDEX_INS] {
-            x if x == INS_LEGACY_SIGN => Ok((false, false)),
-            x if x == INS_LEGACY_SIGN_UNSAFE => Ok((true, false)),
-            x if x == INS_LEGACY_SIGN_WITH_HASH => Ok((true, false)),
+            INS_LEGACY_SIGN => Ok((false, false)),
+            #[cfg(feature = "wallet")]
+            crate::dispatcher::INS_LEGACY_SIGN_UNSAFE => Ok((true, false)),
+            INS_LEGACY_SIGN_WITH_HASH => Ok((true, false)),
             _ => Err(InsNotSupported),
         }?;
 

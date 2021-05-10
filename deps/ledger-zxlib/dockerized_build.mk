@@ -62,6 +62,7 @@ define run_docker
 	-e DEV_CERT_PRIVKEY=$(DEV_CERT_PRIVKEY) \
 	-e BOLOS_SDK=$(1) \
 	-e BOLOS_ENV=/opt/bolos \
+	-e BAKING=$(BAKING) \
 	-u $(USERID) \
 	-v $(shell pwd):/project \
 	-e COIN=$(COIN) \
@@ -211,4 +212,4 @@ zemu_test:
 
 .PHONY: rust_test
 rust_test:
-	cd app/rust && cargo test
+	$(MAKE) -C rust test
