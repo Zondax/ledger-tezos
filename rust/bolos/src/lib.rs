@@ -32,9 +32,13 @@ pub use bolos_derive::*;
 pub mod swapping_buffer;
 pub use swapping_buffer::SwappingBuffer;
 
-#[macro_use]
-pub mod wear_leveller;
-pub use wear_leveller::Wear;
+cfg_if! {
+    if #[cfg(feature = "wear")] {
+        #[macro_use]
+        pub mod wear_leveller;
+        pub use wear_leveller::Wear;
+    }
+}
 
 mod pic;
 pub use pic::PIC;

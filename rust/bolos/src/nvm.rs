@@ -63,6 +63,9 @@ impl<const N: usize> NVM<N> {
                 };
 
                 catch_exception::<NVMError, _, _>(write)?;
+                if &self.0[from..] != slice {
+                    return Err(NVMError::Write)
+                }
             } else {
                 self.0[from..from+len].copy_from_slice(slice)
             }
@@ -90,7 +93,7 @@ impl<const N: usize> Deref for NVM<N> {
 }
 
 /// This struct is to be used when wanting to properly write the memory behind the pointer
-/// but the memory is not actually owned by the application, or the reference has been obtained
+/// but the memory is not actually owned by the application, or the pointer has been obtained
 /// another way
 pub struct ManualNVM<'m> {
     ptr: *mut u8,

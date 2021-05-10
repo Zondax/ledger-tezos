@@ -84,7 +84,8 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
     ///
     /// # Errors
     /// This function will error if the second buffer is smaller than the requested amount,
-    /// either when appending or when moving from the first buffer
+    /// either when appending or when moving from the first buffer,
+    /// or if there's an exception when writing to NVM
     pub fn write(&mut self, bytes: &[u8]) -> Result<(), NVMError> {
         let len = bytes.len();
 
@@ -113,8 +114,8 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
             }),
             //writing to flash try to write and update counter in case of success
             BufferState::WritingToFlash(cnt) => {
-                //this is ok because we check already for the size
-                self.flash.write(*cnt, bytes).unwrap();
+                //this will never throw a size error, just a write exception
+                self.flash.write(*cnt, bytes)?;
                 *cnt += len;
                 Ok(())
             }

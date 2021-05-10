@@ -5,10 +5,8 @@ authors = ["becominginsane <francesco@zondax.ch>"]
 edition = "2018"
 
 [features]
-default = ["lazy"]
-
 exception-throw = []
-lazy = ["once_cell"]
+wear = ["crc"]
 
 [dependencies]
 cty = "0.2"
@@ -17,4 +15,5 @@ bolos-derive = { version = "0.1", path = "../bolos-derive" }
 cfg-if = "1.0.0"
 no-std-compat = { version = "0.4" }
 
-once_cell = { version = "1", default-features = false, optional = true }
+#wear levelling
+crc = { version = "1.8.1", optional = true, default-features = false }

@@ -14,12 +14,12 @@ use crate::{
 use once_cell::unsync::Lazy;
 
 const N_PAGES: usize = 8;
-const PAGE_SIZE: usize = 64;
 
-type WearLeveller = Wear<'static, 'static, N_PAGES, PAGE_SIZE>;
+type WearLeveller = Wear<'static, 'static, N_PAGES>;
 
 #[bolos_sys::pic]
-static mut PAGES: Lazy<WearLeveller> = Lazy::new(|| new_wear_leveller!(PAGE_SIZE, N_PAGES));
+static mut PAGES: Lazy<WearLeveller> =
+    Lazy::new(|| new_wear_leveller!(N_PAGES).expect("NVM might be corrupted"));
 
 pub struct LegacyHWM {}
 
