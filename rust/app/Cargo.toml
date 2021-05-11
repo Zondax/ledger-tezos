@@ -21,7 +21,7 @@ zemu-sys = { path = "../zemu" }
 
 nom = { version = "6.1.2", default-features = false }
 arrayvec = { version = "0.5.1", default-features = false }
-git-testament = { version = "0.2", default-features = false, git = "https://github.com/becominginsane/git-testament" }
+git-testament = { version = "0.2", default-features = false }
 cfg-if = "1.0.0"
 no-std-compat = { version = "0.4" }
 

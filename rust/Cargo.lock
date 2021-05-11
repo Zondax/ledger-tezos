@@ -92,7 +92,8 @@ dependencies = [
 [[package]]
 name = "git-testament"
 version = "0.2.0"
-source = "git+https://github.com/becominginsane/git-testament#a93183928707366e7c283cddf39df4750778fba8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "096cb9c8aa6f1924d079bf417f1d1685286958ff362fa58ae4d65a53ffec6c02"
 dependencies = [
  "git-testament-derive",
  "no-std-compat",
@@ -100,8 +101,9 @@ dependencies = [
 
 [[package]]
 name = "git-testament-derive"
-version = "0.1.11"
-source = "git+https://github.com/becominginsane/git-testament#a93183928707366e7c283cddf39df4750778fba8"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45ceded7b01141664c3fc4a50199c408a6ed247e6c8415dc005e895f1d233374"
 dependencies = [
  "chrono",
  "log",
