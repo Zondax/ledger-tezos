@@ -127,8 +127,7 @@ jobs:
                                     -u ${CIRCLE_PROJECT_USERNAME} \
                                     -r ${CIRCLE_PROJECT_REPONAME} \
                                     -c ${CIRCLE_SHA1} \
-                                    -delete $(/home/zondax/project/app/pkg/installer_s.sh version) \
-                                    /home/zondax/project/app/pkg/installer_s.sh
+                                    /home/zondax/project/rust/app/pkg/installer_s.sh
       - run:
           name: Build Baking
           environment:
@@ -145,8 +144,7 @@ jobs:
                                     -u ${CIRCLE_PROJECT_USERNAME} \
                                     -r ${CIRCLE_PROJECT_REPONAME} \
                                     -c ${CIRCLE_SHA1} \
-                                    -delete $(/home/zondax/project/app/pkg/installer_baking_s.sh version) \
-                                    /home/zondax/project/app/pkg/installer_baking_s.sh
+                                    /home/zondax/project/rust/app/pkg/installer_baking_s.sh
 
 workflows:
   version: 2
