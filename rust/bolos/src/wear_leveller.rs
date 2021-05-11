@@ -28,7 +28,6 @@ impl<'nvm> Slot<'nvm> {
         digest.write(&payload[..]);
 
         digest.sum32()
-
     }
 
     pub fn from_storage(storage: &'nvm [u8; PAGE_SIZE]) -> Result<Self, SlotError> {
@@ -52,7 +51,10 @@ impl<'nvm> Slot<'nvm> {
 
         let expected = Self::crc32(cnt, payload);
         if crc != expected {
-            Err(SlotError::CRC{expected, found: crc})?;
+            Err(SlotError::CRC {
+                expected,
+                found: crc,
+            })?;
         }
 
         Ok(Slot {
@@ -189,6 +191,17 @@ impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
     }
 }
 
+#[cfg(test)]
+impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
+    pub fn idx(&mut self) -> &mut usize {
+        &mut *self.idx
+    }
+
+    pub fn slots(&mut self) -> &mut [NVMWearSlot; S] {
+        &mut *self.slots.get_mut()
+    }
+}
+
 #[macro_export]
 macro_rules! new_wear_leveller {
     ($slots:expr) => {{
@@ -201,4 +214,46 @@ macro_rules! new_wear_leveller {
 
         unsafe { $crate::wear_leveller::Wear::new(&mut __SLOTS, &mut __IDX) }
     }};
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn macro_works() {
+        let mut wear = new_wear_leveller!(2).expect("no nvm/crc issues");
+
+        assert_eq!(0, *wear.idx());
+        assert_eq!(2, wear.slots().len())
+    }
+
+    #[test]
+    fn idx_increase() {
+        let mut wear = new_wear_leveller!(5).expect("no nvm/crc issues");
+
+        wear.write([42; SLOT_SIZE]).expect("no nvm issues");
+        assert_eq!(1, *wear.idx());
+    }
+
+    #[test]
+    fn idx_loop() {
+        let mut wear = new_wear_leveller!(2).expect("no nvm/crc issues");
+        assert_eq!(0, *wear.idx());
+
+        wear.write([42; SLOT_SIZE]).expect("no nvm issues");
+        assert_eq!(1, *wear.idx());
+        wear.write([24; SLOT_SIZE]).expect("no nvm issues");
+        assert_eq!(0, *wear.idx());
+    }
+
+    #[test]
+    fn read_back() {
+        let mut wear = new_wear_leveller!(1).expect("no nvm/crc issues");
+
+        const MSG: [u8; SLOT_SIZE] = [42; SLOT_SIZE];
+
+        wear.write(MSG).expect("no nvm issues");
+        assert_eq!(&MSG, wear.read().expect("no nvm/crc issues"))
+    }
 }
