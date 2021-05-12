@@ -1,11 +1,11 @@
 //! This module contains a struct to handle wear levelling for flash memory
 use crate::{nvm::NVMError, NVM, PIC};
 
-const PAGE_SIZE: usize = 64;
+pub const PAGE_SIZE: usize = 64;
 const COUNTER_SIZE: usize = std::mem::size_of::<u64>();
 const CRC_SIZE: usize = std::mem::size_of::<u32>();
 
-const SLOT_SIZE: usize = PAGE_SIZE - COUNTER_SIZE - CRC_SIZE;
+pub const SLOT_SIZE: usize = PAGE_SIZE - COUNTER_SIZE - CRC_SIZE;
 
 #[derive(Debug)]
 struct Slot<'nvm> {
@@ -89,6 +89,7 @@ impl<'nvm> Slot<'nvm> {
 }
 
 #[derive(Copy, Clone)]
+#[repr(transparent)]
 pub struct NVMWearSlot {
     storage: NVM<64>,
 }
@@ -103,6 +104,23 @@ impl NVMWearSlot {
     pub const fn new() -> Self {
         Self {
             storage: NVM::new(),
+        }
+    }
+
+    pub fn with_baking<'m, const ARRAY_SIZE: usize, const BYTES: usize>(
+        storage: &'m mut PIC<NVM<BYTES>>,
+    ) -> &'m mut PIC<[NVMWearSlot; ARRAY_SIZE]> {
+        //we need to make sure we passed the right details
+        assert_eq!(BYTES, 64 * ARRAY_SIZE);
+
+        let storage: *mut _ = storage;
+        //Safety: this is ok because the memory layout is the same, since PIC is transparent
+        // as well as NVMWearSlot
+        unsafe {
+            storage
+                .cast::<PIC<[NVMWearSlot; ARRAY_SIZE]>>()
+                .as_mut()
+                .unwrap()
         }
     }
 
@@ -205,14 +223,20 @@ impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
 #[macro_export]
 macro_rules! new_wear_leveller {
     ($slots:expr) => {{
-        #[$crate::pic]
-        static mut __SLOTS: [$crate::wear_leveller::NVMWearSlot; $slots] =
-            [$crate::wear_leveller::NVMWearSlot::new(); $slots];
+        const BYTES: usize = $slots * $crate::wear_leveller::PAGE_SIZE;
+
+        #[$crate::nvm]
+        static mut __BAKING_STORAGE: [u8; BYTES];
 
         #[$crate::pic]
         static mut __IDX: usize = 0;
 
-        unsafe { $crate::wear_leveller::Wear::new(&mut __SLOTS, &mut __IDX) }
+        unsafe {
+            $crate::wear_leveller::Wear::new(
+                $crate::wear_leveller::NVMWearSlot::with_baking::<$slots, BYTES>(&mut __BAKING_STORAGE),
+                &mut __IDX,
+            )
+        }
     }};
 }
 
