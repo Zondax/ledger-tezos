@@ -18,8 +18,7 @@ import Zemu, {DEFAULT_START_OPTIONS, DeviceModel} from "@zondax/zemu";
 import TezosApp from "@zondax/ledger-tezos";
 
 const Resolve = require("path").resolve;
-const APP_PATH_S = Resolve("../rust/app/output/app_s.elf");
-const APP_PATH_X = Resolve("../rust/app/output/app_x.elf");
+const APP_PATH_LEGACY_S = Resolve("../legacy/output/app.elf");
 
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 
@@ -31,13 +30,12 @@ const defaultOptions = {
 };
 
 const models: DeviceModel[] = [
-    {name: 'nanos', prefix: 'S', path: APP_PATH_S},
-    {name: 'nanox', prefix: 'X', path: APP_PATH_X},
+    {name: 'nanos', prefix: "LWS", path: APP_PATH_LEGACY_S},
 ]
 
 jest.setTimeout(60000)
 
-describe('Standard', function () {
+describe('Legacy wallet', function () {
     test.each(models)('can start and stop container', async function (m) {
         const sim = new Zemu(m.path);
         try {

@@ -36,9 +36,25 @@ both:
 	$(MAKE)
 	BAKING=tezos_baking $(MAKE)
 
-.PHONY: legacyS
-legacyS:
+.PHONY: legacy legacy_wallet legacy_baking legacy_impl
+legacy:
+	$(MAKE) clean_legacy
+	$(MAKE) legacy_baking
+	$(MAKE) clean_legacy
+	$(MAKE) legacy_wallet
+
+legacy_impl:
 	$(call run_docker,$(DOCKER_LEGACY_BOLOS_SDKS),make -j $(NPROC) -C $(DOCKER_LEGACY_APP_SRC))
+
+legacy_wallet:
+	$(MAKE) legacy_impl
+	- mkdir legacy/output
+	mv legacy/bin/app.elf legacy/output/app.elf
+
+legacy_baking:
+	BAKING=tezos_baking $(MAKE) legacy_impl
+	- mkdir legacy/output
+	mv legacy/bin/app.elf legacy/output/app_baking.elf
 
 .PHONY: clean_legacy
 clean_legacy:
