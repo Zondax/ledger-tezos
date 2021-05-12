@@ -233,7 +233,9 @@ macro_rules! new_wear_leveller {
 
         unsafe {
             $crate::wear_leveller::Wear::new(
-                $crate::wear_leveller::NVMWearSlot::with_baking::<$slots, BYTES>(&mut __BAKING_STORAGE),
+                $crate::wear_leveller::NVMWearSlot::with_baking::<$slots, BYTES>(
+                    &mut __BAKING_STORAGE,
+                ),
                 &mut __IDX,
             )
         }
