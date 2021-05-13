@@ -34,7 +34,7 @@ impl<'nvm> Slot<'nvm> {
 
     pub const fn zeroed() -> Slot<'static> {
         const PAYLOAD_ZERO: [u8; SLOT_SIZE] = [0; SLOT_SIZE];
-        const CRC_ZERO: u32 = 0x6522DF69;
+        const CRC_ZERO: u32 = 0x4128908;
 
         Slot {
             counter: 0,
@@ -54,7 +54,7 @@ impl<'nvm> Slot<'nvm> {
         // borrow checker rules
         // also the size matches
         let payload = &storage[COUNTER_SIZE..COUNTER_SIZE + SLOT_SIZE];
-        let payload = unsafe { &*(*payload.as_ptr() as *const [u8; SLOT_SIZE]) };
+        let payload = unsafe { &*(payload.as_ptr() as *const [u8; SLOT_SIZE]) };
 
         let crc = {
             let mut array = [0; CRC_SIZE];
@@ -123,7 +123,7 @@ impl<'nvm> Slot<'nvm> {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct NVMWearSlot {
     storage: NVM<64>,
@@ -177,7 +177,7 @@ impl NVMWearSlot {
 
     /// Write `slice` to the inner slot
     pub fn write(&mut self, write: [u8; SLOT_SIZE]) -> Result<(), WearError> {
-        let storage = Slot::zeroed().modify(&write).as_storage();
+        let storage = self.as_slot()?.modify(&write).as_storage();
 
         self.storage.write(0, &storage).map_err(|e| match e {
             NVMError::Write => WearError::NVMWrite,
@@ -186,6 +186,7 @@ impl NVMWearSlot {
     }
 }
 
+#[derive(Debug)]
 pub struct Wear<'s, 'm, const SLOTS: usize> {
     slots: &'s mut PIC<[NVMWearSlot; SLOTS]>,
     idx: &'m mut usize,
@@ -203,8 +204,12 @@ impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
     }
 
     /// Increments idx staying in the bounds of the slot
+    fn inc_idx(idx: usize) -> usize {
+        (idx + 1) % S
+    }
+
     fn inc(&mut self) {
-        *self.idx = (*self.idx + 1) % S;
+        *self.idx = Self::inc_idx(*self.idx)
     }
 
     /// Aligns `idx` to the correct position on the tape
@@ -229,10 +234,13 @@ impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
     ///
     /// Will wrap when the end has been reached
     pub fn write(&mut self, payload: [u8; SLOT_SIZE]) -> Result<(), WearError> {
-        let mut slot = self.slots.get_mut()[*self.idx];
+        //temporary index in case writing fails
+        let idx = Self::inc_idx(*self.idx);
+
+        let slot = &mut self.slots.get_mut()[idx];
         slot.write(payload)?;
 
-        //the write checks already if we wrote succesfully
+        //now we can increment for sure because the slot was written
         self.inc();
         Ok(())
     }
@@ -240,7 +248,7 @@ impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
     /// Retrieves the last written slot, which should also be the oldest
     pub fn read(&self) -> Result<&[u8; SLOT_SIZE], WearError> {
         //will only return CRC error
-        self.slots[*self.idx].read()
+        self.slots.get_ref()[*self.idx].read()
     }
 }
 
@@ -318,6 +326,6 @@ mod tests {
         const MSG: [u8; SLOT_SIZE] = [42; SLOT_SIZE];
 
         wear.write(MSG).expect("no nvm issues");
-        assert_eq!(&MSG, wear.read().expect("no nvm/crc issues"))
+        assert_eq!(&MSG, wear.read().expect("no nvm/crc issues"));
     }
 }
