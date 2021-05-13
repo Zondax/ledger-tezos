@@ -15,7 +15,7 @@ use once_cell::unsync::Lazy;
 
 const N_PAGES: usize = 8;
 
-type WearLeveller = Wear<'static, 'static, N_PAGES>;
+type WearLeveller = Wear<'static, N_PAGES>;
 
 // Mainnet Chain ID: NetXdQprcVkpaWU
 // types.h:61,0

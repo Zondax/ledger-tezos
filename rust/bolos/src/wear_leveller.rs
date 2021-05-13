@@ -10,7 +10,7 @@ pub const SLOT_SIZE: usize = PAGE_SIZE - COUNTER_SIZE - CRC_SIZE;
 pub const ZEROED_STORAGE: [u8; PAGE_SIZE] = Slot::zeroed().as_storage();
 
 #[derive(Debug)]
-struct Slot<'nvm> {
+pub(self) struct Slot<'nvm> {
     pub counter: u64,
     payload: &'nvm [u8; SLOT_SIZE],
     crc: u32,
@@ -111,8 +111,7 @@ impl<'nvm> Slot<'nvm> {
         storage
     }
 
-    pub fn modify<'new>(&self, payload: &'new [u8; SLOT_SIZE]) -> Slot<'new> {
-        let counter = self.counter + 1;
+    pub fn modify<'new>(&self, payload: &'new [u8; SLOT_SIZE], counter: u64) -> Slot<'new> {
         let crc = Self::crc32(counter, payload);
 
         Slot {
@@ -133,6 +132,7 @@ pub struct NVMWearSlot {
 pub enum WearError {
     CRC { expected: u32, found: u32 },
     NVMWrite,
+    Uninitialized,
 }
 
 impl NVMWearSlot {
@@ -159,25 +159,30 @@ impl NVMWearSlot {
         }
     }
 
-    fn counter(&self) -> Option<u64> {
-        self.as_slot().ok().map(|s| s.counter)
+    fn counter(&self) -> Result<u64, WearError> {
+        self.as_slot().map(|s| s.counter)
     }
 
-    fn as_slot(&self) -> Result<Slot<'_>, WearError> {
+    pub(self) fn as_slot(&self) -> Result<Slot<'_>, WearError> {
         Slot::from_storage(&self.storage)
             .map_err(|SlotError::CRC { expected, found }| WearError::CRC { expected, found })
+    }
+
+    /// Clears out all data on the slot
+    ///
+    /// Will reset the counter and the CRC to a valid zero state
+    pub(self) fn format(&mut self) -> Result<(), WearError> {
+        self.write([0; SLOT_SIZE], 0)
     }
 
     /// Reads the payload of the slot (if valid)
-    pub fn read(&self) -> Result<&[u8; SLOT_SIZE], WearError> {
-        Slot::from_storage(&self.storage)
-            .map(|s| s.payload)
-            .map_err(|SlotError::CRC { expected, found }| WearError::CRC { expected, found })
+    pub(self) fn read(&self) -> Result<&[u8; SLOT_SIZE], WearError> {
+        self.as_slot().map(|s| s.payload)
     }
 
     /// Write `slice` to the inner slot
-    pub fn write(&mut self, write: [u8; SLOT_SIZE]) -> Result<(), WearError> {
-        let storage = self.as_slot()?.modify(&write).as_storage();
+    pub(self) fn write(&mut self, write: [u8; SLOT_SIZE], counter: u64) -> Result<(), WearError> {
+        let storage = Slot::zeroed().modify(&write, counter).as_storage();
 
         self.storage.write(0, &storage).map_err(|e| match e {
             NVMError::Write => WearError::NVMWrite,
@@ -187,75 +192,82 @@ impl NVMWearSlot {
 }
 
 #[derive(Debug)]
-pub struct Wear<'s, 'm, const SLOTS: usize> {
+pub struct Wear<'s, const SLOTS: usize> {
     slots: &'s mut PIC<[NVMWearSlot; SLOTS]>,
-    idx: &'m mut usize,
+    idx: u64,
 }
 
-impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
-    pub fn new(
-        slots: &'s mut PIC<[NVMWearSlot; S]>,
-        idx: &'m mut usize,
-    ) -> Result<Self, WearError> {
-        let mut me = Self { slots, idx };
-        *me.idx = me.align()?;
+impl<'s, const S: usize> Wear<'s, S> {
+    pub fn new(slots: &'s mut PIC<[NVMWearSlot; S]>) -> Result<Self, WearError> {
+        let mut me = Self { slots, idx: 0 };
+        me.align()?;
 
         Ok(me)
-    }
-
-    /// Increments idx staying in the bounds of the slot
-    fn inc_idx(idx: usize) -> usize {
-        (idx + 1) % S
-    }
-
-    fn inc(&mut self) {
-        *self.idx = Self::inc_idx(*self.idx)
     }
 
     /// Aligns `idx` to the correct position on the tape
     ///
     /// This is most useful when `slots` is not blank data
-    fn align(&mut self) -> Result<usize, WearError> {
-        let mut max = 0;
-        let mut idx = 0;
+    fn align(&mut self) -> Result<(), WearError> {
+        let mut max = Slot::zeroed();
 
         for (i, slot) in self.slots.iter().enumerate() {
-            let cnt = slot.as_slot()?.counter;
-            if cnt > max {
-                max = cnt;
-                idx = i;
+            let slot = slot.as_slot()?;
+            if slot.counter > max.counter {
+                max = slot;
             }
         }
 
-        Ok(idx)
+        self.idx = max.counter;
+        Ok(())
+    }
+
+    const fn idx(&self) -> usize {
+        (self.idx % (S as u64)) as _
+    }
+
+    /// Clears out all information in `Wear`
+    ///
+    /// Will reset all wear counters and uninitialize all data
+    pub fn format(&mut self) -> Result<(), WearError> {
+        for s in self.slots.get_mut().iter_mut() {
+            s.format()?;
+        }
+        self.idx = 0;
+
+        Ok(())
     }
 
     /// Retrieves the next slot to write, which should be also the youngest
     ///
     /// Will wrap when the end has been reached
     pub fn write(&mut self, payload: [u8; SLOT_SIZE]) -> Result<(), WearError> {
-        //temporary index in case writing fails
-        let idx = Self::inc_idx(*self.idx);
+        self.idx += 1;
 
+        let idx = self.idx();
         let slot = &mut self.slots.get_mut()[idx];
-        slot.write(payload)?;
+        slot.write(payload, self.idx)?;
 
-        //now we can increment for sure because the slot was written
-        self.inc();
         Ok(())
     }
 
     /// Retrieves the last written slot, which should also be the oldest
     pub fn read(&self) -> Result<&[u8; SLOT_SIZE], WearError> {
         //will only return CRC error
-        self.slots.get_ref()[*self.idx].read()
+        let slot = self.slots.get_ref()[self.idx()].as_slot()?;
+
+        if slot.counter == 0 {
+            return Err(WearError::Uninitialized);
+        } else {
+            Ok(slot.payload)
+        }
     }
 }
 
 #[cfg(test)]
-impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
-    pub fn idx(&mut self) -> &mut usize {
-        &mut *self.idx
+impl<'s, const S: usize> Wear<'s, S> {
+    pub fn counter(&mut self) -> &mut u64 {
+        &mut self.idx
     }
 
     pub fn slots(&mut self) -> &mut [NVMWearSlot; S] {
@@ -266,24 +278,18 @@ impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
 #[macro_export]
 macro_rules! new_wear_leveller {
     ($slots:expr) => {{
+        use $crate::wear_leveller::{NVMWearSlot, Wear, PAGE_SIZE, ZEROED_STORAGE};
+
         const SLOTS: usize = $slots;
-        const PAGE_SIZE: usize = $crate::wear_leveller::PAGE_SIZE;
         const BYTES: usize = SLOTS * PAGE_SIZE;
 
         #[$crate::nvm]
-        static mut __BAKING_STORAGE: [[u8; PAGE_SIZE]; SLOTS] =
-            $crate::wear_leveller::ZEROED_STORAGE;
-
-        #[$crate::pic]
-        static mut __IDX: usize = 0;
+        static mut __BAKING_STORAGE: [[u8; PAGE_SIZE]; SLOTS] = ZEROED_STORAGE;
 
         unsafe {
-            $crate::wear_leveller::Wear::new(
-                $crate::wear_leveller::NVMWearSlot::with_baking::<$slots, BYTES>(
-                    &mut __BAKING_STORAGE,
-                ),
-                &mut __IDX,
-            )
+            Wear::new(NVMWearSlot::with_baking::<$slots, BYTES>(
+                &mut __BAKING_STORAGE,
+            ))
         }
     }};
 }
@@ -296,7 +302,7 @@ mod tests {
     fn macro_works() {
         let mut wear = new_wear_leveller!(2).expect("no nvm/crc issues");
 
-        assert_eq!(0, *wear.idx());
+        assert_eq!(0, wear.idx());
         assert_eq!(2, wear.slots().len())
     }
 
@@ -305,18 +311,30 @@ mod tests {
         let mut wear = new_wear_leveller!(5).expect("no nvm/crc issues");
 
         wear.write([42; SLOT_SIZE]).expect("no nvm issues");
-        assert_eq!(1, *wear.idx());
+        assert_eq!(1, wear.idx());
     }
 
     #[test]
     fn idx_loop() {
         let mut wear = new_wear_leveller!(2).expect("no nvm/crc issues");
-        assert_eq!(0, *wear.idx());
+        assert_eq!(0, wear.idx());
 
         wear.write([42; SLOT_SIZE]).expect("no nvm issues");
-        assert_eq!(1, *wear.idx());
+        assert_eq!(1, wear.idx());
         wear.write([24; SLOT_SIZE]).expect("no nvm issues");
-        assert_eq!(0, *wear.idx());
+        assert_eq!(0, wear.idx());
+    }
+
+    #[test]
+    fn counter_increase() {
+        let mut wear = new_wear_leveller!(2).expect("no nvm/crc issues");
+        assert_eq!(0, *wear.counter());
+
+        wear.write([0; SLOT_SIZE]).expect("no nvm issues");
+        wear.write([1; SLOT_SIZE]).expect("no nvm issues");
+        wear.write([2; SLOT_SIZE]).expect("no nvm issues");
+        assert_eq!(3, *wear.counter());
+        assert_eq!(1, wear.idx());
     }
 
     #[test]
@@ -327,5 +345,27 @@ mod tests {
 
         wear.write(MSG).expect("no nvm issues");
         assert_eq!(&MSG, wear.read().expect("no nvm/crc issues"));
+    }
+
+    #[test]
+    fn no_uninitialized_read() {
+        let mut wear = new_wear_leveller!(1).expect("no nvm/crc issues");
+
+        wear.read()
+            .expect_err("can't read without writing once first");
+    }
+
+    #[test]
+    fn format() {
+        let mut wear = new_wear_leveller!(1).expect("no nvm/crc issues");
+
+        wear.write([42; SLOT_SIZE]).expect("no nvm issues");
+        wear.write([24; SLOT_SIZE]).expect("no nvm issues");
+        assert_eq!(2, *wear.counter());
+
+        wear.format().expect("no nvm issues");
+        assert_eq!(0, *wear.counter());
+        wear.read()
+            .expect_err("can't read without writing once first");
     }
 }
