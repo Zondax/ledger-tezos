@@ -71,7 +71,20 @@ fn check_initialized_2_dim() {
     static NON_ZERO2: [[u8; 3]; 4] = [13u8; 3];
 
     let non_zero2: &NVM<{ 3 * 4 }> = &NON_ZERO2;
-    let expected : Vec<u8> = vec![vec![13; 3]; 4].into_iter().flatten().collect();
+    let expected: Vec<u8> = vec![vec![13; 3]; 4].into_iter().flatten().collect();
 
     assert_eq!(&non_zero2.read()[..], &expected);
+}
+
+#[test]
+fn check_initialized_with_expr() {
+    const INIT: [u8; 10] = [42; 10];
+
+    #[nvm]
+    static EXPR: [[u8; 10]; 2] = INIT;
+
+    let expr: &NVM<{ 10 * 2 }> = &EXPR;
+    let expected: Vec<u8> = vec![vec![42; 10]; 2].into_iter().flatten().collect();
+
+    assert_eq!(&expr.read()[..], &expected);
 }

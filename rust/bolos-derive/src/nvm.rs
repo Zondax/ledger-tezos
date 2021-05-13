@@ -17,7 +17,7 @@ struct NVMInput {
     mutability: Option<Token![mut]>,
     name: Ident,
     ty: Box<Type>,
-    maybe_init: Option<MyExprArray>,
+    maybe_init: Option<Expr>,
 }
 
 impl Parse for NVMInput {
@@ -33,7 +33,7 @@ impl Parse for NVMInput {
         let maybe_init = match maybe_equals {
             None => None,
             Some(_) => {
-                let expr: MyExprArray = input.parse()?;
+                let expr = input.parse()?;
                 Some(expr)
             }
         };
@@ -56,30 +56,6 @@ struct OnlyOuterAttr(Vec<Attribute>);
 impl Parse for OnlyOuterAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         input.call(Attribute::parse_outer).map(Self)
-    }
-}
-
-//helper to have ExprRepeat or ExprArray
-enum MyExprArray {
-    Array(ExprArray),
-    Repeat(ExprRepeat),
-}
-
-impl Parse for MyExprArray {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        match input.parse() {
-            Ok(repeat) => Ok(Self::Repeat(repeat)),
-            Err(_) => input.parse().map(Self::Array),
-        }
-    }
-}
-
-impl ToTokens for MyExprArray {
-    fn to_tokens(&self, tokens: &mut quote::__private::TokenStream) {
-        match self {
-            Self::Array(array) => array.to_tokens(tokens),
-            Self::Repeat(repeat) => repeat.to_tokens(tokens),
-        }
     }
 }
 

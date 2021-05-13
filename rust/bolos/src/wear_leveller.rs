@@ -39,7 +39,7 @@ impl<'nvm> Slot<'nvm> {
         Slot {
             counter: 0,
             payload: &PAYLOAD_ZERO,
-            crc: CRC_ZERO
+            crc: CRC_ZERO,
         }
     }
 
@@ -263,7 +263,8 @@ macro_rules! new_wear_leveller {
         const BYTES: usize = SLOTS * PAGE_SIZE;
 
         #[$crate::nvm]
-        static mut __BAKING_STORAGE: [[u8; PAGE_SIZE]; SLOTS] = $crate::wear_leveller::ZEROED_STORAGE;
+        static mut __BAKING_STORAGE: [[u8; PAGE_SIZE]; SLOTS] =
+            $crate::wear_leveller::ZEROED_STORAGE;
 
         #[$crate::pic]
         static mut __IDX: usize = 0;
