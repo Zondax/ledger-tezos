@@ -7,6 +7,8 @@ const CRC_SIZE: usize = std::mem::size_of::<u32>();
 
 pub const SLOT_SIZE: usize = PAGE_SIZE - COUNTER_SIZE - CRC_SIZE;
 
+pub const ZEROED_STORAGE: [u8; PAGE_SIZE] = Slot::zeroed().as_storage();
+
 #[derive(Debug)]
 struct Slot<'nvm> {
     pub counter: u64,
@@ -75,14 +77,36 @@ impl<'nvm> Slot<'nvm> {
         })
     }
 
-    pub fn as_storage(&self) -> [u8; PAGE_SIZE] {
+    pub const fn as_storage(&self) -> [u8; PAGE_SIZE] {
         let counter = self.counter.to_be_bytes();
         let crc = self.crc.to_be_bytes();
 
         let mut storage = [0; PAGE_SIZE];
-        storage[..COUNTER_SIZE].copy_from_slice(&counter);
-        storage[COUNTER_SIZE..COUNTER_SIZE + SLOT_SIZE].copy_from_slice(&self.payload[..]);
-        storage[COUNTER_SIZE + SLOT_SIZE..].copy_from_slice(&crc);
+
+        //storage[..COUNTER_SIZE].copy_from_slice(&counter);
+        {
+            let mut i = 0;
+            while i < COUNTER_SIZE {
+                storage[i] = counter[i];
+                i += 1;
+            }
+        }
+        //storage[COUNTER_SIZE..COUNTER_SIZE + SLOT_SIZE].copy_from_slice(&self.payload[..])
+        {
+            let mut i = 0;
+            while i < SLOT_SIZE {
+                storage[COUNTER_SIZE + i] = self.payload[i];
+                i += 1;
+            }
+        }
+        //storage[COUNTER_SIZE + SLOT_SIZE..].copy_from_slice(&crc);
+        {
+            let mut i = 0;
+            while i < CRC_SIZE {
+                storage[COUNTER_SIZE + SLOT_SIZE + i] = crc[i];
+                i += 1;
+            }
+        }
 
         storage
     }
@@ -239,7 +263,7 @@ macro_rules! new_wear_leveller {
         const BYTES: usize = SLOTS * PAGE_SIZE;
 
         #[$crate::nvm]
-        static mut __BAKING_STORAGE: [[u8; PAGE_SIZE]; SLOTS] = [0u8; PAGE_SIZE];
+        static mut __BAKING_STORAGE: [[u8; PAGE_SIZE]; SLOTS] = $crate::wear_leveller::ZEROED_STORAGE;
 
         #[$crate::pic]
         static mut __IDX: usize = 0;
