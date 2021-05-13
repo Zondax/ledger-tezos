@@ -132,6 +132,7 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, FLASH> {
     const fn sizes(&self) -> (usize, usize) {
         (RAM, FLASH)

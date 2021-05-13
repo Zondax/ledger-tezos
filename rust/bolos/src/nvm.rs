@@ -96,44 +96,48 @@ impl<const N: usize> Deref for NVM<N> {
     }
 }
 
-/// This struct is to be used when wanting to properly write the memory behind the pointer
-/// but the memory is not actually owned by the application, or the pointer has been obtained
-/// another way
-pub struct ManualNVM<'m> {
-    ptr: *mut u8,
-    len: usize,
-    _p: std::marker::PhantomData<&'m ()>,
-}
+mod manual {
+    #![allow(dead_code)]
 
-impl<'m> ManualNVM<'m> {
-    pub fn new(p: std::ptr::NonNull<u8>, len: usize) -> Self {
-        Self {
-            ptr: p.as_ptr(),
-            len,
-            _p: Default::default(),
-        }
+    /// This struct is to be used when wanting to properly write the memory behind the pointer
+    /// but the memory is not actually owned by the application, or the pointer has been obtained
+    /// another way
+    pub struct ManualNVM<'m> {
+        ptr: *mut u8,
+        len: usize,
+        _p: std::marker::PhantomData<&'m ()>,
     }
 
-    /// This function is unsafe because we can't guarantee that `self.ptr` is  _actually_
-    /// a pointer to NVM
-    pub unsafe fn write(&mut self, from: usize, slice: &[u8]) -> Result<(), ()> {
-        let len = slice.len();
-        //if the write wouldn't fit
-        // then return error
-        if from + len > self.len {
-            return Err(());
-        }
-
-        cfg_if! {
-            if #[cfg(bolos_sdk)] {
-                let p = self.ptr.add(from);
-                super::bindings::nvm_write(p, slice.as_ptr(), len as u32);
-            } else {
-                let mem: &'m mut [u8] = std::slice::from_raw_parts_mut(self.ptr, self.len);
-                mem[from..from+len].copy_from_slice(slice)
+    impl<'m> ManualNVM<'m> {
+        pub fn new(p: std::ptr::NonNull<u8>, len: usize) -> Self {
+            Self {
+                ptr: p.as_ptr(),
+                len,
+                _p: Default::default(),
             }
         }
 
-        Ok(())
+        /// This function is unsafe because we can't guarantee that `self.ptr` is  _actually_
+        /// a pointer to NVM
+        pub unsafe fn write(&mut self, from: usize, slice: &[u8]) -> Result<(), ()> {
+            let len = slice.len();
+            //if the write wouldn't fit
+            // then return error
+            if from + len > self.len {
+                return Err(());
+            }
+
+            cfg_if! {
+                if #[cfg(bolos_sdk)] {
+                    let p = self.ptr.add(from);
+                    crate::bindings::nvm_write(p, slice.as_ptr(), len as u32);
+                } else {
+                    let mem: &'m mut [u8] = std::slice::from_raw_parts_mut(self.ptr, self.len);
+                    mem[from..from+len].copy_from_slice(slice)
+                }
+            }
+
+            Ok(())
+        }
     }
 }

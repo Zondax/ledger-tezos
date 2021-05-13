@@ -159,10 +159,6 @@ impl NVMWearSlot {
         }
     }
 
-    fn counter(&self) -> Result<u64, WearError> {
-        self.as_slot().map(|s| s.counter)
-    }
-
     pub(self) fn as_slot(&self) -> Result<Slot<'_>, WearError> {
         Slot::from_storage(&self.storage)
             .map_err(|SlotError::CRC { expected, found }| WearError::CRC { expected, found })
@@ -176,6 +172,7 @@ impl NVMWearSlot {
     }
 
     /// Reads the payload of the slot (if valid)
+    #[allow(dead_code)]
     pub(self) fn read(&self) -> Result<&[u8; SLOT_SIZE], WearError> {
         self.as_slot().map(|s| s.payload)
     }
@@ -211,7 +208,7 @@ impl<'s, const S: usize> Wear<'s, S> {
     fn align(&mut self) -> Result<(), WearError> {
         let mut max = Slot::zeroed();
 
-        for (i, slot) in self.slots.iter().enumerate() {
+        for slot in self.slots.iter() {
             let slot = slot.as_slot()?;
             if slot.counter > max.counter {
                 max = slot;
@@ -265,6 +262,7 @@ impl<'s, const S: usize> Wear<'s, S> {
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 impl<'s, const S: usize> Wear<'s, S> {
     pub fn counter(&mut self) -> &mut u64 {
         &mut self.idx
@@ -349,7 +347,7 @@ mod tests {
 
     #[test]
     fn no_uninitialized_read() {
-        let mut wear = new_wear_leveller!(1).expect("no nvm/crc issues");
+        let wear = new_wear_leveller!(1).expect("no nvm/crc issues");
 
         wear.read()
             .expect_err("can't read without writing once first");

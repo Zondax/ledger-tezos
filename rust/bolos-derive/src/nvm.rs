@@ -1,12 +1,12 @@
 use std::collections::VecDeque;
 
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input,
     spanned::Spanned,
-    Attribute, Error, Expr, ExprArray, ExprRepeat, Ident, Token, Type, TypeArray, Visibility,
+    Attribute, Error, Expr, Ident, Token, Type, TypeArray, Visibility,
 };
 
 #[allow(dead_code)]
