@@ -35,8 +35,12 @@ impl From<SyscallError> for NVMError {
 }
 
 impl<const N: usize> NVM<N> {
-    pub const fn new() -> Self {
+    pub const fn zeroed() -> Self {
         Self([0; N])
+    }
+
+    pub const fn new(data: [u8; N]) -> Self {
+        Self(data)
     }
 
     pub fn write(&mut self, from: usize, slice: &[u8]) -> Result<(), NVMError> {

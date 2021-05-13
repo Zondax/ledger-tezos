@@ -30,6 +30,17 @@ impl<'nvm> Slot<'nvm> {
         digest.sum32()
     }
 
+    pub const fn zeroed() -> Slot<'static> {
+        const PAYLOAD_ZERO: [u8; SLOT_SIZE] = [0; SLOT_SIZE];
+        const CRC_ZERO: u32 = 0x6522DF69;
+
+        Slot {
+            counter: 0,
+            payload: &PAYLOAD_ZERO,
+            crc: CRC_ZERO
+        }
+    }
+
     pub fn from_storage(storage: &'nvm [u8; PAGE_SIZE]) -> Result<Self, SlotError> {
         let cnt = {
             let mut array = [0; COUNTER_SIZE];
@@ -103,7 +114,7 @@ pub enum WearError {
 impl NVMWearSlot {
     pub const fn new() -> Self {
         Self {
-            storage: NVM::new(),
+            storage: NVM::zeroed(),
         }
     }
 
@@ -142,7 +153,7 @@ impl NVMWearSlot {
 
     /// Write `slice` to the inner slot
     pub fn write(&mut self, write: [u8; SLOT_SIZE]) -> Result<(), WearError> {
-        let storage = self.as_slot()?.modify(&write).as_storage();
+        let storage = Slot::zeroed().modify(&write).as_storage();
 
         self.storage.write(0, &storage).map_err(|e| match e {
             NVMError::Write => WearError::NVMWrite,
@@ -223,10 +234,12 @@ impl<'s, 'm, const S: usize> Wear<'s, 'm, S> {
 #[macro_export]
 macro_rules! new_wear_leveller {
     ($slots:expr) => {{
-        const BYTES: usize = $slots * $crate::wear_leveller::PAGE_SIZE;
+        const SLOTS: usize = $slots;
+        const PAGE_SIZE: usize = $crate::wear_leveller::PAGE_SIZE;
+        const BYTES: usize = SLOTS * PAGE_SIZE;
 
         #[$crate::nvm]
-        static mut __BAKING_STORAGE: [u8; BYTES];
+        static mut __BAKING_STORAGE: [[u8; PAGE_SIZE]; SLOTS] = [0u8; PAGE_SIZE];
 
         #[$crate::pic]
         static mut __IDX: usize = 0;
