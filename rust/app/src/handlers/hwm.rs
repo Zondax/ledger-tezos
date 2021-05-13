@@ -283,4 +283,18 @@ mod tests {
 
         assert_eq!(&buffer[..12], &hwm[..]);
     }
+
+    #[test]
+    #[serial(hwm)]
+    pub fn trash_01() {
+        //reset state (problematic with other tests)
+        LegacyHWM::format().expect("couldn't format");
+
+        let req = hex::decode("80060000040000002a").unwrap();
+
+        let (_, tx, out) = crate::handle_apdu_raw(&req);
+
+        std::println!("{:x?}", &out[..tx as usize]);
+        assert_error_code!(tx, out, ApduError::Success);
+    }
 }

@@ -76,4 +76,49 @@ describe('Standard baking', function () {
             await sim.close();
         }
     });
+
+    test.each(models)('reset watermark and verify', async function (m) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name,});
+            const app = new TezosApp(sim.getTransport());
+            const resp = await app.resetHighWatermark(42);
+            console.log(resp);
+
+            expect(resp.returnCode).toEqual(0x9000);
+            expect(resp.errorMessage).toEqual("No errors");
+
+            const verify = await app.getHighWatermark();
+            console.log(verify);
+
+            expect(verify.main).toEqual(42);
+        } finally {
+            await sim.close();
+        }
+    });
+
+    test.each(models)('get main high watermark', async function (m) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name,});
+            const app = new TezosApp(sim.getTransport());
+
+            //reset watermark to 0 so we can read from the application
+            await app.resetHighWatermark(0);
+
+            const resp = await app.getHighWatermark();
+
+            console.log(resp);
+
+            expect(resp.returnCode).toEqual(0x9000);
+            expect(resp.errorMessage).toEqual("No errors");
+            expect(resp).toHaveProperty("main");
+            expect(resp).toHaveProperty("test");
+            expect(resp.test).toBeNull();
+            expect(resp).toHaveProperty("chain_id");
+            expect(resp.chain_id).toBeNull();
+        } finally {
+            await sim.close();
+        }
+    });
 })

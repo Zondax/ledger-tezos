@@ -69,3 +69,21 @@ pub unsafe extern "C" fn rs_handle_apdu(
 
     check_canary();
 }
+
+#[cfg(test)]
+pub fn handle_apdu_raw(bytes: &[u8]) -> (u32, u32, std::vec::Vec<u8>) {
+    let mut flags = 0;
+    let mut tx = 0;
+
+    let rx = bytes.len();
+
+    //prepare a big buffer for basically any output
+    let mut out = std::vec![0; 0xFF];
+    //copy input bytes
+    out[..rx].copy_from_slice(bytes);
+
+    //handle
+    handle_apdu(&mut flags, &mut tx, rx as u32, &mut out);
+
+    (flags, tx, out)
+}
