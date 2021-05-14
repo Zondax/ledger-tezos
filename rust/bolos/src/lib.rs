@@ -68,3 +68,9 @@ pub fn exit_app(status: u8) -> ! {
         }
     }
 }
+
+#[doc(hidden)]
+//Please don't use stuff inside here directly
+// (there's better wrappers)
+pub mod exceptions;
+pub use exceptions::SyscallError;
