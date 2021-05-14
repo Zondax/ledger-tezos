@@ -117,6 +117,7 @@ int main(void) {
                 if (!app_init_done) {
                     io_app_init();
                     app_init();                 // TODO: Move this to rust?
+                    rs_init();
                     app_init_done = 1;
                     check_canary();
                 }

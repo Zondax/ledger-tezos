@@ -13,7 +13,7 @@ pub(self) mod bindings {
     }
 }
 
-pub fn zemu_log(_s: &str) {
+fn zemu_log(_s: &str) {
     #[cfg(zemu_sdk)]
     unsafe {
         let p = _s.as_bytes().as_ptr();
@@ -27,3 +27,6 @@ pub fn check_canary() {
         bindings::check_canary();
     }
 }
+
+mod zemu_logger;
+pub use zemu_logger::ZemuLog;

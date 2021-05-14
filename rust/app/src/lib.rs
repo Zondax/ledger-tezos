@@ -20,6 +20,9 @@
 extern crate no_std_compat as std;
 use std::prelude::v1::*;
 
+#[macro_use]
+extern crate log;
+
 cfg_if::cfg_if! {
     if #[cfg(not(test))] {
         use core::panic::PanicInfo;
@@ -40,7 +43,7 @@ mod sys;
 mod utils;
 
 use dispatcher::handle_apdu;
-use sys::{check_canary, zemu_log};
+use sys::check_canary;
 
 cfg_if::cfg_if! {
     if #[cfg(all(feature = "baking", feature = "wallet"))] {
@@ -50,23 +53,32 @@ cfg_if::cfg_if! {
     }
 }
 
-/// # Safety
-///
-/// This function is the app entry point for the minimal C stub
-#[no_mangle]
-pub unsafe extern "C" fn rs_handle_apdu(
-    _flags: *mut u32,
-    _tx: *mut u32,
-    rx: u32,
-    buffer: *mut u8,
-    buffer_len: u16,
-) {
-    let flags = _flags.as_mut().unwrap();
-    let tx = _tx.as_mut().unwrap();
-    let data = std::slice::from_raw_parts_mut(buffer, buffer_len as usize);
-    zemu_log("rs_handle_apdu\n\x00");
+mod cabi {
+    use super::*;
 
-    handle_apdu(flags, tx, rx, data);
+    /// # Safety
+    ///
+    /// This function is the app entry point for the minimal C stub
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_handle_apdu(
+        _flags: *mut u32,
+        _tx: *mut u32,
+        rx: u32,
+        buffer: *mut u8,
+        buffer_len: u16,
+    ) {
+        let flags = _flags.as_mut().unwrap();
+        let tx = _tx.as_mut().unwrap();
+        let data = std::slice::from_raw_parts_mut(buffer, buffer_len as usize);
+        debug!("rs_handle_apdu");
 
-    check_canary();
+        handle_apdu(flags, tx, rx, data);
+
+        check_canary();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_init() {
+        sys::ZemuLog::install().expect("unable to install logger")
+    }
 }
