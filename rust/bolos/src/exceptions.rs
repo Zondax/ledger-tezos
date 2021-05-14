@@ -1,10 +1,11 @@
+#[cfg(bolos_sdk)]
 mod bindings;
+#[cfg(bolos_sdk)]
 use bindings::*;
 
 #[derive(Debug)]
-#[repr(u8)]
 pub enum SyscallError {
-    InvalidParameter = 2,
+    InvalidParameter,
     Overflow,
     Security,
     InvalidCrc,
@@ -13,9 +14,10 @@ pub enum SyscallError {
     NotSupported,
     InvalidState,
     Timeout,
-    Unspecified,
+    Unspecified(u16),
 }
 
+#[cfg(bolos_sdk)]
 impl From<exception_t> for SyscallError {
     fn from(e: exception_t) -> SyscallError {
         match e {
@@ -28,14 +30,38 @@ impl From<exception_t> for SyscallError {
             8 => SyscallError::NotSupported,
             9 => SyscallError::InvalidState,
             10 => SyscallError::Timeout,
-            _ => SyscallError::Unspecified,
+            x => SyscallError::Unspecified(x),
         }
     }
 }
 
-pub fn catch_exception<T, E, F>(syscall: F) -> Result<T, E>
+impl Into<()> for SyscallError {
+    fn into(self) -> () {
+        ()
+    }
+}
+
+impl Into<u16> for SyscallError {
+    fn into(self) -> u16 {
+        match self {
+            SyscallError::InvalidParameter => 2,
+            SyscallError::Overflow => 3,
+            SyscallError::Security => 4,
+            SyscallError::InvalidCrc => 5,
+            SyscallError::InvalidChecksum => 6,
+            SyscallError::InvalidCounter => 7,
+            SyscallError::NotSupported => 8,
+            SyscallError::InvalidState => 9,
+            SyscallError::Timeout => 10,
+            SyscallError::Unspecified(x) => x,
+        }
+    }
+}
+
+#[cfg(bolos_sdk)]
+pub fn catch_exception<E, T, F>(syscall: F) -> Result<T, E>
 where
-    E: From<SyscallError>,
+    SyscallError: Into<E>,
     F: FnOnce() -> T,
 {
     let mut result: Option<Result<T, E>> = None;
@@ -45,6 +71,7 @@ where
     context.ex = unsafe { setjmp(&mut context.jmp_buf[0] as *mut _) } as u16;
 
     if context.ex == 0 {
+        context.previous = unsafe { try_context_set(&mut context as *mut try_context_t) };
         //TRY
         // this could throw, that means if we actually return
         // then it's an ok
@@ -80,4 +107,26 @@ where
 
     //result will be set either way so we can unwrap here
     return result.unwrap();
+}
+
+#[cfg(not(bolos_sdk))]
+pub fn catch_exception<E, T, F>(syscall: F) -> Result<T, E>
+where
+    F: FnOnce() -> T,
+{
+    Ok(syscall())
+}
+
+#[cfg(feature = "exception-throw")]
+pub fn throw(exception: u16) -> ! {
+    cfg_if! {
+        if #[cfg(bolos_sdk)] {
+            unsafe {
+                os_longjmp(exception as u32);
+            }
+            panic!("returned from longjmp");
+        } else {
+            panic!("exception = {}", exception);
+        }
+    }
 }

@@ -12,7 +12,7 @@ crate-type = ["staticlib"]
 [features]
 baking = []
 wallet = []
-dev = ["sha2", "once_cell"]
+dev = ["sha2", "once_cell", "bolos-sys/exception-throw"]
 default = []
 
 [dependencies]

@@ -26,8 +26,8 @@ cfg_if::cfg_if! {
 
         #[panic_handler]
         fn panic(_info: &PanicInfo) -> ! {
-            loop {}
-        } // TODO: we should reset the device here
+            sys::exit_app(255);
+        }
     }
 }
 

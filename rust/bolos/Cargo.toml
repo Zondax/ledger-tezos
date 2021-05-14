@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["becominginsane <francesco@zondax.ch>"]
 edition = "2018"
 
+[features]
+exception-throw = []
+
 [dependencies]
 cty = "0.2"
 bolos-derive = { version = "0.1", path = "../bolos-derive" }
