@@ -20,7 +20,7 @@ impl ZemuLog {
     fn read_record(record: &Record) -> ArrayString<256> {
         let mut s = ArrayString::<256>::new();
 
-        core::fmt::write(
+        match core::fmt::write(
             &mut s,
             format_args!(
                 "[{}] {} @ {}\n\x00",
@@ -28,10 +28,11 @@ impl ZemuLog {
                 record.target(),
                 record.args()
             ),
-        )
-        .expect("Bad formatting");
-
-        s
+        ) {
+            Ok(_) => s,
+            //this is always valid utf8
+            Err(_) => ArrayString::from("[ERROR] Bad formatting").unwrap(),
+        }
     }
 
     ///Install this logger as the global logger

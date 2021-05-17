@@ -78,7 +78,12 @@ mod cabi {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn rs_init() {
-        sys::ZemuLog::install().expect("unable to install logger")
+    pub unsafe extern "C" fn rs_init() -> u16 {
+        use crate::constants::ApduError as Error;
+
+        (match sys::ZemuLog::install() {
+            Ok(_) => Error::Success,
+            Err(_) => Error::ExecutionError,
+        }) as _
     }
 }
