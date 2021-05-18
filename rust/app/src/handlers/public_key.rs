@@ -16,11 +16,11 @@ impl ApduHandler for GetAddress {
             return Err(Error::InsNotSupported);
         }
 
-        let req_confirmation = buffer[1] >= 1;
-        let curve = crypto::Curve::try_from(buffer[2]).map_err(|_| Error::InvalidP1P2)?;
+        let req_confirmation = buffer[2] >= 1;
+        let curve = crypto::Curve::try_from(buffer[3]).map_err(|_| Error::InvalidP1P2)?;
 
-        let cdata_len = buffer[3] as usize;
-        let cdata = &buffer[4..cdata_len];
+        let cdata_len = buffer[4] as usize;
+        let cdata = &buffer[5..cdata_len];
 
         //read_bip32_path(&mut G.key.bip32_path, buffer[4..], cdata_len)
         let bip32_path =
