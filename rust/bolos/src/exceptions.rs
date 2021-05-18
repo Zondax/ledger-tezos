@@ -1,10 +1,21 @@
 #[cfg(bolos_sdk)]
 mod bindings;
+use std::convert::TryFrom;
+
 #[cfg(bolos_sdk)]
 use bindings::*;
 
+//////----- exception_t === u16
+#[cfg(bolos_sdk)]
+type Exception = exception_t;
+
+#[cfg(not(bolos_sdk))]
+type Exception = u16;
+//////
+
 #[derive(Debug)]
 pub enum SyscallError {
+    Exception,
     InvalidParameter,
     Overflow,
     Security,
@@ -14,23 +25,41 @@ pub enum SyscallError {
     NotSupported,
     InvalidState,
     Timeout,
-    Unspecified(u16),
+    PIC,
+    Appexit,
+    IoOverflow,
+    IoHeader,
+    IoState,
+    IoReset,
+    CXPort,
+    System,
+    NotEnoughSpace,
 }
 
-#[cfg(bolos_sdk)]
-impl From<exception_t> for SyscallError {
-    fn from(e: exception_t) -> SyscallError {
+impl TryFrom<Exception> for SyscallError {
+    type Error = ();
+
+    fn try_from(e: Exception) -> Result<SyscallError, ()> {
         match e {
-            2 => SyscallError::InvalidParameter,
-            3 => SyscallError::Overflow,
-            4 => SyscallError::Security,
-            5 => SyscallError::InvalidCrc,
-            6 => SyscallError::InvalidChecksum,
-            7 => SyscallError::InvalidCounter,
-            8 => SyscallError::NotSupported,
-            9 => SyscallError::InvalidState,
-            10 => SyscallError::Timeout,
-            x => SyscallError::Unspecified(x),
+            1 => Ok(Self::Exception),
+            2 => Ok(Self::InvalidParameter),
+            3 => Ok(Self::Overflow),
+            4 => Ok(Self::Security),
+            5 => Ok(Self::InvalidCrc),
+            6 => Ok(Self::InvalidChecksum),
+            7 => Ok(Self::InvalidCounter),
+            8 => Ok(Self::NotSupported),
+            9 => Ok(Self::InvalidState),
+            10 => Ok(Self::Timeout),
+            11 => Ok(Self::PIC),
+            12 => Ok(Self::Appexit),
+            13 => Ok(Self::IoOverflow),
+            14 => Ok(Self::IoHeader),
+            15 => Ok(Self::IoState),
+            16 => Ok(Self::CXPort),
+            17 => Ok(Self::System),
+            18 => Ok(Self::NotEnoughSpace),
+            _ => Err(()),
         }
     }
 }
@@ -44,6 +73,7 @@ impl Into<()> for SyscallError {
 impl Into<u16> for SyscallError {
     fn into(self) -> u16 {
         match self {
+            SyscallError::Exception => 1,
             SyscallError::InvalidParameter => 2,
             SyscallError::Overflow => 3,
             SyscallError::Security => 4,
@@ -53,7 +83,15 @@ impl Into<u16> for SyscallError {
             SyscallError::NotSupported => 8,
             SyscallError::InvalidState => 9,
             SyscallError::Timeout => 10,
-            SyscallError::Unspecified(x) => x,
+            SyscallError::PIC => 11,
+            SyscallError::Appexit => 12,
+            SyscallError::IoOverflow => 13,
+            SyscallError::IoHeader => 14,
+            SyscallError::IoState => 15,
+            SyscallError::IoReset => 16,
+            SyscallError::CXPort => 17,
+            SyscallError::System => 18,
+            SyscallError::NotEnoughSpace => 19,
         }
     }
 }
@@ -80,7 +118,11 @@ where
         result.replace(Ok(val));
     } else {
         //CATCH OTHER
-        let exception: SyscallError = context.ex.into();
+        //we provide a default in case the conversion fails, but that should never happen
+        //except if our mapping from C is incomplete
+        //(from rust it would need unsafe since we can't throw directly, but must go
+        //thru SyscallError first)
+        let exception = SyscallError::try_from(context.ex).unwrap_or(SyscallError::Exception);
         context.ex = 0;
         unsafe {
             try_context_set(context.previous);
@@ -118,15 +160,18 @@ where
 }
 
 #[cfg(feature = "exception-throw")]
-pub fn throw(exception: u16) -> ! {
+pub fn throw(exception: SyscallError) -> ! {
     cfg_if! {
         if #[cfg(bolos_sdk)] {
             unsafe {
+                let exception: u16 = exception.into();
                 os_longjmp(exception as u32);
             }
-            panic!("returned from longjmp");
+            //this should never happen, and it's here for the
+            //never type
+            unreachable!("returned from longjmp");
         } else {
-            panic!("exception = {}", exception);
+            panic!("exception = {:?}", exception);
         }
     }
 }
