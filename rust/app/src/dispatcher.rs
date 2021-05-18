@@ -22,6 +22,7 @@ use crate::handlers::legacy_public_key::LegacyGetPublicKey;
 use crate::handlers::legacy_sign::LegacySign;
 use crate::handlers::legacy_version::{LegacyGetVersion, LegacyGit};
 use crate::handlers::version::GetVersion;
+use crate::handlers::public_key::GetAddress;
 
 pub const CLA: u8 = 0x80;
 
@@ -154,6 +155,7 @@ pub fn apdu_dispatch(
         INS_LEGACY_SIGN_WITH_HASH => LegacySign::handle(flags, tx, rx, apdu_buffer),
 
         INS_GET_VERSION => GetVersion::handle(flags, tx, rx, apdu_buffer),
+        INS_GET_ADDRESS => GetAddress::handle(flags, tx, rx, apdu_buffer),
         _ => Err(CommandNotAllowed),
     }
 }

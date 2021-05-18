@@ -38,6 +38,8 @@ mod sys;
 #[macro_use]
 mod utils;
 
+mod crypto;
+
 use dispatcher::handle_apdu;
 use sys::{check_canary, zemu_log};
 

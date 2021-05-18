@@ -81,3 +81,5 @@ pub fn exit_app(status: u8) -> ! {
 // (there's better wrappers)
 pub mod errors;
 pub use errors::Error;
+
+pub mod crypto;

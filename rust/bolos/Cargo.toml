@@ -17,3 +17,5 @@ no-std-compat = { version = "0.4" }
 
 #wear levelling
 crc = { version = "1.8.1", optional = true, default-features = false }
+
+zeroize = { version = "1", default-features = false }
