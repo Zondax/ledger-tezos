@@ -21,7 +21,7 @@ EXAMPLE_VUE_DIR?=$(CURDIR)/example_vue
 TESTS_JS_PACKAGE?=
 TESTS_JS_DIR?=
 
-LEDGER_SRC=$(CURDIR)/app
+LEDGER_SRC=$(CURDIR)/rust/app
 DOCKER_APP_SRC=/project
 DOCKER_APP_BIN=$(DOCKER_APP_SRC)/app/bin/app.elf
 
@@ -82,10 +82,13 @@ all:
 check_python:
 	@python -c 'import sys; sys.exit(3-sys.version_info.major)' || (echo "The python command does not point to Python 3"; exit 1)
 
-.PHONY: deps
+.PHONY: deps bindgen_install
 deps: check_python
 	@echo "Install dependencies"
 	$(CURDIR)/deps/ledger-zxlib/scripts/install_deps.sh
+
+bindgen_install:
+	cargo install bindgen
 
 .PHONY: pull
 pull:
@@ -98,6 +101,13 @@ build_rustS:
 .PHONY: build_rustX
 build_rustX:
 	$(call run_docker,$(DOCKER_BOLOS_SDKX),make -C $(DOCKER_APP_SRC) rust)
+
+.PHONY: generate_rustS generate_rustX
+generate_rustS:
+	$(MAKE) -C $(CURDIR) TARGET_NAME=TARGET_NANOS BOLOS_SDK=$(CURDIR)/deps/nanos-secure-sdk generate
+
+generate_rustX:
+	$(MAKE) -C $(CURDIR) TARGET_NAME=TARGET_NANOX BOLOS_SDK=$(CURDIR)/deps/nanox-secure-sdk generate
 
 .PHONY: convert_icon
 convert_icon:

@@ -203,7 +203,7 @@ SDK_SOURCE_PATH += lib_ux
 
 .PHONY: rust
 rust:
-	CARGO_HOME="$(CURDIR)/.cargo" cargo build --target thumbv6m-none-eabi --release $(RUST_FEATURES)
+	CARGO_HOME="$(CURDIR)/.cargo" TARGET_NAME=$(TARGET_NAME) cargo build --target thumbv6m-none-eabi --release $(RUST_FEATURES)
 
 .PHONY: rust_clean
 rust_clean:

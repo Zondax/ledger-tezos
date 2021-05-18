@@ -35,6 +35,23 @@ pub use pic::PIC;
 mod nvm;
 pub use nvm::NVM;
 
+#[cfg(bolos_sdk)]
+pub(self) mod raw {
+    #![allow(non_snake_case)]
+    #![allow(non_upper_case_globals)]
+    #![allow(non_camel_case_types)]
+    #![allow(dead_code)]
+    #![allow(clippy::upper_case_acronyms)]
+
+    cfg_if! {
+        if #[cfg(nanos)] {
+            include!("./bindings/bindingsS.rs");
+        } else if #[cfg(nanox)] {
+            include!("./bindings/bindingsX.rs");
+        }
+    }
+}
+
 pub(self) mod bindings {
     extern "C" {
         cfg_if::cfg_if! {
