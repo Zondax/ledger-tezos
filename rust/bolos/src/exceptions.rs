@@ -13,7 +13,7 @@ type Exception = exception_t;
 type Exception = u16;
 //////
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum SyscallError {
     Exception,
     InvalidParameter,
