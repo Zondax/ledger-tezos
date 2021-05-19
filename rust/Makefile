@@ -18,6 +18,7 @@ ifeq ($(TARGET_NAME),TARGET_NANOX)
 generate:
 	- rm bolos/src/bindings/bindingsX.rs
 	bindgen --use-core \
+			--with-derive-default \
 			--ctypes-prefix cty \
 			-o bolos/src/bindings/bindingsX.rs \
 			bolos/bindgen/wrapperX.h -- \
@@ -30,6 +31,7 @@ else ifeq ($(TARGET_NAME),TARGET_NANOS)
 generate:
 	- rm bolos/src/bindings/bindingsS.rs
 	bindgen --use-core \
+		--with-derive-default \
 		--ctypes-prefix cty \
 		-o bolos/src/bindings/bindingsS.rs \
 		bolos/bindgen/wrapperS.h -- \

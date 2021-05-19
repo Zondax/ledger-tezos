@@ -1228,6 +1228,11 @@ fn bindgen_test_layout_bagl_component_t() {
         )
     );
 }
+impl Default for bagl_component_t {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " helper structure to help handling icons"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1301,10 +1306,15 @@ fn bindgen_test_layout_bagl_icon_details_s() {
         )
     );
 }
+impl Default for bagl_icon_details_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " helper structure to help handling icons"]
 pub type bagl_icon_details_t = bagl_icon_details_s;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct bagl_font_character_t {
     pub char_width: cty::c_uchar,
     pub bitmap_byte_count: cty::c_uchar,
@@ -1475,6 +1485,11 @@ fn bindgen_test_layout_bagl_font_t() {
             stringify!(bitmap)
         )
     );
+}
+impl Default for bagl_font_t {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 extern "C" {
     pub static mut C_bagl_fonts: [*const bagl_font_t; 0usize];
@@ -1692,6 +1707,11 @@ fn bindgen_test_layout_bagl_animated_s() {
         )
     );
 }
+impl Default for bagl_animated_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 pub type bagl_animated_t = bagl_animated_s;
 extern "C" {
     pub fn bagl_animate(
@@ -1818,6 +1838,11 @@ fn bindgen_test_layout_try_context_s() {
         )
     );
 }
+impl Default for try_context_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 extern "C" {
     pub fn longjmp(__jmpb: *mut cty::c_uint, __retval: cty::c_int);
 }
@@ -1827,7 +1852,7 @@ extern "C" {
 pub type size_t = cty::c_uint;
 pub type wchar_t = cty::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct max_align_t {
     pub __clang_max_align_nonce1: cty::c_longlong,
     pub __clang_max_align_nonce2: f64,
@@ -1898,7 +1923,7 @@ pub union APSR_Type {
 }
 #[repr(C)]
 #[repr(align(4))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct APSR_Type__bindgen_ty_1 {
     pub _bitfield_align_1: [u32; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 4usize]>,
@@ -2053,6 +2078,11 @@ fn bindgen_test_layout_APSR_Type() {
         )
     );
 }
+impl Default for APSR_Type {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " \\brief  Union type to access the Interrupt Program Status Register (IPSR)."]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -2064,7 +2094,7 @@ pub union IPSR_Type {
 }
 #[repr(C)]
 #[repr(align(4))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct IPSR_Type__bindgen_ty_1 {
     pub _bitfield_align_1: [u32; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 4usize]>,
@@ -2152,6 +2182,11 @@ fn bindgen_test_layout_IPSR_Type() {
         )
     );
 }
+impl Default for IPSR_Type {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " \\brief  Union type to access the Special-Purpose Program Status Registers (xPSR)."]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -2163,7 +2198,7 @@ pub union xPSR_Type {
 }
 #[repr(C)]
 #[repr(align(4))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct xPSR_Type__bindgen_ty_1 {
     pub _bitfield_align_1: [u16; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 4usize]>,
@@ -2366,6 +2401,11 @@ fn bindgen_test_layout_xPSR_Type() {
         )
     );
 }
+impl Default for xPSR_Type {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " \\brief  Union type to access the Control Registers (CONTROL)."]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -2377,7 +2417,7 @@ pub union CONTROL_Type {
 }
 #[repr(C)]
 #[repr(align(4))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct CONTROL_Type__bindgen_ty_1 {
     pub _bitfield_align_1: [u32; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 4usize]>,
@@ -2499,6 +2539,11 @@ fn bindgen_test_layout_CONTROL_Type() {
             stringify!(w)
         )
     );
+}
+impl Default for CONTROL_Type {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " \\brief  Structure type to access the Nested Vectored Interrupt Controller (NVIC)."]
 #[repr(C)]
@@ -2668,9 +2713,14 @@ fn bindgen_test_layout_NVIC_Type() {
         )
     );
 }
+impl Default for NVIC_Type {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " \\brief  Structure type to access the System Control Block (SCB)."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct SCB_Type {
     #[doc = "< Offset: 0x000 (R/ )  CPUID Base Register"]
     pub CPUID: u32,
@@ -2939,7 +2989,7 @@ fn bindgen_test_layout_SCB_Type() {
 }
 #[doc = " \\brief  Structure type to access the System Control and ID Register not in the SCB."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct SCnSCB_Type {
     pub RESERVED0: [u32; 1usize],
     #[doc = "< Offset: 0x004 (R/ )  Interrupt Controller Type Register"]
@@ -2991,7 +3041,7 @@ fn bindgen_test_layout_SCnSCB_Type() {
 }
 #[doc = " \\brief  Structure type to access the System Timer (SysTick)."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct SysTick_Type {
     #[doc = "< Offset: 0x000 (R/W)  SysTick Control and Status Register"]
     pub CTRL: u32,
@@ -3160,6 +3210,11 @@ fn bindgen_test_layout_ITM_Type__bindgen_ty_1() {
             stringify!(u32_)
         )
     );
+}
+impl Default for ITM_Type__bindgen_ty_1 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[test]
 fn bindgen_test_layout_ITM_Type() {
@@ -3444,9 +3499,14 @@ fn bindgen_test_layout_ITM_Type() {
         )
     );
 }
+impl Default for ITM_Type {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " \\brief  Structure type to access the Data Watchpoint and Trace Register (DWT)."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct DWT_Type {
     #[doc = "< Offset: 0x000 (R/W)  Control Register"]
     pub CTRL: u32,
@@ -4034,9 +4094,14 @@ fn bindgen_test_layout_TPI_Type() {
         )
     );
 }
+impl Default for TPI_Type {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " \\brief  Structure type to access the Core Debug Register (CoreDebug)."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct CoreDebug_Type {
     #[doc = "< Offset: 0x000 (R/W)  Debug Halting Control and Status Register"]
     pub DHCSR: u32,
@@ -4553,6 +4618,11 @@ fn bindgen_test_layout_cx_hash_header_s() {
         )
     );
 }
+impl Default for cx_hash_header_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_hash_header_s."]
 pub type cx_hash_t = cx_hash_header_s;
 extern "C" {
@@ -4668,6 +4738,11 @@ fn bindgen_test_layout_cx_ripemd160_s() {
         )
     );
 }
+impl Default for cx_ripemd160_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_ripemd160_s."]
 pub type cx_ripemd160_t = cx_ripemd160_s;
 extern "C" {
@@ -4745,6 +4820,11 @@ fn bindgen_test_layout_cx_sha256_s() {
         )
     );
 }
+impl Default for cx_sha256_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_sha256_s."]
 pub type cx_sha256_t = cx_sha256_s;
 #[doc = " SHA-384 and SHA-512 context"]
@@ -4812,6 +4892,11 @@ fn bindgen_test_layout_cx_sha512_s() {
             stringify!(acc)
         )
     );
+}
+impl Default for cx_sha512_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Convenience type. See #cx_sha512_s."]
 pub type cx_sha512_t = cx_sha512_s;
@@ -4979,6 +5064,11 @@ fn bindgen_test_layout_cx_sha3_s() {
         )
     );
 }
+impl Default for cx_sha3_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_sha3_s."]
 pub type cx_sha3_t = cx_sha3_s;
 extern "C" {
@@ -5137,6 +5227,11 @@ fn bindgen_test_layout_hashState_s() {
         )
     );
 }
+impl Default for hashState_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " @Private"]
 pub type hashState = hashState_s;
 #[doc = " Groestl context"]
@@ -5191,6 +5286,11 @@ fn bindgen_test_layout_cx_groestl_s() {
             stringify!(ctx)
         )
     );
+}
+impl Default for cx_groestl_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Convenience type. See #cx_groestl512_s."]
 pub type cx_groestl_t = cx_groestl_s;
@@ -5305,6 +5405,11 @@ fn bindgen_test_layout_blake2b_state__() {
         )
     );
 }
+impl Default for blake2b_state__ {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " @private"]
 pub type blake2b_state = blake2b_state__;
 #[doc = " Blake2b context"]
@@ -5359,6 +5464,11 @@ fn bindgen_test_layout_cx_blake2b_s() {
             stringify!(ctx)
         )
     );
+}
+impl Default for cx_blake2b_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Convenience type. See #cx_blake2b_s."]
 pub type cx_blake2b_t = cx_blake2b_s;
@@ -5460,6 +5570,11 @@ fn bindgen_test_layout_cx_hash_for_hmac_ctx() {
         )
     );
 }
+impl Default for cx_hash_for_hmac_ctx {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " HMAC context."]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -5499,6 +5614,11 @@ fn bindgen_test_layout_cx_hmac_ctx() {
             stringify!(key)
         )
     );
+}
+impl Default for cx_hmac_ctx {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 pub type cx_hmac_t = cx_hmac_ctx;
 pub type cx_hmac_ripemd160_t = cx_hmac_ctx;
@@ -5711,7 +5831,7 @@ extern "C" {
 #[doc = " changed at all. Only 8 bytes (simple DES) and 16 bytes (triple DES with 2"]
 #[doc = " keys) are supported."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct cx_des_key_s {
     #[doc = " key size"]
     pub size: cty::c_uchar,
@@ -5849,7 +5969,7 @@ extern "C" {
 #[doc = " API compatibility. Indeed, in next API level, the key store format may"]
 #[doc = " changed at all. Only 16 bytes key (AES128) are supported ."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct cx_aes_key_s {
     #[doc = " key size"]
     pub size: cty::c_uint,
@@ -5983,7 +6103,7 @@ extern "C" {
 #[doc = " This type shall not be instantiate, it is only defined to allow unified API"]
 #[doc = " for RSA operations"]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct cx_rsa_public_key_s {
     #[doc = " Key size in bytes"]
     pub size: cty::c_uint,
@@ -6036,7 +6156,7 @@ fn bindgen_test_layout_cx_rsa_public_key_s() {
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct cx_rsa_private_key_s {
     #[doc = " Key size in bytes"]
     pub size: cty::c_uint,
@@ -6146,6 +6266,11 @@ fn bindgen_test_layout_cx_rsa_1024_public_key_s() {
         )
     );
 }
+impl Default for cx_rsa_1024_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " 1024 bits RSA private key"]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -6199,6 +6324,11 @@ fn bindgen_test_layout_cx_rsa_1024_private_key_s() {
             stringify!(n)
         )
     );
+}
+impl Default for cx_rsa_1024_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Convenience type. See #cx_rsa_1024_public_key_s."]
 pub type cx_rsa_1024_public_key_t = cx_rsa_1024_public_key_s;
@@ -6258,6 +6388,11 @@ fn bindgen_test_layout_cx_rsa_2048_public_key_s() {
         )
     );
 }
+impl Default for cx_rsa_2048_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " 2048 bits RSA private key"]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -6311,6 +6446,11 @@ fn bindgen_test_layout_cx_rsa_2048_private_key_s() {
             stringify!(n)
         )
     );
+}
+impl Default for cx_rsa_2048_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Convenience type. See #cx_rsa_2048_public_key_s."]
 pub type cx_rsa_2048_public_key_t = cx_rsa_2048_public_key_s;
@@ -6370,6 +6510,11 @@ fn bindgen_test_layout_cx_rsa_3072_public_key_s() {
         )
     );
 }
+impl Default for cx_rsa_3072_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " 3072 bits RSA private key"]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -6423,6 +6568,11 @@ fn bindgen_test_layout_cx_rsa_3072_private_key_s() {
             stringify!(n)
         )
     );
+}
+impl Default for cx_rsa_3072_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Convenience type. See #cx_rsa_3072_public_key_s."]
 pub type cx_rsa_3072_public_key_t = cx_rsa_3072_public_key_s;
@@ -6482,6 +6632,11 @@ fn bindgen_test_layout_cx_rsa_4096_public_key_s() {
         )
     );
 }
+impl Default for cx_rsa_4096_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " 4096 bits RSA private key"]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -6535,6 +6690,11 @@ fn bindgen_test_layout_cx_rsa_4096_private_key_s() {
             stringify!(n)
         )
     );
+}
+impl Default for cx_rsa_4096_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Convenience type. See #cx_rsa_4096_public_key_s."]
 pub type cx_rsa_4096_public_key_t = cx_rsa_4096_public_key_s;
@@ -7022,6 +7182,11 @@ fn bindgen_test_layout_cx_curve_weierstrass_s() {
         )
     );
 }
+impl Default for cx_curve_weierstrass_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_curve_weierstrass_s."]
 pub type cx_curve_weierstrass_t = cx_curve_weierstrass_s;
 #[repr(C)]
@@ -7205,6 +7370,11 @@ fn bindgen_test_layout_cx_curve_twisted_edward_s() {
         )
     );
 }
+impl Default for cx_curve_twisted_edward_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_curve_twisted_edward_s."]
 pub type cx_curve_twisted_edward_t = cx_curve_twisted_edward_s;
 #[repr(C)]
@@ -7382,6 +7552,11 @@ fn bindgen_test_layout_cx_curve_montgomery_s() {
         )
     );
 }
+impl Default for cx_curve_montgomery_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_curve_montgomery_s."]
 pub type cx_curve_montgomery_t = cx_curve_montgomery_s;
 #[doc = " Abstract type for elliptic curve domain"]
@@ -7512,6 +7687,11 @@ fn bindgen_test_layout_cx_curve_domain_s() {
         )
     );
 }
+impl Default for cx_curve_domain_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_curve_domain_s."]
 pub type cx_curve_domain_t = cx_curve_domain_s;
 extern "C" {
@@ -7576,6 +7756,11 @@ fn bindgen_test_layout_cx_ecfp_public_key_s() {
         )
     );
 }
+impl Default for cx_ecfp_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Private Elliptic Curve key"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -7629,6 +7814,11 @@ fn bindgen_test_layout_cx_ecfp_private_key_s() {
             stringify!(d)
         )
     );
+}
+impl Default for cx_ecfp_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 pub type __cx_ecfp_private_key_t = cx_ecfp_private_key_s;
 pub type __cx_ecfp_public_key_t = cx_ecfp_public_key_s;
@@ -7685,6 +7875,11 @@ fn bindgen_test_layout_cx_ecfp_256_public_key_s() {
             stringify!(W)
         )
     );
+}
+impl Default for cx_ecfp_256_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Up to 256 bits Private Elliptic Curve key"]
 #[repr(C)]
@@ -7743,6 +7938,11 @@ fn bindgen_test_layout_cx_ecfp_256_private_key_s() {
             stringify!(d)
         )
     );
+}
+impl Default for cx_ecfp_256_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Up to 256 bits Extended Private Elliptic Curve key"]
 #[repr(C)]
@@ -7809,6 +8009,11 @@ fn bindgen_test_layout_cx_ecfp_256_extended_private_key_s() {
         )
     );
 }
+impl Default for cx_ecfp_256_extended_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_ecfp_256_public_key_s."]
 pub type cx_ecfp_256_public_key_t = cx_ecfp_256_public_key_s;
 #[doc = " temporary def type. See #cx_ecfp_256_private_key_s."]
@@ -7871,6 +8076,11 @@ fn bindgen_test_layout_cx_ecfp_384_public_key_s() {
         )
     );
 }
+impl Default for cx_ecfp_384_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Up to 384 bits Private Elliptic Curve key"]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -7928,6 +8138,11 @@ fn bindgen_test_layout_cx_ecfp_384_private_key_s() {
             stringify!(d)
         )
     );
+}
+impl Default for cx_ecfp_384_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Convenience type. See #cx_ecfp_384_public_key_s."]
 pub type cx_ecfp_384_private_key_t = cx_ecfp_384_private_key_s;
@@ -7987,6 +8202,11 @@ fn bindgen_test_layout_cx_ecfp_512_public_key_s() {
         )
     );
 }
+impl Default for cx_ecfp_512_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Up to 512 bits Private Elliptic Curve key"]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -8044,6 +8264,11 @@ fn bindgen_test_layout_cx_ecfp_512_private_key_s() {
             stringify!(d)
         )
     );
+}
+impl Default for cx_ecfp_512_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Up to 512 bits Extended Private Elliptic Curve key"]
 #[repr(C)]
@@ -8110,6 +8335,11 @@ fn bindgen_test_layout_cx_ecfp_512_extented_private_key_s() {
         )
     );
 }
+impl Default for cx_ecfp_512_extented_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Convenience type. See #cx_ecfp_512_public_key_s."]
 pub type cx_ecfp_512_public_key_t = cx_ecfp_512_public_key_s;
 #[doc = " Convenience type. See #cx_ecfp_512_private_key_s."]
@@ -8170,6 +8400,11 @@ fn bindgen_test_layout_cx_ecfp_640_public_key_s() {
         )
     );
 }
+impl Default for cx_ecfp_640_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " Up to 640 bits Private Elliptic Curve key"]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -8227,6 +8462,11 @@ fn bindgen_test_layout_cx_ecfp_640_private_key_s() {
             stringify!(d)
         )
     );
+}
+impl Default for cx_ecfp_640_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Convenience type. See #cx_ecfp_640_public_key_s."]
 pub type cx_ecfp_640_public_key_t = cx_ecfp_640_public_key_s;
@@ -9240,6 +9480,11 @@ fn bindgen_test_layout_application_s() {
         )
     );
 }
+impl Default for application_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 pub type application_t = application_s;
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -9272,7 +9517,7 @@ pub union bolos_ux_params_s__bindgen_ty_1 {
     pub pairing_request: bolos_ux_params_s__bindgen_ty_1__bindgen_ty_19,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_1 {
     pub currently_onboarded: cty::c_uint,
     pub hash: [cty::c_uchar; 32usize],
@@ -9323,7 +9568,7 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_1() {
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_2 {
     pub app_idx: cty::c_uint,
 }
@@ -9410,6 +9655,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_3() {
         )
     );
 }
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_3 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_4 {
@@ -9460,6 +9710,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_4() {
             stringify!(appentry)
         )
     );
+}
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_4 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -9512,6 +9767,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_5() {
         )
     );
 }
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_5 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_6 {
@@ -9548,6 +9808,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_6() {
             stringify!(ux_app)
         )
     );
+}
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_6 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -9600,6 +9865,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_7() {
         )
     );
 }
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_7 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_8 {
@@ -9651,6 +9921,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_8() {
         )
     );
 }
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_8 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_9 {
@@ -9687,6 +9962,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_9() {
             stringify!(host_pubkey)
         )
     );
+}
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_9 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -9739,6 +10019,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_10() {
         )
     );
 }
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_10 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_11 {
@@ -9789,6 +10074,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_11() {
             stringify!(public)
         )
     );
+}
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_11 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -9855,8 +10145,13 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_12() {
         )
     );
 }
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_12 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_13 {
     pub cancellable: cty::c_uint,
 }
@@ -9893,7 +10188,7 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_13() {
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_14 {
     pub keycode: cty::c_uint,
 }
@@ -9930,7 +10225,7 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_14() {
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_15 {
     pub fgcolor: cty::c_uint,
     pub bgcolor: cty::c_uint,
@@ -9981,7 +10276,7 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_15() {
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_16 {
     pub x: cty::c_uint,
     pub y: cty::c_uint,
@@ -10060,7 +10355,7 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_16() {
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_17 {
     pub id: cty::c_uint,
 }
@@ -10097,7 +10392,7 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_17() {
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct bolos_ux_params_s__bindgen_ty_1__bindgen_ty_18 {
     pub percent: cty::c_uint,
 }
@@ -10200,6 +10495,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1__bindgen_ty_19() {
             stringify!(pairing_info)
         )
     );
+}
+impl Default for bolos_ux_params_s__bindgen_ty_1__bindgen_ty_19 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[test]
 fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1() {
@@ -10458,6 +10758,11 @@ fn bindgen_test_layout_bolos_ux_params_s__bindgen_ty_1() {
         )
     );
 }
+impl Default for bolos_ux_params_s__bindgen_ty_1 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[test]
 fn bindgen_test_layout_bolos_ux_params_s() {
     assert_eq!(
@@ -10500,6 +10805,11 @@ fn bindgen_test_layout_bolos_ux_params_s() {
             stringify!(u)
         )
     );
+}
+impl Default for bolos_ux_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 pub type bolos_ux_params_t = bolos_ux_params_s;
 extern "C" {
@@ -10719,7 +11029,7 @@ extern "C" {
     ) -> cty::c_int;
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct meminfo_s {
     pub free_nvram_size: cty::c_uint,
     pub appMemory: cty::c_uint,
@@ -11034,6 +11344,11 @@ fn bindgen_test_layout_ux_layout_bnnn_params_s() {
         )
     );
 }
+impl Default for ux_layout_bnnn_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " 1 bold text line"]
 #[doc = " 3 text lines"]
 pub type ux_layout_bnnn_params_t = ux_layout_bnnn_params_s;
@@ -11102,6 +11417,11 @@ fn bindgen_test_layout_ux_layout_nnnn_params_s() {
         )
     );
 }
+impl Default for ux_layout_nnnn_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " 4 text lines"]
 pub type ux_layout_nnnn_params_t = ux_layout_nnnn_params_s;
 extern "C" {
@@ -11157,6 +11477,11 @@ fn bindgen_test_layout_ux_layout_nnn_params_s() {
             stringify!(line3)
         )
     );
+}
+impl Default for ux_layout_nnn_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " 3 normal text lines"]
 pub type ux_layout_nnn_params_t = ux_layout_nnn_params_s;
@@ -11215,6 +11540,11 @@ fn bindgen_test_layout_ux_layout_bnn_params_s() {
         )
     );
 }
+impl Default for ux_layout_bnn_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " 1 bold text lines"]
 #[doc = " 2 normal text lines"]
 pub type ux_layout_bnn_params_t = ux_layout_bnn_params_s;
@@ -11263,6 +11593,11 @@ fn bindgen_test_layout_ux_layout_bnnn_paging_params_s() {
             stringify!(text)
         )
     );
+}
+impl Default for ux_layout_bnnn_paging_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 pub type ux_layout_bnnn_paging_params_t = ux_layout_bnnn_paging_params_s;
 extern "C" {
@@ -11352,6 +11687,11 @@ fn bindgen_test_layout_ux_layout_nnbnn_params_s() {
         )
     );
 }
+impl Default for ux_layout_nnbnn_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " 2 text lines"]
 #[doc = " 1 bold text lines"]
 #[doc = " 2 text lines"]
@@ -11400,6 +11740,11 @@ fn bindgen_test_layout_ux_layout_pb_params_s() {
         )
     );
 }
+impl Default for ux_layout_pb_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " ICON"]
 #[doc = " 1 bold text line"]
 pub type ux_layout_pb_params_t = ux_layout_pb_params_s;
@@ -11446,6 +11791,11 @@ fn bindgen_test_layout_ux_layout_bn_params_s() {
             stringify!(line2)
         )
     );
+}
+impl Default for ux_layout_bn_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " 1 text line"]
 #[doc = " 1 bold text line"]
@@ -11505,6 +11855,11 @@ fn bindgen_test_layout_ux_layout_pbb_params_s() {
         )
     );
 }
+impl Default for ux_layout_pbb_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " ICON"]
 #[doc = " 2 bold text lines"]
 pub type ux_layout_pbb_params_t = ux_layout_pbb_params_s;
@@ -11563,6 +11918,11 @@ fn bindgen_test_layout_ux_layout_pnn_params_s() {
         )
     );
 }
+impl Default for ux_layout_pnn_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " ICON"]
 #[doc = " 2 normal text lines"]
 pub type ux_layout_pnn_params_t = ux_layout_pnn_params_s;
@@ -11610,6 +11970,11 @@ fn bindgen_test_layout_ux_layout_pn_params_s() {
         )
     );
 }
+impl Default for ux_layout_pn_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[doc = " ICON"]
 #[doc = " 1 normal text lines"]
 pub type ux_layout_pn_params_t = ux_layout_pn_params_s;
@@ -11655,6 +12020,11 @@ fn bindgen_test_layout_ux_layout_nn_params_s() {
             stringify!(line2)
         )
     );
+}
+impl Default for ux_layout_nn_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " 2 normal text lines"]
 pub type ux_layout_nn_params_t = ux_layout_nn_params_s;
@@ -11759,6 +12129,11 @@ fn bindgen_test_layout_ux_flow_state_t() {
         )
     );
 }
+impl Default for ux_flow_state_t {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 pub type ux_flow_step_init_t =
     ::core::option::Option<unsafe extern "C" fn(stack_slot: cty::c_uint)>;
 #[repr(C)]
@@ -11821,6 +12196,11 @@ fn bindgen_test_layout_ux_flow_step_s() {
             stringify!(error_flow)
         )
     );
+}
+impl Default for ux_flow_step_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 extern "C" {
     pub fn ux_flow_is_first() -> cty::c_uint;
@@ -11975,6 +12355,11 @@ fn bindgen_test_layout_bagl_element_e() {
         )
     );
 }
+impl Default for bagl_element_e {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 extern "C" {
     pub fn io_seproxyhal_touch(
         elements: *const bagl_element_t,
@@ -12031,6 +12416,11 @@ fn bindgen_test_layout_ux_layout_strings_params_s() {
         )
     );
 }
+impl Default for ux_layout_strings_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 pub type ux_layout_strings_params_t = ux_layout_strings_params_s;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -12074,6 +12464,11 @@ fn bindgen_test_layout_ux_layout_icon_strings_params_s() {
             stringify!(lines)
         )
     );
+}
+impl Default for ux_layout_icon_strings_params_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 pub type ux_layout_icon_strings_params_t = ux_layout_icon_strings_params_s;
 pub type button_push_callback_t = ::core::option::Option<
@@ -12202,6 +12597,11 @@ fn bindgen_test_layout_ux_stack_slot_s__bindgen_ty_1() {
             stringify!(element_array_count)
         )
     );
+}
+impl Default for ux_stack_slot_s__bindgen_ty_1 {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[test]
 fn bindgen_test_layout_ux_stack_slot_s() {
@@ -12342,6 +12742,11 @@ fn bindgen_test_layout_ux_stack_slot_s() {
         )
     );
 }
+impl Default for ux_stack_slot_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ux_state_s {
@@ -12359,7 +12764,7 @@ pub struct ux_state_s {
     pub menulist_selector: list_item_select_t,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct ux_state_s__bindgen_ty_1 {
     pub current: cty::c_uint,
     pub count: cty::c_uint,
@@ -12560,6 +12965,11 @@ fn bindgen_test_layout_ux_state_s() {
         )
     );
 }
+impl Default for ux_state_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
 extern "C" {
     pub static mut G_ux: ux_state_t;
 }
@@ -12733,7 +13143,7 @@ pub struct io_seph_s {
     pub plane_mode: cty::c_uint,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct io_seph_s__bindgen_ty_1 {
     pub timeout: cty::c_ushort,
 }
@@ -12874,6 +13284,11 @@ fn bindgen_test_layout_io_seph_s() {
             stringify!(plane_mode)
         )
     );
+}
+impl Default for io_seph_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 #[doc = " Global type that enables to map memory onto the application zone instead of"]
 #[doc = " over the os for os side"]

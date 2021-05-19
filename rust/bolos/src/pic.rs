@@ -29,7 +29,7 @@ impl<T> PIC<T> {
     pub fn get_ref(&self) -> &T {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {
-                let ptr = unsafe { super::bindings::pic(&self.data as *const T as u32) as *const T };
+                let ptr = unsafe { super::raw::pic(&self.data as *const T as u32) as *const T };
                 unsafe { &*ptr }
             } else {
                 &self.data
@@ -41,7 +41,8 @@ impl<T> PIC<T> {
     pub fn get_mut(&mut self) -> &mut T {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {
-                let ptr = unsafe { super::bindings::pic(&mut self.data as *mut T as u32) as *mut T };
+                let ptr = unsafe { super::raw::pic(&mut self.data as *mut T as u32) as *mut T };
+
                 unsafe { &mut *ptr }
             } else {
                 &mut self.data
