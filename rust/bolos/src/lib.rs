@@ -27,9 +27,6 @@ extern crate self as bolos_sys;
 extern crate no_std_compat as std;
 use std::prelude::v1::*;
 
-#[macro_use]
-extern crate cfg_if;
-
 pub use bolos_derive::*;
 
 #[macro_use]

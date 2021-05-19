@@ -133,6 +133,8 @@ describe('SHA256', function () {
             const resp = await app.getHash(Buffer.from("francesco@zondax.ch"));
 
             console.log(resp);
+            warn_dev(resp.returnCode);
+
             expect(resp.returnCode).toEqual(0x9000);
             expect(resp.errorMessage).toEqual("No errors");
             expect(resp).toHaveProperty("hash");

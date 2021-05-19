@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::{SyscallError, exceptions::catch_exception};
+use crate::{exceptions::catch_exception, SyscallError};
 
 pub struct NVM<const N: usize>([u8; N]);
 
