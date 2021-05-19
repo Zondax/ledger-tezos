@@ -20,6 +20,9 @@ impl ApduHandler for GetAddress {
         let curve = crypto::Curve::try_from(buffer[3]).map_err(|_| Error::InvalidP1P2)?;
 
         let cdata_len = buffer[4] as usize;
+        if cdata_len > buffer[5..].len() {
+            return Err(Error::DataInvalid);
+        }
         let cdata = &buffer[5..cdata_len];
 
         //read_bip32_path(&mut G.key.bip32_path, buffer[4..], cdata_len)
