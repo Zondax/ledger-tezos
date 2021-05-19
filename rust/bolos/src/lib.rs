@@ -45,3 +45,8 @@ pub(self) mod bindings {
         }
     }
 }
+
+#[cfg(test)]
+pub fn init_log() {
+    let _ = env_logger::try_init();
+}

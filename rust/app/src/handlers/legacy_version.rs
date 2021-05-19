@@ -80,6 +80,7 @@ impl ApduHandler for LegacyGit {
 
 #[cfg(test)]
 mod tests {
+    use crate::utils::init_log;
     use super::LegacyGit;
     use crate::assert_error_code;
     use crate::constants::ApduError::Success;
@@ -90,6 +91,7 @@ mod tests {
 
     #[test]
     fn apdu_get_version() {
+        init_log();
         let flags = &mut 0u32;
         let tx = &mut 0u32;
         let rx = 5u32;
@@ -114,6 +116,7 @@ mod tests {
 
     #[test]
     fn apdu_get_git() {
+        init_log();
         let mut flags = 0;
         let mut tx = 0;
         let rx = 5;

@@ -168,6 +168,7 @@ pub fn handle_apdu(flags: &mut u32, tx: &mut u32, rx: u32, apdu_buffer: &mut [u8
 
 #[cfg(test)]
 mod tests {
+    use crate::utils::init_log;
     use crate::assert_error_code;
     use crate::constants::ApduError::WrongLength;
     use crate::dispatcher::handle_apdu;
@@ -175,6 +176,7 @@ mod tests {
 
     #[test]
     fn apdu_too_short() {
+        init_log();
         let flags = &mut 0u32;
         let tx = &mut 0u32;
         let rx = 0u32;
@@ -187,6 +189,7 @@ mod tests {
 
     #[test]
     fn apdu_invalid_cla() {
+        init_log();
         let flags = &mut 0u32;
         let tx = &mut 0u32;
         let rx = 5u32;

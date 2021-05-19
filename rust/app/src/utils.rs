@@ -33,3 +33,8 @@ pub const BAKING: bool = if cfg!(feature = "baking") {
 } else {
     false
 };
+
+#[cfg(test)]
+pub fn init_log() {
+    let _ = env_logger::try_init();
+}

@@ -105,6 +105,7 @@ mod tests {
     use crate::{
         assert_error_code,
         dispatcher::{handle_apdu, CLA},
+        utils::init_log,
     };
     use std::convert::TryInto;
 
@@ -113,6 +114,7 @@ mod tests {
     #[test]
     #[serial(dev_hash)]
     fn apdu_dev_hash() {
+        init_log();
         const MSG: [u8; 0xFF] = [42; 0xFF];
 
         let mut flags = 0;
@@ -169,6 +171,7 @@ mod tests {
     #[test]
     #[serial(dev_hash)]
     fn apdu_dev_hash_short() {
+        init_log();
         const MSG: &[u8] = b"francesco@zondax.ch";
         let len = MSG.len();
 

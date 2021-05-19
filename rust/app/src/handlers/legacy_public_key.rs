@@ -47,6 +47,7 @@ mod tests {
 
     #[test]
     fn apdu_check() {
+        crate::utils::init_log();
         let flags = &mut 0u32;
         let tx = &mut 0u32;
         let rx = 5u32;

@@ -150,11 +150,13 @@ macro_rules! new_swapping_buffer {
 
 #[cfg(test)]
 mod tests {
+    use crate::init_log;
     use super::*;
     const MSG: &[u8] = b"deadbeef";
 
     #[test]
     fn macro_works() {
+        init_log();
         let buffer = new_swapping_buffer!(1, 2);
 
         assert_eq!((1, 2), buffer.sizes());
@@ -163,6 +165,7 @@ mod tests {
 
     #[test]
     fn no_ram() {
+        init_log();
         let mut buffer = new_swapping_buffer!(0, 8);
 
         //should be able to write
@@ -178,6 +181,7 @@ mod tests {
 
     #[test]
     fn no_flash() {
+        init_log();
         let mut buffer = new_swapping_buffer!(8, 0);
 
         buffer.write(MSG).unwrap();
@@ -192,6 +196,7 @@ mod tests {
 
     #[test]
     fn incremental_ram() {
+        init_log();
         let mut buffer = new_swapping_buffer!(16, 0);
 
         buffer.write(MSG).unwrap();
@@ -212,6 +217,7 @@ mod tests {
 
     #[test]
     fn incremental_flash() {
+        init_log();
         let mut buffer = new_swapping_buffer!(0, 16);
 
         buffer.write(MSG).unwrap();
@@ -228,6 +234,7 @@ mod tests {
 
     #[test]
     fn transition() {
+        init_log();
         let mut buffer = new_swapping_buffer!(4, 8);
 
         //write 8 bytes
@@ -242,6 +249,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn not_enough_space() {
+        init_log();
         let mut buffer = new_swapping_buffer!(4, 7);
 
         //writing 8 bytes will try to write to second buffer
@@ -251,6 +259,7 @@ mod tests {
 
     #[test]
     fn reset() {
+        init_log();
         let mut buffer = new_swapping_buffer!(8, 16);
 
         buffer.write(MSG).unwrap();

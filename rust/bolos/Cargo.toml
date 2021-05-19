@@ -9,3 +9,6 @@ bolos-derive = { version = "0.1", path = "../bolos-derive" }
 
 cfg-if = "1.0.0"
 no-std-compat = { version = "0.4" }
+
+[dev-dependencies]
+env_logger = "0.8.3"
