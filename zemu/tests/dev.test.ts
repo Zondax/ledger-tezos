@@ -42,6 +42,12 @@ const models: DeviceModel[] = [
 
 jest.setTimeout(60000)
 
+function warn_dev(code: LedgerError) {
+    if (code === LedgerError.TransactionRejected) {
+        console.log("APP might not be built with `dev` feature!");
+    }
+}
+
 describe('Development specials', function () {
     test.each(models)('catch exception', async function(m) {
         const sim = new Zemu(m.path);
@@ -52,6 +58,8 @@ describe('Development specials', function () {
             const resp = await app.except(true, ex);
 
             console.log(resp);
+            warn_dev(resp.returnCode);
+
             expect(resp.returnCode).toEqual(LedgerError.NoErrors);
             expect(resp.errorMessage).toEqual("No errors");
             expect(resp).toHaveProperty("ex");
@@ -70,6 +78,8 @@ describe('Development specials', function () {
             const resp = await app.except(false, ex);
 
             console.log(resp);
+            warn_dev(resp.returnCode);
+
             expect(resp.returnCode).toEqual(LedgerError.ExecutionError);
             expect(resp.errorMessage).toEqual("Execution Error");
         } finally {
@@ -87,6 +97,8 @@ describe('Unknown exceptions', function () {
             const resp = await app.except(true, 42);
 
             console.log(resp);
+            warn_dev(resp.returnCode);
+
             expect(resp.returnCode).toEqual(LedgerError.InvalidP1P2);
             expect(resp.errorMessage).toEqual("Invalid P1/P2");
         } finally {
@@ -102,6 +114,8 @@ describe('Unknown exceptions', function () {
             const resp = await app.except(false, 42);
 
             console.log(resp);
+            warn_dev(resp.returnCode);
+
             expect(resp.returnCode).toEqual(LedgerError.InvalidP1P2);
             expect(resp.errorMessage).toEqual("Invalid P1/P2");
         } finally {
