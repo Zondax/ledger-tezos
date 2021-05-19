@@ -123,3 +123,37 @@ describe('Unknown exceptions', function () {
         }
     })
 });
+
+describe('SHA256', function () {
+    test.each(models)('get hash', async function(m) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name});
+            const app = new TezosAppDev(sim.getTransport());
+            const resp = await app.getHash(Buffer.from("francesco@zondax.ch"));
+
+            console.log(resp);
+            expect(resp.returnCode).toEqual(0x9000);
+            expect(resp.errorMessage).toEqual("No errors");
+            expect(resp).toHaveProperty("hash");
+        } finally {
+            await sim.close();
+        }
+    })
+
+    test.each(models)('get hash', async function(m) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name});
+            const app = new TezosAppDev(sim.getTransport());
+            const resp = await app.getHash(Buffer.alloc(300, 0));
+
+            console.log(resp);
+            expect(resp.returnCode).toEqual(0x9000);
+            expect(resp.errorMessage).toEqual("No errors");
+            expect(resp).toHaveProperty("hash");
+        } finally {
+            await sim.close();
+        }
+    })
+});
