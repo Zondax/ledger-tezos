@@ -18,7 +18,7 @@ impl log::Log for ZemuLog {
 
 impl ZemuLog {
     fn read_record(record: &Record) -> ArrayString<256> {
-        let mut s = ArrayString::<256>::new();
+        let mut s = ArrayString::<256>::new_const();
 
         match core::fmt::write(
             &mut s,

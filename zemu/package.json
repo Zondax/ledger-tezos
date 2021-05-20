@@ -16,7 +16,8 @@
     "Tezos"
   ],
   "scripts": {
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles",
+    "debug": "node debug/debug.mjs debug"
   },
   "dependencies": {
     "@zondax/ledger-tezos": "link:../js",

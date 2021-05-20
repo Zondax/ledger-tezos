@@ -210,6 +210,10 @@ zemu_install:
 zemu_test:
 	cd $(TESTS_ZEMU_DIR) && yarn test$(COIN)
 
+.PHONY: zemu_debug
+zemu_debug:
+	cd $(TESTS_ZEMU_DIR) && yarn run debug
+
 .PHONY: rust_test
 rust_test:
 	$(MAKE) -C rust test
