@@ -38,6 +38,10 @@ impl PublicKey {
             _ => Ok(*self),
         }
     }
+
+    pub fn curve(&self) -> Curve {
+        self.curve
+    }
 }
 
 impl AsRef<[u8]> for PublicKey {
@@ -68,6 +72,7 @@ impl Keypair {
 
             // Prepare secret key data with the ledger's key
             unsafe {
+                //This shouldn't throw
                 crate::raw::os_perso_derive_node_bip32(
                     curve as _,
                     &path.components as *const u32 as *const _,

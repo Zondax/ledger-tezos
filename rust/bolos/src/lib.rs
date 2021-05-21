@@ -82,3 +82,5 @@ pub mod errors;
 pub use errors::Error;
 
 pub mod crypto;
+
+pub mod hash;
