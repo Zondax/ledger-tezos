@@ -10,7 +10,7 @@ impl<const S: usize> Blake2b<S> {
 
         let might_throw = || unsafe {
             //this does not throw
-            crate::raw::cx_blake2b_init(&mut state as *mut _, S * 8);
+            crate::raw::cx_blake2b_init(&mut state as *mut _, (S * 8) as u32);
         };
 
         catch_exception::<SyscallError, _, _>(might_throw)?;

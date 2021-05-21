@@ -9,12 +9,12 @@ use crate::{
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey {
     curve: Curve,
-    len: usize,
-    w: [u8; 65],
+    pub len: usize,
+    pub w: [u8; 65],
 }
 
 impl PublicKey {
-    pub fn compress(&self) -> Result<PublicKey, SyscallError> {
+    pub fn compress(&self) -> Result<Self, SyscallError> {
         match self.curve {
             Curve::Ed25519 => {
                 //create copy, so we don't overwrite a valid public key already
@@ -46,14 +46,14 @@ impl PublicKey {
 
 impl AsRef<[u8]> for PublicKey {
     fn as_ref(&self) -> &[u8] {
-        &self.w[..]
+        &self.w[..self.len]
     }
 }
 
 pub struct SecretKey {
     curve: Curve,
-    len: usize,
-    d: Zeroizing<[u8; 32]>,
+    pub len: usize,
+    pub d: Zeroizing<[u8; 32]>,
 }
 
 pub struct Keypair {

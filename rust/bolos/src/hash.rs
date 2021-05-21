@@ -3,12 +3,19 @@ use crate::{exceptions::catch_exception, raw::cx_hash, SyscallError};
 pub mod blake2b;
 pub use blake2b::Blake2b;
 
-//This is intentionally private since we want only _our_ hashes to be able to implement it
-trait CxHash<const S: usize>: Sized {
-    fn cx_header(&mut self) -> &mut crate::raw::cx_hash_t;
+pub mod sha256;
+pub use sha256::Sha256;
+
+mod sealed {
+    //This is intentionally private since we want only _our_ hashes to be able to implement it
+    pub trait CxHash<const S: usize>: Sized {
+        fn cx_header(&mut self) -> &mut crate::raw::cx_hash_t;
+    }
 }
 
-pub trait Hash<const S: usize>: CxHash<S> {
+pub(self) use sealed::CxHash;
+
+pub trait Hasher<const S: usize>: CxHash<S> {
     fn update(&mut self, input: &[u8]) -> Result<(), SyscallError> {
         let might_throw = || unsafe {
             cx_hash(
@@ -16,7 +23,7 @@ pub trait Hash<const S: usize>: CxHash<S> {
                 false as u8 as _,
                 &input[0] as *const u8 as *const _,
                 input.len() as u32 as _,
-                core::ptr::null(),
+                core::ptr::null_mut(),
                 0u32 as _,
             );
         };

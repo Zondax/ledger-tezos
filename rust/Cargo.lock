@@ -50,10 +50,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "build_const"
-version = "0.2.2"
+name = "bs58"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4ae4235e6dac0694637c763029ecea1a2ec9e4e06ec2729bd21ba4d9c863eb7"
+checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 
 [[package]]
 name = "cfg-if"
@@ -293,6 +293,7 @@ version = "0.1.0"
 dependencies = [
  "arrayvec",
  "bolos-sys",
+ "bs58",
  "cfg-if",
  "git-testament",
  "hex",

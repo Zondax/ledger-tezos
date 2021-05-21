@@ -146,8 +146,9 @@ pub fn apdu_dispatch(
     match ins {
         INS_LEGACY_GET_VERSION => LegacyGetVersion::handle(flags, tx, rx, apdu_buffer),
 
-        INS_LEGACY_GET_PUBLIC_KEY => LegacyGetPublicKey::handle(flags, tx, rx, apdu_buffer),
-        INS_LEGACY_PROMPT_PUBLIC_KEY => LegacyGetPublicKey::handle(flags, tx, rx, apdu_buffer),
+        INS_LEGACY_GET_PUBLIC_KEY | INS_LEGACY_PROMPT_PUBLIC_KEY | INS_GET_ADDRESS => {
+            GetAddress::handle(flags, tx, rx, apdu_buffer)
+        }
 
         INS_LEGACY_GIT => LegacyGit::handle(flags, tx, rx, apdu_buffer),
 
@@ -155,7 +156,6 @@ pub fn apdu_dispatch(
         INS_LEGACY_SIGN_WITH_HASH => LegacySign::handle(flags, tx, rx, apdu_buffer),
 
         INS_GET_VERSION => GetVersion::handle(flags, tx, rx, apdu_buffer),
-        INS_GET_ADDRESS => GetAddress::handle(flags, tx, rx, apdu_buffer),
         _ => Err(CommandNotAllowed),
     }
 }
