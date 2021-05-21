@@ -14,12 +14,15 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, {DeviceModel} from "@zondax/zemu";
-import TezosApp from "@zondax/ledger-tezos";
-import { defaultOptions } from './common';
+import Zemu, {DEFAULT_START_OPTIONS, DeviceModel} from "@zondax/zemu";
+import TezosApp, { Curve } from "@zondax/ledger-tezos";
+import { APP_SEED } from './common';
 
 const Resolve = require("path").resolve;
 const APP_PATH_LEGACY_S = Resolve("../legacy/output/app_baking.elf");
+
+//from legacy readme
+const APP_DERIVATION = "m/44'/1729'/0'/0'"
 
 const models: DeviceModel[] = [
     {name: 'nanos', prefix: "LBS", path: APP_PATH_LEGACY_S},

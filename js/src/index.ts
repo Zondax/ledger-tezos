@@ -25,12 +25,14 @@ import {
   INS,
   LedgerError,
   P1_VALUES,
+  P2_CURVE,
+  Curve,
   PAYLOAD_TYPE,
   PKLEN,
   processErrorResponse
 } from "./common";
 
-export { LedgerError };
+export { LedgerError, Curve };
 export * from "./types";
 
 function processGetAddrResponse(response: Buffer) {
@@ -187,17 +189,17 @@ export default class TezosApp {
     }, processErrorResponse);
   }
 
-  async getAddressAndPubKey(path: string): Promise<ResponseAddress> {
+  async getAddressAndPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
     const serializedPath = serializePath(path);
     return this.transport
-      .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000])
+      .send(CLA, INS.GET_ADDR, P1_VALUES.ONLY_RETRIEVE, curve, serializedPath, [LedgerError.NoErrors])
       .then(processGetAddrResponse, processErrorResponse);
   }
 
-  async showAddressAndPubKey(path: string): Promise<ResponseAddress> {
+  async showAddressAndPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
     const serializedPath = serializePath(path);
     return this.transport
-      .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [
+      .send(CLA, INS.GET_ADDR, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, curve, serializedPath, [
         LedgerError.NoErrors
       ])
       .then(processGetAddrResponse, processErrorResponse);

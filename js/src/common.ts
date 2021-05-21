@@ -12,6 +12,7 @@ export const INS = {
   GET_HWM: 0x08,
   GET_ALL_HWM: 0x0B,
   RESET_HWM: 0x06,
+  GET_ADDR: 0x11,
 };
 
 export const PAYLOAD_TYPE = {
@@ -24,6 +25,20 @@ export const P1_VALUES = {
   ONLY_RETRIEVE: 0x00,
   SHOW_ADDRESS_IN_DEVICE: 0x01
 };
+
+export const P2_CURVE = {
+  ED25519_SIP: 0,
+  SECP256K1: 1,
+  SECP256R1: 2,
+  ED25519: 3,
+};
+
+export enum Curve {
+  Ed25519_Sip = P2_CURVE.ED25519_SIP,
+  Secp256K1 = P2_CURVE.SECP256K1,
+  Secp256R1 = P2_CURVE.SECP256R1,
+  Ed25519 = P2_CURVE.ED25519,
+}
 
 export const PKLEN = 33;
 
