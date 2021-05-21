@@ -46,7 +46,6 @@ pub use pic::PIC;
 mod nvm;
 pub use nvm::NVM;
 
-#[cfg(bolos_sdk)]
 pub(self) mod raw {
     #![allow(non_snake_case)]
     #![allow(non_upper_case_globals)]

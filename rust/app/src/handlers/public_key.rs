@@ -29,8 +29,18 @@ impl ApduHandler for GetAddress {
         let bip32_path =
             sys::crypto::bip32::BIP32Path::read(cdata).map_err(|_| Error::DataInvalid)?;
 
-        let key = curve.gen_keypair(&bip32_path);
+        let key = curve
+            .gen_keypair(&bip32_path)
+            .map_err(|_| Error::ExecutionError)?
+            .public()
+            .compress()
+            .map_err(|_| Error::ExecutionError)?;
 
-        todo!()
+        let key = key.as_ref();
+        let len = key.len();
+        buffer[..len].copy_from_slice(&key);
+        *tx = len as u32;
+
+        Ok(())
     }
 }

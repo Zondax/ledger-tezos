@@ -7,6 +7,7 @@ use std::convert::TryFrom;
 
 pub mod bip32;
 
+#[derive(Debug, Clone, Copy)]
 pub enum Curve {
     None,
 

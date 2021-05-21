@@ -47,8 +47,6 @@ impl Into<sys::crypto::Curve> for &Curve {
     }
 }
 
-pub enum GenerateKeyError {}
-
 impl Curve {
     pub fn gen_keypair(
         &self,

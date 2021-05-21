@@ -1,6 +1,6 @@
 pub struct BIP32Path {
-    len: u8,
-    components: [u32; 10],
+    pub(crate) len: u8,
+    pub(crate) components: [u32; 10],
 }
 
 pub enum BIP32PathError {
