@@ -16,7 +16,7 @@
 
 .PHONY: all deps build clean load delete check_python show_info_recovery_mode
 
-TESTS_ZEMU_DIR?=$(CURDIR)/tests_zemu
+TESTS_ZEMU_DIR?=$(CURDIR)/zemu
 EXAMPLE_VUE_DIR?=$(CURDIR)/example_vue
 TESTS_JS_PACKAGE?=
 TESTS_JS_DIR?=
