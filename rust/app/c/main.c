@@ -17,6 +17,7 @@
 #include "rslib.h"
 #include <os_io_seproxyhal.h>
 #include <os.h>
+#include "ux.h"
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 

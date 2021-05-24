@@ -48,6 +48,8 @@ typedef enum {
 #define APPVERSION_LINE1                "Tezos"
 #define APPVERSION_LINE2                ("v" APPVERSION)
 
+#define COIN_SECRET_REQUIRED_CLICKS         10
+
 #ifdef __cplusplus
 }
 #endif

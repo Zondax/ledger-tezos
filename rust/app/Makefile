@@ -40,10 +40,14 @@ all: bin/app.elf
 
 include $(BOLOS_SDK)/Makefile.defines
 
+DEFINES += APP_SECRET_MODE_ENABLED
+
+$(info ************ TARGET_NAME  = [$(TARGET_NAME)])
+
 ifeq ($(APP_TESTING),1)
 DEFINES += APP_TESTING
 DEFINES += ZEMU_LOGGING
-$(info ************  LOGGING ENABLED ************)
+$(info ************ LOGGING ENABLED ************)
 endif
 
 ifndef COIN
@@ -73,23 +77,21 @@ endef
 $(error "$(error_message)")
 endif
 
-APP_LOAD_PARAMS = --appFlags 0x200 --delete $(COMMON_LOAD_PARAMS) --path ${APPPATH} --path "44'/1'" --tlvraw 9F:01
-DEFINES += HAVE_PENDING_REVIEW_SCREEN
+APP_LOAD_PARAMS = --appFlags 0x200 --delete $(COMMON_LOAD_PARAMS) --path ${APPPATH} --path "44'/1'"
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
-APP_STACK_SIZE:=2828
+APP_STACK_SIZE:=3072
 ICONNAME:=$(CURDIR)/nanos_icon.gif
-OUTPUT_ELF:= $(CURDIR)/output/app_s.elf
-OUTPUT_INSTALLER:= $(CURDIR)/pkg/installer_s.sh
+OUTPUT_ELF ?= $(CURDIR)/output/app_s.elf
+OUTPUT_INSTALLER := $(CURDIR)/pkg/installer_s.sh
 endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 ICONNAME:=$(CURDIR)/nanox_icon.gif
-OUTPUT_ELF:= $(CURDIR)/output/app_x.elf
+OUTPUT_ELF ?= $(CURDIR)/output/app_x.elf
 OUTPUT_INSTALLER:= $(CURDIR)/pkg/installer_x.sh
 endif
 
-$(info TARGET_NAME  = [$(TARGET_NAME)])
 $(info ICONNAME  = [$(ICONNAME)])
 
 ifndef ICONNAME
@@ -135,12 +137,9 @@ SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 else
 # Assume Nano S
 DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=128
-DEFINES       += COMPLIANCE_UX_160 HAVE_UX_LEGACY
 endif
 
 # X specific
-
-# App specific
 
 #Feature temporarily disabled
 DEFINES   += LEDGER_SPECIFIC
@@ -149,8 +148,8 @@ DEFINES   += LEDGER_SPECIFIC
 
 ifneq ($(BOLOS_ENV),)
 $(info BOLOS_ENV is $(BOLOS_ENV))
-CLANGPATH := $(BOLOS_ENV)/clang-arm-fropi/bin/
-GCCPATH := $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/bin/
+CLANGPATH := /usr/bin/
+GCCPATH := /usr/bin/
 else
 $(info BOLOS_ENV is not set: falling back to CLANGPATH and GCCPATH)
 endif
@@ -166,7 +165,7 @@ endif
 #########################
 
 CC := $(CLANGPATH)clang
-CFLAGS += -O3 -Os -Wno-unknown-pragmas
+CFLAGS += -O3 -Os -Wno-unknown-pragmas -Wno-unused-parameter
 
 AS := $(GCCPATH)arm-none-eabi-gcc
 AFLAGS +=

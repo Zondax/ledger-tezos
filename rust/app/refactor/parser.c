@@ -76,7 +76,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
 
     uint8_t numItems;
     CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
-    CHECK_CANARY()
+    check_canary();
 
     if (displayIdx < 0 || displayIdx >= numItems) {
         return parser_no_data;
