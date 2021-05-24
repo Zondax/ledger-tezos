@@ -30,7 +30,7 @@ void check_canary() {
 #endif
 }
 
-void zemu_log(char *buf) {
+void zemu_log(const char *buf) {
 #if defined(ZEMU_LOGGING)
 #if defined (TARGET_NANOS) || defined(TARGET_NANOX)
     asm volatile (

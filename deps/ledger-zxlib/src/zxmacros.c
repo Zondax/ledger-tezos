@@ -36,3 +36,9 @@ size_t asciify_ext(const char *utf8_in, char *ascii_only_out) {
     *q = 0;
     return q - ascii_only_out;
 }
+
+void check_app_canary() {
+#if defined (TARGET_NANOS) || defined(TARGET_NANOX)
+    if (app_stack_canary != APP_STACK_CANARY_MAGIC) handle_stack_overflow();
+#endif
+}

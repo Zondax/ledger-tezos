@@ -75,7 +75,7 @@ zbuffer_error_e zb_deallocate() {
 
 zbuffer_error_e zb_check_canary() {
 #if defined (TARGET_NANOS) || defined(TARGET_NANOX)
-    CHECK_CANARY();
+    CHECK_APP_CANARY();
     if (zbuffer_internal.size != 0) {
         // allocated
         uint32_t *zb_canary = (uint32_t * )(zbuffer_internal.ptr + zbuffer_internal.size + 4);

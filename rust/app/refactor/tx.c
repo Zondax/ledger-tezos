@@ -100,7 +100,7 @@ const char *tx_parse() {
     }
 
     err = parser_validate(&ctx_parsed_tx);
-    CHECK_CANARY()
+    check_canary();
 
     if (err != parser_ok) {
         return parser_getErrorDescription(err);
