@@ -16,11 +16,10 @@
 
 import Zemu, {DEFAULT_START_OPTIONS, DeviceModel} from "@zondax/zemu";
 import TezosApp from "@zondax/ledger-tezos";
+import { APP_SEED } from './common';
 
 const Resolve = require("path").resolve;
 const APP_PATH_LEGACY_S = Resolve("../legacy/output/app_baking.elf");
-
-const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 
 const defaultOptions = {
     ...DEFAULT_START_OPTIONS,
@@ -46,12 +45,12 @@ describe('Legacy baking', function () {
     });
 
     test.each(models)('main menu', async function (m) {
-        const sim = new Zemu(m.path);
+        const sim = new Zemu(m.path)
         try {
-            await sim.start({...defaultOptions, model: m.name,});
-            expect(await sim.compareSnapshotsAndAccept(".", `${m.prefix.toLowerCase()}-mainmenu`, 3)).toBeTruthy()
+            await sim.start({ ...defaultOptions, model: m.name })
+            await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 5, -5])
         } finally {
-            await sim.close();
+            await sim.close()
         }
     });
 

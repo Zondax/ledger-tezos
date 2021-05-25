@@ -6,7 +6,4 @@
 	url = https://github.com/LedgerHQ/nanox-secure-sdk.git
 [submodule "legacy"]
 	path = legacy
-	url = https://github.com/obsidiansystems/ledger-app-tezos
-[submodule "deps/legacy-nanos-secure-sdk"]
-	path = deps/legacy-nanos-secure-sdk
-	url = https://github.com/LedgerHQ/nanos-secure-sdk
+	url = https://github.com/Zondax/legacy-app-tezos.git

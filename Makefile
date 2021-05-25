@@ -21,7 +21,6 @@
 TESTS_JS_PACKAGE = "@zondax/ledger-tezos"
 TESTS_JS_DIR = $(CURDIR)/js
 
-DOCKER_LEGACY_BOLOS_SDKS=/project/deps/legacy-nanos-secure-sdk
 DOCKER_LEGACY_APP_SRC=/project/legacy
 DOCKER_LEGACY_APP_BIN=$(DOCKER_LEGACY_APP_SRC)/bin/app.elf
 
@@ -44,7 +43,7 @@ legacy:
 	$(MAKE) legacy_wallet
 
 legacy_impl:
-	$(call run_docker,$(DOCKER_LEGACY_BOLOS_SDKS),make -j $(NPROC) -C $(DOCKER_LEGACY_APP_SRC))
+	$(call run_docker,$(DOCKER_BOLOS_SDKS),make -j $(NPROC) -C $(DOCKER_LEGACY_APP_SRC))
 
 legacy_wallet:
 	$(MAKE) legacy_impl
@@ -58,7 +57,7 @@ legacy_baking:
 
 .PHONY: clean_legacy
 clean_legacy:
-	$(call run_docker,$(DOCKER_LEGACY_BOLOS_SDKS), make -C $(DOCKER_LEGACY_APP_SRC) clean)
+	$(call run_docker,$(DOCKER_BOLOS_SDKS), make -C $(DOCKER_LEGACY_APP_SRC) clean)
 
 else
 default:
