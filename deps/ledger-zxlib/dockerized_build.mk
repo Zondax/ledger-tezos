@@ -115,7 +115,7 @@ buildX: build_rustX
 .PHONY: clean_output
 clean_output:
 	@echo "Removing output files"
-	@rm -f app/output/app* || true
+	@rm -f rust/app/output/app* || true
 
 .PHONY: clean
 clean_build:

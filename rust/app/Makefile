@@ -104,6 +104,7 @@ endif
 $(info BAKING = [$(BAKING)])
 $(info TARGET_NAME  = [$(TARGET_NAME)])
 $(info ICONNAME  = [$(ICONNAME)])
+$(info OUTPUT_ELF = [$(OUTPUT_ELF)])
 
 ifndef ICONNAME
 $(error ICONNAME is not set)
