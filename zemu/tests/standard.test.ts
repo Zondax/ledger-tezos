@@ -22,7 +22,7 @@ const defaultOptions = {
   ...DEFAULT_START_OPTIONS,
   logging: true,
   custom: `-s "${APP_SEED}"`,
-  X11: false,
+  X11: true,
 }
 
 jest.setTimeout(60000)
