@@ -13,10 +13,10 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use crate::constants::ApduError::InsNotSupported;
 use crate::constants::{ApduError, APDU_INDEX_INS};
 use crate::dispatcher::{ApduHandler, INS_LEGACY_GET_VERSION, INS_LEGACY_GIT};
 use crate::handlers::version::{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
+use crate::{constants::ApduError::InsNotSupported, utils::BAKING};
 
 pub struct LegacyGetVersion {}
 
@@ -42,7 +42,7 @@ impl ApduHandler for LegacyGetVersion {
         }
 
         // https://github.com/obsidiansystems/ledger-app-tezos/blob/58797b2f9606c5a30dd1ccc9e5b9962e45e10356/src/apdu.c#L24
-        apdu_buffer[0] = 0; // FIXME: Baking app = 1
+        apdu_buffer[0] = BAKING as _;
         apdu_buffer[1] = VERSION_MAJOR;
         apdu_buffer[2] = VERSION_MINOR;
         apdu_buffer[3] = VERSION_PATCH;
@@ -81,10 +81,12 @@ impl ApduHandler for LegacyGit {
 #[cfg(test)]
 mod tests {
     use super::LegacyGit;
+    use crate::assert_error_code;
     use crate::constants::ApduError::Success;
     use crate::dispatcher::{handle_apdu, CLA, INS_LEGACY_GET_VERSION, INS_LEGACY_GIT};
     use crate::handlers::version::{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
-    use crate::utils::assert_error_code;
+    use crate::utils::BAKING;
+    use std::convert::TryInto;
 
     #[test]
     fn apdu_get_version() {
@@ -102,9 +104,9 @@ mod tests {
         handle_apdu(flags, tx, rx, buffer);
 
         assert_eq!(*tx, 4 + 2);
-        assert_error_code(tx, buffer, Success);
+        assert_error_code!(*tx, buffer, Success);
 
-        assert_eq!(buffer[0], 0);
+        assert_eq!(buffer[0], BAKING as _);
         assert_eq!(buffer[1], VERSION_MAJOR);
         assert_eq!(buffer[2], VERSION_MINOR);
         assert_eq!(buffer[3], VERSION_PATCH);
@@ -123,7 +125,7 @@ mod tests {
         handle_apdu(&mut flags, &mut tx, rx, &mut buffer);
 
         assert_eq!(tx as usize, len + 1 + 2);
-        assert_error_code(&tx, &buffer, Success);
+        assert_error_code!(tx, buffer, Success);
 
         let commit_hash = LegacyGit::commit_hash();
         assert_eq!(&buffer[..len], &commit_hash[..len]);

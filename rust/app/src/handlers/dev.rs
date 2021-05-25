@@ -103,9 +103,10 @@ impl ApduHandler for Dev {
 mod tests {
     use super::*;
     use crate::{
+        assert_error_code,
         dispatcher::{handle_apdu, CLA},
-        utils::assert_error_code,
     };
+    use std::convert::TryInto;
 
     use serial_test::serial;
 
@@ -127,7 +128,7 @@ mod tests {
         buffer[5..].copy_from_slice(&MSG[..255]);
 
         handle_apdu(&mut flags, &mut tx, 260, &mut buffer);
-        assert_error_code(&tx, &buffer, Error::Success);
+        assert_error_code!(tx, buffer, Error::Success);
 
         //Add
         MSG[255..].chunks(255).enumerate().for_each(|(i, c)| {
@@ -145,7 +146,7 @@ mod tests {
             buffer[5..len].copy_from_slice(&MSG[msg_sent..msg_sent + len]);
 
             handle_apdu(&mut flags, &mut tx, 5 + len as u32, &mut buffer);
-            assert_error_code(&tx, &buffer, Error::Success);
+            assert_error_code!(tx, buffer, Error::Success);
         });
 
         //Last
@@ -158,7 +159,7 @@ mod tests {
         buffer[4] = 0;
 
         handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
-        assert_error_code(&tx, &buffer, Error::Success);
+        assert_error_code!(tx, buffer, Error::Success);
 
         let expected = sha2::Sha256::digest(&MSG[..]);
         let digest = &buffer[..tx as usize - 2];
@@ -184,7 +185,7 @@ mod tests {
         buffer[5..5 + len].copy_from_slice(&MSG[..]);
 
         handle_apdu(&mut flags, &mut tx, 5 + len as u32, &mut buffer);
-        assert_error_code(&tx, &buffer, Error::Success);
+        assert_error_code!(tx, buffer, Error::Success);
 
         let expected = sha2::Sha256::digest(&MSG[..]);
         let digest = &buffer[..tx as usize - 2];

@@ -35,10 +35,20 @@ pub mod constants;
 pub mod dispatcher;
 mod handlers;
 mod sys;
+
+#[macro_use]
 mod utils;
 
 use dispatcher::handle_apdu;
 use sys::{check_canary, zemu_log};
+
+cfg_if::cfg_if! {
+    if #[cfg(all(feature = "baking", feature = "wallet"))] {
+        compile_error!("both baking and wallet can't be enabled at the same time");
+    } else if #[cfg(all(not(feature = "baking"), not(feature = "wallet")))] {
+        compile_error!("either baking or wallet feature should be enabled");
+    }
+}
 
 /// # Safety
 ///

@@ -10,8 +10,10 @@ name = "rslib"
 crate-type = ["staticlib"]
 
 [features]
+baking = []
+wallet = []
 dev = ["sha2", "once_cell"]
-default = ["dev"]
+default = []
 
 [dependencies]
 bolos-sys = { path = "../bolos" }
