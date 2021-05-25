@@ -46,7 +46,7 @@ legacy_impl:
 	$(call run_docker,$(DOCKER_BOLOS_SDKS),make -j $(NPROC) -C $(DOCKER_LEGACY_APP_SRC))
 
 legacy_wallet:
-	$(MAKE) legacy_impl
+	BAKING=tezos_wallet $(MAKE) legacy_impl
 	- mkdir legacy/output
 	mv legacy/bin/app.elf legacy/output/app.elf
 
