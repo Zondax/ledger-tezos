@@ -73,7 +73,6 @@ define run_docker
 endef
 
 all:
-	@$(MAKE) clean_output
 	@$(MAKE) clean_build
 	@$(MAKE) buildS
 	@$(MAKE) clean_build
