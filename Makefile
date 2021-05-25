@@ -28,6 +28,10 @@ ifeq ($(BOLOS_SDK),)
 lint:
 	cd rust && cargo fmt
 
+both:
+	$(MAKE)
+	BAKING=tezos_baking $(MAKE)
+
 else
 default:
 	$(MAKE) -C rust/app
