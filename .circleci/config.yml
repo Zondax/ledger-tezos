@@ -93,6 +93,10 @@ jobs:
           command: |
             make
       - run:
+          name: Build legacy app
+          command: |
+            make legacy
+      - run:
           name: Build/Install build js deps
           command: |
             nvm use 14.4.0
