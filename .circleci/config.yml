@@ -46,14 +46,14 @@ jobs:
       # Docker entrypoint is not considered
       - run: git submodule update --init --recursive
       - run:
-          name: Build standard app
+          name: Build baker app
+          environment:
+            BAKING: yes
           command: |
             source /home/zondax/.cargo/env
             make
       - run:
-          name: Build baker app
-          environment:
-            BAKING: yes
+          name: Build standard app
           command: |
             source /home/zondax/.cargo/env
             make
@@ -83,15 +83,19 @@ jobs:
             nvm use 14.4.0
             npm install -g yarn
       - run:
-          name: Build Ledger app
-          command: |
-            make
-      - run:
           name: Build Ledger app (Baking)
           environment:
             BAKING: yes
           command: |
             make
+      - run:
+          name: Build Ledger app
+          command: |
+            make
+      - run:
+          name: Build legacy app
+          command: |
+            make legacy
       - run:
           name: Build/Install build js deps
           command: |
@@ -115,21 +119,6 @@ jobs:
       - checkout
       - run: git submodule update --init --recursive
       - run:
-          name: Build
-          command: |
-            source /home/zondax/.cargo/env
-            cd /home/zondax/project
-            make
-      - run:
-          name: Copy artifacts
-          command: |
-            /home/zondax/go/bin/ghr -t ${GITHUB_TOKEN} \
-                                    -u ${CIRCLE_PROJECT_USERNAME} \
-                                    -r ${CIRCLE_PROJECT_REPONAME} \
-                                    -c ${CIRCLE_SHA1} \
-                                    -delete $(/home/zondax/project/app/pkg/installer_s.sh version) \
-                                    /home/zondax/project/app/pkg/installer_s.sh
-      - run:
           name: Build Baking
           environment:
             BAKING: yes
@@ -147,6 +136,21 @@ jobs:
                                     -c ${CIRCLE_SHA1} \
                                     -delete $(/home/zondax/project/app/pkg/installer_baking_s.sh version) \
                                     /home/zondax/project/app/pkg/installer_baking_s.sh
+      - run:
+          name: Build
+          command: |
+            source /home/zondax/.cargo/env
+            cd /home/zondax/project
+            make
+      - run:
+          name: Copy artifacts
+          command: |
+            /home/zondax/go/bin/ghr -t ${GITHUB_TOKEN} \
+                                    -u ${CIRCLE_PROJECT_USERNAME} \
+                                    -r ${CIRCLE_PROJECT_REPONAME} \
+                                    -c ${CIRCLE_SHA1} \
+                                    -delete $(/home/zondax/project/app/pkg/installer_s.sh version) \
+                                    /home/zondax/project/app/pkg/installer_s.sh
 
 workflows:
   version: 2

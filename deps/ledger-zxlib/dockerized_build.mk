@@ -64,6 +64,7 @@ define run_docker
 	-e BOLOS_SDK=$(1) \
 	-e BOLOS_ENV=/opt/bolos \
 	-e BAKING=$(BAKING) \
+	-e APP=$(BAKING) \
 	-u $(USERID) \
 	-v $(shell pwd):/project \
 	-e COIN=$(COIN) \
@@ -72,7 +73,6 @@ define run_docker
 endef
 
 all:
-	@$(MAKE) clean_output
 	@$(MAKE) clean_build
 	@$(MAKE) buildS
 	@$(MAKE) clean_build

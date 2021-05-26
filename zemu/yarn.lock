@@ -1004,10 +1004,10 @@
   version "0.0.0"
   uid ""
 
-"@zondax/zemu@^0.14.2":
-  version "0.14.2"
-  resolved "https://registry.yarnpkg.com/@zondax/zemu/-/zemu-0.14.2.tgz#f14940d188d4b16ff5f64dc18a828ce37d4c8184"
-  integrity sha512-FZf6B1gL6/8WI/9xYTLkw+INRSyJ/snrzL8FPHi2fiwcROeLgwY9nr5F4uy4oYjMlN7mvRZJvPvIHl5IWzrMYA==
+"@zondax/zemu@^0.14.5":
+  version "0.14.5"
+  resolved "https://registry.yarnpkg.com/@zondax/zemu/-/zemu-0.14.5.tgz#c50517fb8d310a7a85ecb01d999ebf5568000e04"
+  integrity sha512-o8/NOMppMYP9lrHpMXs7wsuZh2YGljlYtjlgisWy+GnSk5MS08ULtCb3EzCe0Wc6W3hGBk6siZzpHX/UqqJi3g==
   dependencies:
     "@grpc/grpc-js" "^1.3.2"
     "@grpc/proto-loader" "^0.6.2"
