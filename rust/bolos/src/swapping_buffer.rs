@@ -1,3 +1,5 @@
+use crate::nvm::NVMError;
+
 use super::{nvm::NVM, PIC};
 use std::prelude::v1::*;
 
@@ -83,7 +85,7 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
     /// # Errors
     /// This function will error if the second buffer is smaller than the requested amount,
     /// either when appending or when moving from the first buffer
-    pub fn write(&mut self, bytes: &[u8]) -> Result<(), ()> {
+    pub fn write(&mut self, bytes: &[u8]) -> Result<(), NVMError> {
         let len = bytes.len();
 
         match &mut self.state {
@@ -105,7 +107,10 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
                 Ok(())
             }
             //writing to flash and no more space, error
-            BufferState::WritingToFlash(cnt) if *cnt + len > FLASH => Err(()),
+            BufferState::WritingToFlash(cnt) if *cnt + len > FLASH => Err(NVMError::Overflow {
+                max: FLASH,
+                got: *cnt + len,
+            }),
             //writing to flash try to write and update counter in case of success
             BufferState::WritingToFlash(cnt) => {
                 //this is ok because we check already for the size

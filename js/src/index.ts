@@ -62,11 +62,14 @@ export default class TezosApp {
     }
   }
 
-  static prepareChunks(serializedPathBuffer: Buffer, message: Buffer) {
+  static prepareChunks(message: Buffer, serializedPathBuffer?: Buffer) {
     const chunks = [];
 
     // First chunk (only path)
-    chunks.push(serializedPathBuffer);
+    if (serializedPathBuffer !== undefined) {
+      // First chunk (only path)
+      chunks.push(serializedPathBuffer!);
+    }
 
     const messageBuffer = Buffer.from(message);
 
@@ -83,7 +86,7 @@ export default class TezosApp {
   }
 
   async signGetChunks(path: string, message: Buffer) {
-    return TezosApp.prepareChunks(serializePath(path), message);
+    return TezosApp.prepareChunks(message, serializePath(path));
   }
 
   async getVersion(): Promise<ResponseVersion> {

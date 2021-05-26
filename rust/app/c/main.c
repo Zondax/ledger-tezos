@@ -147,6 +147,15 @@ int main(void) {
                     G_io_apdu_buffer[tx] = sw >> 8;
                     G_io_apdu_buffer[tx + 1] = sw;
                     tx += 2;
+                } else {
+                    //Exception
+                    G_io_apdu_buffer[0] = e >> 8;
+                    G_io_apdu_buffer[1] = e;
+
+                    //ExecutionError
+                    G_io_apdu_buffer[2] = 0x64;
+                    G_io_apdu_buffer[3] = 0x00;
+                    tx = 4;
                 }
             }
             FINALLY
