@@ -8,6 +8,7 @@
 #define COMPLIANCE_UX_160
 #define HAVE_UX_LEGACY
 
+#include "cx.h"
 #include "wrapper.h"
 #include "core_sc000.h"
 

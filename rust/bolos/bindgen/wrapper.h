@@ -32,6 +32,4 @@
 #include "os_io_usb.h"
 #include "os.h"
 
-#include "cx.h"
-
 #endif // WRAPPER_H_

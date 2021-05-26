@@ -22,5 +22,6 @@
 #define BLE_COMMAND_TIMEOUT_MS 2000
 
 #include "wrapper.h"
+#include "cx.h"
 
 #endif // WRAPPERX_H_
