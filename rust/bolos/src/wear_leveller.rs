@@ -182,7 +182,7 @@ impl NVMWearSlot {
         let storage = Slot::zeroed().modify(&write, counter).as_storage();
 
         self.storage.write(0, &storage).map_err(|e| match e {
-            NVMError::Write => WearError::NVMWrite,
+            NVMError::Internal(_) => WearError::NVMWrite,
             _ => unreachable!("size is checked already"),
         })
     }

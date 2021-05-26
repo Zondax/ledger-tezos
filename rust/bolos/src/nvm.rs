@@ -67,9 +67,6 @@ impl<const N: usize> NVM<N> {
                 };
 
                 catch_exception::<NVMError, _, _>(write)?;
-                if &self.0[from..] != slice {
-                    return Err(NVMError::Write)
-                }
             } else {
                 self.0[from..from+len].copy_from_slice(slice)
             }
@@ -130,7 +127,7 @@ mod manual {
             cfg_if! {
                 if #[cfg(bolos_sdk)] {
                     let p = self.ptr.add(from);
-                    crate::bindings::nvm_write(p, slice.as_ptr(), len as u32);
+                    crate::raw::nvm_write(p as *mut _, slice.as_ptr() as *mut u8 as *mut _, len as u32);
                 } else {
                     let mem: &'m mut [u8] = std::slice::from_raw_parts_mut(self.ptr, self.len);
                     mem[from..from+len].copy_from_slice(slice)
