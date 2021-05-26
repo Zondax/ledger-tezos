@@ -62,6 +62,10 @@ clean_legacy:
 else
 default:
 	$(MAKE) -C rust/app
+
+generate:
+	$(MAKE) -C rust generate
+
 %:
 	$(info "Calling app Makefile for target $@")
 	COIN=$(COIN) $(MAKE) -C rust/app $@

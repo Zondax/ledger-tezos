@@ -17,6 +17,10 @@
 #![no_builtins]
 
 //! This crate provides bindings for Ledger's BOLOS, as well as wrappers and utilities
+
+#[macro_use]
+extern crate cfg_if;
+
 #[cfg(test)]
 extern crate self as bolos_sys;
 
@@ -35,13 +39,32 @@ pub use pic::PIC;
 mod nvm;
 pub use nvm::NVM;
 
-pub(self) mod bindings {
-    extern "C" {
-        cfg_if::cfg_if! {
-            if #[cfg(bolos_sdk)] {
-                pub fn pic(link_address: u32) -> u32;
-                pub fn nvm_write(dest: *mut u8, src: *const u8, len: u32);
-            }
+#[cfg(bolos_sdk)]
+pub(self) mod raw {
+    #![allow(non_snake_case)]
+    #![allow(non_upper_case_globals)]
+    #![allow(non_camel_case_types)]
+    #![allow(dead_code)]
+    #![allow(clippy::upper_case_acronyms)]
+
+    cfg_if! {
+        if #[cfg(nanos)] {
+            include!("./bindings/bindingsS.rs");
+        } else if #[cfg(nanox)] {
+            include!("./bindings/bindingsX.rs");
+        }
+    }
+}
+
+/// Wrapper for 'os_sched_exit'
+/// Exit application with status
+pub fn exit_app(status: u8) -> ! {
+    cfg_if! {
+        if #[cfg(bolos_sdk)] {
+            unsafe { raw::os_sched_exit(status as _) }
+            unreachable!("Did not exit properly");
+        } else {
+            panic!("exiting app: {}", status);
         }
     }
 }

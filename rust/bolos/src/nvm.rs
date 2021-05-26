@@ -20,7 +20,9 @@ impl<const N: usize> NVM<N> {
                 //safety: we got the only possible mutable pointer to this location since
                 // we own the location
                 unsafe {
-                    super::bindings::nvm_write(self.0[from..].as_mut_ptr(), slice.as_ptr(), len as u32);
+                    let dst = self.0[from..].as_mut_ptr() as *mut _;
+                    let src = slice.as_ptr() as *mut u8 as *mut _;
+                    super::raw::nvm_write(dst, src, len as u32);
 
                     debug_assert_eq!(&self.0[from..], &slice[..]);
                 }
