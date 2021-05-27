@@ -44,6 +44,7 @@ dependencies = [
  "cfg-if",
  "cty",
  "no-std-compat",
+ "once_cell",
 ]
 
 [[package]]
