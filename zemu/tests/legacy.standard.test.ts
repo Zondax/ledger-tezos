@@ -14,19 +14,12 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, {DEFAULT_START_OPTIONS, DeviceModel} from "@zondax/zemu";
+import Zemu, {DeviceModel} from "@zondax/zemu";
 import TezosApp from "@zondax/ledger-tezos";
-import { APP_SEED } from './common';
+import { defaultOptions } from './common';
 
 const Resolve = require("path").resolve;
 const APP_PATH_LEGACY_S = Resolve("../legacy/output/app.elf");
-
-const defaultOptions = {
-    ...DEFAULT_START_OPTIONS,
-    logging: true,
-    custom: `-s "${APP_SEED}"`,
-    X11: true,
-};
 
 const models: DeviceModel[] = [
     {name: 'nanos', prefix: "LWS", path: APP_PATH_LEGACY_S},

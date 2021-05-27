@@ -181,7 +181,7 @@ mod tests {
     fn apdu_reset_hwm() {
         let mut flags = 0;
         let mut tx = 0;
-        let rx = 4 + 1 + 4;
+        let rx = 5 + 4;
         let mut buffer = [0; 260];
 
         let reset_level = 420u32;
@@ -194,8 +194,8 @@ mod tests {
         buffer[5..rx].copy_from_slice(&reset_level[..]);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
 
-        assert_eq!(tx as usize, 2);
         assert_error_code!(tx, buffer, ApduError::Success);
+        assert_eq!(tx as usize, 2);
 
         let hwm = LegacyHWM::all_hwm().expect("failed retrieving all hwm");
         assert_eq!(&reset_level[..], &hwm[..4]); //main
@@ -207,7 +207,7 @@ mod tests {
     fn apdu_get_hwm() {
         let mut flags = 0;
         let mut tx = 0;
-        let rx = 4;
+        let rx = 5;
         let mut buffer = [0; 260];
 
         let len = MAIN_HWM_LEN;
@@ -219,11 +219,11 @@ mod tests {
 
         let hwm = LegacyHWM::hwm().expect("failed retrieving hwm");
 
-        buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_MAIN_HWM, 0, 0]);
+        buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_MAIN_HWM, 0, 0, 0]);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
 
-        assert_eq!(tx as usize, len + 2);
         assert_error_code!(tx, buffer, ApduError::Success);
+        assert_eq!(tx as usize, len + 2);
         assert_eq!(&buffer[..len], &hwm[..])
     }
 
@@ -232,7 +232,7 @@ mod tests {
     fn apdu_get_hwm_no_write() {
         let mut flags = 0;
         let mut tx = 0;
-        let rx = 4;
+        let rx = 5;
         let mut buffer = [0; 260];
 
         //reset state (problematic with other tests)
@@ -241,11 +241,11 @@ mod tests {
         let err = LegacyHWM::hwm().expect_err("succeed retrieving hwm");
         assert_eq!(err, ApduError::ExecutionError);
 
-        buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_MAIN_HWM, 0, 0]);
+        buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_MAIN_HWM, 0, 0, 0]);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
 
-        assert_eq!(tx as usize, 2);
         assert_error_code!(tx, buffer, ApduError::ExecutionError);
+        assert_eq!(tx as usize, 2);
     }
 
     #[test]
@@ -253,7 +253,7 @@ mod tests {
     fn apdu_get_all_hwm() {
         let mut flags = 0;
         let mut tx = 0;
-        let rx = 4;
+        let rx = 5;
         let mut buffer = [0; 260];
 
         let len = ALL_HWM_LEN;
@@ -266,11 +266,11 @@ mod tests {
         let hwm = LegacyHWM::all_hwm().expect("failed retrieving all hwm");
         let main = LegacyHWM::hwm().expect("failed retrieving main hwm");
 
-        buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_ALL_HWM, 0, 0]);
+        buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_ALL_HWM, 0, 0, 0]);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
 
-        assert_eq!(tx as usize, len + 2);
         assert_error_code!(tx, buffer, ApduError::Success);
+        assert_eq!(tx as usize, len + 2);
         assert_eq!(&buffer[..4], &main[..]); //main
         assert_eq!(&buffer[4..8], &main[..]); //main == test in this case because we reset
 

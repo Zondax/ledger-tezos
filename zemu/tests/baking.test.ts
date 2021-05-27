@@ -14,20 +14,13 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, {DEFAULT_START_OPTIONS, DeviceModel} from "@zondax/zemu";
+import Zemu, {DeviceModel} from "@zondax/zemu";
 import TezosApp from "@zondax/ledger-tezos";
-import { APP_SEED } from './common'
+import { defaultOptions } from './common'
 
 const Resolve = require("path").resolve;
 const APP_PATH_S = Resolve("../rust/app/output/app_s_baking.elf");
 const APP_PATH_X = Resolve("../rust/app/output/app_x_baking.elf");
-
-const defaultOptions = {
-    ...DEFAULT_START_OPTIONS,
-    logging: true,
-    custom: `-s "${APP_SEED}"`,
-    X11: true,
-};
 
 const models: DeviceModel[] = [
     {name: 'nanos', prefix: 'BS', path: APP_PATH_S},
@@ -76,7 +69,9 @@ describe('Standard baking', function () {
             await sim.close();
         }
     });
+})
 
+describe('Standard baking - watermark', function () {
     test.each(models)('reset watermark and verify', async function (m) {
         const sim = new Zemu(m.path);
         try {
