@@ -45,14 +45,14 @@ impl BufferState {
 /// This struct is used to manage 2 buffers, with one "working" buffer
 /// and a "fallback" buffer when the first one is too small for the attempted operation
 pub struct SwappingBuffer<'r, 'f, const RAM: usize, const FLASH: usize> {
-    ram: &'r mut PIC<[u8; RAM]>,
+    ram: &'r mut [u8; RAM],
     flash: &'f mut PIC<NVM<FLASH>>,
     state: BufferState,
 }
 
 impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, FLASH> {
     /// Create a new instance of the buffer
-    pub fn new(ram: &'r mut PIC<[u8; RAM]>, flash: &'f mut PIC<NVM<FLASH>>) -> Self {
+    pub fn new(ram: &'r mut [u8; RAM], flash: &'f mut PIC<NVM<FLASH>>) -> Self {
         Self {
             ram,
             flash,
@@ -93,7 +93,7 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
             //if we writing to ram but there's not enough space for this coming write
             BufferState::WritingToRam(cnt) if *cnt + len > RAM => {
                 //copy ram to flash, and move state over to flash
-                self.flash.write(0, &**self.ram)?;
+                self.flash.write(0, &*self.ram)?;
                 self.state.transition_forward().unwrap();
 
                 //then write (counter already incremented)
@@ -146,7 +146,6 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
 #[macro_export]
 macro_rules! new_swapping_buffer {
     ($ram:expr, $flash:expr) => {{
-        #[$crate::pic]
         static mut __RAM: [u8; $ram] = [0; $ram];
 
         #[$crate::nvm]

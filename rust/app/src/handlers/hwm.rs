@@ -11,8 +11,6 @@ use crate::{
     sys::{new_wear_leveller, wear_leveller::Wear},
 };
 
-use once_cell::unsync::Lazy;
-
 const N_PAGES: usize = 8;
 
 type WearLeveller = Wear<'static, N_PAGES>;
@@ -24,13 +22,11 @@ const ALL_HWM_LEN: usize = 12;
 // types.h:61,0
 const MAINNET_CHAIN_ID: u32 = 0x7A06A770;
 
-#[bolos_sys::pic]
-static mut MAIN: Lazy<WearLeveller> =
-    Lazy::new(|| new_wear_leveller!(N_PAGES).expect("NVM might be corrupted"));
+#[bolos_sys::lazy_static]
+static mut MAIN: WearLeveller = new_wear_leveller!(N_PAGES).expect("NVM might be corrupted");
 
-#[bolos_sys::pic]
-static mut TEST: Lazy<WearLeveller> =
-    Lazy::new(|| new_wear_leveller!(N_PAGES).expect("NVM might be corrupted"));
+#[bolos_sys::lazy_static]
+static mut TEST: WearLeveller = new_wear_leveller!(N_PAGES).expect("NVM might be corrupted");
 
 pub struct LegacyHWM {}
 

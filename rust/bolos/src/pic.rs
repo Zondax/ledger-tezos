@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 /// This struct is to be used when dealing with code memory spaces
 /// as the memory is mapped differently once the app is installed.
 ///
-/// This struct should then be used when accessing `static` memory or
+/// This struct should then be used when accessing flash memory (via nvm or immutable statics) or
 /// function pointers (const in rust is optimized at compile-time)
 ///
 /// # Example
