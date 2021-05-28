@@ -32,6 +32,7 @@ name = "bolos-derive"
 version = "0.1.0"
 dependencies = [
  "bolos-sys",
+ "proc-macro2",
  "quote",
  "syn",
 ]
@@ -44,6 +45,7 @@ dependencies = [
  "cfg-if",
  "cty",
  "no-std-compat",
+ "once_cell",
 ]
 
 [[package]]

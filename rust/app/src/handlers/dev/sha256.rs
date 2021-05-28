@@ -1,6 +1,5 @@
 use std::{convert::TryFrom, prelude::v1::*};
 
-use once_cell::unsync::Lazy;
 use sha2::digest::Digest;
 
 use crate::{
@@ -14,7 +13,8 @@ const FLASH: usize = 0xFFFF;
 
 type Buffer = SwappingBuffer<'static, 'static, RAM, FLASH>;
 
-static mut BUFFER: PIC<Lazy<Buffer>> = PIC::new(Lazy::new(|| new_swapping_buffer!(RAM, FLASH)));
+#[bolos_sys::lazy_static]
+static mut BUFFER: Buffer = new_swapping_buffer!(RAM, FLASH);
 
 pub struct Sha256 {}
 

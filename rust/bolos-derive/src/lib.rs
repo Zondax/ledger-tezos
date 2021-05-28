@@ -119,3 +119,12 @@ pub fn pic(_: TokenStream, input: TokenStream) -> TokenStream {
 
     output.into()
 }
+
+// #[bolos::static]
+// static mut LAZY_STATIC_OBJECT: Object = Object::new()
+mod lazy_static;
+
+#[proc_macro_attribute]
+pub fn lazy_static(metadata: TokenStream, input: TokenStream) -> TokenStream {
+    lazy_static::lazy_static(metadata, input)
+}

@@ -49,6 +49,19 @@ impl<T> PIC<T> {
             }
         }
     }
+
+    pub fn into_inner(self) -> T {
+        cfg_if::cfg_if! {
+            if #[cfg(bolos_sdk)] {
+                //no difference afaik from &mut and & in this case, since we consume self
+                let ptr = unsafe { super::raw::pic(&self.data as *const T as _) as *const T };
+
+                unsafe { ptr.read() }
+            } else {
+                self.data
+            }
+        }
+    }
 }
 
 impl<T> Deref for PIC<T> {

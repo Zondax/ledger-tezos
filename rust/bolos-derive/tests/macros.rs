@@ -21,3 +21,18 @@ fn check_pic() {
 
     assert_eq!(42, **pic);
 }
+
+#[lazy_static]
+static mut SOMETHING: u32 = 33;
+
+#[test]
+fn check_lazy() {
+    let something: &mut __IMPL_LAZY_SOMETHING::__LAZY_SOMETHING = unsafe { &mut SOMETHING };
+    let something = &mut **something;
+
+    assert_eq!(33, *something);
+
+    *something += 1;
+
+    assert_eq!(34, *something);
+}
