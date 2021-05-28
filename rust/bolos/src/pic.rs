@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 /// This struct is to be used when dealing with code memory spaces
 /// as the memory is mapped differently once the app is installed.
 ///
-/// This struct should then be used when accessing `static` memory or
+/// This struct should then be used when accessing flash memory (via nvm or immutable statics) or
 /// function pointers (const in rust is optimized at compile-time)
 ///
 /// # Example
@@ -12,11 +12,14 @@ use std::ops::{Deref, DerefMut};
 /// # use bolos_sys::PIC;
 /// //BUFFER is a `static` so we need to wrap it with PIC so it would
 /// //be accessible when running under BOLOS
-/// static BUFFER: PIC<[u8; 1024]> = PIC::new([0; 1024]);
+/// #[bolos_sys::pic]
+/// static BUFFER: [u8; 1024] = [0; 1024];
 ///
+/// let _: &PIC<[u8; 1024]> = &BUFFER;
 /// assert_eq!(&[0; 1024], &*BUFFER);
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
 pub struct PIC<T> {
     data: T,
 }

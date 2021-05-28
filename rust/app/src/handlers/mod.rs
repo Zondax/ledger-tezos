@@ -5,3 +5,6 @@ pub mod version;
 
 #[cfg(feature = "dev")]
 pub mod dev;
+
+#[cfg(feature = "baking")]
+pub mod hwm;

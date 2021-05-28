@@ -9,6 +9,9 @@ export const INS = {
   GET_ADDR_SECP256K1: 0x01,
   SIGN_SECP256K1: 0x02,
   GET_GIT: 0x09,
+  GET_HWM: 0x08,
+  GET_ALL_HWM: 0x0B,
+  RESET_HWM: 0x06,
 };
 
 export const PAYLOAD_TYPE = {

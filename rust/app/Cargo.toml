@@ -10,9 +10,9 @@ name = "rslib"
 crate-type = ["staticlib"]
 
 [features]
-baking = []
+baking = ["bolos-sys/wear"]
 wallet = []
-dev = ["sha2", "once_cell", "bolos-sys/exception-throw"]
+dev = ["sha2", "bolos-sys/exception-throw"]
 default = []
 
 [dependencies]
@@ -27,7 +27,6 @@ no-std-compat = { version = "0.4" }
 
 #dev
 sha2 = { version = "0.9", default-features = false, optional = true }
-once_cell = { version = "1", default-features = false, optional = true }
 
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"
@@ -35,6 +34,7 @@ panic-halt = "0.2.0"
 [dev-dependencies]
 no-std-compat = { version = "0.4", features = ["std"] }
 serial_test = "0.5"
+hex = "0.4.3"
 
 [profile.release]
 lto = false

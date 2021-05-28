@@ -14,20 +14,13 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, {DEFAULT_START_OPTIONS, DeviceModel} from "@zondax/zemu";
+import Zemu, {DeviceModel} from "@zondax/zemu";
 import TezosApp from "@zondax/ledger-tezos";
-import { APP_SEED } from './common'
+import { defaultOptions } from './common'
 
 const Resolve = require("path").resolve;
 const APP_PATH_S = Resolve("../rust/app/output/app_s_baking.elf");
 const APP_PATH_X = Resolve("../rust/app/output/app_x_baking.elf");
-
-const defaultOptions = {
-    ...DEFAULT_START_OPTIONS,
-    logging: true,
-    custom: `-s "${APP_SEED}"`,
-    X11: true,
-};
 
 const models: DeviceModel[] = [
     {name: 'nanos', prefix: 'BS', path: APP_PATH_S},
@@ -72,6 +65,53 @@ describe('Standard baking', function () {
             expect(resp).toHaveProperty("major");
             expect(resp).toHaveProperty("minor");
             expect(resp).toHaveProperty("patch");
+        } finally {
+            await sim.close();
+        }
+    });
+})
+
+describe('Standard baking - watermark', function () {
+    test.each(models)('reset watermark and verify', async function (m) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name,});
+            const app = new TezosApp(sim.getTransport());
+            const resp = await app.resetHighWatermark(42);
+            console.log(resp);
+
+            expect(resp.returnCode).toEqual(0x9000);
+            expect(resp.errorMessage).toEqual("No errors");
+
+            const verify = await app.getHighWatermark();
+            console.log(verify);
+
+            expect(verify.main).toEqual(42);
+        } finally {
+            await sim.close();
+        }
+    });
+
+    test.each(models)('get main high watermark', async function (m) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name,});
+            const app = new TezosApp(sim.getTransport());
+
+            //reset watermark to 0 so we can read from the application
+            await app.resetHighWatermark(0);
+
+            const resp = await app.getHighWatermark();
+
+            console.log(resp);
+
+            expect(resp.returnCode).toEqual(0x9000);
+            expect(resp.errorMessage).toEqual("No errors");
+            expect(resp).toHaveProperty("main");
+            expect(resp).toHaveProperty("test");
+            expect(resp.test).toBeNull();
+            expect(resp).toHaveProperty("chain_id");
+            expect(resp.chain_id).toBeNull();
         } finally {
             await sim.close();
         }

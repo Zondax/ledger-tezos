@@ -14,16 +14,9 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { DEFAULT_START_OPTIONS } from '@zondax/zemu'
-import { APP_SEED, models } from './common'
+import Zemu from '@zondax/zemu'
+import { defaultOptions, models } from './common'
 import TezosApp from '@zondax/ledger-tezos'
-
-const defaultOptions = {
-  ...DEFAULT_START_OPTIONS,
-  logging: true,
-  custom: `-s "${APP_SEED}"`,
-  X11: true,
-}
 
 jest.setTimeout(60000)
 

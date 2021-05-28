@@ -16,7 +16,7 @@
  ******************************************************************************* */
 import Transport from "@ledgerhq/hw-transport";
 import { serializePath } from "./helper";
-import { ResponseAddress, ResponseAppInfo, ResponseSign, ResponseVersion, ResponseGit } from "./types";
+import { ResponseAddress, ResponseAppInfo, ResponseSign, ResponseVersion, ResponseGit, ResponseHWM, ResponseBase } from "./types";
 import {
   CHUNK_SIZE,
   CLA,
@@ -102,6 +102,38 @@ export default class TezosApp {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
         commit_hash: response.slice(0, -2).toString('ascii'),
+      }
+    }, processErrorResponse)
+  }
+
+  async resetHighWatermark(level: number): Promise<ResponseBase> {
+    let data = Buffer.allocUnsafe(4);
+    data.writeInt32BE(level);
+
+    return this.transport.send(CLA, INS.RESET_HWM, 0, 0, data).then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+      }
+    }, processErrorResponse)
+  }
+
+  async getHighWatermark(): Promise<ResponseHWM> {
+    return this.transport.send(CLA, INS.GET_HWM, 0, 0).then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      const main = response.slice(0, -2).readInt32BE();
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        main,
+        test: null,
+        chain_id: null
       }
     }, processErrorResponse)
   }

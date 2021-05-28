@@ -35,3 +35,9 @@ export interface ResponseSign extends ResponseBase {
 export interface ResponseGit extends ResponseBase {
   commit_hash: string;
 }
+
+export interface ResponseHWM extends ResponseBase {
+  main: number;
+  test?: number;
+  chain_id?: number;
+}

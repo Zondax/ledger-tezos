@@ -38,6 +38,9 @@ cfg_if! {
         pub const INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE: u8 = 0xD;
         pub const INS_LEGACY_HMAC: u8 = 0xE;
 
+        //baking-only legacy imports
+        use crate::handlers::hwm::LegacyHWM;
+
         //baking-only new instructions
     } else if #[cfg(feature = "wallet")] {
         //wallet-only legacy instructions
@@ -116,12 +119,13 @@ pub fn apdu_dispatch(
         if #[cfg(feature = "baking")] {
             //baking-only instructions
             match ins {
+                INS_LEGACY_RESET => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
+                INS_LEGACY_QUERY_MAIN_HWM => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
+                INS_LEGACY_QUERY_ALL_HWM => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
+
                 INS_LEGACY_AUTHORIZE_BAKING => return Err(CommandNotAllowed),
-                INS_LEGACY_RESET => return Err(CommandNotAllowed),
                 INS_LEGACY_QUERY_AUTH_KEY => return Err(CommandNotAllowed),
-                INS_LEGACY_QUERY_MAIN_HWM => return Err(CommandNotAllowed),
                 INS_LEGACY_SETUP => return Err(CommandNotAllowed),
-                INS_LEGACY_QUERY_ALL_HWM => return Err(CommandNotAllowed),
                 INS_LEGACY_DEAUTHORIZE => return Err(CommandNotAllowed),
                 INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => return Err(CommandNotAllowed),
                 INS_LEGACY_HMAC => return Err(CommandNotAllowed),
