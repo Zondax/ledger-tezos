@@ -36,13 +36,6 @@ pub use swapping_buffer::SwappingBuffer;
 mod pic;
 pub use pic::PIC;
 
-cfg_if! {
-    if #[cfg(feature = "lazy")] {
-        mod lazy;
-        pub use lazy::Lazy;
-    }
-}
-
 mod nvm;
 pub use nvm::NVM;
 

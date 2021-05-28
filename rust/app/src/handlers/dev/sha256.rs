@@ -5,7 +5,7 @@ use sha2::digest::Digest;
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_HASH},
-    sys::{Lazy, new_swapping_buffer, swapping_buffer::SwappingBuffer, PIC},
+    sys::{new_swapping_buffer, swapping_buffer::SwappingBuffer, PIC},
 };
 
 const RAM: usize = 0xFF;
@@ -13,7 +13,8 @@ const FLASH: usize = 0xFFFF;
 
 type Buffer = SwappingBuffer<'static, 'static, RAM, FLASH>;
 
-static mut BUFFER: PIC<Lazy<Buffer>> = Lazy::pic(|| new_swapping_buffer!(RAM, FLASH));
+#[bolos_sys::lazy_static]
+static mut BUFFER: Buffer = new_swapping_buffer!(RAM, FLASH);
 
 pub struct Sha256 {}
 
