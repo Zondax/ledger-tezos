@@ -101,7 +101,7 @@ RUST_FEATURES=--features="wallet"
 BAKING=false
 endif
 
-ifeq ($(APP_TESTING), 1)
+ifeq ($(APP_TESTING),1)
 RUST_FEATURES:=$(RUST_FEATURES),"dev"
 endif
 

@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "test": "jest --detectOpenHandles --testPathIgnorePatterns='dev.*'",
-    "test_dev": "jest --detectOpenHandles"
+    "test_dev": "jest --detectOpenHandles",
+    "debug": "node debug/debug.mjs debug"
   },
   "dependencies": {
     "@zondax/ledger-tezos": "link:../js",
