@@ -132,6 +132,8 @@ export default class TezosApp {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
         main,
+        test: null,
+        chain_id: null
       }
     }, processErrorResponse)
   }
