@@ -42,14 +42,16 @@ impl ApduHandler for Except {
             Ok(_) => {
                 let n: u64 = 0x100000000;
                 let n = n.to_be_bytes();
-                buffer[..8].copy_from_slice(&n[..]);
-                *tx = 8;
+                let len = n.len();
+                buffer[..len].copy_from_slice(&n[..]);
+                *tx = len as u32;
             }
             Err(ex) => {
                 let ex: u32 = ex.into();
-                let n: [u8; 4] = ex.to_be_bytes();
-                buffer[..4].copy_from_slice(&n[..]);
-                *tx = 4;
+                let n = (ex as u64).to_be_bytes();
+                let len = n.len();
+                buffer[..len].copy_from_slice(&n[..]);
+                *tx = len as u32;
             }
         }
 
