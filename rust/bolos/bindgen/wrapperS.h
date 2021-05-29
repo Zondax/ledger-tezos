@@ -1,6 +1,8 @@
 #ifndef WRAPPERS_H_
 #define WRAPPERS_H_
 
+#include "defs.h"
+
 #include "bolos_version.h"
 
 // Taken from Makefile
