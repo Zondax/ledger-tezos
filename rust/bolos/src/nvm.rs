@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 use std::ops::Deref;
 
-use crate::{exceptions::catch_exception, SyscallError};
+use crate::{errors::catch, Error as SysError};
 
 /// This struct is to be used when wanting to store something in non-volatile
 /// memory (NVM).
@@ -25,11 +25,11 @@ pub struct NVM<const N: usize>([u8; N]);
 #[derive(Debug, Clone, Copy)]
 pub enum NVMError {
     Overflow { max: usize, got: usize },
-    Internal(SyscallError),
+    Internal(SysError),
 }
 
-impl From<SyscallError> for NVMError {
-    fn from(err: SyscallError) -> Self {
+impl From<SysError> for NVMError {
+    fn from(err: SysError) -> Self {
         Self::Internal(err)
     }
 }
@@ -66,7 +66,7 @@ impl<const N: usize> NVM<N> {
                     debug_assert_eq!(&self.0[from..], &slice[..]);
                 };
 
-                catch_exception::<NVMError, _, _>(write)?;
+                catch(write)?;
             } else {
                 self.0[from..from+len].copy_from_slice(slice)
             }
