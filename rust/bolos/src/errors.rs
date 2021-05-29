@@ -1,4 +1,5 @@
 mod exceptions {
+    #[cfg(bolos_sdk)]
     use crate::raw::{
         jmp_buf, os_longjmp, setjmp, try_context_get, try_context_set, try_context_t,
     };
@@ -8,6 +9,8 @@ mod exceptions {
             include!("errors/exceptionsX.rs");
         } else if #[cfg(nanos)] {
             include!("errors/exceptionsS.rs");
+        } else {
+            include!("errors/exceptionsSTUB.rs");
         }
     }
 
@@ -70,7 +73,7 @@ mod exceptions {
     }
 
     #[cfg(not(bolos_sdk))]
-    pub fn catch<T, F>(syscall: F) -> Result<T, u32>
+    pub fn catch<T, F>(syscall: F) -> Result<T, Error>
     where
         F: FnOnce() -> T,
     {
