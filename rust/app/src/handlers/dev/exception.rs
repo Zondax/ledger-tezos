@@ -1,4 +1,4 @@
-use crate::sys::exceptions::{catch_exception, throw, SyscallError};
+use crate::sys::errors::{catch, throw_raw, Error as SysError};
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_EXCEPT},
@@ -14,28 +14,24 @@ impl ApduHandler for Except {
         }
         *tx = 0;
 
-        let catch = buffer[2] >= 1;
+        let do_catch = buffer[2] >= 1;
         let exception = buffer[3];
 
         #[allow(unreachable_code)]
         let call = move || {
-            let ex = match SyscallError::try_from(exception as u16) {
+            let ex = match SysError::try_from(exception as u16) {
                 Ok(ex) => ex,
                 Err(_) => return false,
             };
 
-            throw(ex);
+            throw_raw(ex.into());
             true
         };
 
         //if we have catch == true, then we should always
         // be returning the passed code
         // otherwise... don't know yet!
-        let res = if catch {
-            catch_exception::<u16, _, _>(call)
-        } else {
-            Ok(call())
-        };
+        let res = if do_catch { catch(call) } else { Ok(call()) };
 
         match res {
             //if exception was unspecified, then the call returns false,
@@ -44,15 +40,18 @@ impl ApduHandler for Except {
                 return Err(Error::InvalidP1P2);
             }
             Ok(_) => {
-                let n: u32 = 0x100;
+                let n: u64 = 0x100000000;
                 let n = n.to_be_bytes();
-                buffer[..4].copy_from_slice(&n[..]);
-                *tx = 4;
+                let len = n.len();
+                buffer[..len].copy_from_slice(&n[..]);
+                *tx = len as u32;
             }
             Err(ex) => {
-                let n: [u8; 2] = ex.to_be_bytes();
-                buffer[..2].copy_from_slice(&n[..]);
-                *tx = 2;
+                let ex: u32 = ex.into();
+                let n = (ex as u64).to_be_bytes();
+                let len = n.len();
+                buffer[..len].copy_from_slice(&n[..]);
+                *tx = len as u32;
             }
         }
 
@@ -66,19 +65,18 @@ mod tests {
         assert_error_code,
         constants::ApduError as Error,
         dispatcher::{handle_apdu, CLA, INS_DEV_EXCEPT},
-        sys::exceptions::SyscallError,
     };
     use std::convert::TryInto;
 
     #[test]
-    #[should_panic(expected = "exception = InvalidState")]
+    #[should_panic(expected = "exception = 1")]
     fn throw() {
         let mut flags = 0;
         let mut tx = 0;
         let mut buffer = [0; 260];
         let rx = 5;
 
-        let ex: u16 = SyscallError::InvalidState.into();
+        let ex: u16 = 1;
 
         buffer[..rx].copy_from_slice(&[CLA, INS_DEV_EXCEPT, 0, ex as u8, 0]);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
@@ -86,18 +84,18 @@ mod tests {
 
         assert!(tx > 2);
         assert_error_code!(tx, buffer, Error::Success);
-        assert_eq!(&buffer[..2], &42u32.to_be_bytes()[..])
+        assert_eq!(&buffer[..2], &1u32.to_be_bytes()[..])
     }
 
     #[test]
-    #[should_panic(expected = "exception = InvalidState")] //unfortunately we don't catch during tests...
+    #[should_panic(expected = "exception = 1")] //unfortunately we don't catch during tests...
     fn catch() {
         let mut flags = 0;
         let mut tx = 0;
         let mut buffer = [0; 260];
         let rx = 5;
 
-        let ex: u16 = SyscallError::InvalidState.into();
+        let ex: u16 = 1;
 
         buffer[..rx].copy_from_slice(&[CLA, INS_DEV_EXCEPT, 1, ex as u8, 0]);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
@@ -106,6 +104,6 @@ mod tests {
         assert!(tx > 2);
         assert_error_code!(tx, buffer, Error::Success);
         //if we don't throw properly we should get this...
-        assert_eq!(&buffer[..4], &0x100u32.to_be_bytes()[..])
+        assert_eq!(&buffer[..4], &0x100000000u64.to_be_bytes()[..])
     }
 }

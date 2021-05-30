@@ -198,6 +198,96 @@ pub const CX_ECSCHNORR_BSI03111: u32 = 20480;
 pub const CX_ECSCHNORR_LIBSECP: u32 = 24576;
 pub const CX_ECSCHNORR_Z: u32 = 28672;
 pub const CX_NO_REINIT: u32 = 32768;
+pub const APPLICATION_FLAG_MAIN: u32 = 1;
+pub const APPLICATION_FLAG_BOLOS_UPGRADE: u32 = 2;
+pub const APPLICATION_FLAG_SIGNED: u32 = 4;
+pub const APPLICATION_FLAG_BOLOS_UX: u32 = 8;
+pub const APPLICATION_FLAG_DERIVE_MASTER: u32 = 16;
+pub const APPLICATION_FLAG_SHARED_NVRAM: u32 = 32;
+pub const APPLICATION_FLAG_GLOBAL_PIN: u32 = 64;
+pub const APPLICATION_FLAG_DEBUG: u32 = 128;
+pub const APPLICATION_FLAG_AUTOBOOT: u32 = 256;
+pub const APPLICATION_FLAG_BOLOS_SETTINGS: u32 = 512;
+pub const APPLICATION_FLAG_CUSTOM_CA: u32 = 1024;
+pub const APPLICATION_FLAG_LIBRARY: u32 = 2048;
+pub const APPLICATION_FLAG_NO_RUN: u32 = 4096;
+pub const APPLICATION_FLAG_ISSUER: u32 = 16384;
+pub const APPLICATION_FLAG_ENABLED: u32 = 32768;
+pub const APPLICATION_FLAG_AEM_PIN: u32 = 8;
+pub const APPLICATION_FLAG_NEG_MASK: u32 = 4294901760;
+pub const TARGET_ID: u32 = 823132164;
+pub const ERR_IOL_RANGE: u32 = 4096;
+pub const ERR_TSK_RANGE: u32 = 8192;
+pub const ERR_CRY_RANGE: u32 = 12288;
+pub const ERR_PAR_RANGE: u32 = 16384;
+pub const ERR_SEC_RANGE: u32 = 20480;
+pub const ERR_APD_RANGE: u32 = 24576;
+pub const ERR_MUI_RANGE: u32 = 40960;
+pub const ERR_APP_RANGE_01: u32 = 45056;
+pub const ERR_APP_RANGE_02: u32 = 49152;
+pub const ERR_APP_RANGE_03: u32 = 53248;
+pub const ERR_APP_RANGE_04: u32 = 57344;
+pub const ERR_GEN_SUB_01: u32 = 256;
+pub const ERR_GEN_SUB_02: u32 = 512;
+pub const ERR_GEN_SUB_03: u32 = 768;
+pub const ERR_GEN_SUB_04: u32 = 1024;
+pub const ERR_GEN_SUB_05: u32 = 1280;
+pub const ERR_GEN_SUB_06: u32 = 1536;
+pub const ERR_GEN_SUB_07: u32 = 1792;
+pub const ERR_GEN_SUB_08: u32 = 2048;
+pub const ERR_GEN_SUB_09: u32 = 2304;
+pub const ERR_GEN_SUB_0D: u32 = 3328;
+pub const ERR_GEN_SUB_0E: u32 = 3584;
+pub const ERR_IOL_OFW: u32 = 4352;
+pub const ERR_IOL_HDR: u32 = 4608;
+pub const ERR_IOL_STA: u32 = 4864;
+pub const ERR_IOL_RST: u32 = 5120;
+pub const ERR_TSK_STC: u32 = 8448;
+pub const ERR_TSK_OWN: u32 = 8704;
+pub const ERR_TSK_OFW: u32 = 8960;
+pub const ERR_CRY_LEN: u32 = 12544;
+pub const ERR_CRY_VAL: u32 = 12800;
+pub const ERR_PAR_LEN: u32 = 16640;
+pub const ERR_PAR_VAL: u32 = 16896;
+pub const ERR_SEC_APP: u32 = 20736;
+pub const ERR_SEC_CRC: u32 = 20992;
+pub const ERR_SEC_CHK: u32 = 21248;
+pub const ERR_SEC_KEY: u32 = 21504;
+pub const ERR_SEC_PIN: u32 = 21760;
+pub const ERR_SEC_SCP: u32 = 22016;
+pub const ERR_SEC_SIG: u32 = 22272;
+pub const ERR_SEC_MEM: u32 = 22528;
+pub const ERR_SEC_STA: u32 = 22784;
+pub const ERR_APD_CLA: u32 = 28160;
+pub const ERR_APD_INS: u32 = 27904;
+pub const ERR_APD_HDR: u32 = 25856;
+pub const ERR_APD_STA: u32 = 26112;
+pub const ERR_APD_LEN: u32 = 26368;
+pub const ERR_APD_DAT: u32 = 26624;
+pub const SWO_SUCCESS: u32 = 36864;
+pub const EXCEPTION: u32 = 1;
+pub const INVALID_PARAMETER: u32 = 2;
+pub const EXCEPTION_SECURITY: u32 = 3;
+pub const INVALID_STATE: u32 = 4;
+pub const EXCEPTION_IO_RESET: u32 = 5;
+pub const NOT_ENOUGH_SPACE: u32 = 6;
+pub const EXCEPTION_OVERFLOW: u32 = 7;
+pub const INVALID_CRC: u32 = 8;
+pub const INVALID_CHECKSUM: u32 = 9;
+pub const INVALID_COUNTER: u32 = 10;
+pub const NOT_SUPPORTED: u32 = 11;
+pub const TIMEOUT: u32 = 12;
+pub const EXCEPTION_PIC: u32 = 13;
+pub const EXCEPTION_APPEXIT: u32 = 14;
+pub const EXCEPTION_IO_OVERFLOW: u32 = 15;
+pub const EXCEPTION_IO_HEADER: u32 = 16;
+pub const EXCEPTION_IO_STATE: u32 = 17;
+pub const EXCEPTION_CXPORT: u32 = 18;
+pub const EXCEPTION_SYSTEM: u32 = 19;
+pub const OS_PARSE_BERTLV_OFFSET_COMPARE_WITH_BUFFER: u32 = 2147483648;
+pub const OS_PARSE_BERTLV_OFFSET_GET_LENGTH: u32 = 1073741824;
+pub const CX_HASH_MAX_BLOCK_COUNT: u32 = 65535;
+pub const CX_SHA256_SIZE: u32 = 32;
 pub const IO_USB_MAX_ENDPOINTS: u32 = 7;
 pub const IO_HID_EP_LENGTH: u32 = 64;
 pub const USB_SEGMENT_SIZE: u32 = 64;
@@ -241,7 +331,6 @@ pub const BAGL_FONT_SYMBOLS_0_DASHBOARD: [u8; 2usize] = [133u8, 0u8];
 pub const BAGL_FONT_SYMBOLS_0_SETTINGS: [u8; 2usize] = [134u8, 0u8];
 pub const BAGL_FONT_SYMBOLS_0_EXIT: [u8; 2usize] = [135u8, 0u8];
 pub const BAGL_FONT_SYMBOLS_1_CARET: [u8; 2usize] = [160u8, 0u8];
-pub const TARGET_ID: u32 = 823132164;
 pub const __NVIC_PRIO_BITS: u32 = 2;
 pub const __Vendor_SysTickConfig: u32 = 0;
 pub const __MPU_PRESENT: u32 = 1;
@@ -628,25 +717,6 @@ pub const SEPROXYHAL_TAG_BOOTLOADER_CAPDU_STATUS: u32 = 106;
 pub const IO_CACHE: u32 = 1;
 pub const NO_TIMEOUT: u32 = 0;
 pub const ENDORSEMENT_MAX_ASN1_LENGTH: u32 = 72;
-pub const OS_PARSE_BERTLV_OFFSET_COMPARE_WITH_BUFFER: u32 = 2147483648;
-pub const OS_PARSE_BERTLV_OFFSET_GET_LENGTH: u32 = 1073741824;
-pub const APPLICATION_FLAG_MAIN: u32 = 1;
-pub const APPLICATION_FLAG_BOLOS_UPGRADE: u32 = 2;
-pub const APPLICATION_FLAG_SIGNED: u32 = 4;
-pub const APPLICATION_FLAG_BOLOS_UX: u32 = 8;
-pub const APPLICATION_FLAG_DERIVE_MASTER: u32 = 16;
-pub const APPLICATION_FLAG_SHARED_NVRAM: u32 = 32;
-pub const APPLICATION_FLAG_GLOBAL_PIN: u32 = 64;
-pub const APPLICATION_FLAG_DEBUG: u32 = 128;
-pub const APPLICATION_FLAG_AUTOBOOT: u32 = 256;
-pub const APPLICATION_FLAG_BOLOS_SETTINGS: u32 = 512;
-pub const APPLICATION_FLAG_CUSTOM_CA: u32 = 1024;
-pub const APPLICATION_FLAG_LIBRARY: u32 = 2048;
-pub const APPLICATION_FLAG_NO_RUN: u32 = 4096;
-pub const APPLICATION_FLAG_ISSUER: u32 = 16384;
-pub const APPLICATION_FLAG_ENABLED: u32 = 32768;
-pub const APPLICATION_FLAG_AEM_PIN: u32 = 8;
-pub const APPLICATION_FLAG_NEG_MASK: u32 = 4294901760;
 pub const OS_FLAG_RECOVERY: u32 = 1;
 pub const OS_FLAG_SIGNED_MCU_CODE: u32 = 2;
 pub const OS_FLAG_ONBOARDED: u32 = 4;
@@ -665,74 +735,6 @@ pub const CX_COMPAT_APILEVEL: u32 = 12;
 pub const CXPORT_ED_DES: u32 = 1;
 pub const CXPORT_ED_AES: u32 = 2;
 pub const CXPORT_ED_RSA: u32 = 4;
-pub const ERR_IOL_RANGE: u32 = 4096;
-pub const ERR_TSK_RANGE: u32 = 8192;
-pub const ERR_CRY_RANGE: u32 = 12288;
-pub const ERR_PAR_RANGE: u32 = 16384;
-pub const ERR_SEC_RANGE: u32 = 20480;
-pub const ERR_APD_RANGE: u32 = 24576;
-pub const ERR_MUI_RANGE: u32 = 40960;
-pub const ERR_APP_RANGE_01: u32 = 45056;
-pub const ERR_APP_RANGE_02: u32 = 49152;
-pub const ERR_APP_RANGE_03: u32 = 53248;
-pub const ERR_APP_RANGE_04: u32 = 57344;
-pub const ERR_GEN_SUB_01: u32 = 256;
-pub const ERR_GEN_SUB_02: u32 = 512;
-pub const ERR_GEN_SUB_03: u32 = 768;
-pub const ERR_GEN_SUB_04: u32 = 1024;
-pub const ERR_GEN_SUB_05: u32 = 1280;
-pub const ERR_GEN_SUB_06: u32 = 1536;
-pub const ERR_GEN_SUB_07: u32 = 1792;
-pub const ERR_GEN_SUB_08: u32 = 2048;
-pub const ERR_GEN_SUB_09: u32 = 2304;
-pub const ERR_GEN_SUB_0D: u32 = 3328;
-pub const ERR_GEN_SUB_0E: u32 = 3584;
-pub const ERR_IOL_OFW: u32 = 4352;
-pub const ERR_IOL_HDR: u32 = 4608;
-pub const ERR_IOL_STA: u32 = 4864;
-pub const ERR_IOL_RST: u32 = 5120;
-pub const ERR_TSK_STC: u32 = 8448;
-pub const ERR_TSK_OWN: u32 = 8704;
-pub const ERR_TSK_OFW: u32 = 8960;
-pub const ERR_CRY_LEN: u32 = 12544;
-pub const ERR_CRY_VAL: u32 = 12800;
-pub const ERR_PAR_LEN: u32 = 16640;
-pub const ERR_PAR_VAL: u32 = 16896;
-pub const ERR_SEC_APP: u32 = 20736;
-pub const ERR_SEC_CRC: u32 = 20992;
-pub const ERR_SEC_CHK: u32 = 21248;
-pub const ERR_SEC_KEY: u32 = 21504;
-pub const ERR_SEC_PIN: u32 = 21760;
-pub const ERR_SEC_SCP: u32 = 22016;
-pub const ERR_SEC_SIG: u32 = 22272;
-pub const ERR_SEC_MEM: u32 = 22528;
-pub const ERR_SEC_STA: u32 = 22784;
-pub const ERR_APD_CLA: u32 = 28160;
-pub const ERR_APD_INS: u32 = 27904;
-pub const ERR_APD_HDR: u32 = 25856;
-pub const ERR_APD_STA: u32 = 26112;
-pub const ERR_APD_LEN: u32 = 26368;
-pub const ERR_APD_DAT: u32 = 26624;
-pub const SWO_SUCCESS: u32 = 36864;
-pub const EXCEPTION: u32 = 1;
-pub const INVALID_PARAMETER: u32 = 2;
-pub const EXCEPTION_SECURITY: u32 = 3;
-pub const INVALID_STATE: u32 = 4;
-pub const EXCEPTION_IO_RESET: u32 = 5;
-pub const NOT_ENOUGH_SPACE: u32 = 6;
-pub const EXCEPTION_OVERFLOW: u32 = 7;
-pub const INVALID_CRC: u32 = 8;
-pub const INVALID_CHECKSUM: u32 = 9;
-pub const INVALID_COUNTER: u32 = 10;
-pub const NOT_SUPPORTED: u32 = 11;
-pub const TIMEOUT: u32 = 12;
-pub const EXCEPTION_PIC: u32 = 13;
-pub const EXCEPTION_APPEXIT: u32 = 14;
-pub const EXCEPTION_IO_OVERFLOW: u32 = 15;
-pub const EXCEPTION_IO_HEADER: u32 = 16;
-pub const EXCEPTION_IO_STATE: u32 = 17;
-pub const EXCEPTION_CXPORT: u32 = 18;
-pub const EXCEPTION_SYSTEM: u32 = 19;
 pub const SYSCALL_get_api_level_ID_IN: u32 = 1610613048;
 pub const SYSCALL_halt_ID_IN: u32 = 1610613308;
 pub const SYSCALL_nvm_write_ID_IN: u32 = 1610613631;
@@ -2389,6 +2391,1711 @@ extern "C" {
     pub fn cx_trng_init();
 }
 pub type uint64bits_t = u64;
+pub const generic_identifiers_ERR_GEN_ID_01: generic_identifiers = 1;
+pub const generic_identifiers_ERR_GEN_ID_02: generic_identifiers = 2;
+pub const generic_identifiers_ERR_GEN_ID_03: generic_identifiers = 3;
+pub const generic_identifiers_ERR_GEN_ID_04: generic_identifiers = 4;
+pub const generic_identifiers_ERR_GEN_ID_05: generic_identifiers = 5;
+pub const generic_identifiers_ERR_GEN_ID_06: generic_identifiers = 6;
+pub const generic_identifiers_ERR_GEN_ID_07: generic_identifiers = 7;
+pub const generic_identifiers_ERR_GEN_ID_08: generic_identifiers = 8;
+pub const generic_identifiers_ERR_GEN_ID_09: generic_identifiers = 9;
+pub const generic_identifiers_ERR_GEN_ID_0A: generic_identifiers = 10;
+pub const generic_identifiers_ERR_GEN_ID_0B: generic_identifiers = 11;
+pub const generic_identifiers_ERR_GEN_ID_0C: generic_identifiers = 12;
+pub const generic_identifiers_ERR_GEN_ID_0D: generic_identifiers = 13;
+pub const generic_identifiers_ERR_GEN_ID_0E: generic_identifiers = 14;
+pub const generic_identifiers_ERR_GEN_ID_0F: generic_identifiers = 15;
+pub const generic_identifiers_ERR_GEN_ID_10: generic_identifiers = 16;
+pub const generic_identifiers_ERR_GEN_ID_11: generic_identifiers = 17;
+pub const generic_identifiers_ERR_GEN_ID_12: generic_identifiers = 18;
+pub const generic_identifiers_ERR_GEN_ID_13: generic_identifiers = 19;
+pub const generic_identifiers_ERR_GEN_ID_14: generic_identifiers = 20;
+pub const generic_identifiers_ERR_GEN_ID_15: generic_identifiers = 21;
+pub const generic_identifiers_ERR_GEN_ID_16: generic_identifiers = 22;
+pub const generic_identifiers_ERR_GEN_ID_17: generic_identifiers = 23;
+pub const generic_identifiers_ERR_GEN_ID_18: generic_identifiers = 24;
+pub const generic_identifiers_ERR_GEN_ID_19: generic_identifiers = 25;
+pub const generic_identifiers_ERR_GEN_ID_1A: generic_identifiers = 26;
+pub const generic_identifiers_ERR_GEN_ID_1B: generic_identifiers = 27;
+pub const generic_identifiers_ERR_GEN_ID_1C: generic_identifiers = 28;
+pub const generic_identifiers_ERR_GEN_ID_1D: generic_identifiers = 29;
+pub const generic_identifiers_ERR_GEN_ID_1E: generic_identifiers = 30;
+pub const generic_identifiers_ERR_GEN_ID_1F: generic_identifiers = 31;
+pub const generic_identifiers_ERR_GEN_ID_20: generic_identifiers = 32;
+pub const generic_identifiers_ERR_GEN_ID_21: generic_identifiers = 33;
+pub const generic_identifiers_ERR_GEN_ID_22: generic_identifiers = 34;
+pub const generic_identifiers_ERR_GEN_ID_23: generic_identifiers = 35;
+pub const generic_identifiers_ERR_GEN_ID_24: generic_identifiers = 36;
+pub const generic_identifiers_ERR_GEN_ID_25: generic_identifiers = 37;
+pub const generic_identifiers_ERR_GEN_ID_26: generic_identifiers = 38;
+pub const generic_identifiers_ERR_GEN_ID_27: generic_identifiers = 39;
+pub const generic_identifiers_ERR_GEN_ID_28: generic_identifiers = 40;
+pub const generic_identifiers_ERR_GEN_ID_29: generic_identifiers = 41;
+pub const generic_identifiers_ERR_GEN_ID_2A: generic_identifiers = 42;
+pub const generic_identifiers_ERR_GEN_ID_2B: generic_identifiers = 43;
+pub type generic_identifiers = cty::c_uint;
+pub type exception_t = cty::c_ushort;
+pub type try_context_t = try_context_s;
+pub type jmp_buf = [cty::c_uint; 10usize];
+extern "C" {
+    pub fn longjmp(__jmpb: *mut cty::c_uint, __retval: cty::c_int);
+}
+extern "C" {
+    pub fn setjmp(__jmpb: *mut cty::c_uint) -> cty::c_int;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct try_context_s {
+    pub jmp_buf: jmp_buf,
+    pub previous: *mut try_context_t,
+    pub ex: exception_t,
+}
+#[test]
+fn bindgen_test_layout_try_context_s() {
+    assert_eq!(
+        ::core::mem::size_of::<try_context_s>(),
+        48usize,
+        concat!("Size of: ", stringify!(try_context_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<try_context_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(try_context_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<try_context_s>())).jmp_buf as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(try_context_s),
+            "::",
+            stringify!(jmp_buf)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<try_context_s>())).previous as *const _ as usize },
+        40usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(try_context_s),
+            "::",
+            stringify!(previous)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<try_context_s>())).ex as *const _ as usize },
+        44usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(try_context_s),
+            "::",
+            stringify!(ex)
+        )
+    );
+}
+impl Default for try_context_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+extern "C" {
+    pub fn try_context_get() -> *mut try_context_t;
+}
+extern "C" {
+    pub fn try_context_set(context: *mut try_context_t) -> *mut try_context_t;
+}
+extern "C" {
+    pub fn os_longjmp(exception: cty::c_uint);
+}
+extern "C" {
+    pub fn os_parse_bertlv(
+        mem: *mut cty::c_uchar,
+        mem_len: cty::c_uint,
+        tlv_instance_offset: *mut cty::c_uint,
+        tag: cty::c_uint,
+        offset: cty::c_uint,
+        buffer: *mut *mut cty::c_void,
+        maxlength: cty::c_uint,
+    ) -> cty::c_uint;
+}
+#[doc = " NONE Digest"]
+pub const cx_md_e_CX_NONE: cx_md_e = 0;
+#[doc = " RIPEMD160 Digest"]
+pub const cx_md_e_CX_RIPEMD160: cx_md_e = 1;
+#[doc = " SHA224 Digest"]
+pub const cx_md_e_CX_SHA224: cx_md_e = 2;
+#[doc = " SHA256 Digest"]
+pub const cx_md_e_CX_SHA256: cx_md_e = 3;
+#[doc = " SHA384 Digest"]
+pub const cx_md_e_CX_SHA384: cx_md_e = 4;
+#[doc = " SHA512 Digest"]
+pub const cx_md_e_CX_SHA512: cx_md_e = 5;
+#[doc = " Keccak (pre-SHA3) Digest"]
+pub const cx_md_e_CX_KECCAK: cx_md_e = 6;
+#[doc = " SHA3 Digest"]
+pub const cx_md_e_CX_SHA3: cx_md_e = 7;
+#[doc = " Groestl Digest"]
+pub const cx_md_e_CX_GROESTL: cx_md_e = 8;
+#[doc = " Blake Digest"]
+pub const cx_md_e_CX_BLAKE2B: cx_md_e = 9;
+#[doc = " SHAKE-128 Digest"]
+pub const cx_md_e_CX_SHAKE128: cx_md_e = 10;
+#[doc = " SHAKE-128 Digest"]
+pub const cx_md_e_CX_SHAKE256: cx_md_e = 11;
+#[doc = " SHA3-256 Digest"]
+pub const cx_md_e_CX_SHA3_256: cx_md_e = 12;
+#[doc = " SHA3-512 Digest"]
+pub const cx_md_e_CX_SHA3_512: cx_md_e = 13;
+#[doc = " Message Digest algorithm identifiers."]
+pub type cx_md_e = cty::c_uint;
+#[doc = " Convenience type. See #cx_md_e."]
+pub use self::cx_md_e as cx_md_t;
+#[doc = " Convenience type. See #cx_hash_header_s."]
+pub type cx_hash_t = cx_hash_header_s;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct cx_hash_info_t {
+    pub md_type: cx_md_t,
+    pub output_size: size_t,
+    pub block_size: size_t,
+    pub init_func: ::core::option::Option<unsafe extern "C" fn(ctx: *mut cx_hash_t) -> cx_err_t>,
+    pub update_func: ::core::option::Option<
+        unsafe extern "C" fn(ctx: *mut cx_hash_t, data: *const u8, len: size_t) -> cx_err_t,
+    >,
+    pub finish_func: ::core::option::Option<
+        unsafe extern "C" fn(ctx: *mut cx_hash_t, digest: *mut u8) -> cx_err_t,
+    >,
+    pub init_ex_func: ::core::option::Option<
+        unsafe extern "C" fn(ctx: *mut cx_hash_t, output_size: size_t) -> cx_err_t,
+    >,
+    pub output_size_func:
+        ::core::option::Option<unsafe extern "C" fn(ctx: *const cx_hash_t) -> size_t>,
+}
+#[test]
+fn bindgen_test_layout_cx_hash_info_t() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_hash_info_t>(),
+        32usize,
+        concat!("Size of: ", stringify!(cx_hash_info_t))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_hash_info_t>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_hash_info_t))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hash_info_t>())).md_type as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_info_t),
+            "::",
+            stringify!(md_type)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hash_info_t>())).output_size as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_info_t),
+            "::",
+            stringify!(output_size)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hash_info_t>())).block_size as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_info_t),
+            "::",
+            stringify!(block_size)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hash_info_t>())).init_func as *const _ as usize },
+        12usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_info_t),
+            "::",
+            stringify!(init_func)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hash_info_t>())).update_func as *const _ as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_info_t),
+            "::",
+            stringify!(update_func)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hash_info_t>())).finish_func as *const _ as usize },
+        20usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_info_t),
+            "::",
+            stringify!(finish_func)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hash_info_t>())).init_ex_func as *const _ as usize },
+        24usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_info_t),
+            "::",
+            stringify!(init_ex_func)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_hash_info_t>())).output_size_func as *const _ as usize
+        },
+        28usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_info_t),
+            "::",
+            stringify!(output_size_func)
+        )
+    );
+}
+impl Default for cx_hash_info_t {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Common Message Digest context, used as abstract type."]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct cx_hash_header_s {
+    #[doc = " Hash description."]
+    pub info: *const cx_hash_info_t,
+    #[doc = " Number of block already processed"]
+    pub counter: u32,
+}
+#[test]
+fn bindgen_test_layout_cx_hash_header_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_hash_header_s>(),
+        8usize,
+        concat!("Size of: ", stringify!(cx_hash_header_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_hash_header_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_hash_header_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hash_header_s>())).info as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_header_s),
+            "::",
+            stringify!(info)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hash_header_s>())).counter as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hash_header_s),
+            "::",
+            stringify!(counter)
+        )
+    );
+}
+impl Default for cx_hash_header_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+extern "C" {
+    pub fn cx_hash_get_size(ctx: *const cx_hash_t) -> size_t;
+}
+extern "C" {
+    #[doc = " Add more data to hash."]
+    #[doc = ""]
+    #[doc = " @param  [in/out] hash"]
+    #[doc = "   Univers Continuation Blob."]
+    #[doc = "   The hash context pointer shall point to a well-defined hash struct cx_ripemd160_t, cx_sha256_t, ...."]
+    #[doc = "   The hash context shall be inited with 'cx_xxx_init'"]
+    #[doc = "   The hash context shall be in RAM"]
+    #[doc = "   The function should be called with a nice cast."]
+    #[doc = ""]
+    #[doc = " @param  [in] mode"]
+    #[doc = "   Supported flags: CX_LAST"]
+    #[doc = "   If CX_LAST is set,"]
+    #[doc = "     - The struct is left not modified after finishing"]
+    #[doc = "     - if out is provided, hash is copied in out"]
+    #[doc = "     - context is NOT automatically re-inited."]
+    #[doc = ""]
+    #[doc = " @param  [in] in"]
+    #[doc = "   Input data to add to current hash"]
+    #[doc = ""]
+    #[doc = " @param  [in] len"]
+    #[doc = "   Length of input to data."]
+    #[doc = ""]
+    #[doc = " @param [out] out"]
+    #[doc = "   Either:"]
+    #[doc = "     - NULL (ignored) if CX_LAST is NOT set"]
+    #[doc = "     - produced hash  if CX_LAST is set"]
+    #[doc = ""]
+    #[doc = " @param [out] out_len"]
+    #[doc = "   Either:"]
+    #[doc = "     - O, if out is NULL"]
+    #[doc = "     - out buffer size, if buffer is too small to store the hash a exception is thrown"]
+    #[doc = ""]
+    pub fn cx_hash_no_throw(
+        hash: *mut cx_hash_t,
+        mode: u32,
+        in_: *const u8,
+        len: size_t,
+        out: *mut u8,
+        out_len: size_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Generic Initialization of hash context."]
+    #[doc = ""]
+    #[doc = " @param [out] hash the context to init."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @param [in] hash_id the hash identifier."]
+    #[doc = ""]
+    #[doc = " @return algorithm identifier"]
+    pub fn cx_hash_init(hash: *mut cx_hash_t, hash_id: cx_md_t) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Generic Initialization of hash context with parameter"]
+    #[doc = ""]
+    #[doc = " @param [out]"]
+    #[doc = "    hash the context to init."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @param [in] hash_id"]
+    #[doc = "    the hash identifier."]
+    #[doc = ""]
+    #[doc = " @param [in] output_size"]
+    #[doc = "    for blake, groestl, shake."]
+    #[doc = ""]
+    #[doc = " @return algorithm identifier, or 0 if the 'hash_id'"]
+    #[doc = "    identifier is not supported."]
+    pub fn cx_hash_init_ex(hash: *mut cx_hash_t, hash_id: cx_md_t, output_size: size_t)
+        -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Add more data to hash."]
+    #[doc = ""]
+    #[doc = " Equivalent to cx_hash_no_throw(hash, 0, in, in_len NULL, 0);"]
+    #[doc = ""]
+    #[doc = " @param  [in/out] hash"]
+    #[doc = "   Univers Continuation Blob."]
+    #[doc = "   The hash context pointer shall point to a well-defined hash struct cx_ripemd160_t, cx_sha256_t, ...."]
+    #[doc = "   The hash context shall be inited with 'cx_xxx_init'"]
+    #[doc = "   The hash context shall be in RAM"]
+    #[doc = "   The function should be called with a nice cast."]
+    #[doc = ""]
+    #[doc = " @param  [in] in"]
+    #[doc = "   Input data to add to current hash"]
+    #[doc = ""]
+    #[doc = " @param  [in] in_len"]
+    #[doc = "   Length of input to data."]
+    pub fn cx_hash_update(hash: *mut cx_hash_t, in_: *const u8, in_len: size_t) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Finalize hash and get result"]
+    #[doc = ""]
+    #[doc = " Equivalent to cx_hash_no_throw(hash, CX_LAST, NULL, 0, out, <LEN>);"]
+    #[doc = ""]
+    #[doc = " @param [out] out"]
+    #[doc = "     produced hash"]
+    pub fn cx_hash_final(hash: *mut cx_hash_t, digest: *mut u8) -> cx_err_t;
+}
+#[doc = " SHA-224 and SHA-256 context"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_sha256_s {
+    #[doc = " @copydoc cx_ripemd160_s::header"]
+    pub header: cx_hash_header_s,
+    #[doc = " @internal @copydoc cx_ripemd160_s::blen"]
+    pub blen: size_t,
+    #[doc = " @internal @copydoc cx_ripemd160_s::block"]
+    pub block: [u8; 64usize],
+    #[doc = " @copydoc cx_ripemd160_s::acc"]
+    pub acc: [u8; 32usize],
+}
+#[test]
+fn bindgen_test_layout_cx_sha256_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_sha256_s>(),
+        108usize,
+        concat!("Size of: ", stringify!(cx_sha256_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_sha256_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_sha256_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_sha256_s>())).header as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_sha256_s),
+            "::",
+            stringify!(header)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_sha256_s>())).blen as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_sha256_s),
+            "::",
+            stringify!(blen)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_sha256_s>())).block as *const _ as usize },
+        12usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_sha256_s),
+            "::",
+            stringify!(block)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_sha256_s>())).acc as *const _ as usize },
+        76usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_sha256_s),
+            "::",
+            stringify!(acc)
+        )
+    );
+}
+impl Default for cx_sha256_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Convenience type. See #cx_sha256_s."]
+pub type cx_sha256_t = cx_sha256_s;
+extern "C" {
+    #[doc = " Initialize a SHA-256 context."]
+    #[doc = ""]
+    #[doc = " @param [out] hash the context to init."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @return algorithm identifier"]
+    pub fn cx_sha256_init_no_throw(hash: *mut cx_sha256_t) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " One shot SHA-256 digest"]
+    #[doc = ""]
+    #[doc = " @param  [in] in"]
+    #[doc = "   Input data to compute the hash"]
+    #[doc = ""]
+    #[doc = " @param  [in] len"]
+    #[doc = "   Length of input data."]
+    #[doc = ""]
+    #[doc = " @param [out] out"]
+    #[doc = "   'out' length is implicit"]
+    #[doc = ""]
+    pub fn cx_hash_sha256(in_: *const u8, len: size_t, out: *mut u8, out_len: size_t) -> size_t;
+}
+pub const blake2b_constant_BLAKE2B_BLOCKBYTES: blake2b_constant = 128;
+pub const blake2b_constant_BLAKE2B_OUTBYTES: blake2b_constant = 64;
+pub const blake2b_constant_BLAKE2B_KEYBYTES: blake2b_constant = 64;
+pub const blake2b_constant_BLAKE2B_SALTBYTES: blake2b_constant = 16;
+pub const blake2b_constant_BLAKE2B_PERSONALBYTES: blake2b_constant = 16;
+#[doc = "  @private"]
+pub type blake2b_constant = cty::c_uint;
+#[doc = "  @private"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct blake2b_state__ {
+    pub h: [u64; 8usize],
+    pub t: [u64; 2usize],
+    pub f: [u64; 2usize],
+    pub buf: [u8; 128usize],
+    pub buflen: size_t,
+    pub outlen: size_t,
+    pub last_node: u8,
+}
+#[test]
+fn bindgen_test_layout_blake2b_state__() {
+    assert_eq!(
+        ::core::mem::size_of::<blake2b_state__>(),
+        240usize,
+        concat!("Size of: ", stringify!(blake2b_state__))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<blake2b_state__>(),
+        8usize,
+        concat!("Alignment of ", stringify!(blake2b_state__))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<blake2b_state__>())).h as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(blake2b_state__),
+            "::",
+            stringify!(h)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<blake2b_state__>())).t as *const _ as usize },
+        64usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(blake2b_state__),
+            "::",
+            stringify!(t)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<blake2b_state__>())).f as *const _ as usize },
+        80usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(blake2b_state__),
+            "::",
+            stringify!(f)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<blake2b_state__>())).buf as *const _ as usize },
+        96usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(blake2b_state__),
+            "::",
+            stringify!(buf)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<blake2b_state__>())).buflen as *const _ as usize },
+        224usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(blake2b_state__),
+            "::",
+            stringify!(buflen)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<blake2b_state__>())).outlen as *const _ as usize },
+        228usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(blake2b_state__),
+            "::",
+            stringify!(outlen)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<blake2b_state__>())).last_node as *const _ as usize },
+        232usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(blake2b_state__),
+            "::",
+            stringify!(last_node)
+        )
+    );
+}
+impl Default for blake2b_state__ {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " @private"]
+pub type blake2b_state = blake2b_state__;
+#[doc = " Blake2b context"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_blake2b_s {
+    #[doc = " @copydoc cx_ripemd160_s::header"]
+    pub header: cx_hash_header_s,
+    #[doc = " @internal output digest size"]
+    pub output_size: size_t,
+    pub ctx: blake2b_state__,
+}
+#[test]
+fn bindgen_test_layout_cx_blake2b_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_blake2b_s>(),
+        256usize,
+        concat!("Size of: ", stringify!(cx_blake2b_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_blake2b_s>(),
+        8usize,
+        concat!("Alignment of ", stringify!(cx_blake2b_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_blake2b_s>())).header as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_blake2b_s),
+            "::",
+            stringify!(header)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_blake2b_s>())).output_size as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_blake2b_s),
+            "::",
+            stringify!(output_size)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_blake2b_s>())).ctx as *const _ as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_blake2b_s),
+            "::",
+            stringify!(ctx)
+        )
+    );
+}
+impl Default for cx_blake2b_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Convenience type. See #cx_blake2b_s."]
+pub type cx_blake2b_t = cx_blake2b_s;
+extern "C" {
+    #[doc = " Init a blake2b context."]
+    #[doc = ""]
+    #[doc = " Blake2b as specified at https://blake2.net."]
+    #[doc = ""]
+    #[doc = " @param [out] hash  the context to init."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @param [in] size   output blake2b size, in BITS."]
+    #[doc = ""]
+    #[doc = ""]
+    #[doc = " @return algorithm identifier"]
+    pub fn cx_blake2b_init_no_throw(hash: *mut cx_blake2b_t, out_len: size_t) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Init a blake2b context with salt and personalization string."]
+    #[doc = ""]
+    #[doc = " Blake2b as specified at https://blake2.net."]
+    #[doc = ""]
+    #[doc = " @param [out] hash  the context to init."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @param [in] size   output blake2b size, in BITS."]
+    #[doc = ""]
+    #[doc = ""]
+    #[doc = " @return algorithm identifier"]
+    pub fn cx_blake2b_init2_no_throw(
+        hash: *mut cx_blake2b_t,
+        out_len: size_t,
+        salt: *mut u8,
+        salt_len: size_t,
+        perso: *mut u8,
+        perso_len: size_t,
+    ) -> cx_err_t;
+}
+#[doc = " Elliptic Curve public key"]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct cx_ecfp_public_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Public key length in bytes"]
+    pub W_len: size_t,
+    #[doc = " Public key value starting at offset 0"]
+    pub W: [u8; 1usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_public_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_public_key_s>(),
+        12usize,
+        concat!("Size of: ", stringify!(cx_ecfp_public_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_public_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_public_key_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_public_key_s>())).curve as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_public_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_public_key_s>())).W_len as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_public_key_s),
+            "::",
+            stringify!(W_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_public_key_s>())).W as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_public_key_s),
+            "::",
+            stringify!(W)
+        )
+    );
+}
+impl Default for cx_ecfp_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Elliptic Curve private key"]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct cx_ecfp_private_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Private key length in bytes"]
+    pub d_len: size_t,
+    #[doc = " Private key value starting at offset 0"]
+    pub d: [u8; 1usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_private_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_private_key_s>(),
+        12usize,
+        concat!("Size of: ", stringify!(cx_ecfp_private_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_private_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_private_key_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_private_key_s>())).curve as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_private_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_private_key_s>())).d_len as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_private_key_s),
+            "::",
+            stringify!(d_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_private_key_s>())).d as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_private_key_s),
+            "::",
+            stringify!(d)
+        )
+    );
+}
+impl Default for cx_ecfp_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Up to 256 bits Elliptic Curve public key"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_ecfp_256_public_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Public key length in bytes"]
+    pub W_len: size_t,
+    #[doc = " Public key value starting at offset 0"]
+    pub W: [u8; 65usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_256_public_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_256_public_key_s>(),
+        76usize,
+        concat!("Size of: ", stringify!(cx_ecfp_256_public_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_256_public_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_256_public_key_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_256_public_key_s>())).curve as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_256_public_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_256_public_key_s>())).W_len as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_256_public_key_s),
+            "::",
+            stringify!(W_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_256_public_key_s>())).W as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_256_public_key_s),
+            "::",
+            stringify!(W)
+        )
+    );
+}
+impl Default for cx_ecfp_256_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Up to 256 bits Elliptic Curve private key"]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct cx_ecfp_256_private_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Private key length in bytes"]
+    pub d_len: size_t,
+    #[doc = " Private key value starting at offset 0"]
+    pub d: [u8; 32usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_256_private_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_256_private_key_s>(),
+        40usize,
+        concat!("Size of: ", stringify!(cx_ecfp_256_private_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_256_private_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_256_private_key_s))
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_256_private_key_s>())).curve as *const _ as usize
+        },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_256_private_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_256_private_key_s>())).d_len as *const _ as usize
+        },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_256_private_key_s),
+            "::",
+            stringify!(d_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_256_private_key_s>())).d as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_256_private_key_s),
+            "::",
+            stringify!(d)
+        )
+    );
+}
+impl Default for cx_ecfp_256_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Up to 256 bits Elliptic Curve extended private key"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_ecfp_256_extended_private_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Public key length in bytes"]
+    pub d_len: size_t,
+    #[doc = " Public key value starting at offset 0"]
+    pub d: [u8; 64usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_256_extended_private_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_256_extended_private_key_s>(),
+        72usize,
+        concat!("Size of: ", stringify!(cx_ecfp_256_extended_private_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_256_extended_private_key_s>(),
+        4usize,
+        concat!(
+            "Alignment of ",
+            stringify!(cx_ecfp_256_extended_private_key_s)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_256_extended_private_key_s>())).curve as *const _
+                as usize
+        },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_256_extended_private_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_256_extended_private_key_s>())).d_len as *const _
+                as usize
+        },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_256_extended_private_key_s),
+            "::",
+            stringify!(d_len)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_256_extended_private_key_s>())).d as *const _ as usize
+        },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_256_extended_private_key_s),
+            "::",
+            stringify!(d)
+        )
+    );
+}
+impl Default for cx_ecfp_256_extended_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Convenience type. See #cx_ecfp_256_public_key_s."]
+pub type cx_ecfp_256_public_key_t = cx_ecfp_256_public_key_s;
+#[doc = " temporary def type. See #cx_ecfp_256_private_key_s."]
+pub type cx_ecfp_256_private_key_t = cx_ecfp_256_private_key_s;
+#[doc = " Convenience type. See #cx_ecfp_256_extended_private_key_s."]
+pub type cx_ecfp_256_extended_private_key_t = cx_ecfp_256_extended_private_key_s;
+pub type cx_ecfp_public_key_t = cx_ecfp_256_public_key_s;
+pub type cx_ecfp_private_key_t = cx_ecfp_256_private_key_s;
+#[doc = " Up to 384 bits Public Elliptic Curve key"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_ecfp_384_public_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Public key length in bytes"]
+    pub W_len: size_t,
+    #[doc = " Public key value starting at offset 0"]
+    pub W: [u8; 97usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_384_public_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_384_public_key_s>(),
+        108usize,
+        concat!("Size of: ", stringify!(cx_ecfp_384_public_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_384_public_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_384_public_key_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_384_public_key_s>())).curve as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_384_public_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_384_public_key_s>())).W_len as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_384_public_key_s),
+            "::",
+            stringify!(W_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_384_public_key_s>())).W as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_384_public_key_s),
+            "::",
+            stringify!(W)
+        )
+    );
+}
+impl Default for cx_ecfp_384_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Up to 384 bits Private Elliptic Curve key"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_ecfp_384_private_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Private key length in bytes"]
+    pub d_len: size_t,
+    #[doc = " Private key value starting at offset 0"]
+    pub d: [u8; 48usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_384_private_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_384_private_key_s>(),
+        56usize,
+        concat!("Size of: ", stringify!(cx_ecfp_384_private_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_384_private_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_384_private_key_s))
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_384_private_key_s>())).curve as *const _ as usize
+        },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_384_private_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_384_private_key_s>())).d_len as *const _ as usize
+        },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_384_private_key_s),
+            "::",
+            stringify!(d_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_384_private_key_s>())).d as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_384_private_key_s),
+            "::",
+            stringify!(d)
+        )
+    );
+}
+impl Default for cx_ecfp_384_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Convenience type. See #cx_ecfp_384_public_key_s."]
+pub type cx_ecfp_384_private_key_t = cx_ecfp_384_private_key_s;
+#[doc = " Convenience type. See #cx_ecfp_384_private_key_s."]
+pub type cx_ecfp_384_public_key_t = cx_ecfp_384_public_key_s;
+#[doc = " Up to 512 bits Public Elliptic Curve key"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_ecfp_512_public_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Public key length in bytes"]
+    pub W_len: size_t,
+    #[doc = " Public key value starting at offset 0"]
+    pub W: [u8; 129usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_512_public_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_512_public_key_s>(),
+        140usize,
+        concat!("Size of: ", stringify!(cx_ecfp_512_public_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_512_public_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_512_public_key_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_512_public_key_s>())).curve as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_512_public_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_512_public_key_s>())).W_len as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_512_public_key_s),
+            "::",
+            stringify!(W_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_512_public_key_s>())).W as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_512_public_key_s),
+            "::",
+            stringify!(W)
+        )
+    );
+}
+impl Default for cx_ecfp_512_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Up to 512 bits Private Elliptic Curve key"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_ecfp_512_private_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Private key length in bytes"]
+    pub d_len: size_t,
+    #[doc = " Private key value starting at offset 0"]
+    pub d: [u8; 64usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_512_private_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_512_private_key_s>(),
+        72usize,
+        concat!("Size of: ", stringify!(cx_ecfp_512_private_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_512_private_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_512_private_key_s))
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_512_private_key_s>())).curve as *const _ as usize
+        },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_512_private_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_512_private_key_s>())).d_len as *const _ as usize
+        },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_512_private_key_s),
+            "::",
+            stringify!(d_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_512_private_key_s>())).d as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_512_private_key_s),
+            "::",
+            stringify!(d)
+        )
+    );
+}
+impl Default for cx_ecfp_512_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Up to 512 bits Extended Private Elliptic Curve key"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_ecfp_512_extented_private_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Private key length in bytes"]
+    pub d_len: size_t,
+    #[doc = " Private key value starting at offset 0"]
+    pub d: [u8; 128usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_512_extented_private_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_512_extented_private_key_s>(),
+        136usize,
+        concat!("Size of: ", stringify!(cx_ecfp_512_extented_private_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_512_extented_private_key_s>(),
+        4usize,
+        concat!(
+            "Alignment of ",
+            stringify!(cx_ecfp_512_extented_private_key_s)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_512_extented_private_key_s>())).curve as *const _
+                as usize
+        },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_512_extented_private_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_512_extented_private_key_s>())).d_len as *const _
+                as usize
+        },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_512_extented_private_key_s),
+            "::",
+            stringify!(d_len)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_512_extented_private_key_s>())).d as *const _ as usize
+        },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_512_extented_private_key_s),
+            "::",
+            stringify!(d)
+        )
+    );
+}
+impl Default for cx_ecfp_512_extented_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Convenience type. See #cx_ecfp_512_public_key_s."]
+pub type cx_ecfp_512_public_key_t = cx_ecfp_512_public_key_s;
+#[doc = " Convenience type. See #cx_ecfp_512_private_key_s."]
+pub type cx_ecfp_512_private_key_t = cx_ecfp_512_private_key_s;
+#[doc = " Convenience type. See #cx_ecfp_512_extented_private_key_s."]
+pub type cx_ecfp_512_extented_private_key_t = cx_ecfp_512_extented_private_key_s;
+#[doc = " Up to 640 bits Public Elliptic Curve key"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_ecfp_640_public_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Public key length in bytes"]
+    pub W_len: size_t,
+    #[doc = " Public key value starting at offset 0"]
+    pub W: [u8; 161usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_640_public_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_640_public_key_s>(),
+        172usize,
+        concat!("Size of: ", stringify!(cx_ecfp_640_public_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_640_public_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_640_public_key_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_640_public_key_s>())).curve as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_640_public_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_640_public_key_s>())).W_len as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_640_public_key_s),
+            "::",
+            stringify!(W_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_640_public_key_s>())).W as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_640_public_key_s),
+            "::",
+            stringify!(W)
+        )
+    );
+}
+impl Default for cx_ecfp_640_public_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Up to 640 bits Private Elliptic Curve key"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_ecfp_640_private_key_s {
+    #[doc = " curve ID #cx_curve_e"]
+    pub curve: cx_curve_t,
+    #[doc = " Private key length in bytes"]
+    pub d_len: size_t,
+    #[doc = " Private key value starting at offset 0"]
+    pub d: [u8; 80usize],
+}
+#[test]
+fn bindgen_test_layout_cx_ecfp_640_private_key_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_ecfp_640_private_key_s>(),
+        88usize,
+        concat!("Size of: ", stringify!(cx_ecfp_640_private_key_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_ecfp_640_private_key_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_ecfp_640_private_key_s))
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_640_private_key_s>())).curve as *const _ as usize
+        },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_640_private_key_s),
+            "::",
+            stringify!(curve)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            &(*(::core::ptr::null::<cx_ecfp_640_private_key_s>())).d_len as *const _ as usize
+        },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_640_private_key_s),
+            "::",
+            stringify!(d_len)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_ecfp_640_private_key_s>())).d as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_ecfp_640_private_key_s),
+            "::",
+            stringify!(d)
+        )
+    );
+}
+impl Default for cx_ecfp_640_private_key_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Convenience type. See #cx_ecfp_640_public_key_s."]
+pub type cx_ecfp_640_public_key_t = cx_ecfp_640_public_key_s;
+#[doc = " Convenience type. See #cx_ecfp_640_private_key_s."]
+pub type cx_ecfp_640_private_key_t = cx_ecfp_640_private_key_s;
+extern "C" {
+    #[doc = " Add two affine points"]
+    #[doc = ""]
+    #[doc = " This routine only support Weierstrass and twisted Edwards curves."]
+    #[doc = ""]
+    #[doc = " @param [in] domain"]
+    #[doc = "   The curve domain parameters to work with."]
+    #[doc = ""]
+    #[doc = " @param [out] R"]
+    #[doc = "   P+Q encoded as: 04 x y, where x and y are"]
+    #[doc = "   encoded as  big endian raw value and have bits length equals to"]
+    #[doc = "   the curve size."]
+    #[doc = ""]
+    #[doc = " @param [in] P"]
+    #[doc = "   First point to add *"]
+    #[doc = "   The value shall be a point encoded as: 04 x y, where x and y are"]
+    #[doc = "   encoded as  big endian raw value and have bits length equals to"]
+    #[doc = "   the curve size."]
+    #[doc = ""]
+    #[doc = " @param [in] Q"]
+    #[doc = "   Second point to add"]
+    #[doc = ""]
+    #[doc = " @param [in]  public_point"]
+    #[doc = "   The point to test  encoded as: 04 x y"]
+    #[doc = ""]
+    #[doc = " @return"]
+    #[doc = "   R encoding length, if add success"]
+    #[doc = "   0 if result is infinity"]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_ecfp_add_point_no_throw(
+        curve: cx_curve_t,
+        R: *mut u8,
+        P: *const u8,
+        Q: *const u8,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Multiply an affine point"]
+    #[doc = ""]
+    #[doc = " @param [in] domain"]
+    #[doc = "   The curve domain parameters to work with."]
+    #[doc = ""]
+    #[doc = " @param [out] R"]
+    #[doc = "   R = k.P encoded as: 04 x y, where x and y are"]
+    #[doc = "   encoded as  big endian raw value and have bits length equals to"]
+    #[doc = "   the curve size."]
+    #[doc = ""]
+    #[doc = " @param [in] P"]
+    #[doc = "   Point to multiply *"]
+    #[doc = "   The value shall be a point encoded as: 04 x y, where x and y are"]
+    #[doc = "   encoded as  big endian raw value and have bits length equals to"]
+    #[doc = "   the curve size."]
+    #[doc = ""]
+    #[doc = " @param [in] k"]
+    #[doc = "   scalar to multiply, encoded as big endian integer"]
+    #[doc = ""]
+    #[doc = " @param [in] k_len"]
+    #[doc = "   byte length of scalar to multiply"]
+    #[doc = ""]
+    #[doc = " @return"]
+    #[doc = "   R encoding length, if mult success"]
+    #[doc = "   0 if result is infinity"]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_ecfp_scalar_mult_no_throw(
+        curve: cx_curve_t,
+        P: *mut u8,
+        k: *const u8,
+        k_len: size_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Initialize a public ECFP Key."]
+    #[doc = " Once initialized, the key may be stored in non-volatile memory"]
+    #[doc = " an reused 'as-is' for any ECDSA/25519 processing"]
+    #[doc = " Passing NULL as raw key initializes the key without value. The key may be used"]
+    #[doc = " as parameter for cx_ecfp_generate_pair."]
+    #[doc = ""]
+    #[doc = " @param [in] curve"]
+    #[doc = "   The curve domain parameters to work with."]
+    #[doc = ""]
+    #[doc = " @param [in] rawkey"]
+    #[doc = "   Raw key value or NULL."]
+    #[doc = "   The value shall be the public point encoded as:"]
+    #[doc = "     - '04 x y' for Weiertrass curve"]
+    #[doc = "     - '04 x y'  or '02 y' (plus sign) for twisted Edwards curves"]
+    #[doc = "     - '04 x y'  or '02 x' for Montgomery curves"]
+    #[doc = "    where x and y are encoded as big endian raw value and have bits length"]
+    #[doc = "    equals to the curve size. Any specific integer decoding from binary,"]
+    #[doc = "    such as specified in RFC7748 and RFC eddsa-draft, is up to caller."]
+    #[doc = ""]
+    #[doc = " @param [in] key_len"]
+    #[doc = "   Key bytes lenght"]
+    #[doc = ""]
+    #[doc = " @param [out] key"]
+    #[doc = "   Public ecfp key to init."]
+    #[doc = ""]
+    #[doc = " @param key"]
+    #[doc = "   Ready to use key to init"]
+    #[doc = ""]
+    #[doc = " @return something"]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_ecfp_init_public_key_no_throw(
+        curve: cx_curve_t,
+        rawkey: *const u8,
+        key_len: size_t,
+        key: *mut cx_ecfp_public_key_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Initialize a private ECFP Key."]
+    #[doc = " Once initialized, the key may be  stored in non-volatile memory"]
+    #[doc = " and reused 'as-is' for any ECDSA/EC25519 processing"]
+    #[doc = " Passing NULL as raw key initializes the key without value. The key may be used"]
+    #[doc = " as parameter for cx_ecfp_generate_pair."]
+    #[doc = ""]
+    #[doc = " @param [in] curve"]
+    #[doc = "   The curve domain parameters to work with."]
+    #[doc = ""]
+    #[doc = " @param [in] rawkey"]
+    #[doc = "   Raw key value or NULL."]
+    #[doc = "   The value shall be the private key big endian raw value."]
+    #[doc = ""]
+    #[doc = " @param [in] key_len"]
+    #[doc = "   Key bytes lenght"]
+    #[doc = ""]
+    #[doc = " @param [out] pvkey"]
+    #[doc = "   Private ecfp key to init."]
+    #[doc = ""]
+    #[doc = " @param key"]
+    #[doc = "   Ready to use key to init"]
+    #[doc = ""]
+    #[doc = " @return something"]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_ecfp_init_private_key_no_throw(
+        curve: cx_curve_t,
+        rawkey: *const u8,
+        key_len: size_t,
+        pvkey: *mut cx_ecfp_private_key_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Generate a ecfp key pair."]
+    #[doc = " This function call cx_ecfp_generate_pair2 with hashID equals to CX_SHA512."]
+    #[doc = ""]
+    #[doc = " @param [in] curve"]
+    #[doc = "   The curve domain parameters to work with."]
+    #[doc = ""]
+    #[doc = " @param [out] pubkey"]
+    #[doc = "   A public ecfp public key to generate."]
+    #[doc = ""]
+    #[doc = " @param [in,out] privkey"]
+    #[doc = "   A private ecfp private key to generate."]
+    #[doc = "   Either:"]
+    #[doc = "     - if the private ecfp key is fully inited, i.e  parameter 'rawkey' of"]
+    #[doc = "       'cx_ecfp_init_private_key' is NOT null, the private key value is kept"]
+    #[doc = "       if the 'keep_private' parameter is non zero"]
+    #[doc = "     - else a new private key is generated."]
+    #[doc = ""]
+    #[doc = " @param [in] keepprivate if set to non zero, keep the private key value if set."]
+    #[doc = "             Else generate a new random one"]
+    #[doc = ""]
+    #[doc = " @return zero"]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_ecfp_generate_pair_no_throw(
+        curve: cx_curve_t,
+        pubkey: *mut cx_ecfp_public_key_t,
+        privkey: *mut cx_ecfp_private_key_t,
+        keepprivate: bool,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Generate a ecfp key pair"]
+    #[doc = ""]
+    #[doc = " @param [in] curve"]
+    #[doc = "   The curve domain parameters to work with."]
+    #[doc = ""]
+    #[doc = " @param [out] pubkey"]
+    #[doc = "   A public ecfp public key to generate."]
+    #[doc = ""]
+    #[doc = " @param [in,out] privkey"]
+    #[doc = "   A private ecfp private key to generate."]
+    #[doc = "   Either:"]
+    #[doc = "     - if the private ecfp key is fully inited, i.e  parameter 'rawkey' of"]
+    #[doc = "       'cx_ecfp_init_private_key' is NOT null, the private key value is kept"]
+    #[doc = "       if the 'keep_private' parameter is non zero"]
+    #[doc = "     - else a new private key is generated."]
+    #[doc = ""]
+    #[doc = " @param [in] keepprivate if set to non zero, keep the private key value if set."]
+    #[doc = "             Else generate a new random one"]
+    #[doc = ""]
+    #[doc = "  @param [in] hashID Hash to use for eddsa (SHA512, SHA3 and Keccak are supported)"]
+    #[doc = ""]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_ecfp_generate_pair2_no_throw(
+        curve: cx_curve_t,
+        pubkey: *mut cx_ecfp_public_key_t,
+        privkey: *mut cx_ecfp_private_key_t,
+        keepprivate: bool,
+        hashID: cx_md_t,
+    ) -> cx_err_t;
+}
 pub const bagl_components_type_e__BAGL_NONE: bagl_components_type_e_ = 0;
 pub const bagl_components_type_e__BAGL_BUTTON: bagl_components_type_e_ = 1;
 pub const bagl_components_type_e__BAGL_LABEL: bagl_components_type_e_ = 2;
@@ -7884,17 +9591,6 @@ extern "C" {
 extern "C" {
     pub fn halt();
 }
-extern "C" {
-    pub fn os_parse_bertlv(
-        mem: *mut cty::c_uchar,
-        mem_len: cty::c_uint,
-        tlv_instance_offset: *mut cty::c_uint,
-        tag: cty::c_uint,
-        offset: cty::c_uint,
-        buffer: *mut *mut cty::c_void,
-        maxlength: cty::c_uint,
-    ) -> cty::c_uint;
-}
 pub type bolos_task_status_t = cty::c_uchar;
 pub const task_unsecure_id_e_TASK_BOLOS: task_unsecure_id_e = 0;
 pub const task_unsecure_id_e_TASK_SYSCALL: task_unsecure_id_e = 1;
@@ -8301,123 +9997,6 @@ extern "C" {
     #[doc = " Function takes 0 for first call. Returns 0 when timeout has occured. Returned"]
     #[doc = " value is passed as argument for next call, acting as a timeout context."]
     pub fn io_timeout(last_timeout: cty::c_ushort) -> cty::c_ushort;
-}
-pub const generic_identifiers_ERR_GEN_ID_01: generic_identifiers = 1;
-pub const generic_identifiers_ERR_GEN_ID_02: generic_identifiers = 2;
-pub const generic_identifiers_ERR_GEN_ID_03: generic_identifiers = 3;
-pub const generic_identifiers_ERR_GEN_ID_04: generic_identifiers = 4;
-pub const generic_identifiers_ERR_GEN_ID_05: generic_identifiers = 5;
-pub const generic_identifiers_ERR_GEN_ID_06: generic_identifiers = 6;
-pub const generic_identifiers_ERR_GEN_ID_07: generic_identifiers = 7;
-pub const generic_identifiers_ERR_GEN_ID_08: generic_identifiers = 8;
-pub const generic_identifiers_ERR_GEN_ID_09: generic_identifiers = 9;
-pub const generic_identifiers_ERR_GEN_ID_0A: generic_identifiers = 10;
-pub const generic_identifiers_ERR_GEN_ID_0B: generic_identifiers = 11;
-pub const generic_identifiers_ERR_GEN_ID_0C: generic_identifiers = 12;
-pub const generic_identifiers_ERR_GEN_ID_0D: generic_identifiers = 13;
-pub const generic_identifiers_ERR_GEN_ID_0E: generic_identifiers = 14;
-pub const generic_identifiers_ERR_GEN_ID_0F: generic_identifiers = 15;
-pub const generic_identifiers_ERR_GEN_ID_10: generic_identifiers = 16;
-pub const generic_identifiers_ERR_GEN_ID_11: generic_identifiers = 17;
-pub const generic_identifiers_ERR_GEN_ID_12: generic_identifiers = 18;
-pub const generic_identifiers_ERR_GEN_ID_13: generic_identifiers = 19;
-pub const generic_identifiers_ERR_GEN_ID_14: generic_identifiers = 20;
-pub const generic_identifiers_ERR_GEN_ID_15: generic_identifiers = 21;
-pub const generic_identifiers_ERR_GEN_ID_16: generic_identifiers = 22;
-pub const generic_identifiers_ERR_GEN_ID_17: generic_identifiers = 23;
-pub const generic_identifiers_ERR_GEN_ID_18: generic_identifiers = 24;
-pub const generic_identifiers_ERR_GEN_ID_19: generic_identifiers = 25;
-pub const generic_identifiers_ERR_GEN_ID_1A: generic_identifiers = 26;
-pub const generic_identifiers_ERR_GEN_ID_1B: generic_identifiers = 27;
-pub const generic_identifiers_ERR_GEN_ID_1C: generic_identifiers = 28;
-pub const generic_identifiers_ERR_GEN_ID_1D: generic_identifiers = 29;
-pub const generic_identifiers_ERR_GEN_ID_1E: generic_identifiers = 30;
-pub const generic_identifiers_ERR_GEN_ID_1F: generic_identifiers = 31;
-pub const generic_identifiers_ERR_GEN_ID_20: generic_identifiers = 32;
-pub const generic_identifiers_ERR_GEN_ID_21: generic_identifiers = 33;
-pub const generic_identifiers_ERR_GEN_ID_22: generic_identifiers = 34;
-pub const generic_identifiers_ERR_GEN_ID_23: generic_identifiers = 35;
-pub const generic_identifiers_ERR_GEN_ID_24: generic_identifiers = 36;
-pub const generic_identifiers_ERR_GEN_ID_25: generic_identifiers = 37;
-pub const generic_identifiers_ERR_GEN_ID_26: generic_identifiers = 38;
-pub const generic_identifiers_ERR_GEN_ID_27: generic_identifiers = 39;
-pub const generic_identifiers_ERR_GEN_ID_28: generic_identifiers = 40;
-pub const generic_identifiers_ERR_GEN_ID_29: generic_identifiers = 41;
-pub const generic_identifiers_ERR_GEN_ID_2A: generic_identifiers = 42;
-pub const generic_identifiers_ERR_GEN_ID_2B: generic_identifiers = 43;
-pub type generic_identifiers = cty::c_uint;
-pub type exception_t = cty::c_ushort;
-pub type try_context_t = try_context_s;
-pub type jmp_buf = [cty::c_uint; 10usize];
-extern "C" {
-    pub fn longjmp(__jmpb: *mut cty::c_uint, __retval: cty::c_int);
-}
-extern "C" {
-    pub fn setjmp(__jmpb: *mut cty::c_uint) -> cty::c_int;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct try_context_s {
-    pub jmp_buf: jmp_buf,
-    pub previous: *mut try_context_t,
-    pub ex: exception_t,
-}
-#[test]
-fn bindgen_test_layout_try_context_s() {
-    assert_eq!(
-        ::core::mem::size_of::<try_context_s>(),
-        48usize,
-        concat!("Size of: ", stringify!(try_context_s))
-    );
-    assert_eq!(
-        ::core::mem::align_of::<try_context_s>(),
-        4usize,
-        concat!("Alignment of ", stringify!(try_context_s))
-    );
-    assert_eq!(
-        unsafe { &(*(::core::ptr::null::<try_context_s>())).jmp_buf as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(try_context_s),
-            "::",
-            stringify!(jmp_buf)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::core::ptr::null::<try_context_s>())).previous as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(try_context_s),
-            "::",
-            stringify!(previous)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::core::ptr::null::<try_context_s>())).ex as *const _ as usize },
-        44usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(try_context_s),
-            "::",
-            stringify!(ex)
-        )
-    );
-}
-impl Default for try_context_s {
-    fn default() -> Self {
-        unsafe { ::core::mem::zeroed() }
-    }
-}
-extern "C" {
-    pub fn try_context_get() -> *mut try_context_t;
-}
-extern "C" {
-    pub fn try_context_set(context: *mut try_context_t) -> *mut try_context_t;
-}
-extern "C" {
-    pub fn os_longjmp(exception: cty::c_uint);
 }
 extern "C" {
     #[doc = "BOLOS RAM LAYOUT"]

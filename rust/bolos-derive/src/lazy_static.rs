@@ -60,6 +60,10 @@ fn produce_custom_ty(
                fn get_mut(&mut self) -> &'static mut #ty {
                    self.init();
 
+                   //SAFETY:
+                   // same considerations as `get`:
+                   // aligned, non-null, initialized by above call
+                   // guaranteed single-threaded access
                    unsafe { LAZY.as_mut_ptr().as_mut().unwrap() }
                }
             }
@@ -84,7 +88,8 @@ fn produce_custom_ty(
             use super::*;
             use ::core::mem::MaybeUninit;
 
-            static mut INITIALIZED: bool = false;
+            static mut UNINITIALIZED: MaybeUninit<u8> = MaybeUninit::uninit();
+
             static mut LAZY: MaybeUninit<#ty> = MaybeUninit::uninit();
 
             #[allow(non_camel_case_types)]
@@ -104,11 +109,24 @@ fn produce_custom_ty(
                     #[inline(always)]
                     fn __initialize() -> #ty { #init }
 
-                    let initialized = unsafe { &mut INITIALIZED };
+                    //SAFETY:
+                    // single-threaded code guarantees no data races when accessing
+                    // global variables.
+                    // Furthermore, u8 can't be uninitialized as any value is valid.
+                    let initialized_ptr = unsafe { UNINITIALIZED.as_mut_ptr() };
 
-                    if !*initialized {
+                    //SAFETY:
+                    // ptr comes from rust so guaranteed to be aligned and not null,
+                    // is also initialized (see above), not deallocated (global)
+                    let initialized_val = unsafe { core::ptr::read_volatile(initialized_ptr as *const _) };
+
+                    if initialized_val != 1u8 {
+                        //SAFETY:
+                        // single threaded access, non-null, aligned
                         unsafe { LAZY.as_mut_ptr().write(__initialize()); };
-                        *initialized = true;
+
+                        //SAFETY: see above when reading `initialized_val`
+                        unsafe { initialized_ptr.write(1u8); }
                     }
 
                 }
@@ -116,6 +134,10 @@ fn produce_custom_ty(
                 fn get(&self) -> &'static #ty {
                     self.init();
 
+                    //SAFETY:
+                    // code is single-threaed so no data races,
+                    // furthermore the pointer is guaranteed to be non-null, aligned
+                    // and initialized by the `init` call above
                     unsafe { LAZY.as_ptr().as_ref().unwrap() }
                 }
             }

@@ -11,7 +11,7 @@ interface ResponseHash extends ResponseBase {
 }
 
 interface ResponseException extends ResponseBase {
-  ex: number
+  ex: BigInt
 }
 
 export default class TezosAppDev extends TezosApp {
@@ -23,7 +23,7 @@ export default class TezosAppDev extends TezosApp {
       return {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
-        ex: response.slice(0, -2).readInt16BE(),
+        ex: response.slice(0, -2).readBigInt64BE(),
       }
     }, processErrorResponse)
   }
@@ -64,7 +64,7 @@ export default class TezosAppDev extends TezosApp {
     }
 
     for (let i = 0; i < chunks.length; i += 1) {
-      result = await this.sendHashChunk(i, chunks.length, chunks[i])
+      result = await this.sendHashChunk(i, chunks.length - 1, chunks[i])
       if (result.hash !== null) {
         break
       }
