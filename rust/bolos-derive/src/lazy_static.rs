@@ -78,6 +78,12 @@ fn produce_custom_ty(
         ));
     };
 
+    let uninit_check_val = if cfg!(bolos_sdk) {
+        quote! {UninitializeCheck::Initialized}
+    } else {
+        quote! {UninitializeCheck::Uninitialized}
+    };
+
     let output = quote! {
         #[allow(non_snake_case)]
         #[doc(hidden)]
@@ -109,7 +115,7 @@ fn produce_custom_ty(
             }
 
             #[no_mangle]
-            static mut #init_name: UninitializeCheck = UninitializeCheck::Initialized;
+            static mut #init_name: UninitializeCheck = #uninit_check_val;
 
             static mut LAZY: MaybeUninit<#ty> = MaybeUninit::uninit();
 

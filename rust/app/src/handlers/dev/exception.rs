@@ -65,12 +65,11 @@ mod tests {
         assert_error_code,
         constants::ApduError as Error,
         dispatcher::{handle_apdu, CLA, INS_DEV_EXCEPT},
-        sys::exceptions::SysError,
     };
     use std::convert::TryInto;
 
     #[test]
-    #[should_panic(expected = "exception = InvalidState")]
+    #[should_panic(expected = "exception = 1")]
     fn throw() {
         let mut flags = 0;
         let mut tx = 0;
@@ -89,7 +88,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "exception = InvalidState")] //unfortunately we don't catch during tests...
+    #[should_panic(expected = "exception = 1")] //unfortunately we don't catch during tests...
     fn catch() {
         let mut flags = 0;
         let mut tx = 0;
@@ -105,6 +104,6 @@ mod tests {
         assert!(tx > 2);
         assert_error_code!(tx, buffer, Error::Success);
         //if we don't throw properly we should get this...
-        assert_eq!(&buffer[..4], &0x100000000u32.to_be_bytes()[..])
+        assert_eq!(&buffer[..4], &0x100000000u64.to_be_bytes()[..])
     }
 }
