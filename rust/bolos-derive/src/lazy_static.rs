@@ -53,7 +53,6 @@ fn produce_custom_ty(
     let span = name.span();
     let mod_name = Ident::new(&format!("__IMPL_LAZY_{}", name), span);
     let struct_name = Ident::new(&format!("__LAZY_{}", name), span);
-    let init_name = Ident::new(&format!("__PRIVATE__LAZY_{}_INITIALIZED", name), span);
 
     let mut_impl = if is_mut.is_some() {
         quote! {
@@ -61,6 +60,10 @@ fn produce_custom_ty(
                fn get_mut(&mut self) -> &'static mut #ty {
                    self.init();
 
+                   //SAFETY:
+                   // same considerations as `get`:
+                   // aligned, non-null, initialized by above call
+                   // guaranteed single-threaded access
                    unsafe { LAZY.as_mut_ptr().as_mut().unwrap() }
                }
             }
@@ -78,12 +81,6 @@ fn produce_custom_ty(
         ));
     };
 
-    let uninit_check_val = if cfg!(bolos_sdk) {
-        quote! {UninitializeCheck::Initialized}
-    } else {
-        quote! {UninitializeCheck::Uninitialized}
-    };
-
     let output = quote! {
         #[allow(non_snake_case)]
         #[doc(hidden)]
@@ -91,31 +88,7 @@ fn produce_custom_ty(
             use super::*;
             use ::core::mem::MaybeUninit;
 
-            #[non_exhaustive]
-            enum UninitializeCheck {
-                Initialized = 0,
-                Uninitialized
-            }
-
-            impl UninitializeCheck {
-                fn as_bool(&self) -> bool {
-                    match self {
-                        Self::Initialized => true,
-                        Self::Uninitialized | _ => false,
-                    }
-                }
-
-                fn set(&mut self, b: bool) {
-                    if b {
-                        *self = Self::Initialized;
-                    } else {
-                        *self = Self::Uninitialized;
-                    }
-                }
-            }
-
-            #[no_mangle]
-            static mut #init_name: UninitializeCheck = #uninit_check_val;
+            static mut UNINITIALIZED: MaybeUninit<u8> = MaybeUninit::uninit();
 
             static mut LAZY: MaybeUninit<#ty> = MaybeUninit::uninit();
 
@@ -136,11 +109,24 @@ fn produce_custom_ty(
                     #[inline(always)]
                     fn __initialize() -> #ty { #init }
 
-                    let initialized = unsafe { &mut #init_name };
+                    //SAFETY:
+                    // single-threaded code guarantees no data races when accessing
+                    // global variables.
+                    // Furthermore, u8 can't be uninitialized as any value is valid.
+                    let initialized_ptr = unsafe { UNINITIALIZED.as_mut_ptr() };
 
-                    if !initialized.as_bool() {
+                    //SAFETY:
+                    // ptr comes from rust so guaranteed to be aligned and not null,
+                    // is also initialized (see above), not deallocated (global)
+                    let initialized_val = unsafe { core::ptr::read_volatile(initialized_ptr as *const _) };
+
+                    if initialized_val != 1u8 {
+                        //SAFETY:
+                        // single threaded access, non-null, aligned
                         unsafe { LAZY.as_mut_ptr().write(__initialize()); };
-                        initialized.set(true);
+
+                        //SAFETY: see above when reading `initialized_val`
+                        unsafe { initialized_ptr.write(1u8); }
                     }
 
                 }
@@ -148,6 +134,10 @@ fn produce_custom_ty(
                 fn get(&self) -> &'static #ty {
                     self.init();
 
+                    //SAFETY:
+                    // code is single-threaed so no data races,
+                    // furthermore the pointer is guaranteed to be non-null, aligned
+                    // and initialized by the `init` call above
                     unsafe { LAZY.as_ptr().as_ref().unwrap() }
                 }
             }
