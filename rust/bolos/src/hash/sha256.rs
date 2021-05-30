@@ -1,11 +1,11 @@
-use crate::{exceptions::catch_exception, raw::cx_sha256_t, SyscallError};
+use crate::{errors::catch, raw::cx_sha256_t, Error};
 
 pub struct Sha256 {
     state: cx_sha256_t,
 }
 
 impl Sha256 {
-    pub fn new() -> Result<Self, SyscallError> {
+    pub fn new() -> Result<Self, Error> {
         let mut state = cx_sha256_t::default();
 
         let might_throw = || unsafe {
@@ -13,12 +13,12 @@ impl Sha256 {
             crate::raw::cx_sha256_init(&mut state as *mut _);
         };
 
-        catch_exception::<SyscallError, _, _>(might_throw)?;
+        catch(might_throw)?;
 
         Ok(Self { state })
     }
 
-    pub fn digest(input: &[u8]) -> Result<[u8; 32], SyscallError> {
+    pub fn digest(input: &[u8]) -> Result<[u8; 32], Error> {
         use super::Hasher;
 
         let mut digest = Self::new()?;

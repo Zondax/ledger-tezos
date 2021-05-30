@@ -1,4 +1,4 @@
-use crate::{exceptions::catch_exception, raw::cx_hash, SyscallError};
+use crate::{errors::catch, raw::cx_hash, Error};
 
 pub mod blake2b;
 pub use blake2b::Blake2b;
@@ -16,7 +16,7 @@ mod sealed {
 pub(self) use sealed::CxHash;
 
 pub trait Hasher<const S: usize>: CxHash<S> {
-    fn update(&mut self, input: &[u8]) -> Result<(), SyscallError> {
+    fn update(&mut self, input: &[u8]) -> Result<(), Error> {
         let might_throw = || unsafe {
             cx_hash(
                 self.cx_header() as *mut _,
@@ -28,12 +28,12 @@ pub trait Hasher<const S: usize>: CxHash<S> {
             );
         };
 
-        catch_exception::<SyscallError, _, _>(might_throw)?;
+        catch(might_throw)?;
 
         Ok(())
     }
 
-    fn finalize(mut self) -> Result<[u8; S], SyscallError> {
+    fn finalize(mut self) -> Result<[u8; S], Error> {
         let mut out = [0; S];
 
         let might_throw = || unsafe {
@@ -47,10 +47,10 @@ pub trait Hasher<const S: usize>: CxHash<S> {
             )
         };
 
-        catch_exception::<SyscallError, _, _>(might_throw)?;
+        catch(might_throw)?;
 
         Ok(out)
     }
 }
 
-impl<H: CxHash<S>, const S: usize> Hash<S> for H {}
+impl<H: CxHash<S>, const S: usize> Hasher<S> for H {}

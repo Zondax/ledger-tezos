@@ -2,7 +2,7 @@ use zeroize::{Zeroize, Zeroizing};
 
 use super::{bip32::BIP32Path, Curve};
 use crate::{
-    exceptions::{catch_exception, SyscallError},
+    errors::{catch, Error},
     raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t},
 };
 
@@ -14,7 +14,7 @@ pub struct PublicKey {
 }
 
 impl PublicKey {
-    pub fn compress(&self) -> Result<Self, SyscallError> {
+    pub fn compress(&self) -> Result<Self, Error> {
         match self.curve {
             Curve::Ed25519 => {
                 //create copy, so we don't overwrite a valid public key already
@@ -31,7 +31,7 @@ impl PublicKey {
                     //set let to compressed
                     copy.len = 33;
                 };
-                catch_exception::<SyscallError, _, _>(might_throw)?;
+                catch(might_throw)?;
 
                 Ok(copy)
             }
@@ -62,7 +62,7 @@ pub struct Keypair {
 }
 
 impl Keypair {
-    pub fn generate(curve: Curve, path: &BIP32Path) -> Result<Self, SyscallError> {
+    pub fn generate(curve: Curve, path: &BIP32Path) -> Result<Self, Error> {
         //Sensitive data is stored outside so we can clear it in case of an exception
         let mut sk_data = [0u8; 32];
         let mut sk = cx_ecfp_private_key_t::default();
@@ -111,7 +111,7 @@ impl Keypair {
         };
 
         //use retrieved sk and pk to construct keypair
-        let pk = match catch_exception::<SyscallError, _, _>(might_throw) {
+        let pk = match catch(might_throw) {
             Ok(pk) => pk,
             Err(e) => {
                 //an exception was thrown, we should zeroize before returning
