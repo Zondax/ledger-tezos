@@ -53,6 +53,7 @@ fn produce_custom_ty(
     let span = name.span();
     let mod_name = Ident::new(&format!("__IMPL_LAZY_{}", name), span);
     let struct_name = Ident::new(&format!("__LAZY_{}", name), span);
+    let init_name = Ident::new(&format!("__PRIVATE__LAZY_{}_INITIALIZED", name), span);
 
     let mut_impl = if is_mut.is_some() {
         quote! {
@@ -84,7 +85,32 @@ fn produce_custom_ty(
             use super::*;
             use ::core::mem::MaybeUninit;
 
-            static mut INITIALIZED: bool = false;
+            #[non_exhaustive]
+            enum UninitializeCheck {
+                Initialized = 0,
+                Uninitialized
+            }
+
+            impl UninitializeCheck {
+                fn as_bool(&self) -> bool {
+                    match self {
+                        Self::Initialized => true,
+                        Self::Uninitialized | _ => false,
+                    }
+                }
+
+                fn set(&mut self, b: bool) {
+                    if b {
+                        *self = Self::Initialized;
+                    } else {
+                        *self = Self::Uninitialized;
+                    }
+                }
+            }
+
+            #[no_mangle]
+            static mut #init_name: UninitializeCheck = UninitializeCheck::Initialized;
+
             static mut LAZY: MaybeUninit<#ty> = MaybeUninit::uninit();
 
             #[allow(non_camel_case_types)]
@@ -104,11 +130,11 @@ fn produce_custom_ty(
                     #[inline(always)]
                     fn __initialize() -> #ty { #init }
 
-                    let initialized = unsafe { &mut INITIALIZED };
+                    let initialized = unsafe { &mut #init_name };
 
-                    if !*initialized {
+                    if !initialized.as_bool() {
                         unsafe { LAZY.as_mut_ptr().write(__initialize()); };
-                        *initialized = true;
+                        initialized.set(true);
                     }
 
                 }
