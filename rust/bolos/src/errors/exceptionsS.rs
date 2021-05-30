@@ -1,5 +1,5 @@
 use crate::raw::{cx_err_t, exception_t};
-use std::convert::{TryFrom, Infallible};
+//use std::convert::{TryFrom, Infallible};
 
 //TODO: map exceptions from `errors.h`
 #[derive(Debug, Clone, Copy)]

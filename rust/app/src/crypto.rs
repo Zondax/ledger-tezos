@@ -1,17 +1,17 @@
 use std::convert::TryFrom;
 
 use crate::sys;
-use sys::{crypto::bip32::BIP32Path, exceptions::SyscallError};
+use sys::{crypto::bip32::BIP32Path, errors::Error, hash::Hasher};
 
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey(pub(crate) sys::crypto::ecfp256::PublicKey);
 
 impl PublicKey {
-    pub fn compress(&self) -> Result<Self, SyscallError> {
+    pub fn compress(&self) -> Result<Self, Error> {
         self.0.compress().map(Self)
     }
 
-    pub fn hash(&self) -> Result<[u8; 20], SyscallError> {
+    pub fn hash(&self) -> Result<[u8; 20], Error> {
         //legacy/src/keys.c:118
         let key = {
             match self.curve() {
@@ -125,7 +125,7 @@ impl Keypair {
 }
 
 impl Curve {
-    pub fn gen_keypair(&self, path: &BIP32Path) -> Result<Keypair, SyscallError> {
+    pub fn gen_keypair(&self, path: &BIP32Path) -> Result<Keypair, Error> {
         match self {
             Self::Ed25519 => {
                 todo!("sip1000");

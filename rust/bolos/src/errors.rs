@@ -1,8 +1,6 @@
 mod exceptions {
     #[cfg(bolos_sdk)]
-    use crate::raw::{
-        jmp_buf, os_longjmp, setjmp, try_context_get, try_context_set, try_context_t,
-    };
+    use crate::raw::{os_longjmp, setjmp, try_context_get, try_context_set, try_context_t};
 
     cfg_if! {
         if #[cfg(nanox)] {

@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use bolos_sys::SyscallError;
+use bolos_sys::Error as SysError;
 
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
@@ -106,7 +106,7 @@ struct Addr {
 }
 
 impl Addr {
-    pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SyscallError> {
+    pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         use crypto::Curve;
         use sys::hash::{Hasher, Sha256};
 

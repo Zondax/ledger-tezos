@@ -1,4 +1,9 @@
-use crate::{errors::catch, raw::cx_blake2b_t, Error};
+#![allow(unused_imports)]
+
+use crate::raw::{cx_blake2b_t, cx_hash_t};
+use crate::{errors::catch, Error};
+
+use super::CxHash;
 
 pub struct Blake2b<const S: usize> {
     state: cx_blake2b_t,
@@ -6,29 +11,38 @@ pub struct Blake2b<const S: usize> {
 
 impl<const S: usize> Blake2b<S> {
     pub fn new() -> Result<Self, Error> {
+        Self::init_hasher()
+    }
+}
+
+impl<const S: usize> CxHash<S> for Blake2b<S> {
+    fn init_hasher() -> Result<Self, Error> {
         let mut state = cx_blake2b_t::default();
 
-        let might_throw = || unsafe {
-            //this does not throw
-            crate::raw::cx_blake2b_init(&mut state as *mut _, (S * 8) as u32);
-        };
+        cfg_if! {
+            if #[cfg(nanox)] {
+                let might_throw = || unsafe {
+                    crate::raw::cx_blake2b_init(&mut state as *mut _, (S * 8) as u32);
+                };
 
-        catch(might_throw)?;
+                catch(might_throw)?;
+            } else if #[cfg(nanos)] {
+                match unsafe { crate::raw::cx_blake2b_init_no_throw(
+                    &mut state as *mut _,
+                    (S * 8) as u32
+                )} {
+                    0 => {},
+                    err => return Err(err.into()),
+                }
+            } else {
+                todo!("blake2b init called in non bolos")
+            }
+        }
 
         Ok(Self { state })
     }
 
-    pub fn digest(input: &[u8]) -> Result<[u8; S], Error> {
-        use super::Hasher;
-
-        let mut digest = Self::new()?;
-        digest.update(input)?;
-        digest.finalize()
-    }
-}
-
-impl<const S: usize> super::CxHash<S> for Blake2b<S> {
-    fn cx_header(&mut self) -> &mut crate::raw::cx_hash_t {
+    fn cx_header(&mut self) -> &mut cx_hash_t {
         &mut self.state.header
     }
 }
