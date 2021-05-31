@@ -149,4 +149,40 @@ impl Curve {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum Mode {
+    BIP32,
+    Ed25519Slip10,
+    Slip21
+}
+
+impl TryFrom<u8> for Mode {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::BIP32),
+            1 => Ok(Self::Ed25519Slip10),
+            2 => Ok(Self::Slip21),
+            _ => Err(())
+        }
+    }
+}
+
+impl Into<u8> for Mode {
+    fn into(self) -> u8 {
+        match self {
+            Mode::BIP32 => 0,
+            Mode::Ed25519Slip10 => 1,
+            Mode::Slip21 => 2,
+        }
+    }
+}
+
+impl Default for Mode {
+    fn default() -> Self {
+        Self::BIP32
+    }
+}
+
 pub mod ecfp256;

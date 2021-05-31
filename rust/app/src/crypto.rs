@@ -126,17 +126,18 @@ impl Keypair {
 
 impl Curve {
     pub fn gen_keypair(&self, path: &BIP32Path) -> Result<Keypair, Error> {
-        match self {
-            Self::Ed25519 => {
-                todo!("sip1000");
-            }
-            crv => {
-                let kp = sys::crypto::ecfp256::Keypair::generate(crv.into(), path)?;
-                Ok(Keypair {
-                    public: PublicKey(kp.public),
-                    secret: kp.secret,
-                })
-            }
-        }
+        use sys::crypto::Mode;
+
+        let mode = match self {
+            Self::Ed25519 => Mode::Ed25519Slip10,
+
+            _ => Default::default(),
+        };
+
+        let kp = sys::crypto::ecfp256::Keypair::generate(mode, self.into(), path)?;
+        Ok(Keypair {
+            public: PublicKey(kp.public),
+            secret: kp.secret,
+        })
     }
 }
