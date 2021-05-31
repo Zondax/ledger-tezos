@@ -1513,6 +1513,9 @@ extern "C" {
     pub fn cx_des_block_hw(inblock: *const cty::c_uchar, outblock: *mut cty::c_uchar);
 }
 pub const cx_curve_e_CX_CURVE_NONE: cx_curve_e = 0;
+#[doc = " Low limit (not included) of  Twister Edwards curve ID"]
+pub const cx_curve_e_CX_CURVE_TWISTED_EDWARDS_START: cx_curve_e = 112;
+pub const cx_curve_e_CX_CURVE_TWISTED_EDWARDS_END: cx_curve_e = 127;
 #[doc = " List of supported elliptic curves"]
 pub type cx_curve_e = cty::c_uint;
 #[doc = " Convenience type. See #cx_curve_e."]
@@ -4094,6 +4097,59 @@ extern "C" {
         privkey: *mut cx_ecfp_private_key_t,
         keepprivate: bool,
         hashID: cx_md_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = "  Retrieve (a,h) = (Kr, Kl), such (Kr, Kl) = Hash(pv_key) as specified in RFC8032"]
+    #[doc = ""]
+    #[doc = " @param [in] pv_key"]
+    #[doc = "   A private ecfp key fully inited with 'cx_ecfp_init_private_key'."]
+    #[doc = ""]
+    #[doc = " @param [in] hashID"]
+    #[doc = "  Hash identifier used to compute the input data. SHA512, SHA3 and Keccak are supported."]
+    #[doc = ""]
+    #[doc = " @param [out] pu_key"]
+    #[doc = "   A public null-inited ecfp key container for retrieving public key A."]
+    #[doc = ""]
+    #[doc = " @param [out] a"]
+    #[doc = "   private scalar such A = a.B"]
+    #[doc = ""]
+    #[doc = " @param [out] h"]
+    #[doc = "   prefix signature"]
+    #[doc = ""]
+    #[doc = " @param [in] hashID"]
+    #[doc = "  Hash identifier used to compute the input data. SHA512, SHA3 and Keccak are supported."]
+    #[doc = ""]
+    pub fn cx_eddsa_get_public_key_no_throw(
+        pvkey: *const cx_ecfp_private_key_t,
+        hashID: cx_md_t,
+        pukey: *mut cx_ecfp_public_key_t,
+        a: *mut u8,
+        a_len: size_t,
+        h: *mut u8,
+        h_len: size_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = "  Compress point according to RFC8032."]
+    #[doc = ""]
+    #[doc = " @param [in]     domain"]
+    #[doc = " @param [in,out] P"]
+    pub fn cx_edwards_compress_point_no_throw(
+        curve: cx_curve_t,
+        p: *mut u8,
+        p_len: size_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = "  Decompress point according to draft-irtf-cfrg-eddsa-05."]
+    #[doc = ""]
+    #[doc = " @param [in]     domain"]
+    #[doc = " @param [in,out] P"]
+    pub fn cx_edwards_decompress_point_no_throw(
+        curve: cx_curve_t,
+        p: *mut u8,
+        p_len: size_t,
     ) -> cx_err_t;
 }
 pub const bagl_components_type_e__BAGL_NONE: bagl_components_type_e_ = 0;

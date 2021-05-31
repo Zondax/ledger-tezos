@@ -1,10 +1,7 @@
 use zeroize::{Zeroize, Zeroizing};
 
 use super::{bip32::BIP32Path, Curve};
-use crate::{
-    errors::{catch, Error},
-    raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t},
-};
+use crate::errors::{catch, Error};
 
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey {
@@ -19,19 +16,9 @@ impl PublicKey {
             Curve::Ed25519 => {
                 //create copy, so we don't overwrite a valid public key already
                 let mut copy = *self;
-                let curve: u8 = self.curve.into();
 
-                //wrap call with possible exception
-                let might_throw = || unsafe {
-                    crate::raw::cx_edward_compress_point(
-                        curve as _,
-                        &mut copy.w[0] as *mut u8 as *mut _,
-                        copy.len as u32 as _,
-                    );
-                    //set let to compressed
-                    copy.len = 33;
-                };
-                catch(might_throw)?;
+                let comp_len = cx_edward_compress_point(self.curve, &mut copy.w[..])?;
+                copy.len = comp_len;
 
                 Ok(copy)
             }
@@ -63,16 +50,13 @@ pub struct Keypair {
 
 impl Keypair {
     pub fn generate(curve: Curve, path: &BIP32Path) -> Result<Self, Error> {
-        //Sensitive data is stored outside so we can clear it in case of an exception
         let mut sk_data = [0u8; 32];
-        let mut sk = cx_ecfp_private_key_t::default();
 
+        // Prepare secret key data with the ledger's key
         let might_throw = || {
             let curve: u8 = curve.into();
 
-            // Prepare secret key data with the ledger's key
             unsafe {
-                //This shouldn't throw
                 crate::raw::os_perso_derive_node_bip32(
                     curve as _,
                     &path.components as *const u32 as *const _,
@@ -81,46 +65,19 @@ impl Keypair {
                     core::ptr::null_mut(),
                 );
             }
-
-            unsafe {
-                // Use the secret key data to actually get a private key
-                crate::raw::cx_ecfp_init_private_key(
-                    curve as _,
-                    &sk_data[0] as *const u8 as *const _,
-                    sk_data.len() as u32 as _,
-                    &mut sk as *mut _,
-                ); //legacy code ignored the return so...
-            }
-            sk_data.zeroize();
-
-            let mut pk = cx_ecfp_public_key_t::default();
-            unsafe {
-                // Use the secret key to generate a keypair,
-                // the last parameter dictates wheter
-                // the private key is gonna be kept (true)
-                // or it will be discarded and a new one generated instead
-                crate::raw::cx_ecfp_generate_pair(
-                    curve as _,
-                    &mut pk as *mut _,
-                    &mut sk as *mut _,
-                    true as u8 as _,
-                );
-            }
-
-            pk
         };
+        catch(might_throw)?;
 
-        //use retrieved sk and pk to construct keypair
-        let pk = match catch(might_throw) {
-            Ok(pk) => pk,
-            Err(e) => {
-                //an exception was thrown, we should zeroize before returning
-                sk_data.zeroize();
-                sk.d.zeroize();
+        // Use the secret key data to prepare a secret key
+        let sk_r = cx_ecfp_init_private_key(curve, Some(&sk_data[..]));
+        // let's zeroize the sk_data right away before we return
+        sk_data.zeroize();
 
-                return Err(e);
-            }
-        };
+        // bubble up error or get the secret key
+        let sk = sk_r?;
+
+        // Use the secret key to generate a keypair
+        let (mut sk, pk) = cx_ecfp_generate_pair(curve, Some(sk))?;
 
         let rs_sk = SecretKey {
             curve,
@@ -147,7 +104,130 @@ impl Keypair {
     }
 }
 
-#[cfg(bolos_sdk)]
 mod bindings {
+    use super::{catch, Curve, Error};
+    use crate::raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t};
+    use zeroize::Zeroize;
 
+    pub fn cx_edward_compress_point(curve: Curve, p: &mut [u8]) -> Result<usize, Error> {
+        let curve: u8 = curve.into();
+
+        cfg_if! {
+            if #[cfg(nanox)] {
+                let might_throw = || unsafe {
+                    crate::raw::cx_edward_compress_point(
+                        curve as _,
+                        &mut p[0] as *mut u8 as *mut _,
+                        p.len() as u32 as _,
+                    );
+                };
+
+                catch(might_throw)?;
+                Ok(33)
+            } else if #[cfg(nanos)] {
+                match unsafe { crate::raw::cx_edwards_compress_point_no_throw(
+                    curve as _,
+                    &mut p[0] as *mut u8 as *mut _,
+                    p.len() as u32 as _
+                )} {
+                    0 => Ok(33),
+                    err => Err(err.into())
+                }
+            } else {
+                todo!("edwards_compress_point called in non-bolos");
+            }
+        }
+    }
+
+    pub fn cx_ecfp_init_private_key(
+        curve: Curve,
+        sk_data: Option<&[u8]>,
+    ) -> Result<cx_ecfp_private_key_t, Error> {
+        let curve: u8 = curve.into();
+
+        let (sk_data, sk_data_len): (*const u8, u32) = match sk_data {
+            None => (std::ptr::null(), 0),
+            Some(data) => (&data[0] as *const u8, data.len() as u32),
+        };
+
+        let mut out = cx_ecfp_private_key_t::default();
+
+        cfg_if! {
+            if #[cfg(nanox)] {
+                let might_throw = || unsafe {
+                    crate::raw::cx_ecfp_init_private_key(
+                        curve as _,
+                        sk_data as *const _,
+                        sk_data_len as _,
+                        &mut out as *mut _,
+                    );
+                };
+
+                catch(might_throw)?;
+            } else if #[cfg(nanos)] {
+                match unsafe { crate::raw::cx_ecfp_init_private_key_no_throw(
+                    curve as _,
+                    sk_data as *const _,
+                    sk_data_len as _,
+                    &mut out as *mut _,
+                )} {
+                    0 => {},
+                    err => return Err(err.into()),
+                }
+            } else {
+                todo!("init ecfp_private_key called in non-bolos");
+            }
+        }
+
+        Ok(out)
+    }
+
+    pub fn cx_ecfp_generate_pair(
+        curve: Curve,
+        sk: Option<cx_ecfp_private_key_t>,
+    ) -> Result<(cx_ecfp_private_key_t, cx_ecfp_public_key_t), Error> {
+        let curve: u8 = curve.into();
+
+        let (mut sk, keep) = match sk {
+            Some(sk) => (sk, true),
+            None => (Default::default(), false),
+        };
+        let mut pk = cx_ecfp_public_key_t::default();
+
+        cfg_if! {
+            if #[cfg(nanox)] {
+                let might_throw = || unsafe {
+                    crate::raw::cx_ecfp_generate_pair(
+                        curve as _,
+                        &mut pk as *mut _,
+                        &mut sk as *mut _,
+                        keep as u8 as _,
+                    );
+                };
+
+                if let Err(e) = catch(might_throw) {
+                    sk.d.zeroize();
+                    return Err(e.into());
+                }
+            } else if #[cfg(nanos)] {
+                match unsafe { crate::raw::cx_ecfp_generate_pair_no_throw(
+                    curve as _,
+                    &mut pk as *mut _,
+                    &mut sk as *mut _,
+                    keep,
+                )} {
+                    0 => (),
+                    err => {
+                        sk.d.zeroize();
+                        return Err(err.into())
+                    },
+                }
+            } else {
+                todo!("generate_ecfp_keypair called in non-bolos");
+            }
+        }
+
+        Ok((sk, pk))
+    }
 }
+use bindings::*;
