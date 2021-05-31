@@ -63,7 +63,7 @@ ifeq ($(COIN),XTZ)
 # Main app configuration
 DEFINES += APP_STANDARD
 APPNAME = "Tezos"
-APPPATH = "44'/5757'"
+APPPATH = "44'/1729'"
 
 else ifeq ($(COIN),XTZ_baker)
 else

@@ -102,7 +102,7 @@ mod bindings {
                 let might_throw = || unsafe {
                     crate::raw::cx_edward_compress_point(
                         curve as _,
-                        &mut p[0] as *mut u8 as *mut _,
+                        p.as_mut_ptr() as *mut _,
                         p.len() as u32 as _,
                     );
                 };
@@ -112,7 +112,7 @@ mod bindings {
             } else if #[cfg(nanos)] {
                 match unsafe { crate::raw::cx_edwards_compress_point_no_throw(
                     curve as _,
-                    &mut p[0] as *mut u8 as *mut _,
+                    p.as_mut_ptr() as *mut _,
                     p.len() as u32 as _
                 )} {
                     0 => Ok(33),
@@ -130,9 +130,9 @@ mod bindings {
     ) -> Result<cx_ecfp_private_key_t, Error> {
         let curve: u8 = curve.into();
 
-        let (sk_data, sk_data_len): (*const u8, u32) = match sk_data {
-            None => (std::ptr::null(), 0),
-            Some(data) => (&data[0] as *const u8, data.len() as u32),
+        let sk_data: *const u8 = match sk_data {
+            None => std::ptr::null(),
+            Some(data) => data.as_ptr(),
         };
 
         let mut out = cx_ecfp_private_key_t::default();
@@ -143,7 +143,7 @@ mod bindings {
                     crate::raw::cx_ecfp_init_private_key(
                         curve as _,
                         sk_data as *const _,
-                        sk_data_len as _,
+                        32 as _,
                         &mut out as *mut _,
                     );
                 };
@@ -153,7 +153,7 @@ mod bindings {
                 match unsafe { crate::raw::cx_ecfp_init_private_key_no_throw(
                     curve as _,
                     sk_data as *const _,
-                    sk_data_len as _,
+                    32 as _,
                     &mut out as *mut _,
                 )} {
                     0 => {},

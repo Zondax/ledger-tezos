@@ -222,7 +222,7 @@ mod bindings {
 
         let mut out = [0; 64];
         let out_p = &mut out[0] as *mut u8;
-        let (components, path_len) = (&path.components[0] as *const u32, path.len as u32);
+        let (components, path_len) = (&path.components as *const [u32] as *const u32, path.len as u32);
 
         cfg_if! {
             if #[cfg(nanox)] {

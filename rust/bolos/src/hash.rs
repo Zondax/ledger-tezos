@@ -16,19 +16,24 @@ pub use sha256::Sha256;
 /// Abstracts away nanos or nanox implementations
 pub(self) fn cx_hash(
     hash: &mut cx_hash_t,
-    write_out: bool,
     input: &[u8],
-    out: &mut [u8],
+    out: Option<&mut [u8]>,
 ) -> Result<(), Error> {
+
+    let (out, out_len, write_out): (*mut u8, u32, bool) = match out {
+        Some(out) => (out.as_mut_ptr(), out.len() as u32, true),
+        None => (std::ptr::null_mut(), 0, false)
+    };
+
     cfg_if! {
         if #[cfg(nanox)] {
             let might_throw = || unsafe { crate::raw::cx_hash(
                 hash as *mut _,
                 write_out as u8 as _,
-                &input[0] as *const u8 as *const _,
+                input.as_ptr() as *const _,
                 input.len() as u32 as _,
-                &mut out[0] as *mut u8 as *mut _,
-                out.len() as u32 as _,
+                out as *mut _,
+                out_len as _,
             )};
 
             catch(might_throw)?;
@@ -38,10 +43,10 @@ pub(self) fn cx_hash(
             match unsafe { crate::raw::cx_hash_no_throw(
                 hash as *mut _,
                 write_out as u8 as _,
-                &input[0] as *const u8 as *const _,
+                input.as_ptr() as *const _,
                 input.len() as u32 as _,
-                &mut out[0] as *mut u8 as *mut _,
-                out.len() as u32 as _,
+                out as *mut _,
+                out_len as _,
             )} {
                 0 => Ok(()),
                 err => Err(err.into())
@@ -65,13 +70,13 @@ pub(self) use sealed::CxHash;
 
 pub trait Hasher<const S: usize>: CxHash<S> {
     fn update(&mut self, input: &[u8]) -> Result<(), Error> {
-        cx_hash(self.cx_header(), false, input, &mut [])
+        cx_hash(self.cx_header(), input, None)
     }
 
     fn finalize(mut self) -> Result<[u8; S], Error> {
         let mut out = [0; S];
 
-        cx_hash(self.cx_header(), true, &[], &mut out[..])?;
+        cx_hash(self.cx_header(), &[], Some(&mut out[..]))?;
         Ok(out)
     }
 
@@ -80,7 +85,7 @@ pub trait Hasher<const S: usize>: CxHash<S> {
         let mut hasher = Self::init_hasher()?;
 
         let mut out = [0; S];
-        cx_hash(hasher.cx_header(), true, input, &mut out[..])?;
+        cx_hash(hasher.cx_header(), input, Some(&mut out[..]))?;
 
         Ok(out)
     }
