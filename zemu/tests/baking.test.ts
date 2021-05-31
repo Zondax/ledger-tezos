@@ -15,7 +15,7 @@
  ******************************************************************************* */
 
 import Zemu, {DeviceModel} from "@zondax/zemu";
-import TezosApp from "@zondax/ledger-tezos";
+import TezosApp, { Curve } from "@zondax/ledger-tezos";
 import { defaultOptions } from './common'
 
 const Resolve = require("path").resolve;

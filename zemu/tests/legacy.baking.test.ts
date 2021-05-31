@@ -16,7 +16,7 @@
 
 import Zemu, {DEFAULT_START_OPTIONS, DeviceModel} from "@zondax/zemu";
 import TezosApp, { Curve } from "@zondax/ledger-tezos";
-import { APP_SEED } from './common';
+import { defaultOptions } from './common';
 
 const Resolve = require("path").resolve;
 const APP_PATH_LEGACY_S = Resolve("../legacy/output/app_baking.elf");
