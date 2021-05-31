@@ -1513,9 +1513,35 @@ extern "C" {
     pub fn cx_des_block_hw(inblock: *const cty::c_uchar, outblock: *mut cty::c_uchar);
 }
 pub const cx_curve_e_CX_CURVE_NONE: cx_curve_e = 0;
+#[doc = " Low limit (not included) of Weierstrass curve ID"]
+pub const cx_curve_e_CX_CURVE_WEIERSTRASS_START: cx_curve_e = 32;
+pub const cx_curve_e_CX_CURVE_SECP256K1: cx_curve_e = 33;
+pub const cx_curve_e_CX_CURVE_SECP256R1: cx_curve_e = 34;
+pub const cx_curve_e_CX_CURVE_SECP384R1: cx_curve_e = 35;
+pub const cx_curve_e_CX_CURVE_SECP521R1: cx_curve_e = 36;
+pub const cx_curve_e_CX_CURVE_BrainPoolP256T1: cx_curve_e = 49;
+pub const cx_curve_e_CX_CURVE_BrainPoolP256R1: cx_curve_e = 50;
+pub const cx_curve_e_CX_CURVE_BrainPoolP320T1: cx_curve_e = 51;
+pub const cx_curve_e_CX_CURVE_BrainPoolP320R1: cx_curve_e = 52;
+pub const cx_curve_e_CX_CURVE_BrainPoolP384T1: cx_curve_e = 53;
+pub const cx_curve_e_CX_CURVE_BrainPoolP384R1: cx_curve_e = 54;
+pub const cx_curve_e_CX_CURVE_BrainPoolP512T1: cx_curve_e = 55;
+pub const cx_curve_e_CX_CURVE_BrainPoolP512R1: cx_curve_e = 56;
+pub const cx_curve_e_CX_CURVE_BLS12_381_G1: cx_curve_e = 57;
+pub const cx_curve_e_CX_CURVE_FRP256V1: cx_curve_e = 65;
+pub const cx_curve_e_CX_CURVE_Stark256: cx_curve_e = 81;
+#[doc = " High limit (not included) of Weierstrass curve ID"]
+pub const cx_curve_e_CX_CURVE_WEIERSTRASS_END: cx_curve_e = 111;
 #[doc = " Low limit (not included) of  Twister Edwards curve ID"]
 pub const cx_curve_e_CX_CURVE_TWISTED_EDWARDS_START: cx_curve_e = 112;
+pub const cx_curve_e_CX_CURVE_Ed25519: cx_curve_e = 113;
+pub const cx_curve_e_CX_CURVE_Ed448: cx_curve_e = 114;
 pub const cx_curve_e_CX_CURVE_TWISTED_EDWARDS_END: cx_curve_e = 127;
+#[doc = " Low limit (not included) of Montgomery curve ID"]
+pub const cx_curve_e_CX_CURVE_MONTGOMERY_START: cx_curve_e = 128;
+pub const cx_curve_e_CX_CURVE_Curve25519: cx_curve_e = 129;
+pub const cx_curve_e_CX_CURVE_Curve448: cx_curve_e = 130;
+pub const cx_curve_e_CX_CURVE_MONTGOMERY_END: cx_curve_e = 143;
 #[doc = " List of supported elliptic curves"]
 pub type cx_curve_e = cty::c_uint;
 #[doc = " Convenience type. See #cx_curve_e."]

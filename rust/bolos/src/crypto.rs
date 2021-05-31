@@ -7,6 +7,19 @@ use std::convert::TryFrom;
 
 pub mod bip32;
 
+//Constants
+use crate::raw::{
+    cx_curve_e_CX_CURVE_BLS12_381_G1, cx_curve_e_CX_CURVE_BrainPoolP256R1,
+    cx_curve_e_CX_CURVE_BrainPoolP256T1, cx_curve_e_CX_CURVE_BrainPoolP320R1,
+    cx_curve_e_CX_CURVE_BrainPoolP320T1, cx_curve_e_CX_CURVE_BrainPoolP384R1,
+    cx_curve_e_CX_CURVE_BrainPoolP384T1, cx_curve_e_CX_CURVE_BrainPoolP512R1,
+    cx_curve_e_CX_CURVE_BrainPoolP512T1, cx_curve_e_CX_CURVE_Curve25519,
+    cx_curve_e_CX_CURVE_Curve448, cx_curve_e_CX_CURVE_Ed25519, cx_curve_e_CX_CURVE_Ed448,
+    cx_curve_e_CX_CURVE_FRP256V1, cx_curve_e_CX_CURVE_NONE, cx_curve_e_CX_CURVE_SECP256K1,
+    cx_curve_e_CX_CURVE_SECP256R1, cx_curve_e_CX_CURVE_SECP384R1, cx_curve_e_CX_CURVE_SECP521R1,
+    cx_curve_e_CX_CURVE_Stark256,
+};
+
 #[derive(Debug, Clone, Copy)]
 pub enum Curve {
     None,
@@ -54,29 +67,29 @@ impl TryFrom<u8> for Curve {
     type Error = ();
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Self::None),
-            21 => Ok(Self::Secp256K1),
-            22 => Ok(Self::Secp256R1),
-            23 => Ok(Self::Secp384R1),
-            24 => Ok(Self::Secp521R1),
-            25 => Ok(Self::BrainPoolP256T1),
-            26 => Ok(Self::BrainPoolP256R1),
-            27 => Ok(Self::BrainPoolP320T1),
-            28 => Ok(Self::BrainPoolP320R1),
-            29 => Ok(Self::BrainPoolP384T1),
-            30 => Ok(Self::BrainPoolP384R1),
-            31 => Ok(Self::BrainPoolP512T1),
-            32 => Ok(Self::BrainPoolP512R1),
-            33 => Ok(Self::Frp256V1),
-            34 => Ok(Self::Stark256),
-            35 => Ok(Self::Bls12_381G1),
+        match value as u32 {
+            cx_curve_e_CX_CURVE_NONE => Ok(Self::None),
+            cx_curve_e_CX_CURVE_SECP256K1 => Ok(Self::Secp256K1),
+            cx_curve_e_CX_CURVE_SECP256R1 => Ok(Self::Secp256R1),
+            cx_curve_e_CX_CURVE_SECP384R1 => Ok(Self::Secp384R1),
+            cx_curve_e_CX_CURVE_SECP521R1 => Ok(Self::Secp521R1),
+            cx_curve_e_CX_CURVE_BrainPoolP256T1 => Ok(Self::BrainPoolP256T1),
+            cx_curve_e_CX_CURVE_BrainPoolP256R1 => Ok(Self::BrainPoolP256R1),
+            cx_curve_e_CX_CURVE_BrainPoolP320T1 => Ok(Self::BrainPoolP320T1),
+            cx_curve_e_CX_CURVE_BrainPoolP320R1 => Ok(Self::BrainPoolP320R1),
+            cx_curve_e_CX_CURVE_BrainPoolP384T1 => Ok(Self::BrainPoolP384T1),
+            cx_curve_e_CX_CURVE_BrainPoolP384R1 => Ok(Self::BrainPoolP384R1),
+            cx_curve_e_CX_CURVE_BrainPoolP512T1 => Ok(Self::BrainPoolP512T1),
+            cx_curve_e_CX_CURVE_BrainPoolP512R1 => Ok(Self::BrainPoolP512R1),
+            cx_curve_e_CX_CURVE_FRP256V1 => Ok(Self::Frp256V1),
+            cx_curve_e_CX_CURVE_Stark256 => Ok(Self::Stark256),
+            cx_curve_e_CX_CURVE_BLS12_381_G1 => Ok(Self::Bls12_381G1),
 
-            41 => Ok(Self::Ed25519),
-            42 => Ok(Self::Ed448),
+            cx_curve_e_CX_CURVE_Ed25519 => Ok(Self::Ed25519),
+            cx_curve_e_CX_CURVE_Ed448 => Ok(Self::Ed448),
 
-            61 => Ok(Self::Curve25519),
-            62 => Ok(Self::Curve448),
+            cx_curve_e_CX_CURVE_Curve25519 => Ok(Self::Curve25519),
+            cx_curve_e_CX_CURVE_Curve448 => Ok(Self::Curve448),
             _ => Err(()),
         }
     }
@@ -84,28 +97,29 @@ impl TryFrom<u8> for Curve {
 
 impl Into<u8> for Curve {
     fn into(self) -> u8 {
-        match self {
-            Curve::None => 0,
-            Curve::Secp256K1 => 21,
-            Curve::Secp256R1 | Curve::Nistp256 => 22,
-            Curve::Secp384R1 | Curve::Nistp384 => 23,
-            Curve::Secp521R1 | Curve::Nistp521 => 24,
-            Curve::BrainPoolP256T1 => 25,
-            Curve::BrainPoolP256R1 => 26,
-            Curve::BrainPoolP320T1 => 27,
-            Curve::BrainPoolP320R1 => 28,
-            Curve::BrainPoolP384T1 => 29,
-            Curve::BrainPoolP384R1 => 30,
-            Curve::BrainPoolP512T1 => 31,
-            Curve::BrainPoolP512R1 => 32,
-            Curve::Frp256V1 => 33,
-            Curve::Stark256 => 34,
-            Curve::Bls12_381G1 => 35,
-            Curve::Ed25519 => 41,
-            Curve::Ed448 => 42,
-            Curve::Curve25519 => 61,
-            Curve::Curve448 => 62,
-        }
+        let n = match self {
+            Curve::None => cx_curve_e_CX_CURVE_NONE,
+            Curve::Secp256K1 => cx_curve_e_CX_CURVE_SECP256K1,
+            Curve::Secp256R1 | Curve::Nistp256 => cx_curve_e_CX_CURVE_SECP256R1,
+            Curve::Secp384R1 | Curve::Nistp384 => cx_curve_e_CX_CURVE_SECP384R1,
+            Curve::Secp521R1 | Curve::Nistp521 => cx_curve_e_CX_CURVE_SECP521R1,
+            Curve::BrainPoolP256T1 => cx_curve_e_CX_CURVE_BrainPoolP256T1,
+            Curve::BrainPoolP256R1 => cx_curve_e_CX_CURVE_BrainPoolP256R1,
+            Curve::BrainPoolP320T1 => cx_curve_e_CX_CURVE_BrainPoolP320T1,
+            Curve::BrainPoolP320R1 => cx_curve_e_CX_CURVE_BrainPoolP320R1,
+            Curve::BrainPoolP384T1 => cx_curve_e_CX_CURVE_BrainPoolP384T1,
+            Curve::BrainPoolP384R1 => cx_curve_e_CX_CURVE_BrainPoolP384R1,
+            Curve::BrainPoolP512T1 => cx_curve_e_CX_CURVE_BrainPoolP512T1,
+            Curve::BrainPoolP512R1 => cx_curve_e_CX_CURVE_BrainPoolP512R1,
+            Curve::Frp256V1 => cx_curve_e_CX_CURVE_FRP256V1,
+            Curve::Stark256 => cx_curve_e_CX_CURVE_Stark256,
+            Curve::Bls12_381G1 => cx_curve_e_CX_CURVE_BLS12_381_G1,
+            Curve::Ed25519 => cx_curve_e_CX_CURVE_Ed25519,
+            Curve::Ed448 => cx_curve_e_CX_CURVE_Ed448,
+            Curve::Curve25519 => cx_curve_e_CX_CURVE_Curve25519,
+            Curve::Curve448 => cx_curve_e_CX_CURVE_Ed448,
+        };
+        n as u8
     }
 }
 
@@ -149,39 +163,104 @@ impl Curve {
     }
 }
 
+use crate::raw::{HDW_NORMAL, HDW_ED25519_SLIP10};
+#[cfg(nanos)]
+use crate::raw::HDW_SLIP21;
+
 #[derive(Debug, Clone, Copy)]
 pub enum Mode {
     BIP32,
     Ed25519Slip10,
-    Slip21
+    #[cfg(nanos)]
+    Slip21,
 }
 
 impl TryFrom<u8> for Mode {
     type Error = ();
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Self::BIP32),
-            1 => Ok(Self::Ed25519Slip10),
-            2 => Ok(Self::Slip21),
-            _ => Err(())
+        match value as u32 {
+            HDW_NORMAL => Ok(Self::BIP32),
+            HDW_ED25519_SLIP10 => Ok(Self::Ed25519Slip10),
+            #[cfg(nanos)]
+            HDW_SLIP21 => Ok(Self::Slip21),
+            _ => Err(()),
         }
     }
 }
 
 impl Into<u8> for Mode {
     fn into(self) -> u8 {
-        match self {
-            Mode::BIP32 => 0,
-            Mode::Ed25519Slip10 => 1,
-            Mode::Slip21 => 2,
-        }
+        let n = match self {
+            Mode::BIP32 => HDW_NORMAL,
+            Mode::Ed25519Slip10 => HDW_ED25519_SLIP10,
+            #[cfg(nanos)]
+            Mode::Slip21 => HDW_SLIP21,
+        };
+
+        n as u8
     }
 }
 
 impl Default for Mode {
     fn default() -> Self {
         Self::BIP32
+    }
+}
+
+mod bindings {
+    use super::{bip32::BIP32Path, Curve, Mode};
+    use crate::errors::{catch, Error};
+
+    pub fn os_perso_derive_node_with_seed_key(
+        mode: Mode,
+        curve: Curve,
+        path: &BIP32Path,
+    ) -> Result<[u8; 64], Error> {
+        let curve: u8 = curve.into();
+        let mode: u8 = mode.into();
+
+        let mut out = [0; 64];
+        let out_p = &mut out[0] as *mut u8;
+        let (components, path_len) = (&path.components[0] as *const u32, path.len as u32);
+
+        cfg_if! {
+            if #[cfg(nanox)] {
+                let might_throw = || unsafe {
+                    crate::raw::os_perso_derive_node_bip32_seed_key(
+                        mode as _,
+                        curve as _,
+                        components as *const _,
+                        path_len as _,
+                        out_p as *mut _,
+                        std::ptr::null_mut(),
+                        std::ptr::null_mut(),
+                        0
+                    );
+                };
+
+                catch(might_throw)?;
+            } else if #[cfg(nanos)] {
+                let might_throw = || unsafe {
+                    crate::raw::os_perso_derive_node_with_seed_key(
+                        mode as _,
+                        curve as _,
+                        components as *const _,
+                        path_len as _,
+                        out_p as *mut _,
+                        std::ptr::null_mut(),
+                        std::ptr::null_mut(),
+                        0
+                    )
+                };
+
+                catch(might_throw)?;
+            } else {
+                todo!("os derive called in non-bolos")
+            }
+        }
+
+        Ok(out)
     }
 }
 

@@ -51,7 +51,7 @@ pub struct Keypair {
 impl Keypair {
     pub fn generate(mode: Mode, curve: Curve, path: &BIP32Path) -> Result<Self, Error> {
         // Prepare secret key data with the ledger's key
-        let mut sk_data = os_perso_derive_node_with_seed_key::<64>(mode, curve, path)?;
+        let mut sk_data = super::bindings::os_perso_derive_node_with_seed_key(mode, curve, path)?;
 
         // Use the secret key data to prepare a secret key
         let sk_r = cx_ecfp_init_private_key(curve, Some(&sk_data[..]));
@@ -90,7 +90,7 @@ impl Keypair {
 }
 
 mod bindings {
-    use super::{catch, Mode, BIP32Path, Curve, Error};
+    use super::{catch, Curve, Error};
     use crate::raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t};
     use zeroize::Zeroize;
 
@@ -213,57 +213,6 @@ mod bindings {
         }
 
         Ok((sk, pk))
-    }
-
-    pub fn os_perso_derive_node_with_seed_key<const S: usize>(
-        mode: Mode,
-        curve: Curve,
-        path: &BIP32Path,
-    ) -> Result<[u8; S], Error> {
-        let curve: u8 = curve.into();
-        let mode: u8 = mode.into();
-
-        let mut out = [0; S];
-        let out_p = &mut out[0] as *mut u8;
-        let (components, path_len) = (&path.components as *const u32, path.len as u32);
-
-        cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe {
-                    crate::raw::os_perso_derive_node_bip32_seed_key(
-                        mode as _,
-                        curve as _,
-                        components as *const _,
-                        path_len as _,
-                        out_p as *mut _,
-                        std::ptr::null_mut(),
-                        std::ptr::null_mut(),
-                        0
-                    );
-                };
-
-                catch(might_throw)?;
-            } else if #[cfg(nanos)] {
-                let might_throw = || unsafe {
-                    crate::raw::os_perso_derive_node_with_seed_key(
-                        mode as _,
-                        curve as _,
-                        components as *const _,
-                        path_len as _,
-                        out_p as *mut _,
-                        std::ptr::null_mut(),
-                        std::ptr::null_mut(),
-                        0
-                    )
-                };
-
-                catch(might_throw)?;
-            } else {
-                todo!("os derive called in non-bolos")
-            }
-        }
-
-        Ok(out)
     }
 }
 use bindings::*;
