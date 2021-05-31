@@ -244,7 +244,7 @@ mod bindings {
 
                 catch(might_throw)?;
             } else if #[cfg(nanos)] {
-                unsafe {
+                let might_throw = || unsafe {
                     crate::raw::os_perso_derive_node_with_seed_key(
                         mode as _,
                         curve as _,
@@ -256,6 +256,8 @@ mod bindings {
                         0
                     )
                 };
+
+                catch(might_throw)?;
             } else {
                 todo!("os derive called in non-bolos")
             }

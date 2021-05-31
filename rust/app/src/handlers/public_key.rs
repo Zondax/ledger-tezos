@@ -13,6 +13,16 @@ use crate::{
 
 pub struct GetAddress;
 
+impl GetAddress {
+    /// Retrieve the public key with the given curve and bip32 path
+    pub fn new_key(
+        curve: crypto::Curve,
+        path: &sys::crypto::bip32::BIP32Path,
+    ) -> Result<crypto::PublicKey, SysError> {
+        curve.gen_keypair(path)?.public().compress()
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 enum Action {
     //NEW API: return concat(public_key,address)
@@ -47,17 +57,12 @@ impl ApduHandler for GetAddress {
         if cdata_len > buffer[5..].len() {
             return Err(Error::DataInvalid);
         }
-        let cdata = &buffer[5..cdata_len];
+        let cdata = &buffer[5..5 + cdata_len];
 
         let bip32_path =
             sys::crypto::bip32::BIP32Path::read(cdata).map_err(|_| Error::DataInvalid)?;
 
-        let key = curve
-            .gen_keypair(&bip32_path)
-            .map_err(|_| Error::ExecutionError)?
-            .public()
-            .compress()
-            .map_err(|_| Error::ExecutionError)?;
+        let key = Self::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
 
         match action {
             Action::GetPublicAndAddress => {
@@ -99,7 +104,7 @@ impl ApduHandler for GetAddress {
     }
 }
 
-struct Addr {
+pub struct Addr {
     prefix: [u8; 3],
     hash: [u8; 20],
     checksum: [u8; 4],
