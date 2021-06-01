@@ -19,10 +19,9 @@ pub(self) fn cx_hash(
     input: &[u8],
     out: Option<&mut [u8]>,
 ) -> Result<(), Error> {
-
     let (out, out_len, write_out): (*mut u8, u32, bool) = match out {
         Some(out) => (out.as_mut_ptr(), out.len() as u32, true),
-        None => (std::ptr::null_mut(), 0, false)
+        None => (std::ptr::null_mut(), 0, false),
     };
 
     cfg_if! {

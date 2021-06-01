@@ -163,9 +163,9 @@ impl Curve {
     }
 }
 
-use crate::raw::{HDW_NORMAL, HDW_ED25519_SLIP10};
 #[cfg(nanos)]
 use crate::raw::HDW_SLIP21;
+use crate::raw::{HDW_ED25519_SLIP10, HDW_NORMAL};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Mode {
@@ -222,7 +222,10 @@ mod bindings {
 
         let mut out = [0; 64];
         let out_p = &mut out[0] as *mut u8;
-        let (components, path_len) = (&path.components as *const [u32] as *const u32, path.len as u32);
+        let (components, path_len) = (
+            &path.components as *const [u32] as *const u32,
+            path.len as u32,
+        );
 
         cfg_if! {
             if #[cfg(nanox)] {
