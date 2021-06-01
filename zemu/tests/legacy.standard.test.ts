@@ -41,7 +41,7 @@ describe('Legacy wallet', function () {
         const sim = new Zemu(m.path)
         try {
             await sim.start({ ...defaultOptions, model: m.name })
-            await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 5, -5])
+            await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [3, -3])
         } finally {
             await sim.close()
         }

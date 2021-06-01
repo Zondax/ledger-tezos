@@ -620,30 +620,15 @@
     rxjs "6"
     semver "^7.3.5"
 
-"@ledgerhq/devices@^5.51.1":
-  version "5.51.1"
-  resolved "https://registry.yarnpkg.com/@ledgerhq/devices/-/devices-5.51.1.tgz#d741a4a5d8f17c2f9d282fd27147e6fe1999edb7"
-  integrity sha512-4w+P0VkbjzEXC7kv8T1GJ/9AVaP9I6uasMZ/JcdwZBS3qwvKo5A5z9uGhP5c7TvItzcmPb44b5Mw2kT+WjUuAA==
-  dependencies:
-    "@ledgerhq/errors" "^5.50.0"
-    "@ledgerhq/logs" "^5.50.0"
-    rxjs "6"
-    semver "^7.3.5"
-
-"@ledgerhq/errors@^5.48.0":
-  version "5.48.0"
-  resolved "https://registry.yarnpkg.com/@ledgerhq/errors/-/errors-5.48.0.tgz#f77e098d9e9bb4443ed57f4a5f46c97fb25f8a7a"
-  integrity sha512-817t7M0hi7j0xY6uuG0F3kjbkaEP9hHlxfDBpb3EWkTvkg5SgHaDmvHYTjUoE1HhaPypHLjEii7URx2boOfQVA==
-
 "@ledgerhq/errors@^5.50.0":
   version "5.50.0"
   resolved "https://registry.yarnpkg.com/@ledgerhq/errors/-/errors-5.50.0.tgz#e3a6834cb8c19346efca214c1af84ed28e69dad9"
   integrity sha512-gu6aJ/BHuRlpU7kgVpy2vcYk6atjB4iauP2ymF7Gk0ez0Y/6VSMVSJvubeEQN+IV60+OBK0JgeIZG7OiHaw8ow==
 
-"@ledgerhq/hw-transport-http@^5.48.0":
-  version "5.48.0"
-  resolved "https://registry.yarnpkg.com/@ledgerhq/hw-transport-http/-/hw-transport-http-5.48.0.tgz#379dfd6522ad0432adf78f65d5ccbbb619189f0d"
-  integrity sha512-OTM69+P5jZLgS0NMh9/cq7d8vXKnU2JqONT8HVdPPjqFF+94DyjXoVi9ywFViUczfXyaycoDu1CbO4XoBWEzjg==
+"@ledgerhq/hw-transport-http@^5.51.1":
+  version "5.51.1"
+  resolved "https://registry.yarnpkg.com/@ledgerhq/hw-transport-http/-/hw-transport-http-5.51.1.tgz#720b4a054401c82884f9d64bcb093988fd397498"
+  integrity sha512-hsWxRX+dICyCHUxdUWqKnFwSPL0G9v/R6TVEJpnQ07IiBfIajbF59IRPCn9/Fw4XHII6IO+xtPT+jFkwwSdHLQ==
   dependencies:
     "@ledgerhq/errors" "^5.50.0"
     "@ledgerhq/hw-transport" "^5.51.1"
@@ -1007,7 +992,6 @@
     "@typescript-eslint/types" "4.20.0"
     eslint-visitor-keys "^2.0.0"
 
-<<<<<<< HEAD
 "@typescript-eslint/visitor-keys@4.24.0":
   version "4.24.0"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/visitor-keys/-/visitor-keys-4.24.0.tgz#a8fafdc76cad4e04a681a945fbbac4e35e98e297"
@@ -1015,11 +999,6 @@
   dependencies:
     "@typescript-eslint/types" "4.24.0"
     eslint-visitor-keys "^2.0.0"
-=======
-"@zondax/ledger-tezos@link:../js":
-  version "0.0.0"
-  uid ""
->>>>>>> 2672c66 (test(zemu): add initial getPubKey tests)
 
 "@zondax/ledger-tezos@link:../js":
   version "0.0.0"
@@ -5098,11 +5077,7 @@ run-parallel@^1.1.9:
   dependencies:
     queue-microtask "^1.2.2"
 
-<<<<<<< HEAD
 rxjs@6:
-=======
-rxjs@6, rxjs@^6.6.7:
->>>>>>> 2672c66 (test(zemu): add initial getPubKey tests)
   version "6.6.7"
   resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-6.6.7.tgz#90ac018acabf491bf65044235d5863c4dab804c9"
   integrity sha512-hTdwr+7yYNIT5n4AMYp85KA6yw2Va0FLa3Rguvbpa4W3I5xynaBZo41cM3XM+4Q6fRMj3sBYIR1VAmZMXYJvRQ==
