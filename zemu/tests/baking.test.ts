@@ -22,9 +22,6 @@ const Resolve = require("path").resolve;
 const APP_PATH_S = Resolve("../rust/app/output/app_s_baking.elf");
 const APP_PATH_X = Resolve("../rust/app/output/app_x_baking.elf");
 
-//from legacy readme
-const APP_DERIVATION = "m/44'/1729'/0'/0'"
-
 const models: DeviceModel[] = [
     {name: 'nanos', prefix: 'BS', path: APP_PATH_S},
     {name: 'nanox', prefix: 'BX', path: APP_PATH_X},
@@ -85,25 +82,6 @@ describe('Standard baking', function () {
             expect(resp.errorMessage).toEqual("No errors");
             expect(resp).toHaveProperty("commit_hash");
         } finally {
-            await sim.close();
-        }
-    });
-
-    test.each(models)('get pubkey ed25519', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosApp(sim.getTransport());
-            const resp = await app.getAddressAndPubKey(APP_DERIVATION, Curve.Ed25519);
-
-            console.log(resp, m.name);
-
-            expect(resp.returnCode).toEqual(0x9000);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("publicKey");
-            expect(resp).toHaveProperty("address");
-
-        }finally {
             await sim.close();
         }
     });

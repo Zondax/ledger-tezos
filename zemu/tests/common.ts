@@ -18,3 +18,5 @@ export const defaultOptions = {
     custom: `-s "${APP_SEED}"`,
     X11: true,
 };
+
+export const APP_DERIVATION = "m/44'/1729'/0'/0'"
