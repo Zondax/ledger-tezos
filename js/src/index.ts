@@ -28,7 +28,6 @@ import {
   P2_CURVE,
   Curve,
   PAYLOAD_TYPE,
-  PKLEN,
   processErrorResponse
 } from "./common";
 
@@ -41,10 +40,14 @@ function processGetAddrResponse(response: Buffer) {
   const errorCodeData = partialResponse.slice(-2);
   const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]);
 
-  const publicKey = Buffer.from(partialResponse.slice(0, PKLEN));
-  partialResponse = partialResponse.slice(PKLEN);
+  //get public key len (variable)
+  const PKLEN = partialResponse[0];
+  const publicKey = Buffer.from(partialResponse.slice(1, 1 + PKLEN));
 
-  const address = Buffer.from(partialResponse.slice(PKLEN, -2)).toString();
+  //"advance" buffer
+  partialResponse = partialResponse.slice(1 + PKLEN);
+
+  const address = Buffer.from(partialResponse.slice(0, -2)).toString();
 
   return {
     publicKey,

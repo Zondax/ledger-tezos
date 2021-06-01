@@ -40,8 +40,6 @@ export enum Curve {
   Ed25519 = P2_CURVE.ED25519,
 }
 
-export const PKLEN = 33;
-
 export enum LedgerError {
   U2FUnknown = 1,
   U2FBadRequest = 2,

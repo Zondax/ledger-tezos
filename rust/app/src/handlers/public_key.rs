@@ -74,12 +74,14 @@ impl ApduHandler for GetAddress {
 
                 let key = key.as_ref();
                 let len = key.len();
-                buffer[..len].copy_from_slice(&key);
+                //prepend pubkey with len
+                buffer[0] = len as u8;
+                buffer[1.. 1 + len].copy_from_slice(&key);
                 *tx = len as u32;
 
                 let addr = addr.to_base58();
                 let alen = addr.len();
-                buffer[len..len + alen].copy_from_slice(&addr[..]);
+                buffer[1 + len..1 + len + alen].copy_from_slice(&addr[..]);
                 *tx += alen as u32;
             }
             Action::LegacyGetPublic => {
