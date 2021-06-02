@@ -1,17 +1,14 @@
 [package]
-name = "bolos-derive"
+name = "bolos-mock"
 version = "0.1.0"
 authors = ["becominginsane <francesco@zondax.ch>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-proc-macro = true
+
+[features]
 
 [dependencies]
-syn = { version = "1.0", features = ["full", "extra-traits"] }
-quote = "1.0"
-proc-macro2 = "1"
+bolos-common = { version = "0.1", path = "../bolos-common" }
 
-[dev-dependencies]
-bolos = { path = "../bolos" }
+cfg-if = "1"

@@ -1,6 +1,6 @@
 [workspace]
 members = ["app",
-            "bolos", "bolos-derive",
+            "bolos", "bolos-sys", "bolos-impl", "bolos-mock", "bolos-common", "bolos-derive",
             "zemu"]
 
 resolver = "2"

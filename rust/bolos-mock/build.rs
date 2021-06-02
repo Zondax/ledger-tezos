@@ -4,11 +4,7 @@ fn main() {
     if let Some(v) = std::env::var_os("BOLOS_SDK") {
         if !v.is_empty() {
             println!("cargo:rustc-cfg=bolos_sdk");
-            println!("cargo:rustc-cfg=__impl");
-        } else {
-            println!("cargo:rustc-cfg=__mock");
+            println!("cargo:warning=[MOCK] BOLOS_SDK is set, not exporting anything")
         }
-    } else {
-        println!("cargo:rustc-cfg=__mock");
     }
 }

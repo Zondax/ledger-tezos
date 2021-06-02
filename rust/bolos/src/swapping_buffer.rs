@@ -1,6 +1,4 @@
-use crate::nvm::NVMError;
-
-use super::{nvm::NVM, PIC};
+use super::{nvm::{NVMError, NVM}, PIC};
 use std::prelude::v1::*;
 
 #[derive(Debug, Clone, Copy)]

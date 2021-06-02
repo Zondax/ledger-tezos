@@ -1,4 +1,3 @@
-use cfg_if::cfg_if;
 use std::ops::Deref;
 
 use crate::{errors::catch, Error as SysError};
@@ -10,9 +9,9 @@ use crate::{errors::catch, Error as SysError};
 ///
 /// # Example
 /// ```
-/// # use bolos_sys::{PIC, NVM};
+/// # use bolos::{PIC, NVM};
 /// //the macro will take care of wrapping with PIC aswell
-/// #[bolos_sys::nvm]
+/// #[bolos::nvm]
 /// static MEMORY: [u8; 1024];
 ///
 /// let _: &PIC<NVM<1024>> = &MEMORY;

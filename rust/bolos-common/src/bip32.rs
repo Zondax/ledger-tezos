@@ -1,6 +1,7 @@
+/// Struct representing a BIP32 derivation path, with up to 10 components
 pub struct BIP32Path {
-    pub(crate) len: u8,
-    pub(crate) components: [u32; 10],
+    len: u8,
+    components: [u32; 10],
 }
 
 pub enum BIP32PathError {
@@ -49,5 +50,10 @@ impl BIP32Path {
             len: len as u8,
             components: components_array,
         })
+    }
+
+    ///Retrieve the list of components
+    pub fn components(&self) -> &[u32] {
+        &self.components[..self.len as usize]
     }
 }

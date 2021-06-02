@@ -1,14 +1,12 @@
 use std::convert::TryFrom;
 
-use bolos_sys::Error as SysError;
-
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     crypto,
     dispatcher::{
         ApduHandler, INS_GET_ADDRESS, INS_LEGACY_GET_PUBLIC_KEY, INS_LEGACY_PROMPT_PUBLIC_KEY,
     },
-    sys,
+    sys::{self, Error as SysError},
 };
 
 pub struct GetAddress;

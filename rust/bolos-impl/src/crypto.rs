@@ -5,7 +5,7 @@
 
 use std::convert::TryFrom;
 
-pub mod bip32;
+pub use bolos_common::bip32;
 
 //Constants
 use crate::raw::{
@@ -222,10 +222,10 @@ mod bindings {
 
         let mut out = [0; 64];
         let out_p = &mut out[0] as *mut u8;
-        let (components, path_len) = (
-            &path.components as *const [u32] as *const u32,
-            path.len as u32,
-        );
+        let (components, path_len) = {
+            let components = path.components();
+            (components.as_ptr(), components.len() as u32)
+        };
 
         cfg_if! {
             if #[cfg(nanox)] {

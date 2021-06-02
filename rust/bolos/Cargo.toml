@@ -1,21 +1,24 @@
 [package]
-name = "bolos-sys"
+name = "bolos"
 version = "0.1.0"
 authors = ["becominginsane <francesco@zondax.ch>"]
 edition = "2018"
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-exception-throw = []
 wear = ["crc"]
 
 [dependencies]
-cty = "0.2"
+cfg-if = "1.0.0"
 bolos-derive = { version = "0.1", path = "../bolos-derive" }
 
-cfg-if = "1.0.0"
 no-std-compat = { version = "0.4" }
 
 #wear levelling
 crc = { version = "1.8.1", optional = true, default-features = false }
 
-zeroize = { version = "1", default-features = false }
+[target.thumbv6m-none-eabi.dependencies]
+bolos-impl = { version = "0.1", path = "../bolos-impl" }
+
+[target.'cfg(any(unix, windows))'.dependencies]
+bolos-mock = { version = "0.1", path = "../bolos-mock" }

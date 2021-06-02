@@ -1,6 +1,6 @@
 use bolos_derive::*;
 
-use bolos_sys::{NVM, PIC};
+use bolos::{NVM, PIC};
 
 #[test]
 fn check_access() {
