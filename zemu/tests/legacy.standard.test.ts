@@ -52,13 +52,14 @@ describe('Legacy wallet', function () {
         try {
             await sim.start({...defaultOptions, model: m.name,});
             const app = new TezosApp(sim.getTransport());
-            const resp = await app.getVersion();
+            const resp = await app.legacyGetVersion();
 
             console.log(resp);
 
             expect(resp.returnCode).toEqual(0x9000);
             expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("testMode");
+            expect(resp).toHaveProperty("baking");
+            expect(resp.baking).toBe(false);
             expect(resp).toHaveProperty("major");
             expect(resp).toHaveProperty("minor");
             expect(resp).toHaveProperty("patch");
@@ -72,7 +73,7 @@ describe('Legacy wallet', function () {
         try {
             await sim.start({...defaultOptions, model: m.name});
             const app = new TezosApp(sim.getTransport());
-            const resp = await app.getGit();
+            const resp = await app.legacyGetGit();
 
             console.log(resp);
             expect(resp.returnCode).toEqual(0x9000);

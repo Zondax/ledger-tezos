@@ -60,12 +60,37 @@ describe('Standard', function () {
     }
   })
 
+})
+
+describe('Standard; legacy', function () {
+
+  test.each(models)('get app version', async function (m) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+      const resp = await app.legacyGetVersion()
+
+      console.log(resp)
+
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('baking')
+      expect(resp.baking).toBe(false)
+      expect(resp).toHaveProperty('major')
+      expect(resp).toHaveProperty('minor')
+      expect(resp).toHaveProperty('patch')
+    } finally {
+      await sim.close()
+    }
+  })
+
   test.each(models)('get git app', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.getGit()
+      const resp = await app.legacyGetGit()
 
       console.log(resp)
       expect(resp.returnCode).toEqual(0x9000)
@@ -75,6 +100,7 @@ describe('Standard', function () {
       await sim.close()
     }
   })
+
 })
 
 describe('Standard - pubkey', function () {
