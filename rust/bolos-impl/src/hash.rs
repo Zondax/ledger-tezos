@@ -68,29 +68,48 @@ mod sealed {
 pub(self) use sealed::CxHash;
 
 pub use bolos_common::hash::Hasher;
-impl<T, const S: usize> Hasher<S> for T
-where
-    T: CxHash<S>,
-{
-    type Error = Error;
 
-    fn update(&mut self, input: &[u8]) -> Result<(), Error> {
-        cx_hash(self.cx_header(), input, None)
-    }
+macro_rules! impl_hasher {
+    (@__IMPL $ty:ty, $s:tt) => {
+        type Error = Error;
 
-    fn finalize(mut self) -> Result<[u8; S], Error> {
-        let mut out = [0; S];
+        fn update(&mut self, input: &[u8]) -> Result<(), Self::Error> {
+            cx_hash(self.cx_header(), input, None)
+        }
 
-        cx_hash(self.cx_header(), &[], Some(&mut out[..]))?;
-        Ok(out)
-    }
+        fn finalize(mut self) -> Result<[u8; $s], Error> {
+            let mut out = [0; $s];
 
-    fn digest(input: &[u8]) -> Result<[u8; S], Error> {
-        let mut hasher = Self::init_hasher()?;
+            cx_hash(self.cx_header(), &[], Some(&mut out[..]))?;
+            Ok(out)
+        }
 
-        let mut out = [0; S];
-        cx_hash(hasher.cx_header(), input, Some(&mut out[..]))?;
+        fn digest(input: &[u8]) -> Result<[u8; $s], Error> {
+            let mut hasher = Self::init_hasher()?;
 
-        Ok(out)
-    }
+            let mut out = [0; $s];
+            cx_hash(hasher.cx_header(), input, Some(&mut out[..]))?;
+
+            Ok(out)
+        }
+    };
+    (@GENERIC $s:ident, $ty:ty) => {
+        impl<const $s: usize> Hasher<S> for $ty
+        where
+            Self: CxHash<$s>,
+        {
+            impl_hasher! {@__IMPL $ty, $s}
+        }
+    };
+    (@FIXED $sz:expr, $ty:ty) => {
+        impl Hasher<$sz> for $ty
+        where
+            Self: CxHash<$sz>,
+        {
+            impl_hasher! {@__IMPL $ty, $sz}
+        }
+    };
 }
+
+impl_hasher! {@FIXED 32, Sha256}
+impl_hasher! {@GENERIC S, Blake2b<S>}
