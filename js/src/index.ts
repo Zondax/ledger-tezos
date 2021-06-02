@@ -16,13 +16,15 @@
  ******************************************************************************* */
 import Transport from "@ledgerhq/hw-transport";
 import { serializePath } from "./helper";
-import { ResponseAddress, ResponseAppInfo, ResponseSign, ResponseVersion, ResponseGit, ResponseHWM, ResponseBase } from "./types";
+import { ResponseBase, ResponseAddress, ResponseAppInfo, ResponseSign, ResponseVersion,
+         ResponseLegacyVersion, ResponseLegacyGit, ResponseLegacyHWM } from "./types";
 import {
   CHUNK_SIZE,
   CLA,
   errorCodeToString,
   getVersion,
   INS,
+  LEGACY_INS,
   LedgerError,
   P1_VALUES,
   P2_CURVE,
@@ -96,51 +98,6 @@ export default class TezosApp {
 
   async getVersion(): Promise<ResponseVersion> {
     return getVersion(this.transport).catch(err => processErrorResponse(err));
-  }
-
-  async getGit(): Promise<ResponseGit> {
-    return this.transport.send(CLA, INS.GET_GIT, 0, 0).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
-
-      return {
-        returnCode,
-        errorMessage: errorCodeToString(returnCode),
-        commit_hash: response.slice(0, -2).toString('ascii'),
-      }
-    }, processErrorResponse)
-  }
-
-  async resetHighWatermark(level: number): Promise<ResponseBase> {
-    let data = Buffer.allocUnsafe(4);
-    data.writeInt32BE(level);
-
-    return this.transport.send(CLA, INS.RESET_HWM, 0, 0, data).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
-
-      return {
-        returnCode,
-        errorMessage: errorCodeToString(returnCode),
-      }
-    }, processErrorResponse)
-  }
-
-  async getHighWatermark(): Promise<ResponseHWM> {
-    return this.transport.send(CLA, INS.GET_HWM, 0, 0).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
-
-      const main = response.slice(0, -2).readInt32BE();
-
-      return {
-        returnCode,
-        errorMessage: errorCodeToString(returnCode),
-        main,
-        test: null,
-        chain_id: null
-      }
-    }, processErrorResponse)
   }
 
   async getAppInfo(): Promise<ResponseAppInfo> {
@@ -218,7 +175,7 @@ export default class TezosApp {
     }
 
     return this.transport
-      .send(CLA, INS.SIGN_SECP256K1, payloadType, 0, chunk, [
+      .send(CLA, 0, payloadType, 0, chunk, [
         LedgerError.NoErrors,
         LedgerError.DataIsInvalid,
         LedgerError.BadKeyHandle,
@@ -275,5 +232,68 @@ export default class TezosApp {
         return result;
       }, processErrorResponse);
     }, processErrorResponse);
+  }
+
+
+  //--------------------- lEGACY INSTRUCTIONS
+  async legacyGetVersion(): Promise<ResponseLegacyVersion> {
+    return this.transport.send(CLA, LEGACY_INS.VERSION, 0, 0).then(response => {
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        baking: response[0] == 1,
+        major: response[1],
+        minor: response[2],
+        patch: response[3],
+      }
+    }, processErrorResponse)
+  }
+
+  async legacyGetGit(): Promise<ResponseLegacyGit> {
+    return this.transport.send(CLA, LEGACY_INS.GIT, 0, 0).then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        commit_hash: response.slice(0, -2).toString('ascii'),
+      }
+    }, processErrorResponse)
+  }
+
+  async legacyResetHighWatermark(level: number): Promise<ResponseBase> {
+    let data = Buffer.allocUnsafe(4);
+    data.writeInt32BE(level);
+
+    return this.transport.send(CLA, LEGACY_INS.RESET, 0, 0, data).then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+      }
+    }, processErrorResponse)
+  }
+
+  async legacyGetHighWatermark(): Promise<ResponseLegacyHWM> {
+    return this.transport.send(CLA, LEGACY_INS.QUERY_MAIN_HWM, 0, 0).then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      const main = response.slice(0, -2).readInt32BE();
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        main,
+        test: null,
+        chain_id: null
+      }
+    }, processErrorResponse)
   }
 }

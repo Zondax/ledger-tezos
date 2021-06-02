@@ -5,14 +5,34 @@ export const CHUNK_SIZE = 250;
 export const APP_KEY = "XTZ";
 
 export const INS = {
-  GET_VERSION: 0x00,
-  GET_ADDR_SECP256K1: 0x01,
-  SIGN_SECP256K1: 0x02,
-  GET_GIT: 0x09,
-  GET_HWM: 0x08,
-  GET_ALL_HWM: 0x0B,
-  RESET_HWM: 0x06,
+  GET_VERSION: 0x10,
   GET_ADDR: 0x11,
+};
+
+export const LEGACY_INS = {
+  VERSION: 0x00,
+  GIT: 0x09,
+
+  GET_PUBLIC_KEY: 0x02,
+  PROMPT_PUBLIC_KEY: 0x03,
+
+  AUTHORIZE_BAKING: 0x01,
+  DEAUTHORIZE: 0x0C,
+
+  RESET: 0x06,
+  QUERY_MAIN_HWM: 0x08,
+  QUERY_ALL_HWM: 0x0B,
+
+  QUERY_AUTH_KEY: 0x07,
+  QUERY_AUTH_KEY_WITH_CURVE: 0x0D,
+
+  SETUP: 0x0A,
+
+  HMAC: 0x0E,
+
+  SIGN: 0x04,
+  SIGN_WITH_HASH: 0x0F,
+  SIGN_UNSAFE: 0x05,
 };
 
 export const PAYLOAD_TYPE = {

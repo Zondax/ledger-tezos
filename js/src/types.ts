@@ -32,11 +32,21 @@ export interface ResponseSign extends ResponseBase {
   signature: Buffer;
 }
 
-export interface ResponseGit extends ResponseBase {
+
+//------------------------ LEGACY RESPONSES
+
+export interface ResponseLegacyGit extends ResponseBase {
   commit_hash: string;
 }
 
-export interface ResponseHWM extends ResponseBase {
+export interface ResponseLegacyVersion extends ResponseBase {
+  baking: boolean
+  major: number
+  minor: number
+  patch: number
+}
+
+export interface ResponseLegacyHWM extends ResponseBase {
   main: number;
   test?: number;
   chain_id?: number;
