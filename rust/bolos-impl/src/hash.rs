@@ -67,7 +67,13 @@ mod sealed {
 
 pub(self) use sealed::CxHash;
 
-pub trait Hasher<const S: usize>: CxHash<S> {
+pub use bolos_common::hash::Hasher;
+impl<T, const S: usize> Hasher<S> for T
+where
+    T: CxHash<S>,
+{
+    type Error = Error;
+
     fn update(&mut self, input: &[u8]) -> Result<(), Error> {
         cx_hash(self.cx_header(), input, None)
     }
@@ -79,7 +85,6 @@ pub trait Hasher<const S: usize>: CxHash<S> {
         Ok(out)
     }
 
-    /// One-shot digest
     fn digest(input: &[u8]) -> Result<[u8; S], Error> {
         let mut hasher = Self::init_hasher()?;
 
@@ -89,5 +94,3 @@ pub trait Hasher<const S: usize>: CxHash<S> {
         Ok(out)
     }
 }
-
-impl<H: CxHash<S>, const S: usize> Hasher<S> for H {}

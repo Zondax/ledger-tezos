@@ -3,6 +3,8 @@
 
 extern crate no_std_compat as std;
 
+extern crate self as bolos;
+
 #[macro_use]
 extern crate cfg_if;
 

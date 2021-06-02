@@ -29,6 +29,10 @@ impl PublicKey {
     pub fn curve(&self) -> Curve {
         self.curve
     }
+
+    pub fn len(&self) -> usize {
+        self.len
+    }
 }
 
 impl AsRef<[u8]> for PublicKey {

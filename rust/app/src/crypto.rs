@@ -12,30 +12,36 @@ impl PublicKey {
     }
 
     pub fn hash(&self) -> Result<[u8; 20], Error> {
+        let mut key = [0; 65];
+
         //legacy/src/keys.c:118
-        let key = {
+        let len = {
             match self.curve() {
                 Curve::Bip32Ed25519 | Curve::Ed25519 => {
-                    let len = self.0.len - 1;
-                    let mut copy = self.0;
+                    let bytes = &self.0.as_ref();
+                    let len = self.0.len();
 
-                    copy.w[..len].copy_from_slice(&self.0.w[1..1 + len]);
-                    copy.len = len;
+                    let new_len = len - 1;
+                    //copy all but the first byte
+                    key[..new_len].copy_from_slice(&bytes[1..1 + new_len]);
 
-                    Self(copy)
+                    new_len
                 }
                 Curve::Secp256K1 | Curve::Secp256R1 => {
-                    let mut copy = self.0;
+                    let bytes = self.0.as_ref();
 
-                    copy.w[0] = 0x02 | (copy.w[64] & 0x01);
-                    copy.len = 33;
+                    //copy only 33 bytes
+                    key[..33].copy_from_slice(&bytes[..33]);
 
-                    Self(copy)
+                    //and change a few things
+                    key[0] = 0x02 | (bytes[64] & 0x01);
+
+                    33
                 }
             }
         };
 
-        sys::hash::Blake2b::digest(key.as_ref())
+        sys::hash::Blake2b::digest(&key[..len])
     }
 
     pub fn curve(&self) -> Curve {

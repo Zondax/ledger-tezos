@@ -13,7 +13,7 @@ const FLASH: usize = 0xFFFF;
 
 type Buffer = SwappingBuffer<'static, 'static, RAM, FLASH>;
 
-#[bolos_sys::lazy_static]
+#[bolos::lazy_static]
 static mut BUFFER: Buffer = new_swapping_buffer!(RAM, FLASH);
 
 pub struct Sha256 {}

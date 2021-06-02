@@ -30,6 +30,14 @@ impl Into<u32> for SyscallError {
     }
 }
 
+impl From<std::convert::Infallible> for SyscallError {
+    fn from(infallible: std::convert::Infallible) -> Self {
+        unsafe {
+            std::hint::unreachable_unchecked()
+        }
+    }
+}
+
 pub type Error = SyscallError;
 
 pub fn catch<T, F>(syscall: F) -> Result<T, Error>
