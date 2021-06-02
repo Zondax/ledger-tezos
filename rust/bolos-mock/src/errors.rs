@@ -32,9 +32,7 @@ impl Into<u32> for SyscallError {
 
 impl From<std::convert::Infallible> for SyscallError {
     fn from(infallible: std::convert::Infallible) -> Self {
-        unsafe {
-            std::hint::unreachable_unchecked()
-        }
+        unsafe { std::hint::unreachable_unchecked() }
     }
 }
 

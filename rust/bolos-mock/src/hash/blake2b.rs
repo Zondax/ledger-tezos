@@ -22,12 +22,10 @@ impl<const S: usize> super::Hasher<S> for Blake2b<S> {
     fn finalize(self) -> Result<[u8; S], Self::Error> {
         let mut out = [0; S];
 
-        self.0.finalize_variable(|digest| {
-            out.copy_from_slice(digest)
-        });
+        self.0
+            .finalize_variable(|digest| out.copy_from_slice(digest));
 
         Ok(out)
-
     }
 
     fn digest(input: &[u8]) -> Result<[u8; S], Self::Error> {

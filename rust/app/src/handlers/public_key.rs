@@ -74,7 +74,7 @@ impl ApduHandler for GetAddress {
                 let len = key.len();
                 //prepend pubkey with len
                 buffer[0] = len as u8;
-                buffer[1.. 1 + len].copy_from_slice(&key);
+                buffer[1..1 + len].copy_from_slice(&key);
                 *tx = len as u32;
 
                 let addr = addr.to_base58();

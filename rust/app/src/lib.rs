@@ -24,7 +24,7 @@ pub mod dispatcher;
 mod handlers;
 mod sys;
 
-sys::panic_handler!{}
+sys::panic_handler! {}
 
 #[macro_use]
 mod utils;
