@@ -15,13 +15,13 @@
  ******************************************************************************* */
 
 import Zemu from '@zondax/zemu'
-import { defaultOptions, models, APP_DERIVATION } from './common'
-import TezosApp, { Curve } from '@zondax/ledger-tezos'
+import { defaultOptions, models, APP_DERIVATION, curves } from './common'
+import TezosApp from '@zondax/ledger-tezos'
 
 jest.setTimeout(60000)
 
-describe('Standard', function () {
-  test.each(models)('can start and stop container', async function (m) {
+describe.each(models)('Standard', function (m) {
+  test('can start and stop container', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -30,7 +30,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('main menu', async function (m) {
+  test('main menu', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -40,7 +40,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('get app version', async function (m) {
+  test('get app version', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -59,12 +59,10 @@ describe('Standard', function () {
       await sim.close()
     }
   })
-
 })
 
-describe('Standard; legacy', function () {
-
-  test.each(models)('get app version', async function (m) {
+describe.each(models)('Standard [%s]; legacy', function (m) {
+  test('get app version', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -85,7 +83,7 @@ describe('Standard; legacy', function () {
     }
   })
 
-  test.each(models)('get git app', async function (m) {
+  test('get git app', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -100,83 +98,26 @@ describe('Standard; legacy', function () {
       await sim.close()
     }
   })
-
 })
 
-describe('Standard - pubkey', function () {
-    test.each(models)('get pubkey and addr ed25519', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosApp(sim.getTransport());
-            const resp = await app.getAddressAndPubKey(APP_DERIVATION, Curve.Ed25519);
+describe.each(models)('Standard - pubkey', function (m) {
+  test.each(curves)('get pubkey and addr %s', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+      const resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
-            console.log(resp, m.name);
+      console.log(resp, m.name)
 
-            expect(resp.returnCode).toEqual(0x9000);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("publicKey");
-            expect(resp).toHaveProperty("address");
-
-        }finally {
-            await sim.close();
-        }
-    });
-
-    test.each(models)('get pubkey and addr ed25519 slip10', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosApp(sim.getTransport());
-            const resp = await app.getAddressAndPubKey(APP_DERIVATION, Curve.Ed25519_Slip10);
-
-            console.log(resp, m.name);
-
-            expect(resp.returnCode).toEqual(0x9000);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("publicKey");
-            expect(resp).toHaveProperty("address");
-
-        }finally {
-            await sim.close();
-        }
-    });
-
-    test.each(models)('get pubkey and addr secp256k1', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosApp(sim.getTransport());
-            const resp = await app.getAddressAndPubKey(APP_DERIVATION, Curve.Secp256K1);
-
-            console.log(resp, m.name);
-
-            expect(resp.returnCode).toEqual(0x9000);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("publicKey");
-            expect(resp).toHaveProperty("address");
-
-        }finally {
-            await sim.close();
-        }
-    });
-
-    test.each(models)('get pubkey and addr secp256r1', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosApp(sim.getTransport());
-            const resp = await app.getAddressAndPubKey(APP_DERIVATION, Curve.Secp256R1);
-
-            console.log(resp, m.name);
-
-            expect(resp.returnCode).toEqual(0x9000);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("publicKey");
-            expect(resp).toHaveProperty("address");
-
-        }finally {
-            await sim.close();
-        }
-    });
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('publicKey')
+      expect(resp).toHaveProperty('address')
+      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+      expect(resp.address).toContain('tz')
+    } finally {
+      await sim.close()
+    }
+  })
 })

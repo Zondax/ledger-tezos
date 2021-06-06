@@ -39,3 +39,10 @@ export function serializePath(path: string): Buffer {
 
   return buf;
 }
+
+const createHash = require('crypto').createHash;
+
+export function sha256x2(input: Buffer): Buffer {
+  const tmp = createHash('sha256').update(input).digest();
+  return createHash('sha256').update(tmp).digest();
+}

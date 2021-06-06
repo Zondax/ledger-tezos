@@ -15,8 +15,8 @@
  ******************************************************************************* */
 
 import Zemu, {DeviceModel} from "@zondax/zemu";
-import TezosApp, { Curve } from "@zondax/ledger-tezos";
-import { APP_DERIVATION, defaultOptions } from './common'
+import TezosApp from "@zondax/ledger-tezos";
+import { APP_DERIVATION, defaultOptions, curves } from './common'
 
 const Resolve = require("path").resolve;
 const APP_PATH_S = Resolve("../rust/app/output/app_s_baking.elf");
@@ -29,8 +29,8 @@ const models: DeviceModel[] = [
 
 jest.setTimeout(60000)
 
-describe('Standard baking', function () {
-    test.each(models)('can start and stop container', async function (m) {
+describe.each(models)('Standard baking', function (m) {
+    test('can start and stop container', async function () {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name});
@@ -39,7 +39,7 @@ describe('Standard baking', function () {
         }
     });
 
-    test.each(models)('main menu', async function (m) {
+    test('main menu', async function () {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name});
@@ -49,7 +49,7 @@ describe('Standard baking', function () {
         }
     });
 
-    test.each(models)('get app version', async function (m) {
+    test('get app version', async function () {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name,});
@@ -71,8 +71,8 @@ describe('Standard baking', function () {
 
 })
 
-describe('Standard baking; legacy', function () {
-    test.each(models)('get app version', async function (m) {
+describe.each(models)('Standard baking; legacy', function (m) {
+    test('get app version', async function () {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name,});
@@ -93,7 +93,7 @@ describe('Standard baking; legacy', function () {
         }
     });
 
-    test.each(models)('get git app', async function(m) {
+    test('get git app', async function() {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name});
@@ -110,8 +110,8 @@ describe('Standard baking; legacy', function () {
     });
 })
 
-describe('Standard baking; legacy - watermark', function () {
-    test.each(models)('reset watermark and verify', async function (m) {
+describe.each(models)('Standard baking [%s]; legacy - watermark', function (m) {
+    test('reset watermark and verify', async function () {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name,});
@@ -131,7 +131,7 @@ describe('Standard baking; legacy - watermark', function () {
         }
     });
 
-    test.each(models)('get main high watermark', async function (m) {
+    test('get main high watermark', async function () {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name,});
@@ -157,13 +157,13 @@ describe('Standard baking; legacy - watermark', function () {
     });
 })
 
-describe('Standard baking - pubkey', function () {
-    test.each(models)('get pubkey and addr ed25519', async function(m) {
+describe.each(models)('Standard baking [%s] - pubkey', function (m) {
+    test.each(curves)('get pubkey and addr %s', async function(curve) {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name});
             const app = new TezosApp(sim.getTransport());
-            const resp = await app.getAddressAndPubKey(APP_DERIVATION, Curve.Ed25519);
+            const resp = await app.getAddressAndPubKey(APP_DERIVATION, curve);
 
             console.log(resp, m.name);
 
@@ -171,63 +171,8 @@ describe('Standard baking - pubkey', function () {
             expect(resp.errorMessage).toEqual("No errors");
             expect(resp).toHaveProperty("publicKey");
             expect(resp).toHaveProperty("address");
-
-        }finally {
-            await sim.close();
-        }
-    });
-
-    test.each(models)('get pubkey and addr ed25519 slip10', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosApp(sim.getTransport());
-            const resp = await app.getAddressAndPubKey(APP_DERIVATION, Curve.Ed25519_Slip10);
-
-            console.log(resp, m.name);
-
-            expect(resp.returnCode).toEqual(0x9000);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("publicKey");
-            expect(resp).toHaveProperty("address");
-
-        }finally {
-            await sim.close();
-        }
-    });
-
-    test.each(models)('get pubkey and addr secp256k1', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosApp(sim.getTransport());
-            const resp = await app.getAddressAndPubKey(APP_DERIVATION, Curve.Secp256K1);
-
-            console.log(resp, m.name);
-
-            expect(resp.returnCode).toEqual(0x9000);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("publicKey");
-            expect(resp).toHaveProperty("address");
-
-        }finally {
-            await sim.close();
-        }
-    });
-
-    test.each(models)('get pubkey and addr secp256r1', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosApp(sim.getTransport());
-            const resp = await app.getAddressAndPubKey(APP_DERIVATION, Curve.Secp256R1);
-
-            console.log(resp, m.name);
-
-            expect(resp.returnCode).toEqual(0x9000);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("publicKey");
-            expect(resp).toHaveProperty("address");
+            expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve));
+            expect(resp.address).toContain("tz");
 
         }finally {
             await sim.close();

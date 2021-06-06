@@ -1,4 +1,5 @@
 import { DeviceModel, DEFAULT_START_OPTIONS } from '@zondax/zemu'
+import { Curve } from '@zondax/ledger-tezos'
 
 const Resolve = require('path').resolve
 
@@ -12,11 +13,24 @@ export const models: DeviceModel[] = [
   { name: 'nanox', prefix: 'X', path: APP_PATH_X },
 ]
 
+export const curves: Curve[] = [
+    Curve.Ed25519,
+    Curve.Ed25519_Slip10,
+    Curve.Secp256K1,
+    Curve.Secp256R1
+];
+
 export const defaultOptions = {
-    ...DEFAULT_START_OPTIONS,
-    logging: true,
-    custom: `-s "${APP_SEED}"`,
-    X11: true,
-};
+  ...DEFAULT_START_OPTIONS,
+  logging: true,
+  custom: `-s "${APP_SEED}"`,
+}
 
 export const APP_DERIVATION = "m/44'/1729'/0'/0'"
+
+type MapCartesian<T extends any[][]> = {
+  [P in keyof T]: T[P] extends Array<infer U> ? U : never
+}
+
+export const cartesianProduct = <T extends any[][]>(...arr: T): MapCartesian<T>[] =>
+  arr.reduce((a, b) => a.flatMap(c => b.map(d => [...c, d])), [[]]) as MapCartesian<T>[]

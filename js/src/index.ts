@@ -15,7 +15,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 import Transport from "@ledgerhq/hw-transport";
-import { serializePath } from "./helper";
+import { serializePath, sha256x2 } from "./helper";
 import { ResponseBase, ResponseAddress, ResponseAppInfo, ResponseSign, ResponseVersion,
          ResponseLegacyVersion, ResponseLegacyGit, ResponseLegacyHWM } from "./types";
 import {
@@ -295,5 +295,72 @@ export default class TezosApp {
         chain_id: null
       }
     }, processErrorResponse)
+  }
+
+  async legacyGetPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
+    const serializedPath = serializePath(path);
+    return this.transport
+      .send(CLA, LEGACY_INS.PUBLIC_KEY, P1_VALUES.ONLY_RETRIEVE, curve, serializedPath)
+      .then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      const publicKey = response.slice(0, -2);
+      const address = this.publicKeyToAddress(publicKey, curve);
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        publicKey,
+        address
+      }
+    }, processErrorResponse)
+  }
+
+  publicKeyToAddress(key: Buffer, curve: Curve): string {
+    let prefix;
+
+    switch (curve) {
+        case Curve.Ed25519:
+        case Curve.Ed25519_Slip10:
+          prefix = [6, 161, 159]
+          break;
+
+        case Curve.Secp256K1:
+          prefix = [6, 161, 161]
+          break;
+
+        case Curve.Secp256R1:
+          prefix = [6, 161, 164]
+          break;
+
+        default:
+          throw Error("not a valid curve type")
+    }
+
+    prefix = Buffer.from(prefix);
+
+    switch (curve) {
+        case Curve.Ed25519:
+        case Curve.Ed25519_Slip10:
+          key = key.slice(1);
+        break;
+
+        case Curve.Secp256K1:
+        case Curve.Secp256R1:
+          const last = key.readUInt8(64);
+          key = key.slice(0, 33);
+          key.writeUInt8(0x02 + (last & 0x01));
+        break;
+    }
+
+    const blake2 = require('blake2');
+    const hash = blake2.createHash('blake2b', {digestLength: 20}).update(key).digest();
+
+    const checksum = sha256x2(Buffer.concat([prefix, hash])).slice(0, 4);
+
+    const bs58 = require('bs58');
+
+    return bs58.encode(Buffer.concat([prefix, hash, checksum]));
   }
 }

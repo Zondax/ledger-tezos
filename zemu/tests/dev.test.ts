@@ -40,71 +40,43 @@ function warn_dev(code: LedgerError) {
     }
 }
 
-describe('Development specials', function () {
-    test.each(models)('catch exception', async function(m) {
+describe.each(models)('Development specials', function (m) {
+    test.each([
+        [true, LedgerError.NoErrors],
+        [false, LedgerError.ExecutionError]])
+    ('exception', async function(do_catch, err) {
         const sim = new Zemu(m.path);
         try {
             const ex = 1; //generic exception
             await sim.start({...defaultOptions, model: m.name});
             const app = new TezosAppDev(sim.getTransport());
-            const resp = await app.except(true, ex);
+            const resp = await app.except(do_catch, ex);
 
             console.log(resp, m.prefix);
             warn_dev(resp.returnCode);
 
-            expect(resp.returnCode).toEqual(LedgerError.NoErrors);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("ex");
-            expect(resp.ex).toEqual(BigInt(ex));
-        } finally {
-            await sim.close();
-        }
-    })
+            expect(resp.returnCode).toEqual(err);
 
-    test.each(models)('throw exception', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            const ex = 1; //generic exception
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosAppDev(sim.getTransport());
-            const resp = await app.except(false, ex);
-
-            console.log(resp, m.prefix);
-            warn_dev(resp.returnCode);
-
-            expect(resp.returnCode).toEqual(LedgerError.ExecutionError);
-            expect(resp.errorMessage).toEqual("Execution Error");
+            if (do_catch) {
+                expect(resp).toHaveProperty("ex");
+                expect(resp.ex).toEqual(BigInt(ex));
+            }
         } finally {
             await sim.close();
         }
     })
 });
 
-describe('Unknown exceptions', function () {
-    test.each(models)('catch unknown exception', async function(m) {
+describe.each(models)('Unknown exceptions', function (m) {
+    test.each([
+        true,
+        false])
+    ('unknown exception', async function(do_catch) {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name});
             const app = new TezosAppDev(sim.getTransport());
-            const resp = await app.except(true, 42);
-
-            console.log(resp, m.prefix);
-            warn_dev(resp.returnCode);
-
-            if ((resp.returnCode == LedgerError.InvalidP1P2) || (resp.returnCode == LedgerError.NoErrors)) {
-                //in case of nanos there's no unknown exception (for now)
-            }
-        } finally {
-            await sim.close();
-        }
-    })
-
-    test.each(models)('throw unknown exception', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosAppDev(sim.getTransport());
-            const resp = await app.except(false, 42);
+            const resp = await app.except(do_catch, 42);
 
             console.log(resp, m.prefix);
             warn_dev(resp.returnCode);
@@ -118,33 +90,20 @@ describe('Unknown exceptions', function () {
     })
 });
 
-describe('SHA256', function () {
-    test.each(models)('get hash', async function(m) {
+describe.each(models)('SHA256', function (m) {
+    test.each([
+        Buffer.from("francesco@zondax.ch"),
+        Buffer.alloc(300, 0),
+    ])('get hash', async function(input) {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name});
             const app = new TezosAppDev(sim.getTransport());
-            const resp = await app.getHash(Buffer.from("francesco@zondax.ch"));
+            const resp = await app.getHash(input);
 
             console.log(resp, m.prefix);
             warn_dev(resp.returnCode);
 
-            expect(resp.returnCode).toEqual(0x9000);
-            expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("hash");
-        } finally {
-            await sim.close();
-        }
-    })
-
-    test.each(models)('get long hash', async function(m) {
-        const sim = new Zemu(m.path);
-        try {
-            await sim.start({...defaultOptions, model: m.name});
-            const app = new TezosAppDev(sim.getTransport());
-            const resp = await app.getHash(Buffer.alloc(300, 0));
-
-            console.log(resp, m.prefix);
             expect(resp.returnCode).toEqual(0x9000);
             expect(resp.errorMessage).toEqual("No errors");
             expect(resp).toHaveProperty("hash");
