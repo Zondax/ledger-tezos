@@ -11,7 +11,8 @@ export function serializePath(path: string): Buffer {
     throw new Error("Invalid path. (e.g \"m/44'/5757'/5'/0/3\")");
   }
 
-  const buf = Buffer.alloc((pathArray.length - 1) * 4);
+  const buf = Buffer.alloc(1 + (pathArray.length - 1) * 4);
+  buf.writeUInt8(pathArray.length - 1); //first byte is the path length
 
   for (let i = 1; i < pathArray.length; i += 1) {
     let value = 0;
@@ -33,7 +34,7 @@ export function serializePath(path: string): Buffer {
 
     value += childNumber;
 
-    buf.writeUInt32BE(value, 4 * (i - 1));
+    buf.writeUInt32BE(value, 1 + 4 * (i - 1));
   }
 
   return buf;

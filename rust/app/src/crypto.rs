@@ -34,7 +34,7 @@ impl PublicKey {
                     key[..33].copy_from_slice(&bytes[..33]);
 
                     //and change a few things
-                    key[0] = 0x02 | (bytes[64] & 0x01);
+                    key[0] = 0x02 + (bytes[64] & 0x01);
 
                     33
                 }

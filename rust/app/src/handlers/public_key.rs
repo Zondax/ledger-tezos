@@ -74,8 +74,10 @@ impl ApduHandler for GetAddress {
                 let len = key.len();
                 //prepend pubkey with len
                 buffer[0] = len as u8;
+                *tx += 1;
+
                 buffer[1..1 + len].copy_from_slice(&key);
-                *tx = len as u32;
+                *tx += len as u32;
 
                 let addr = addr.to_base58();
                 let alen = addr.len();
@@ -128,19 +130,21 @@ impl Addr {
 
         //legacy/src/to_string.c:94
         // hash prefix + hash
-        let checksum_hash = {
+        let checksum = {
             let mut digest = Sha256::new()?;
             digest.update(&prefix[..])?;
             digest.update(&hash[..])?;
-            digest.finalize()?
+
+            let hash = digest.finalize()?;
+
+            //and hash that to get the checksum
+            Sha256::digest(&hash[..])?
         };
 
-        //and hash that to get the checksum
-        let big_checksum = Sha256::digest(&checksum_hash[..])?;
         let checksum = {
             //but only get the first 4 bytes
             let mut array = [0; 4];
-            array.copy_from_slice(&big_checksum[..4]);
+            array.copy_from_slice(&checksum[..4]);
             array
         };
 
@@ -153,16 +157,16 @@ impl Addr {
 
     //[u8; PKH_STRING] without null byte
     // legacy/src/types.h:156
-    pub fn to_base58(&self) -> [u8; 39] {
+    pub fn to_base58(&self) -> [u8; 36] {
         let mut input = {
-            let mut array = [0; 29];
+            let mut array = [0; 27];
             array[..3].copy_from_slice(&self.prefix[..]);
             array[3..3 + 20].copy_from_slice(&self.hash[..]);
             array[3 + 20..3 + 20 + 4].copy_from_slice(&self.checksum[..]);
             array
         };
 
-        let mut out = [0; 39];
+        let mut out = [0; 36];
 
         //the expect is ok since we know all the sizes
         bs58::encode(input)
@@ -170,5 +174,49 @@ impl Addr {
             .expect("encoded in base58 is not of the right length");
 
         out
+    }
+}
+
+#[cfg(test)]
+impl Addr {
+    pub fn from_parts(prefix: [u8; 3], hash: [u8; 20], checksum: [u8; 4]) -> Self {
+        Self {
+            prefix,
+            hash,
+            checksum,
+        }
+    }
+
+    pub fn bytes(&self) -> std::vec::Vec<u8> {
+        let mut out = std::vec::Vec::with_capacity(3 + 20 + 4);
+        out.extend_from_slice(&self.prefix[..]);
+        out.extend_from_slice(&self.hash[..]);
+        out.extend_from_slice(&self.checksum[..]);
+
+        out
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_bs58() {
+        //TODO: use mocked hashing instead
+        let addr = Addr::from_parts(
+            [0x6, 0xa1, 0x9f],
+            [
+                0xc8, 0x60, 0xbe, 0x67, 0x3a, 0xe4, 0x7e, 0xc5, 0x49, 0xf9, 0xb5, 0xa0, 0x1a, 0x8c,
+                0xcb, 0x65, 0x7b, 0xe7, 0x5b, 0x6a,
+            ],
+            [0x88, 0x8a, 0x19, 0x84],
+        );
+
+        let expected = "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ";
+        let output = addr.to_base58();
+        let output = std::str::from_utf8(&output[..]).unwrap();
+
+        assert_eq!(expected, output);
     }
 }

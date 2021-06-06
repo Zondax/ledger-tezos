@@ -16,20 +16,28 @@ pub enum BIP32PathError {
 impl BIP32Path {
     ///Attempt to read a BIP32 Path from the provided input bytes
     pub fn read(input: &[u8]) -> Result<Self, BIP32PathError> {
-        let len = input.len();
+        let blen = input.len() - 1;
 
-        if len == 0 {
+        if blen == 0 {
             return Err(BIP32PathError::ZeroLength);
-        } else if len > 10 * 4 {
-            return Err(BIP32PathError::TooMuchData);
-        } else if len % 4 != 0 {
+        } else if blen % 4 != 0 {
             return Err(BIP32PathError::NotEnoughData);
         }
 
-        //actual number of components
-        let len = len / 4;
+        //first byte is the number of path components
+        let len = input[0] as usize;
+        if len == 0 {
+            return Err(BIP32PathError::ZeroLength);
+        } else if len > 10 {
+            return Err(BIP32PathError::TooMuchData);
+        } else if blen / 4 > len {
+            return Err(BIP32PathError::TooMuchData);
+        } else if blen / 4 < len {
+            return Err(BIP32PathError::NotEnoughData);
+        }
 
-        let components = input[..]
+        //each chunk of 4 bytes thereafter is a path component
+        let components = input[1..]
             .chunks(4) //each component is 4 bytes
             .take(len) //take at most `len` chunks
             .map(|c| {
