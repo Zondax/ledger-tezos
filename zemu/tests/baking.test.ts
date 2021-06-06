@@ -29,7 +29,7 @@ const models: DeviceModel[] = [
 
 jest.setTimeout(60000)
 
-describe.each(models)('Standard baking', function (m) {
+describe.each(models)('Standard baking [%s]', function (m) {
     test('can start and stop container', async function () {
         const sim = new Zemu(m.path);
         try {
@@ -71,7 +71,7 @@ describe.each(models)('Standard baking', function (m) {
 
 })
 
-describe.each(models)('Standard baking; legacy', function (m) {
+describe.each(models)('Standard baking [%s]; legacy', function (m) {
     test('get app version', async function () {
         const sim = new Zemu(m.path);
         try {
@@ -178,4 +178,26 @@ describe.each(models)('Standard baking [%s] - pubkey', function (m) {
             await sim.close();
         }
     });
+})
+
+describe.each(models)('Standard baking [%s]; legacy - pubkey', function (m) {
+  test.each(curves)('get pubkey and compute addr %s', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+      const resp = await app.legacyGetPubKey(APP_DERIVATION, curve);
+
+      console.log(resp, m.name)
+
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('publicKey')
+      expect(resp).toHaveProperty('address')
+      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+      expect(resp.address).toContain('tz')
+    } finally {
+      await sim.close()
+    }
+  })
 })
