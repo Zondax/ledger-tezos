@@ -11,18 +11,15 @@ pub struct PublicKey {
 }
 
 impl PublicKey {
-    pub fn compress(&self) -> Result<Self, Error> {
+    pub fn compress(&mut self) -> Result<(), Error> {
         match self.curve {
             Curve::Ed25519 => {
-                //create copy, so we don't overwrite a valid public key already
-                let mut copy = *self;
+                let comp_len = cx_edward_compress_point(self.curve, &mut self.w[..])?;
+                self.len = comp_len;
 
-                let comp_len = cx_edward_compress_point(self.curve, &mut copy.w[..])?;
-                copy.len = comp_len;
-
-                Ok(copy)
+                Ok(())
             }
-            _ => Ok(*self),
+            _ => Ok(()),
         }
     }
 

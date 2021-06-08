@@ -161,6 +161,7 @@ pub fn apdu_dispatch(
 }
 
 pub fn handle_apdu(flags: &mut u32, tx: &mut u32, rx: u32, apdu_buffer: &mut [u8]) {
+    crate::sys::zemu_log_stack("handle_apdu\x00");
     let response = apdu_dispatch(flags, tx, rx, apdu_buffer);
 
     // Retrieve error code or use 0x9000 if ok

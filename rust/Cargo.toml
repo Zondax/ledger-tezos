@@ -12,4 +12,4 @@ panic = "abort"
 lto = false
 codegen-units = 1
 debug = true
-opt-level = "s"
+opt-level = "z"

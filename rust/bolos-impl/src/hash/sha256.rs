@@ -11,24 +11,24 @@ pub struct Sha256 {
 
 impl Sha256 {
     pub fn new() -> Result<Self, Error> {
-        Self::init_hasher()
+        let mut state = Default::default();
+
+        Self::init_state(&mut state)?;
+
+        Ok(Self { state })
     }
-}
 
-impl CxHash<32> for Sha256 {
-    fn init_hasher() -> Result<Self, Error> {
-        let mut state = cx_sha256_t::default();
-
+    fn init_state(state: &mut cx_sha256_t) -> Result<(), Error> {
         cfg_if! {
             if #[cfg(nanox)] {
                 let might_throw = || unsafe {
-                    crate::raw::cx_sha256_init(&mut state as *mut _);
+                    crate::raw::cx_sha256_init(state as *mut _);
                 };
 
                 catch(might_throw)?;
             } else if #[cfg(nanos)] {
                 match unsafe { crate::raw::cx_sha256_init_no_throw(
-                    &mut state as *mut _
+                    state as *mut _
                 )} {
                     0 => {},
                     err => return Err(err.into()),
@@ -38,7 +38,17 @@ impl CxHash<32> for Sha256 {
             }
         }
 
-        Ok(Self { state })
+        Ok(())
+    }
+}
+
+impl CxHash<32> for Sha256 {
+    fn init_hasher() -> Result<Self, Error> {
+        Self::new()
+    }
+
+    fn reset(&mut self) -> Result<(), Error> {
+        Self::init_state(&mut self.state)
     }
 
     fn cx_header(&mut self) -> &mut cx_hash_t {

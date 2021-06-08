@@ -7,10 +7,11 @@ use sys::{crypto::bip32::BIP32Path, errors::Error, hash::Hasher};
 pub struct PublicKey(pub(crate) sys::crypto::ecfp256::PublicKey);
 
 impl PublicKey {
-    pub fn compress(&self) -> Result<Self, Error> {
-        self.0.compress().map(Self)
+    pub fn compress(&mut self) -> Result<(), Error> {
+        self.0.compress()
     }
 
+    #[inline(never)]
     pub fn hash(&self) -> Result<[u8; 20], Error> {
         let mut key = [0; 65];
 
@@ -125,8 +126,8 @@ pub struct Keypair {
 }
 
 impl Keypair {
-    pub fn public(&self) -> &PublicKey {
-        &self.public
+    pub fn into_public(self) -> PublicKey {
+        self.public
     }
 }
 

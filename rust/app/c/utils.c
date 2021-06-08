@@ -24,6 +24,9 @@ void handle_stack_overflow() {
     while (1);
 }
 
+extern unsigned int app_stack_canary;
+#define APP_STACK_CANARY_MAGIC 0xDEAD0031
+
 void check_canary() {
 #if defined (TARGET_NANOS) || defined(TARGET_NANOX)
     if (app_stack_canary != APP_STACK_CANARY_MAGIC) handle_stack_overflow();
@@ -43,11 +46,13 @@ void zemu_log(const char *buf) {
 #endif
 }
 
+
 void zemu_log_stack(char *ctx) {
 #if defined(ZEMU_LOGGING)
 #if defined (TARGET_NANOS) || defined(TARGET_NANOX)
 #define STACK_SHIFT 20
-    void* p = NULL;
+
+    void* p = 0x0;
     char buf[70];
     snprintf(buf, sizeof(buf), "|SP| %p %p (%d) : %s\n",
             &app_stack_canary,

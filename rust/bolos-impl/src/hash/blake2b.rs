@@ -11,26 +11,30 @@ pub struct Blake2b<const S: usize> {
 
 impl<const S: usize> Blake2b<S> {
     pub fn new() -> Result<Self, Error> {
-        Self::init_hasher()
+        let mut state = Default::default();
+
+        Self::init_state(&mut state)?;
+
+        Ok(Self { state })
     }
-}
 
-impl<const S: usize> CxHash<S> for Blake2b<S> {
-    fn init_hasher() -> Result<Self, Error> {
-        let mut state = cx_blake2b_t::default();
-
+    fn init_state(state: &mut cx_blake2b_t) -> Result<(), Error> {
         cfg_if! {
             if #[cfg(nanox)] {
                 let might_throw = || unsafe {
-                    crate::raw::cx_blake2b_init(&mut state as *mut _, (S * 8) as u32);
+                    crate::raw::cx_blake2b_init(state as *mut _, (S * 8) as u32);
                 };
 
                 catch(might_throw)?;
             } else if #[cfg(nanos)] {
-                match unsafe { crate::raw::cx_blake2b_init_no_throw(
-                    &mut state as *mut _,
-                    (S * 8) as u32
-                )} {
+                let r = unsafe {
+                    crate::raw::cx_blake2b_init_no_throw(
+                        state as *mut _,
+                        (S * 8) as u32
+                    )
+                };
+
+                match r {
                     0 => {},
                     err => return Err(err.into()),
                 }
@@ -39,7 +43,17 @@ impl<const S: usize> CxHash<S> for Blake2b<S> {
             }
         }
 
-        Ok(Self { state })
+        Ok(())
+    }
+}
+
+impl<const S: usize> CxHash<S> for Blake2b<S> {
+    fn init_hasher() -> Result<Self, Error> {
+        Self::new()
+    }
+
+    fn reset(&mut self) -> Result<(), Error> {
+        Self::init_state(&mut self.state)
     }
 
     fn cx_header(&mut self) -> &mut cx_hash_t {

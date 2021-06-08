@@ -17,7 +17,8 @@ impl GetAddress {
         curve: crypto::Curve,
         path: &sys::crypto::bip32::BIP32Path,
     ) -> Result<crypto::PublicKey, SysError> {
-        curve.gen_keypair(path)?.public().compress()
+        let mut pkey = curve.gen_keypair(path)?.into_public();
+        pkey.compress().map(|_| pkey)
     }
 }
 
@@ -35,6 +36,8 @@ enum Action {
 
 impl ApduHandler for GetAddress {
     fn handle(_flags: &mut u32, tx: &mut u32, _rx: u32, buffer: &mut [u8]) -> Result<(), Error> {
+        sys::zemu_log_stack("GetAddress::handle\x00");
+
         *tx = 0;
         let action = match buffer[APDU_INDEX_INS] {
             INS_GET_ADDRESS => Action::GetPublicAndAddress,
@@ -64,8 +67,7 @@ impl ApduHandler for GetAddress {
 
         match action {
             Action::GetPublicAndAddress => {
-                let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?;
-
+                let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
                 if req_confirmation {
                     //TODO: show(&addr)
                 }
@@ -79,7 +81,6 @@ impl ApduHandler for GetAddress {
                 buffer[1..1 + len].copy_from_slice(&key);
                 *tx += len as u32;
 
-                let addr = addr.to_base58();
                 let alen = addr.len();
                 buffer[1 + len..1 + len + alen].copy_from_slice(&addr[..]);
                 *tx += alen as u32;
@@ -91,7 +92,7 @@ impl ApduHandler for GetAddress {
                 *tx = len as u32;
             }
             Action::LegacyPromptAddressButGetPublic => {
-                let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?;
+                let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
 
                 //TODO: show(&addr)
 
@@ -121,11 +122,12 @@ impl Addr {
 
         //legacy/src/to_string.c:135
         let prefix: [u8; 3] = {
-            match pubkey.curve() {
+            sys::PIC::new(match pubkey.curve() {
                 Curve::Ed25519 | Curve::Bip32Ed25519 => [6, 161, 159],
                 Curve::Secp256K1 => [6, 161, 161],
                 Curve::Secp256R1 => [6, 161, 164],
-            }
+            })
+            .into_inner()
         };
 
         //legacy/src/to_string.c:94
@@ -135,10 +137,12 @@ impl Addr {
             digest.update(&prefix[..])?;
             digest.update(&hash[..])?;
 
-            let hash = digest.finalize()?;
+            let hash = digest.finalize_dirty()?;
 
             //and hash that to get the checksum
-            Sha256::digest(&hash[..])?
+            digest.reset();
+            digest.update(&hash[..])?;
+            digest.finalize()?
         };
 
         let checksum = {

@@ -61,6 +61,8 @@ mod sealed {
     pub trait CxHash<const S: usize>: Sized {
         fn init_hasher() -> Result<Self, super::Error>;
 
+        fn reset(&mut self) -> Result<(), super::Error>;
+
         fn cx_header(&mut self) -> &mut super::cx_hash_t;
     }
 }
@@ -77,14 +79,23 @@ macro_rules! impl_hasher {
             cx_hash(self.cx_header(), input, None)
         }
 
-        fn finalize(mut self) -> Result<[u8; $s], Error> {
+        fn finalize_dirty(&mut self) -> Result<[u8; $s], Self::Error> {
             let mut out = [0; $s];
 
             cx_hash(self.cx_header(), &[], Some(&mut out[..]))?;
             Ok(out)
         }
 
-        fn digest(input: &[u8]) -> Result<[u8; $s], Error> {
+        fn finalize(mut self) -> Result<[u8; $s], Self::Error> {
+            self.finalize_dirty()
+        }
+
+        fn reset(&mut self) -> Result<(), Self::Error> {
+            CxHash::reset(self)
+        }
+
+        #[inline(never)]
+        fn digest(input: &[u8]) -> Result<[u8; $s], Self::Error> {
             let mut hasher = Self::init_hasher()?;
 
             let mut out = [0; $s];
