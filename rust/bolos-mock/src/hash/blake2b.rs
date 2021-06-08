@@ -1,4 +1,4 @@
-use blake2::digest::{Update, VariableOutput};
+use blake2::digest::{Reset, Update, VariableOutputDirty};
 
 pub struct Blake2b<const S: usize>(blake2::VarBlake2b);
 
@@ -19,13 +19,22 @@ impl<const S: usize> super::Hasher<S> for Blake2b<S> {
         Ok(())
     }
 
-    fn finalize(self) -> Result<[u8; S], Self::Error> {
+    fn finalize_dirty(&mut self) -> Result<[u8; S], Self::Error> {
         let mut out = [0; S];
 
         self.0
-            .finalize_variable(|digest| out.copy_from_slice(digest));
+            .finalize_variable_dirty(|digest| out.copy_from_slice(digest));
 
         Ok(out)
+    }
+
+    fn reset(&mut self) -> Result<(), Self::Error> {
+        self.0.reset();
+        Ok(())
+    }
+
+    fn finalize(mut self) -> Result<[u8; S], Self::Error> {
+        self.finalize_dirty()
     }
 
     fn digest(input: &[u8]) -> Result<[u8; S], Self::Error> {

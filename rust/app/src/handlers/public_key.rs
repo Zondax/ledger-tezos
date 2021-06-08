@@ -13,12 +13,65 @@ pub struct GetAddress;
 
 impl GetAddress {
     /// Retrieve the public key with the given curve and bip32 path
-    pub fn new_key(
+    #[inline(never)]
+    pub fn new_key<const B: usize>(
         curve: crypto::Curve,
-        path: &sys::crypto::bip32::BIP32Path,
+        path: &sys::crypto::bip32::BIP32Path<B>,
     ) -> Result<crypto::PublicKey, SysError> {
         let mut pkey = curve.gen_keypair(path)?.into_public();
         pkey.compress().map(|_| pkey)
+    }
+
+    #[inline(never)]
+    fn get_public_and_address(
+        key: crypto::PublicKey,
+        req_confirmation: bool,
+        buffer: &mut [u8],
+    ) -> Result<u32, Error> {
+        let mut tx = 0;
+
+        let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
+        if req_confirmation {
+            //TODO: show(&addr)
+        }
+
+        let key = key.as_ref();
+        let len = key.len();
+        //prepend pubkey with len
+        buffer[0] = len as u8;
+        tx += 1;
+
+        buffer[1..1 + len].copy_from_slice(&key);
+        tx += len as u32;
+
+        let alen = addr.len();
+        buffer[1 + len..1 + len + alen].copy_from_slice(&addr[..]);
+        tx += alen as u32;
+
+        Ok(tx)
+    }
+
+    #[inline(never)]
+    fn legacy_get_public(key: crypto::PublicKey, buffer: &mut [u8]) -> Result<u32, Error> {
+        let key = key.as_ref();
+        let len = key.len();
+        buffer[..len].copy_from_slice(&key);
+        Ok(len as u32)
+    }
+
+    #[inline(never)]
+    fn legacy_prompt_address_get_public(
+        key: crypto::PublicKey,
+        buffer: &mut [u8],
+    ) -> Result<u32, Error> {
+        let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
+
+        //TODO: show(&addr)
+
+        let key = key.as_ref();
+        let len = key.len();
+        buffer[..len].copy_from_slice(&key);
+        Ok(len as u32)
     }
 }
 
@@ -35,6 +88,7 @@ enum Action {
 }
 
 impl ApduHandler for GetAddress {
+    #[inline(never)]
     fn handle(_flags: &mut u32, tx: &mut u32, _rx: u32, buffer: &mut [u8]) -> Result<(), Error> {
         sys::zemu_log_stack("GetAddress::handle\x00");
 
@@ -61,47 +115,19 @@ impl ApduHandler for GetAddress {
         let cdata = &buffer[5..5 + cdata_len];
 
         let bip32_path =
-            sys::crypto::bip32::BIP32Path::read(cdata).map_err(|_| Error::DataInvalid)?;
+            sys::crypto::bip32::BIP32Path::<6>::read(cdata).map_err(|_| Error::DataInvalid)?;
 
         let key = Self::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
 
-        match action {
+        *tx = match action {
             Action::GetPublicAndAddress => {
-                let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
-                if req_confirmation {
-                    //TODO: show(&addr)
-                }
-
-                let key = key.as_ref();
-                let len = key.len();
-                //prepend pubkey with len
-                buffer[0] = len as u8;
-                *tx += 1;
-
-                buffer[1..1 + len].copy_from_slice(&key);
-                *tx += len as u32;
-
-                let alen = addr.len();
-                buffer[1 + len..1 + len + alen].copy_from_slice(&addr[..]);
-                *tx += alen as u32;
+                Self::get_public_and_address(key, req_confirmation, buffer)?
             }
-            Action::LegacyGetPublic => {
-                let key = key.as_ref();
-                let len = key.len();
-                buffer[..len].copy_from_slice(&key);
-                *tx = len as u32;
-            }
+            Action::LegacyGetPublic => Self::legacy_get_public(key, buffer)?,
             Action::LegacyPromptAddressButGetPublic => {
-                let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
-
-                //TODO: show(&addr)
-
-                let key = key.as_ref();
-                let len = key.len();
-                buffer[..len].copy_from_slice(&key);
-                *tx = len as u32;
+                Self::legacy_prompt_address_get_public(key, buffer)?
             }
-        }
+        };
 
         Ok(())
     }
@@ -117,6 +143,7 @@ impl Addr {
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         use crypto::Curve;
         use sys::hash::{Hasher, Sha256};
+        sys::zemu_log_stack("Addr::new\x00");
 
         let hash = pubkey.hash()?;
 
@@ -130,20 +157,22 @@ impl Addr {
             .into_inner()
         };
 
-        //legacy/src/to_string.c:94
-        // hash prefix + hash
-        let checksum = {
+        #[inline(never)]
+        fn sha256x2(pieces: &[&[u8]]) -> Result<[u8; 32], SysError> {
             let mut digest = Sha256::new()?;
-            digest.update(&prefix[..])?;
-            digest.update(&hash[..])?;
+            for p in pieces {
+                digest.update(p)?;
+            }
 
-            let hash = digest.finalize_dirty()?;
+            let x1 = digest.finalize_dirty()?;
+            digest.reset()?;
+            digest.update(&x1[..])?;
+            digest.finalize().map_err(Into::into)
+        }
 
-            //and hash that to get the checksum
-            digest.reset();
-            digest.update(&hash[..])?;
-            digest.finalize()?
-        };
+        //legacy/src/to_string.c:94
+        // hash(hash(prefix + hash))
+        let checksum = sha256x2(&[&prefix[..], &hash[..]])?;
 
         let checksum = {
             //but only get the first 4 bytes

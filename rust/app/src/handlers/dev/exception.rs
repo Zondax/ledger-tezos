@@ -8,6 +8,7 @@ use std::convert::TryFrom;
 pub struct Except {}
 
 impl ApduHandler for Except {
+    #[inline(never)]
     fn handle(_: &mut u32, tx: &mut u32, _: u32, buffer: &mut [u8]) -> Result<(), Error> {
         if buffer[APDU_INDEX_INS] != INS_DEV_EXCEPT {
             return Err(Error::InsNotSupported);

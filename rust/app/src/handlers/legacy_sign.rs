@@ -20,6 +20,7 @@ use crate::dispatcher::{ApduHandler, INS_LEGACY_SIGN, INS_LEGACY_SIGN_WITH_HASH}
 pub struct LegacySign {}
 
 impl ApduHandler for LegacySign {
+    #[inline(never)]
     fn handle(
         _flags: &mut u32,
         tx: &mut u32,

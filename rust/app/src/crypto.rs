@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::sys;
+use bolos::hash::Blake2b;
 use sys::{crypto::bip32::BIP32Path, errors::Error, hash::Hasher};
 
 #[derive(Debug, Clone, Copy)]
@@ -13,36 +14,32 @@ impl PublicKey {
 
     #[inline(never)]
     pub fn hash(&self) -> Result<[u8; 20], Error> {
-        let mut key = [0; 65];
+        sys::zemu_log_stack("PublicKey::hash\x00");
 
-        //legacy/src/keys.c:118
-        let len = {
-            match self.curve() {
-                Curve::Bip32Ed25519 | Curve::Ed25519 => {
-                    let bytes = &self.0.as_ref();
-                    let len = self.0.len();
+        let mut hasher = Blake2b::new()?;
 
-                    let new_len = len - 1;
-                    //copy all but the first byte
-                    key[..new_len].copy_from_slice(&bytes[1..1 + new_len]);
+        match self.curve() {
+            Curve::Bip32Ed25519 | Curve::Ed25519 => {
+                let bytes = self.0.as_ref();
+                let len = self.0.len();
 
-                    new_len
-                }
-                Curve::Secp256K1 | Curve::Secp256R1 => {
-                    let bytes = self.0.as_ref();
-
-                    //copy only 33 bytes
-                    key[..33].copy_from_slice(&bytes[..33]);
-
-                    //and change a few things
-                    key[0] = 0x02 + (bytes[64] & 0x01);
-
-                    33
-                }
+                //skip the first byte when hashing
+                hasher.update(&bytes[1..len])?;
             }
-        };
+            Curve::Secp256K1 | Curve::Secp256R1 => {
+                let bytes = self.0.as_ref();
 
-        sys::hash::Blake2b::digest(&key[..len])
+                //calculate a new first byte
+                let first = 0x02 + (bytes[64] & 0x01);
+                hasher.update(&[first])?;
+
+                //we already hashed the first byte
+                // so hash from the second to the 33rd (ignore the rest)
+                hasher.update(&bytes[1..33])?;
+            }
+        }
+
+        hasher.finalize()
     }
 
     pub fn curve(&self) -> Curve {
@@ -132,7 +129,7 @@ impl Keypair {
 }
 
 impl Curve {
-    pub fn gen_keypair(&self, path: &BIP32Path) -> Result<Keypair, Error> {
+    pub fn gen_keypair<const B: usize>(&self, path: &BIP32Path<B>) -> Result<Keypair, Error> {
         use sys::crypto::Mode;
 
         let mode = match self {

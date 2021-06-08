@@ -19,6 +19,7 @@ pub(self) fn cx_hash(
     input: &[u8],
     out: Option<&mut [u8]>,
 ) -> Result<(), Error> {
+    zemu_sys::zemu_log_stack("cx_hash\x00");
     let (out, out_len, write_out): (*mut u8, u32, bool) = match out {
         Some(out) => (out.as_mut_ptr(), out.len() as u32, true),
         None => (std::ptr::null_mut(), 0, false),
@@ -96,6 +97,7 @@ macro_rules! impl_hasher {
 
         #[inline(never)]
         fn digest(input: &[u8]) -> Result<[u8; $s], Self::Error> {
+            zemu_sys::zemu_log_stack("Hasher::digest\x00");
             let mut hasher = Self::init_hasher()?;
 
             let mut out = [0; $s];

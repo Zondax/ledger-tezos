@@ -1,7 +1,7 @@
-/// Struct representing a BIP32 derivation path, with up to 10 components
-pub struct BIP32Path {
+/// Struct representing a BIP32 derivation path, with up to LEN components
+pub struct BIP32Path<const LEN: usize> {
     len: u8,
-    components: [u32; 10],
+    components: [u32; LEN],
 }
 
 pub enum BIP32PathError {
@@ -13,7 +13,7 @@ pub enum BIP32PathError {
     TooMuchData,
 }
 
-impl BIP32Path {
+impl<const LEN: usize> BIP32Path<LEN> {
     ///Attempt to read a BIP32 Path from the provided input bytes
     pub fn read(input: &[u8]) -> Result<Self, BIP32PathError> {
         let blen = input.len() - 1;
@@ -28,7 +28,7 @@ impl BIP32Path {
         let len = input[0] as usize;
         if len == 0 {
             return Err(BIP32PathError::ZeroLength);
-        } else if len > 10 {
+        } else if len > LEN {
             return Err(BIP32PathError::TooMuchData);
         } else if blen / 4 > len {
             return Err(BIP32PathError::TooMuchData);
@@ -49,7 +49,7 @@ impl BIP32Path {
             //convert to u32
             .map(|bytes| u32::from_be_bytes(bytes));
 
-        let mut components_array = [0; 10];
+        let mut components_array = [0; LEN];
         for (i, component) in components.enumerate() {
             components_array[i] = component;
         }

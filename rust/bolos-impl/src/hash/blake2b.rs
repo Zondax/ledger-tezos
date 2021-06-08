@@ -10,7 +10,9 @@ pub struct Blake2b<const S: usize> {
 }
 
 impl<const S: usize> Blake2b<S> {
+    #[inline(never)]
     pub fn new() -> Result<Self, Error> {
+        zemu_sys::zemu_log_stack("Blake2b::new\x00");
         let mut state = Default::default();
 
         Self::init_state(&mut state)?;

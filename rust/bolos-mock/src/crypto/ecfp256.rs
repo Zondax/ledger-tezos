@@ -8,7 +8,7 @@ pub struct PublicKey {
 }
 
 impl PublicKey {
-    pub fn compress(&self) -> Result<Self, Error> {
+    pub fn compress(&mut self) -> Result<(), Error> {
         todo!("compress ecfp256 pubkey")
     }
 
@@ -35,7 +35,11 @@ pub struct Keypair {
 }
 
 impl Keypair {
-    pub fn generate(_mode: Mode, _curve: Curve, _path: &BIP32Path) -> Result<Self, Error> {
+    pub fn generate<const B: usize>(
+        _mode: Mode,
+        _curve: Curve,
+        _path: &BIP32Path<B>,
+    ) -> Result<Self, Error> {
         todo!("generate keypair ecfp256")
     }
 }

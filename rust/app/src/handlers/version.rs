@@ -29,6 +29,7 @@ pub fn get_target_id() -> Result<u32, ApduError> {
 }
 
 impl ApduHandler for GetVersion {
+    #[inline(never)]
     fn handle(
         _flags: &mut u32,
         tx: &mut u32,

@@ -77,6 +77,7 @@ impl LegacyHWM {
 }
 
 impl ApduHandler for LegacyHWM {
+    #[inline(never)]
     fn handle(_: &mut u32, tx: &mut u32, _: u32, apdu: &mut [u8]) -> Result<(), Error> {
         match apdu[APDU_INDEX_INS] {
             INS_LEGACY_RESET => {

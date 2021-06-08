@@ -212,10 +212,10 @@ mod bindings {
     use super::{bip32::BIP32Path, Curve, Mode};
     use crate::errors::{catch, Error};
 
-    pub fn os_perso_derive_node_with_seed_key(
+    pub fn os_perso_derive_node_with_seed_key<const B: usize>(
         mode: Mode,
         curve: Curve,
-        path: &BIP32Path,
+        path: &BIP32Path<B>,
     ) -> Result<[u8; 64], Error> {
         let curve: u8 = curve.into();
         let mode: u8 = mode.into();

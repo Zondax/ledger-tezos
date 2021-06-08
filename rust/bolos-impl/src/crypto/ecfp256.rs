@@ -50,7 +50,11 @@ pub struct Keypair {
 }
 
 impl Keypair {
-    pub fn generate(mode: Mode, curve: Curve, path: &BIP32Path) -> Result<Self, Error> {
+    pub fn generate<const B: usize>(
+        mode: Mode,
+        curve: Curve,
+        path: &BIP32Path<B>,
+    ) -> Result<Self, Error> {
         // Prepare secret key data with the ledger's key
         let mut sk_data = super::bindings::os_perso_derive_node_with_seed_key(mode, curve, path)?;
 

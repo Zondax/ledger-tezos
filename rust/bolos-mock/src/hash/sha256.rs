@@ -1,4 +1,4 @@
-use sha2::digest::Digest;
+use sha2::digest::{Digest, FixedOutput};
 
 pub struct Sha256(sha2::Sha256);
 
@@ -30,8 +30,17 @@ impl super::Hasher<32> for Sha256 {
         Ok(())
     }
 
+    fn finalize_dirty(&mut self) -> Result<[u8; 32], Self::Error> {
+        Ok(*self.0.finalize_fixed_reset().as_ref())
+    }
+
     fn finalize(self) -> Result<[u8; 32], Self::Error> {
         Ok(*self.0.finalize().as_ref())
+    }
+
+    fn reset(&mut self) -> Result<(), Self::Error> {
+        self.0.reset();
+        Ok(())
     }
 
     fn digest(input: &[u8]) -> Result<[u8; 32], Self::Error> {

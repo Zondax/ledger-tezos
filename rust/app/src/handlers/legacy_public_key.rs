@@ -20,6 +20,7 @@ use crate::dispatcher::{ApduHandler, INS_LEGACY_GET_PUBLIC_KEY, INS_LEGACY_PROMP
 pub struct LegacyGetPublicKey {}
 
 impl ApduHandler for LegacyGetPublicKey {
+    #[inline(never)]
     fn handle(
         _flags: &mut u32,
         tx: &mut u32,
