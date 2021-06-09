@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
 
-use crate::raw::{cx_blake2b_t, cx_hash_t};
+use crate::raw::{cx_blake2b_t, cx_hash_t, cx_md_t};
 use crate::{errors::catch, Error};
 
 use super::CxHash;
@@ -50,15 +50,19 @@ impl<const S: usize> Blake2b<S> {
 }
 
 impl<const S: usize> CxHash<S> for Blake2b<S> {
-    fn init_hasher() -> Result<Self, Error> {
+    fn cx_init_hasher() -> Result<Self, Error> {
         Self::new()
     }
 
-    fn reset(&mut self) -> Result<(), Error> {
+    fn cx_reset(&mut self) -> Result<(), Error> {
         Self::init_state(&mut self.state)
     }
 
     fn cx_header(&mut self) -> &mut cx_hash_t {
         &mut self.state.header
+    }
+
+    fn cx_id() -> cx_md_t {
+        crate::raw::cx_md_e_CX_BLAKE2B
     }
 }

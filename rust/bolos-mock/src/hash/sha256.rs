@@ -49,3 +49,11 @@ impl super::Hasher<32> for Sha256 {
         hasher.finalize()
     }
 }
+
+impl super::HasherId for Sha256 {
+    type Id = u8;
+
+    fn id() -> Self::Id {
+        12
+    }
+}

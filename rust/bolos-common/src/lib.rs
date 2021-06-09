@@ -24,4 +24,10 @@ pub mod hash {
         /// One-short digest
         fn digest(input: &[u8]) -> Result<[u8; S], Self::Error>;
     }
+
+    pub trait HasherId {
+        type Id;
+
+        fn id() -> Self::Id;
+    }
 }

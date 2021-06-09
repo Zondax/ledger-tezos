@@ -43,3 +43,11 @@ impl<const S: usize> super::Hasher<S> for Blake2b<S> {
         hasher.finalize()
     }
 }
+
+impl<const S: usize> super::HasherId for Blake2b<S> {
+    type Id = u8;
+
+    fn id() -> Self::Id {
+        9
+    }
+}

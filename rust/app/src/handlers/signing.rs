@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use bolos::{
     crypto::bip32::BIP32Path,
-    hash::{Blake2b, Hasher},
+    hash::{Blake2b, Hasher, HasherId},
     new_swapping_buffer, SwappingBuffer,
 };
 
@@ -35,11 +35,15 @@ impl Sign {
 
     //(actual_size, [u8; MAX_SIGNATURE_SIZE])
     #[inline(never)]
-    fn sign<const LEN: usize>(
+    fn sign<H, const LEN: usize>(
         curve: Curve,
         path: &BIP32Path<LEN>,
         data: &[u8],
-    ) -> Result<(usize, [u8; 100]), Error> {
+    ) -> Result<(usize, [u8; 100]), Error>
+    where
+        H: HasherId,
+        H::Id: Into<u8>
+    {
         let keypair = curve.gen_keypair(path).map_err(|_| Error::ExecutionError)?;
 
         todo!()
@@ -84,7 +88,8 @@ impl Sign {
 
                 let unsigned_hash = Self::blake2b_digest(unsafe { BUFFER.read_exact() })?;
 
-                let (sig_size, sig) = Self::sign(*curve, path, &unsigned_hash[..])?;
+                let (sig_size, sig) =
+                    Self::sign::<Blake2b<0>, 6>(*curve, path, &unsigned_hash[..])?;
 
                 //write unsigned_hash to buffer
                 tx += Self::SIGN_HASH_SIZE as u32;
@@ -160,8 +165,7 @@ pub struct Addr {
 
 impl Addr {
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
-        use crypto::Curve;
-        use sys::hash::{Hasher, Sha256};
+        use sys::hash::Sha256;
         sys::zemu_log_stack("Addr::new\x00");
 
         let hash = pubkey.hash()?;

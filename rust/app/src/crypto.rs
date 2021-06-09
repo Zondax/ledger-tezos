@@ -2,7 +2,11 @@ use std::convert::TryFrom;
 
 use crate::sys;
 use bolos::hash::Blake2b;
-use sys::{crypto::bip32::BIP32Path, errors::Error, hash::Hasher};
+use sys::{
+    crypto::bip32::BIP32Path,
+    errors::Error,
+    hash::{Hasher, HasherId},
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey(pub(crate) sys::crypto::ecfp256::PublicKey);
@@ -132,7 +136,11 @@ impl Keypair {
         self.public
     }
 
-    pub fn sign(&mut self, out: &mut [u8]) -> Result<usize, SignError> {
+    pub fn sign<H>(&mut self, out: &mut [u8]) -> Result<usize, SignError>
+    where
+        H: HasherId,
+        H::Id: Into<u8>
+    {
         match self.public.curve() {
             Curve::Ed25519 | Curve::Bip32Ed25519 if out.len() < 64 => {
                 Err(SignError::BufferTooSmall)
