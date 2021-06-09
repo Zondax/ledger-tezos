@@ -35,18 +35,19 @@ impl Sign {
 
     //(actual_size, [u8; MAX_SIGNATURE_SIZE])
     #[inline(never)]
-    fn sign<H, const LEN: usize>(
+    fn sign<const LEN: usize>(
         curve: Curve,
         path: &BIP32Path<LEN>,
         data: &[u8],
-    ) -> Result<(usize, [u8; 100]), Error>
-    where
-        H: HasherId,
-        H::Id: Into<u8>
-    {
-        let keypair = curve.gen_keypair(path).map_err(|_| Error::ExecutionError)?;
+    ) -> Result<(usize, [u8; 100]), Error> {
+        let mut keypair = curve.gen_keypair(path).map_err(|_| Error::ExecutionError)?;
 
-        todo!()
+        let mut out = [0; 100];
+        let sz = keypair
+            .sign(data, &mut out[..])
+            .map_err(|_| Error::ExecutionError)?;
+
+        Ok((sz, out))
     }
 
     #[inline(never)]
@@ -89,7 +90,7 @@ impl Sign {
                 let unsigned_hash = Self::blake2b_digest(unsafe { BUFFER.read_exact() })?;
 
                 let (sig_size, sig) =
-                    Self::sign::<Blake2b<0>, 6>(*curve, path, &unsigned_hash[..])?;
+                    Self::sign(*curve, path, &unsigned_hash[..])?;
 
                 //write unsigned_hash to buffer
                 tx += Self::SIGN_HASH_SIZE as u32;

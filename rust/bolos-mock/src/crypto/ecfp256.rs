@@ -32,7 +32,7 @@ impl AsRef<[u8]> for PublicKey {
 pub struct SecretKey {}
 
 impl SecretKey {
-    pub fn sign<H>(&mut self, _data: &[u8], _out: &mut [u8]) -> Result<(), Error>
+    pub fn sign<H>(&mut self, _data: &[u8], _out: &mut [u8]) -> Result<usize, Error>
     where
         H: HasherId,
         H::Id: Into<u8>,

@@ -77,7 +77,7 @@ impl SecretKey {
 
             Ok(size)
         } else if crv.is_twisted_edward() {
-            todo!("eddsa sign")
+            bindings::cx_eddsa_sign(self, data, out)
         } else if crv.is_montgomery() {
             todo!("montgomery sign")
         } else {
@@ -277,38 +277,45 @@ mod bindings {
         use crate::raw::CX_RND_RFC6979;
 
         let id: u8 = H::id().into();
-        let mut raw_sk = sk.as_raw_mut();
 
-        let sk = &mut *raw_sk as *const _;
+        let crv = sk.curve;
+
+        let mut raw_sk = sk.as_raw_mut();
+        let raw_sk = &mut *raw_sk as *const _;
 
         let (data, data_len) = (data.as_ptr(), data.len() as u32);
-        let (sig, mut sig_len) = (sig_out.as_mut_ptr(), 0u32);
+        let sig = sig_out.as_mut_ptr();
+
+        let mut sig_len = match crv.domain_length() {
+            Some(n) => 6+2*(n + 1),
+            None => sig_out.len(),
+        } as u32;
 
         let mut info = 0;
 
         cfg_if! {
             if #[cfg(nanox)] {
                 let might_throw = || unsafe { crate::raw::cx_ecdsa_sign(
-                    sk,
+                    raw_sk,
                     CX_RND_RFC6979 as _,
                     id as _,
                     data,
                     data_len as _,
                     sig,
-                    sig_out.len() as u32 as _,
+                    sig_len as _,
                     &mut info as *mut u32 as *mut _,
                 )};
 
                 sig_len = catch(might_throw)? as u32;
             } else if #[cfg(nanos)] {
                 match unsafe { crate::raw::cx_ecdsa_sign_no_throw(
-                    sk,
+                    raw_sk,
                     CX_RND_RFC6979,
                     id as _,
                     data,
                     data_len as _,
                     sig,
-                    &mut sig_len as &mut u32 as *mut _,
+                    &mut sig_len as *mut _,
                     &mut info as *mut u32 as *mut _,
                 )} {
                     0 => {},
@@ -320,6 +327,72 @@ mod bindings {
         }
 
         Ok((info == crate::raw::CX_ECCINFO_PARITY_ODD, sig_len as usize))
+    }
+
+    pub fn cx_eddsa_sign(
+        sk: &mut SecretKey,
+        data: &[u8],
+        sig_out: &mut [u8],
+    ) -> Result<usize, Error>
+    {
+        let id: u8 = crate::hash::Sha512::id().into();
+
+        let crv = sk.curve;
+
+        let mut raw_sk = sk.as_raw_mut();
+        let raw_sk = &mut *raw_sk as *const _;
+
+        let (data, data_len) = (data.as_ptr(), data.len() as u32);
+        let sig = sig_out.as_mut_ptr();
+
+        let mut sig_len = match crv.domain_length() {
+            Some(n) => 6+2*(n + 1),
+            None => sig_out.len(),
+        } as u32;
+
+        cfg_if! {
+            if #[cfg(nanox)] {
+                let might_throw = || unsafe { crate::raw::cx_eddsa_sign(
+                    raw_sk,
+                    0 as _,
+                    id as _,
+                    data,
+                    data_len as _,
+                    std::ptr::null(),
+                    0,
+                    sig,
+                    sig_len as _,
+                    std::ptr::null_mut(),
+                )};
+
+                sig_len = catch(might_throw)? as u32;
+            } else if #[cfg(nanos)] {
+                match unsafe { crate::raw::cx_eddsa_sign_no_throw(
+                    raw_sk,
+                    id as _,
+                    data,
+                    data_len as _,
+                    sig,
+                    sig_len as _,
+                )} {
+                    0 => {
+                        let crv: u8 = crv.into();
+                        match unsafe { crate::raw::cx_ecdomain_parameters_length(
+                            crv as _,
+                            &mut sig_len as *mut _
+                        )} {
+                            0 => {},
+                            err => return Err(err.into()),
+                        }
+                    },
+                    err => return Err(err.into()),
+                }
+            } else {
+                todo!("cx_eddsa_sign called in not bolos")
+            }
+        }
+
+        Ok(sig_len as usize)
     }
 }
 use bindings::*;

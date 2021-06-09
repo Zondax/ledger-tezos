@@ -161,6 +161,31 @@ impl Curve {
             _ => false,
         }
     }
+
+    pub fn domain_length(&self) -> Option<usize> {
+        match self {
+            Curve::None => None,
+            Curve::Secp256K1 |
+            Curve::Secp256R1 | Curve::Nistp256 => Some(32),
+            Curve::Secp384R1 | Curve::Nistp384 => Some(48),
+            Curve::Secp521R1 | Curve::Nistp521 => Some(66),
+            Curve::BrainPoolP256T1 |
+            Curve::BrainPoolP256R1 => Some(32),
+            Curve::BrainPoolP320T1 |
+            Curve::BrainPoolP320R1 => Some(40),
+            Curve::BrainPoolP384T1 |
+            Curve::BrainPoolP384R1 => Some(48),
+            Curve::BrainPoolP512T1 |
+            Curve::BrainPoolP512R1 => Some(64),
+            Curve::Frp256V1 => Some(32),
+            Curve::Stark256 => None,
+            Curve::Bls12_381G1 => None,
+            Curve::Ed25519 => Some(32),
+            Curve::Ed448 => Some(57),
+            Curve::Curve25519 => Some(32),
+            Curve::Curve448 => Some(56),
+        }
+    }
 }
 
 #[cfg(nanos)]

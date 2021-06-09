@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::sys;
-use bolos::hash::Blake2b;
+use bolos::hash::{Blake2b, Sha256};
 use sys::{
     crypto::bip32::BIP32Path,
     errors::Error,
@@ -136,11 +136,7 @@ impl Keypair {
         self.public
     }
 
-    pub fn sign<H>(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, SignError>
-    where
-        H: HasherId,
-        H::Id: Into<u8>,
-    {
+    pub fn sign(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, SignError> {
         match self.public.curve() {
             Curve::Ed25519 | Curve::Bip32Ed25519 if out.len() < 64 => {
                 Err(SignError::BufferTooSmall)
@@ -149,9 +145,10 @@ impl Keypair {
                 Err(SignError::BufferTooSmall)
             }
 
-            Curve::Ed25519 | Curve::Bip32Ed25519 | Curve::Secp256K1 | Curve::Secp256R1 => {
-                self.secret.sign::<H>(data, out).map_err(|e| SignError::Sys(e))
-            }
+            Curve::Ed25519 | Curve::Bip32Ed25519 | Curve::Secp256K1 | Curve::Secp256R1 => self
+                .secret
+                .sign::<Sha256>(data, out) //pass Sha256 for the signature nonce hasher
+                .map_err(|e| SignError::Sys(e)),
         }
     }
 }
