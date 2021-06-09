@@ -136,10 +136,10 @@ impl Keypair {
         self.public
     }
 
-    pub fn sign<H>(&mut self, out: &mut [u8]) -> Result<usize, SignError>
+    pub fn sign<H>(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, SignError>
     where
         H: HasherId,
-        H::Id: Into<u8>
+        H::Id: Into<u8>,
     {
         match self.public.curve() {
             Curve::Ed25519 | Curve::Bip32Ed25519 if out.len() < 64 => {
@@ -149,7 +149,9 @@ impl Keypair {
                 Err(SignError::BufferTooSmall)
             }
 
-            Curve::Ed25519 | Curve::Bip32Ed25519 | Curve::Secp256K1 | Curve::Secp256R1 => todo!(),
+            Curve::Ed25519 | Curve::Bip32Ed25519 | Curve::Secp256K1 | Curve::Secp256R1 => {
+                self.secret.sign::<H>(data, out).map_err(|e| SignError::Sys(e))
+            }
         }
     }
 }

@@ -1,7 +1,12 @@
 use zeroize::{Zeroize, Zeroizing};
 
 use super::{bip32::BIP32Path, Curve, Mode};
-use crate::errors::{catch, Error};
+use crate::{
+    errors::{catch, Error},
+    misc::FakeLifetimeMut,
+    raw::cx_ecfp_private_key_t,
+    hash::HasherId,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey {
@@ -42,6 +47,43 @@ pub struct SecretKey {
     curve: Curve,
     pub len: usize,
     pub d: Zeroizing<[u8; 32]>,
+}
+
+impl SecretKey {
+    fn as_raw_mut(&mut self) -> FakeLifetimeMut<'_, Self, Zeroizing<cx_ecfp_private_key_t>> {
+        let curve: u8 = self.curve.into();
+
+        let sk = Zeroizing::new(cx_ecfp_private_key_t {
+            curve: curve as u32,
+            d_len: self.len as _,
+            d: *self.d,
+        });
+
+        FakeLifetimeMut::new(self, sk)
+    }
+
+    pub fn sign<H>(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, Error>
+    where
+        H: HasherId,
+        H::Id: Into<u8>,
+    {
+        let crv = self.curve;
+
+        if crv.is_weirstrass() {
+            let (parity, size) = bindings::cx_ecdsa_sign::<H>(self, data, out)?;
+            if parity {
+                out[0] |= 0x01;
+            }
+
+            Ok(size)
+        } else if crv.is_twisted_edward() {
+            todo!("eddsa sign")
+        } else if crv.is_montgomery() {
+            todo!("montgomery sign")
+        } else {
+            todo!("unknown signature type")
+        }
+    }
 }
 
 pub struct Keypair {
@@ -92,10 +134,11 @@ impl Keypair {
     pub fn public(&self) -> &PublicKey {
         &self.public
     }
+
 }
 
 mod bindings {
-    use super::{catch, Curve, Error};
+    use super::{catch, SecretKey, Curve, Error, HasherId};
     use crate::raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t};
     use zeroize::Zeroize;
 
@@ -218,6 +261,65 @@ mod bindings {
         }
 
         Ok((sk, pk))
+    }
+
+    //first item says if Y is odd when computing k.G
+    // second item in the tuple is the number of bytes written to `sig_out`
+    pub fn cx_ecdsa_sign<H>(
+        sk: &mut SecretKey,
+        data: &[u8],
+        sig_out: &mut [u8],
+    ) -> Result<(bool, usize), Error>
+    where
+        H: HasherId,
+        H::Id: Into<u8>,
+    {
+        use crate::raw::CX_RND_RFC6979;
+
+        let id: u8 = H::id().into();
+        let mut raw_sk = sk.as_raw_mut();
+
+        let sk = &mut *raw_sk as *const _;
+
+        let (data, data_len) = (data.as_ptr(), data.len() as u32);
+        let (sig, mut sig_len) = (sig_out.as_mut_ptr(), 0u32);
+
+        let mut info = 0;
+
+        cfg_if! {
+            if #[cfg(nanox)] {
+                let might_throw = || unsafe { crate::raw::cx_ecdsa_sign(
+                    sk,
+                    CX_RND_RFC6979 as _,
+                    id as _,
+                    data,
+                    data_len as _,
+                    sig,
+                    sig_out.len() as u32 as _,
+                    &mut info as *mut u32 as *mut _,
+                )};
+
+                sig_len = catch(might_throw)? as u32;
+            } else if #[cfg(nanos)] {
+                match unsafe { crate::raw::cx_ecdsa_sign_no_throw(
+                    sk,
+                    CX_RND_RFC6979,
+                    id as _,
+                    data,
+                    data_len as _,
+                    sig,
+                    &mut sig_len as &mut u32 as *mut _,
+                    &mut info as *mut u32 as *mut _,
+                )} {
+                    0 => {},
+                    err => return Err(err.into()),
+                }
+            } else {
+                todo!("cx_ecdsa_sign called in not bolos")
+            }
+        }
+
+        Ok((info == crate::raw::CX_ECCINFO_PARITY_ODD, sig_len as usize))
     }
 }
 use bindings::*;

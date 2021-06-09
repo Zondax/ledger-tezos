@@ -9,7 +9,7 @@ edition = "2018"
 
 [dependencies]
 bolos-common = { version = "0.1", path = "../bolos-common" }
-bolos-sys = { version = "0.1", path = "../bolos-sys" }
+bolos-sys = { version = "0.1", path = "../bolos-sys", features = ["extra-traits-zeroize"] }
 zemu-sys = { version = "0.1", path = "../zemu" }
 
 cfg-if = "1.0.0"
