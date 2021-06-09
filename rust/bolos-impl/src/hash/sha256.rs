@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
 
-use crate::raw::{cx_hash_t, cx_sha256_t, cx_md_t};
+use crate::raw::{cx_hash_t, cx_md_t, cx_sha256_t};
 use crate::{errors::catch, Error};
 
 use super::CxHash;

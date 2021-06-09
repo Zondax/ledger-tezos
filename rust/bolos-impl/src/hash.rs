@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 use crate::errors::{catch, Error};
-pub(self) use crate::raw::{cx_md_t, cx_hash_t};
+pub(self) use crate::raw::{cx_hash_t, cx_md_t};
 
 pub mod blake2b;
 pub use blake2b::Blake2b;

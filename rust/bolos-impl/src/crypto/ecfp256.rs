@@ -3,9 +3,9 @@ use zeroize::{Zeroize, Zeroizing};
 use super::{bip32::BIP32Path, Curve, Mode};
 use crate::{
     errors::{catch, Error},
+    hash::HasherId,
     misc::FakeLifetimeMut,
     raw::cx_ecfp_private_key_t,
-    hash::HasherId,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -134,11 +134,10 @@ impl Keypair {
     pub fn public(&self) -> &PublicKey {
         &self.public
     }
-
 }
 
 mod bindings {
-    use super::{catch, SecretKey, Curve, Error, HasherId};
+    use super::{catch, Curve, Error, HasherId, SecretKey};
     use crate::raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t};
     use zeroize::Zeroize;
 
@@ -287,7 +286,7 @@ mod bindings {
         let sig = sig_out.as_mut_ptr();
 
         let mut sig_len = match crv.domain_length() {
-            Some(n) => 6+2*(n + 1),
+            Some(n) => 6 + 2 * (n + 1),
             None => sig_out.len(),
         } as u32;
 
@@ -333,8 +332,7 @@ mod bindings {
         sk: &mut SecretKey,
         data: &[u8],
         sig_out: &mut [u8],
-    ) -> Result<usize, Error>
-    {
+    ) -> Result<usize, Error> {
         let id: u8 = crate::hash::Sha512::id().into();
 
         let crv = sk.curve;
@@ -346,7 +344,7 @@ mod bindings {
         let sig = sig_out.as_mut_ptr();
 
         let mut sig_len = match crv.domain_length() {
-            Some(n) => 6+2*(n + 1),
+            Some(n) => 6 + 2 * (n + 1),
             None => sig_out.len(),
         } as u32;
 

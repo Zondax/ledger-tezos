@@ -89,8 +89,7 @@ impl Sign {
 
                 let unsigned_hash = Self::blake2b_digest(unsafe { BUFFER.read_exact() })?;
 
-                let (sig_size, sig) =
-                    Self::sign(*curve, path, &unsigned_hash[..])?;
+                let (sig_size, sig) = Self::sign(*curve, path, &unsigned_hash[..])?;
 
                 //write unsigned_hash to buffer
                 tx += Self::SIGN_HASH_SIZE as u32;

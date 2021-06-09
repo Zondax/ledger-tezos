@@ -2,12 +2,12 @@ use std::{convert::TryFrom, prelude::v1::*};
 
 use sha2::digest::Digest;
 
+use super::PacketType;
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_HASH},
     sys::{new_swapping_buffer, swapping_buffer::SwappingBuffer, PIC},
 };
-use super::PacketType;
 
 const RAM: usize = 0xFF;
 const FLASH: usize = 0xFFFF;
@@ -18,7 +18,6 @@ type Buffer = SwappingBuffer<'static, 'static, RAM, FLASH>;
 static mut BUFFER: Buffer = new_swapping_buffer!(RAM, FLASH);
 
 pub struct Sha256 {}
-
 
 impl ApduHandler for Sha256 {
     #[inline(never)]
