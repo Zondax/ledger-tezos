@@ -2,10 +2,10 @@ use std::{convert::TryFrom, prelude::v1::*};
 
 use sha2::digest::Digest;
 
-use super::PacketType;
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_HASH},
+    handlers::PacketType,
     sys::{new_swapping_buffer, swapping_buffer::SwappingBuffer, PIC},
 };
 

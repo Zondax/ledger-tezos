@@ -1,4 +1,3 @@
-pub mod legacy_sign;
 pub mod legacy_version;
 pub mod public_key;
 pub mod signing;
