@@ -35,7 +35,7 @@ pub fn pic(_: TokenStream, input: TokenStream) -> TokenStream {
 
     let output = quote! {
         #(#attrs)*
-        #vis static #mutability #name: ::bolos_sys::PIC<#ty> = ::bolos_sys::PIC::new(#expr);
+        #vis static #mutability #name: ::bolos::PIC<#ty> = ::bolos::PIC::new(#expr);
     };
 
     output.into()

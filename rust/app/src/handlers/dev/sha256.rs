@@ -13,7 +13,7 @@ const FLASH: usize = 0xFFFF;
 
 type Buffer = SwappingBuffer<'static, 'static, RAM, FLASH>;
 
-#[bolos_sys::lazy_static]
+#[bolos::lazy_static]
 static mut BUFFER: Buffer = new_swapping_buffer!(RAM, FLASH);
 
 pub struct Sha256 {}
@@ -45,6 +45,7 @@ impl Into<u8> for PacketType {
 }
 
 impl ApduHandler for Sha256 {
+    #[inline(never)]
     fn handle(_: &mut u32, tx: &mut u32, _: u32, apdu_buffer: &mut [u8]) -> Result<(), Error> {
         if apdu_buffer[APDU_INDEX_INS] != INS_DEV_HASH {
             return Err(Error::InsNotSupported);

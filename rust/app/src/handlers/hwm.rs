@@ -22,10 +22,10 @@ const ALL_HWM_LEN: usize = 12;
 // types.h:61,0
 const MAINNET_CHAIN_ID: u32 = 0x7A06A770;
 
-#[bolos_sys::lazy_static]
+#[bolos::lazy_static]
 static mut MAIN: WearLeveller = new_wear_leveller!(N_PAGES).expect("NVM might be corrupted");
 
-#[bolos_sys::lazy_static]
+#[bolos::lazy_static]
 static mut TEST: WearLeveller = new_wear_leveller!(N_PAGES).expect("NVM might be corrupted");
 
 pub struct LegacyHWM {}
@@ -77,6 +77,7 @@ impl LegacyHWM {
 }
 
 impl ApduHandler for LegacyHWM {
+    #[inline(never)]
     fn handle(_: &mut u32, tx: &mut u32, _: u32, apdu: &mut [u8]) -> Result<(), Error> {
         match apdu[APDU_INDEX_INS] {
             INS_LEGACY_RESET => {

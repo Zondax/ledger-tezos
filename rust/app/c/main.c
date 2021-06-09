@@ -108,6 +108,7 @@ int main(void) {
     volatile uint8_t app_init_done = 0;
     volatile uint32_t rx = 0, tx = 0, flags = 0;
     volatile uint16_t sw = 0;
+    zemu_log_stack("main");
 
     for (;;) {
         BEGIN_TRY

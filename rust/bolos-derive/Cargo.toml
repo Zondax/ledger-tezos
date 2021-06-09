@@ -14,4 +14,4 @@ quote = "1.0"
 proc-macro2 = "1"
 
 [dev-dependencies]
-bolos-sys = { path = "../bolos" }
+bolos = { path = "../bolos" }

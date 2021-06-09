@@ -264,10 +264,6 @@ zemu:
 zemu_val:
 	cd $(TESTS_ZEMU_DIR)/tools && node debug_val.mjs
 
-.PHONY: zemu_debug
-zemu_debug:
-	cd $(TESTS_ZEMU_DIR)/tools && node debug.mjs $(COIN) debug
-
 ########################## TEST Section ###############################
 
 .PHONY: zemu_test

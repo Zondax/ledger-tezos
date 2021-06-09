@@ -7,11 +7,12 @@ export function serializePath(path: string): Buffer {
 
   const pathArray = path.split("/");
 
-  if (pathArray.length !== 6) {
+  if (pathArray.length !== 5) {
     throw new Error("Invalid path. (e.g \"m/44'/5757'/5'/0/3\")");
   }
 
-  const buf = Buffer.alloc(20);
+  const buf = Buffer.alloc(1 + (pathArray.length - 1) * 4);
+  buf.writeUInt8(pathArray.length - 1); //first byte is the path length
 
   for (let i = 1; i < pathArray.length; i += 1) {
     let value = 0;
@@ -33,8 +34,15 @@ export function serializePath(path: string): Buffer {
 
     value += childNumber;
 
-    buf.writeUInt32LE(value, 4 * (i - 1));
+    buf.writeUInt32BE(value, 1 + 4 * (i - 1));
   }
 
   return buf;
+}
+
+const createHash = require('crypto').createHash;
+
+export function sha256x2(input: Buffer): Buffer {
+  const tmp = createHash('sha256').update(input).digest();
+  return createHash('sha256').update(tmp).digest();
 }

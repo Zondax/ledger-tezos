@@ -31,6 +31,7 @@ impl LegacyGit {
 }
 
 impl ApduHandler for LegacyGetVersion {
+    #[inline(never)]
     fn handle(
         _flags: &mut u32,
         tx: &mut u32,
@@ -53,6 +54,7 @@ impl ApduHandler for LegacyGetVersion {
 }
 
 impl ApduHandler for LegacyGit {
+    #[inline(never)]
     fn handle(
         _flags: &mut u32,
         tx: &mut u32,

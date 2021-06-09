@@ -104,9 +104,7 @@ fn produce_custom_ty(
                     }
                 }
 
-                #[inline(always)]
                 fn init(&self) {
-                    #[inline(always)]
                     fn __initialize() -> #ty { #init }
 
                     //SAFETY:

@@ -9,10 +9,10 @@ use std::ops::{Deref, DerefMut};
 ///
 /// # Example
 /// ```
-/// # use bolos_sys::PIC;
+/// # use bolos::PIC;
 /// //BUFFER is a `static` so we need to wrap it with PIC so it would
 /// //be accessible when running under BOLOS
-/// #[bolos_sys::pic]
+/// #[bolos::pic]
 /// static BUFFER: [u8; 1024] = [0; 1024];
 ///
 /// let _: &PIC<[u8; 1024]> = &BUFFER;

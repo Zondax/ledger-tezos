@@ -19,24 +19,17 @@
 
 extern crate no_std_compat as std;
 
-cfg_if::cfg_if! {
-    if #[cfg(not(test))] {
-        use core::panic::PanicInfo;
-
-        #[panic_handler]
-        fn panic(_info: &PanicInfo) -> ! {
-            sys::exit_app(255);
-        }
-    }
-}
-
 pub mod constants;
 pub mod dispatcher;
 mod handlers;
 mod sys;
 
+sys::panic_handler! {}
+
 #[macro_use]
 mod utils;
+
+mod crypto;
 
 use dispatcher::handle_apdu;
 use sys::{check_canary, zemu_log};

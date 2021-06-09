@@ -1,20 +1,14 @@
 mod exceptions {
-    #[cfg(bolos_sdk)]
-    use crate::raw::{
-        jmp_buf, os_longjmp, setjmp, try_context_get, try_context_set, try_context_t,
-    };
+    use crate::raw::{os_longjmp, setjmp, try_context_get, try_context_set, try_context_t};
 
     cfg_if! {
         if #[cfg(nanox)] {
             include!("errors/exceptionsX.rs");
         } else if #[cfg(nanos)] {
             include!("errors/exceptionsS.rs");
-        } else {
-            include!("errors/exceptionsSTUB.rs");
         }
     }
 
-    #[cfg(bolos_sdk)]
     /// General catch mechanism to catch _all_ kinds of exceptions
     ///
     /// As you can see the error type is just a `u32`
@@ -72,28 +66,13 @@ mod exceptions {
         return result.unwrap();
     }
 
-    #[cfg(not(bolos_sdk))]
-    pub fn catch<T, F>(syscall: F) -> Result<T, Error>
-    where
-        F: FnOnce() -> T,
-    {
-        Ok(syscall())
-    }
-
-    #[cfg(feature = "exception-throw")]
     pub fn throw_raw(exception: u32) -> ! {
-        cfg_if! {
-            if #[cfg(bolos_sdk)] {
-                unsafe {
-                    os_longjmp(exception);
-                }
-                //this should never happen, and it's here for the
-                //never type
-                unreachable!("returned from longjmp");
-            } else {
-                panic!("exception = {:?}", exception);
-            }
+        unsafe {
+            os_longjmp(exception);
         }
+        //this should never happen, and it's here for the
+        //never type
+        unreachable!("returned from longjmp");
     }
 }
 pub use exceptions::*;

@@ -16,7 +16,7 @@
 
 import Zemu, {DeviceModel} from "@zondax/zemu";
 import TezosApp from "@zondax/ledger-tezos";
-import { defaultOptions } from './common';
+import { defaultOptions, APP_DERIVATION, curves } from './common';
 
 const Resolve = require("path").resolve;
 const APP_PATH_LEGACY_S = Resolve("../legacy/output/app.elf");
@@ -27,8 +27,8 @@ const models: DeviceModel[] = [
 
 jest.setTimeout(60000)
 
-describe('Legacy wallet', function () {
-    test.each(models)('can start and stop container', async function (m) {
+describe.each(models)('Legacy wallet [%s]', function (m) {
+    test('can start and stop container', async function () {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name,});
@@ -37,28 +37,29 @@ describe('Legacy wallet', function () {
         }
     });
 
-    test.each(models)('main menu', async function (m) {
+    test('main menu', async function () {
         const sim = new Zemu(m.path)
         try {
             await sim.start({ ...defaultOptions, model: m.name })
-            await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 5, -5])
+            await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [3, -3])
         } finally {
             await sim.close()
         }
     });
 
-    test.each(models)('get app version', async function (m) {
+    test('get app version', async function () {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name,});
             const app = new TezosApp(sim.getTransport());
-            const resp = await app.getVersion();
+            const resp = await app.legacyGetVersion();
 
             console.log(resp);
 
             expect(resp.returnCode).toEqual(0x9000);
             expect(resp.errorMessage).toEqual("No errors");
-            expect(resp).toHaveProperty("testMode");
+            expect(resp).toHaveProperty("baking");
+            expect(resp.baking).toBe(false);
             expect(resp).toHaveProperty("major");
             expect(resp).toHaveProperty("minor");
             expect(resp).toHaveProperty("patch");
@@ -67,12 +68,12 @@ describe('Legacy wallet', function () {
         }
     });
 
-    test.each(models)('get git app', async function(m) {
+    test('get git app', async function() {
         const sim = new Zemu(m.path);
         try {
             await sim.start({...defaultOptions, model: m.name});
             const app = new TezosApp(sim.getTransport());
-            const resp = await app.getGit();
+            const resp = await app.legacyGetGit();
 
             console.log(resp);
             expect(resp.returnCode).toEqual(0x9000);
@@ -82,4 +83,27 @@ describe('Legacy wallet', function () {
             await sim.close();
         }
     })
+});
+
+describe.each(models)('Legacy standard [%s] - pubkey', function (m) {
+    test.each(curves)('get pubkey and compute addr $s', async function(curve) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name});
+            const app = new TezosApp(sim.getTransport());
+
+            let resp = await app.legacyGetPubKey(APP_DERIVATION, curve);
+
+            console.log(resp, m.name);
+
+            expect(resp.returnCode).toEqual(0x9000);
+            expect(resp.errorMessage).toEqual("No errors");
+            expect(resp).toHaveProperty("publicKey");
+            expect(resp).toHaveProperty("address");
+            expect(resp.address).toContain("tz");
+
+        } finally {
+            await sim.close();
+        }
+    });
 });

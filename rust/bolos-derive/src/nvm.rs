@@ -122,7 +122,7 @@ pub fn nvm(_: TokenStream, input: TokenStream) -> TokenStream {
             //construct input based on input and dims
             let init = {
                 match maybe_init {
-                    None => quote! {::bolos_sys::NVM::zeroed()},
+                    None => quote! {::bolos::NVM::zeroed()},
                     Some(init) => {
                         //skip first len (init len)
                         let init_len = lens.pop_front().unwrap();
@@ -154,7 +154,7 @@ pub fn nvm(_: TokenStream, input: TokenStream) -> TokenStream {
                                //      i += 1;
                                //  }
 
-                                ::bolos_sys::NVM::new(out)
+                                ::bolos::NVM::new(out)
                             }
                         }
                     }
@@ -163,8 +163,8 @@ pub fn nvm(_: TokenStream, input: TokenStream) -> TokenStream {
 
             quote! {
                 #(#attrs)*
-                #[bolos_sys::pic]
-                #vis static #mutability #name: ::bolos_sys::NVM<#total_len> = #init;
+                #[bolos::pic]
+                #vis static #mutability #name: ::bolos::NVM<#total_len> = #init;
             }
         }
     }

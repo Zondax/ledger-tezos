@@ -18,9 +18,9 @@ use cfg_if::cfg_if;
 
 use crate::constants::ApduError::{ClaNotSupported, CommandNotAllowed, Success, WrongLength};
 use crate::constants::{ApduError, APDU_INDEX_CLA, APDU_INDEX_INS, APDU_MIN_LENGTH};
-use crate::handlers::legacy_public_key::LegacyGetPublicKey;
 use crate::handlers::legacy_sign::LegacySign;
 use crate::handlers::legacy_version::{LegacyGetVersion, LegacyGit};
+use crate::handlers::public_key::GetAddress;
 use crate::handlers::version::GetVersion;
 
 pub const CLA: u8 = 0x80;
@@ -145,8 +145,9 @@ pub fn apdu_dispatch(
     match ins {
         INS_LEGACY_GET_VERSION => LegacyGetVersion::handle(flags, tx, rx, apdu_buffer),
 
-        INS_LEGACY_GET_PUBLIC_KEY => LegacyGetPublicKey::handle(flags, tx, rx, apdu_buffer),
-        INS_LEGACY_PROMPT_PUBLIC_KEY => LegacyGetPublicKey::handle(flags, tx, rx, apdu_buffer),
+        INS_LEGACY_GET_PUBLIC_KEY | INS_LEGACY_PROMPT_PUBLIC_KEY | INS_GET_ADDRESS => {
+            GetAddress::handle(flags, tx, rx, apdu_buffer)
+        }
 
         INS_LEGACY_GIT => LegacyGit::handle(flags, tx, rx, apdu_buffer),
 
@@ -159,6 +160,7 @@ pub fn apdu_dispatch(
 }
 
 pub fn handle_apdu(flags: &mut u32, tx: &mut u32, rx: u32, apdu_buffer: &mut [u8]) {
+    crate::sys::zemu_log_stack("handle_apdu\x00");
     let response = apdu_dispatch(flags, tx, rx, apdu_buffer);
 
     // Retrieve error code or use 0x9000 if ok
