@@ -20,5 +20,6 @@
 #define HAVE_HASH
 #define HAVE_BLAKE2
 #define HAVE_SHA256
+#define HAVE_SHA512
 
 #endif // DEFINES_H_

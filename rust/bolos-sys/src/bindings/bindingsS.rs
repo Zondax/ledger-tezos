@@ -288,6 +288,8 @@ pub const OS_PARSE_BERTLV_OFFSET_COMPARE_WITH_BUFFER: u32 = 2147483648;
 pub const OS_PARSE_BERTLV_OFFSET_GET_LENGTH: u32 = 1073741824;
 pub const CX_HASH_MAX_BLOCK_COUNT: u32 = 65535;
 pub const CX_SHA256_SIZE: u32 = 32;
+pub const CX_SHA384_SIZE: u32 = 48;
+pub const CX_SHA512_SIZE: u32 = 64;
 pub const IO_USB_MAX_ENDPOINTS: u32 = 7;
 pub const IO_HID_EP_LENGTH: u32 = 64;
 pub const USB_SEGMENT_SIZE: u32 = 64;
@@ -2945,6 +2947,113 @@ extern "C" {
     #[doc = "   'out' length is implicit"]
     #[doc = ""]
     pub fn cx_hash_sha256(in_: *const u8, len: size_t, out: *mut u8, out_len: size_t) -> size_t;
+}
+#[doc = " SHA-384 and SHA-512 context"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_sha512_s {
+    #[doc = " @copydoc cx_ripemd160_s::header"]
+    pub header: cx_hash_header_s,
+    #[doc = " @internal @copydoc cx_ripemd160_s::blen"]
+    pub blen: size_t,
+    #[doc = " @internal @copydoc cx_ripemd160_s::block"]
+    pub block: [u8; 128usize],
+    #[doc = " @copydoc cx_ripemd160_s::acc"]
+    pub acc: [u8; 64usize],
+}
+#[test]
+fn bindgen_test_layout_cx_sha512_s() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_sha512_s>(),
+        204usize,
+        concat!("Size of: ", stringify!(cx_sha512_s))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_sha512_s>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_sha512_s))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_sha512_s>())).header as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_sha512_s),
+            "::",
+            stringify!(header)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_sha512_s>())).blen as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_sha512_s),
+            "::",
+            stringify!(blen)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_sha512_s>())).block as *const _ as usize },
+        12usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_sha512_s),
+            "::",
+            stringify!(block)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_sha512_s>())).acc as *const _ as usize },
+        140usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_sha512_s),
+            "::",
+            stringify!(acc)
+        )
+    );
+}
+impl Default for cx_sha512_s {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " Convenience type. See #cx_sha512_s."]
+pub type cx_sha512_t = cx_sha512_s;
+extern "C" {
+    #[doc = " Initialize a SHA-384 context."]
+    #[doc = ""]
+    #[doc = " @param [out] hash the context to initialize."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @return algorithm identifier"]
+    pub fn cx_sha384_init_no_throw(hash: *mut cx_sha512_t) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Initialize a SHA-512 context."]
+    #[doc = ""]
+    #[doc = " @param [out] hash the context to initialize."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @return algorithm identifier"]
+    pub fn cx_sha512_init_no_throw(hash: *mut cx_sha512_t) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " One shot SHA-512 digest"]
+    #[doc = ""]
+    #[doc = " @param  [in] in"]
+    #[doc = "   Input data to compute the hash"]
+    #[doc = ""]
+    #[doc = " @param  [in] in_len"]
+    #[doc = "   Length of input data."]
+    #[doc = ""]
+    #[doc = " @param [out] out"]
+    #[doc = "   'out' buffer"]
+    #[doc = ""]
+    #[doc = " @param [out] out_len"]
+    #[doc = "   max 'out' length"]
+    pub fn cx_hash_sha512(in_: *const u8, in_len: size_t, out: *mut u8, out_len: size_t) -> size_t;
 }
 pub const blake2b_constant_BLAKE2B_BLOCKBYTES: blake2b_constant = 128;
 pub const blake2b_constant_BLAKE2B_OUTBYTES: blake2b_constant = 64;

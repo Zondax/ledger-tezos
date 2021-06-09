@@ -9,6 +9,8 @@ pub use blake2b::Blake2b;
 pub mod sha256;
 pub use sha256::Sha256;
 
+pub mod sha512;
+pub use sha512::Sha512;
 ///Perform a hash computation
 ///
 /// if write_out is true then `out` must be of the necessary size
@@ -149,3 +151,4 @@ macro_rules! impl_hasher {
 
 impl_hasher! {@FIXED 32, Sha256}
 impl_hasher! {@GENERIC S, Blake2b<S>}
+impl_hasher! {@FIXED 64, Sha512}
