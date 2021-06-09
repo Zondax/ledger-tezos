@@ -122,9 +122,27 @@ pub struct Keypair {
     pub secret: sys::crypto::ecfp256::SecretKey,
 }
 
+pub enum SignError {
+    BufferTooSmall,
+    Sys(Error),
+}
+
 impl Keypair {
     pub fn into_public(self) -> PublicKey {
         self.public
+    }
+
+    pub fn sign(&mut self, out: &mut [u8]) -> Result<usize, SignError> {
+        match self.public.curve() {
+            Curve::Ed25519 | Curve::Bip32Ed25519 if out.len() < 64 => {
+                Err(SignError::BufferTooSmall)
+            }
+            Curve::Secp256K1 | Curve::Secp256R1 if out.len() < 100 => {
+                Err(SignError::BufferTooSmall)
+            }
+
+            Curve::Ed25519 | Curve::Bip32Ed25519 | Curve::Secp256K1 | Curve::Secp256R1 => todo!(),
+        }
     }
 }
 

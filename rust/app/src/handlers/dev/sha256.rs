@@ -7,6 +7,7 @@ use crate::{
     dispatcher::{ApduHandler, INS_DEV_HASH},
     sys::{new_swapping_buffer, swapping_buffer::SwappingBuffer, PIC},
 };
+use super::PacketType;
 
 const RAM: usize = 0xFF;
 const FLASH: usize = 0xFFFF;
@@ -18,31 +19,6 @@ static mut BUFFER: Buffer = new_swapping_buffer!(RAM, FLASH);
 
 pub struct Sha256 {}
 
-#[repr(u8)]
-enum PacketType {
-    Init = 0,
-    Add = 1,
-    Last = 2,
-}
-
-impl TryFrom<u8> for PacketType {
-    type Error = ();
-
-    fn try_from(from: u8) -> Result<Self, ()> {
-        match from {
-            0 => Ok(Self::Init),
-            1 => Ok(Self::Add),
-            2 => Ok(Self::Last),
-            _ => Err(()),
-        }
-    }
-}
-
-impl Into<u8> for PacketType {
-    fn into(self) -> u8 {
-        self as _
-    }
-}
 
 impl ApduHandler for Sha256 {
     #[inline(never)]
