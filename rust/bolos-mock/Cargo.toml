@@ -9,7 +9,7 @@ edition = "2018"
 [features]
 
 [dependencies]
-bolos-common = { version = "0.1", path = "../bolos-common" }
+bolos-common = { version = "0.1", path = "../bolos-common", features = ["std"] }
 
 sha2 = "0.9"
 blake2 = "0.9"

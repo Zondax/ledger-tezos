@@ -18,7 +18,6 @@ use cfg_if::cfg_if;
 
 use crate::constants::ApduError::{ClaNotSupported, CommandNotAllowed, Success, WrongLength};
 use crate::constants::{ApduError, APDU_INDEX_CLA, APDU_INDEX_INS, APDU_MIN_LENGTH};
-use crate::handlers::legacy_public_key::LegacyGetPublicKey;
 use crate::handlers::legacy_sign::LegacySign;
 use crate::handlers::legacy_version::{LegacyGetVersion, LegacyGit};
 use crate::handlers::public_key::GetAddress;

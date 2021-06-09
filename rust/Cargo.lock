@@ -53,6 +53,9 @@ dependencies = [
 [[package]]
 name = "bolos-common"
 version = "0.1.0"
+dependencies = [
+ "no-std-compat",
+]
 
 [[package]]
 name = "bolos-derive"
@@ -73,6 +76,7 @@ dependencies = [
  "bolos-sys",
  "cfg-if",
  "no-std-compat",
+ "zemu-sys",
  "zeroize",
 ]
 

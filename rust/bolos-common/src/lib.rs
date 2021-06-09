@@ -1,6 +1,8 @@
 #![no_std]
 #![no_builtins]
 
+extern crate no_std_compat as std;
+
 pub mod bip32;
 
 pub mod hash {
