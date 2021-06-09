@@ -165,17 +165,22 @@ export default class TezosApp {
       .then(processGetAddrResponse, processErrorResponse);
   }
 
-  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer): Promise<ResponseSign> {
+  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, curve?: Curve): Promise<ResponseSign> {
     let payloadType = PAYLOAD_TYPE.ADD;
+    let p2 = 0;
     if (chunkIdx === 1) {
       payloadType = PAYLOAD_TYPE.INIT;
+      if (curve === undefined) {
+        throw Error("curve type not given")
+      }
+      p2 = curve;
     }
     if (chunkIdx === chunkNum) {
       payloadType = PAYLOAD_TYPE.LAST;
     }
 
     return this.transport
-      .send(CLA, 0, payloadType, 0, chunk, [
+      .send(CLA, INS.SIGN, payloadType, p2, chunk, [
         LedgerError.NoErrors,
         LedgerError.DataIsInvalid,
         LedgerError.BadKeyHandle,
@@ -186,8 +191,6 @@ export default class TezosApp {
         const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
         let errorMessage = errorCodeToString(returnCode);
 
-        let signature = Buffer.alloc(0);
-
         if (returnCode === LedgerError.BadKeyHandle ||
           returnCode === LedgerError.DataIsInvalid ||
           returnCode === LedgerError.SignVerifyError) {
@@ -197,9 +200,9 @@ export default class TezosApp {
         }
 
         if (returnCode === LedgerError.NoErrors && response.length > 2) {
-          signature = response.slice(32, 97);
           return {
-            signature,
+            hash: response.slice(0, 32),
+            signature: response.slice(32),
             returnCode: returnCode,
             errorMessage: errorMessage
           };
@@ -214,9 +217,9 @@ export default class TezosApp {
   }
 
 
-  async sign(path: string, message: Buffer) {
+  async sign(path: string, curve: Curve, message: Buffer) {
     return this.signGetChunks(path, message).then(chunks => {
-      return this.signSendChunk(1, chunks.length, chunks[0]).then(async response => {
+      return this.signSendChunk(1, chunks.length, chunks[0], curve).then(async response => {
         let result = {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
@@ -232,6 +235,11 @@ export default class TezosApp {
         return result;
       }, processErrorResponse);
     }, processErrorResponse);
+  }
+
+  sig_hash(msg: Buffer): Buffer {
+    const blake2 = require('blake2');
+    return blake2.createHash('blake2b', {digestLength: 32}).update(msg).digest();
   }
 
 
@@ -266,7 +274,7 @@ export default class TezosApp {
   }
 
   async legacyResetHighWatermark(level: number): Promise<ResponseBase> {
-    let data = Buffer.allocUnsafe(4);
+    const data = Buffer.allocUnsafe(4);
     data.writeInt32BE(level);
 
     return this.transport.send(CLA, LEGACY_INS.RESET, 0, 0, data).then(response => {

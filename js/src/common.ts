@@ -7,6 +7,7 @@ export const APP_KEY = "XTZ";
 export const INS = {
   GET_VERSION: 0x10,
   GET_ADDR: 0x11,
+  SIGN: 0x12,
 };
 
 export const LEGACY_INS = {

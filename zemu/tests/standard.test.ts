@@ -15,7 +15,7 @@
  ******************************************************************************* */
 
 import Zemu from '@zondax/zemu'
-import { defaultOptions, models, APP_DERIVATION, curves } from './common'
+import { defaultOptions, models, APP_DERIVATION, curves, cartesianProduct } from './common'
 import TezosApp from '@zondax/ledger-tezos'
 
 jest.setTimeout(60000)
@@ -138,6 +138,35 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
       expect(resp).toHaveProperty('address')
       expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
       expect(resp.address).toContain('tz')
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
+describe.each(models)('Standard [%s]; sign', function (m) {
+    test.each(
+      cartesianProduct(
+          curves,
+          [
+              Buffer.from("francesco@zondax.ch"),
+              Buffer.alloc(300, 0)
+          ]))
+    ('sign message', async function (curve, msg) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+
+      const resp = await app.sign(APP_DERIVATION, curve, msg);
+
+      console.log(resp, m.name)
+
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('hash')
+      expect(resp).toHaveProperty('signature')
+      expect(resp.hash).toEqual(app.sig_hash(msg))
     } finally {
       await sim.close()
     }

@@ -29,6 +29,7 @@ export interface ResponseAppInfo extends ResponseBase {
 }
 
 export interface ResponseSign extends ResponseBase {
+  hash: Buffer;
   signature: Buffer;
 }
 
