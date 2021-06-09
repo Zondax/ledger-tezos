@@ -4178,6 +4178,213 @@ extern "C" {
         p_len: size_t,
     ) -> cx_err_t;
 }
+extern "C" {
+    #[doc = " Sign a hash message according to ECDSA specification."]
+    #[doc = ""]
+    #[doc = " @param [in] pvkey"]
+    #[doc = "   A private ecfp key fully inited with 'cx_ecfp_init_private_key'"]
+    #[doc = ""]
+    #[doc = " @param [in] mode"]
+    #[doc = "   Crypto mode flags. See above."]
+    #[doc = "   Supported flags:"]
+    #[doc = "     - CX_RND_TRNG"]
+    #[doc = "     - CX_RND_RFC6979"]
+    #[doc = ""]
+    #[doc = " @param [in] hashID"]
+    #[doc = "  Hash identifier used to compute the input data."]
+    #[doc = "  This parameter is mandatory for rng of type CX_RND_RFC6979."]
+    #[doc = ""]
+    #[doc = " @param [in] hash"]
+    #[doc = "   Input data to sign."]
+    #[doc = "   The data should be the hash of the original message."]
+    #[doc = "   The data length must be lesser than the curve size."]
+    #[doc = ""]
+    #[doc = " @param [in] hash_len"]
+    #[doc = "   Length of input to data."]
+    #[doc = ""]
+    #[doc = " @param [out] sig"]
+    #[doc = "   ECDSA signature encoded as TLV:  30 L 02 Lr r 02 Ls s"]
+    #[doc = ""]
+    #[doc = " @param [out] info"]
+    #[doc = "   Set CX_ECCINFO_PARITY_ODD if Y is odd when computing k.G"]
+    #[doc = ""]
+    #[doc = " @return"]
+    #[doc = "   Full length of signature"]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_ecdsa_sign_no_throw(
+        pvkey: *const cx_ecfp_private_key_t,
+        mode: u32,
+        hashID: cx_md_t,
+        hash: *const u8,
+        hash_len: size_t,
+        sig: *mut u8,
+        sig_len: *mut size_t,
+        info: *mut u32,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Verify a hash message signature according to ECDSA specification."]
+    #[doc = ""]
+    #[doc = " @param [in] key"]
+    #[doc = "   A public ecfp key fully inited with 'cx_ecfp_init_public_key'"]
+    #[doc = ""]
+    #[doc = " @param [in] mode"]
+    #[doc = "   Crypto mode flags. See above."]
+    #[doc = "   Supported flags:"]
+    #[doc = "     - CX_LAST"]
+    #[doc = ""]
+    #[doc = " @param [in] hashID"]
+    #[doc = "  Hash identifier used to compute the input data."]
+    #[doc = ""]
+    #[doc = " @param [in] hash"]
+    #[doc = "   Signed input data to verify the signature."]
+    #[doc = "   The data should be the hash of the original message."]
+    #[doc = "   The data length must be lesser than the curve size."]
+    #[doc = ""]
+    #[doc = " @param [in] hash_len"]
+    #[doc = "   Length of input to data."]
+    #[doc = ""]
+    #[doc = " @param [in] sig"]
+    #[doc = "   ECDSA signature to verify encoded as TLV:  30 L 02 Lr r 02 Ls s"]
+    #[doc = ""]
+    #[doc = " @return"]
+    #[doc = "   1 if signature is verified"]
+    #[doc = "   0 is signarure is not verified"]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_ecdsa_verify_no_throw(
+        pukey: *const cx_ecfp_public_key_t,
+        hash: *const u8,
+        hash_len: size_t,
+        sig: *const u8,
+        sig_len: size_t,
+    ) -> bool;
+}
+extern "C" {
+    #[doc = " Sign a hash message according to EdDSA specification RFC8032."]
+    #[doc = ""]
+    #[doc = " @param [in] pv_key"]
+    #[doc = "   A private ecfp key fully inited with 'cx_ecfp_init_private_key'."]
+    #[doc = ""]
+    #[doc = ""]
+    #[doc = " @param [in] mode"]
+    #[doc = "   Crypto mode flags. See above."]
+    #[doc = "   Supported flags:"]
+    #[doc = "      <none>"]
+    #[doc = ""]
+    #[doc = " @param [in] hashID"]
+    #[doc = "  Hash identifier used to compute the input data. SHA512, SHA3 and Keccak are supported."]
+    #[doc = ""]
+    #[doc = " @param [in] hash"]
+    #[doc = "   Input data to sign."]
+    #[doc = "   The data should be the hash of the original message."]
+    #[doc = "   The data length must be lesser than the curve size."]
+    #[doc = ""]
+    #[doc = " @param [in] hash_len"]
+    #[doc = "   Length of input to data."]
+    #[doc = ""]
+    #[doc = " @param [in] ctx"]
+    #[doc = "   UNUSED, SHALL BE NULL"]
+    #[doc = ""]
+    #[doc = " @param [in] ctx_len"]
+    #[doc = "   UNUSED, SHALL BE ZERO"]
+    #[doc = ""]
+    #[doc = " @param [out] sig"]
+    #[doc = "   EdDSA signature encoded as : R|S"]
+    #[doc = ""]
+    #[doc = " @param [out] info"]
+    #[doc = "   Set to zero"]
+    #[doc = ""]
+    #[doc = " @return"]
+    #[doc = "   Full length of signature"]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_eddsa_sign_no_throw(
+        pvkey: *const cx_ecfp_private_key_t,
+        hashID: cx_md_t,
+        hash: *const u8,
+        hash_len: size_t,
+        sig: *mut u8,
+        sig_len: size_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Verify a hash message signature according to EDDSA specification RFC8032."]
+    #[doc = ""]
+    #[doc = " @param [in] key"]
+    #[doc = "   A public ecfp key fully inited with 'cx_ecfp_init_public_key'"]
+    #[doc = ""]
+    #[doc = " @param [in] mode"]
+    #[doc = "   Crypto mode flags. See above."]
+    #[doc = "   Supported flags:"]
+    #[doc = "     - <none>"]
+    #[doc = ""]
+    #[doc = " @param [in] hashID"]
+    #[doc = "  Hash identifier used to compute the input data.  SHA512, SHA3 and Keccak are supported."]
+    #[doc = ""]
+    #[doc = " @param [in] hash"]
+    #[doc = "   Signed input data to verify the signature."]
+    #[doc = "   The data should be the hash of the original message."]
+    #[doc = "   The data length must be lesser than the curve size."]
+    #[doc = ""]
+    #[doc = " @param [in] hash_len"]
+    #[doc = "   Length of input to data."]
+    #[doc = ""]
+    #[doc = " @param [in] ctx"]
+    #[doc = "   UNUSED, SHALL BE NULL"]
+    #[doc = ""]
+    #[doc = " @param [in] ctx_len"]
+    #[doc = "   UNUSED, SHALL BE ZERO"]
+    #[doc = ""]
+    #[doc = " @param [in] sig"]
+    #[doc = "   EDDSA signature to verify encoded as : R|S"]
+    #[doc = ""]
+    #[doc = " @param [in] sig_len"]
+    #[doc = "   sig length in bytes"]
+    #[doc = ""]
+    #[doc = " @return"]
+    #[doc = "   1 if signature is verified"]
+    #[doc = "   0 is signarure is not verified"]
+    #[doc = ""]
+    #[doc = " @throws INVALID_PARAMETER"]
+    pub fn cx_eddsa_verify_no_throw(
+        pukey: *const cx_ecfp_public_key_t,
+        hashID: cx_md_t,
+        hash: *const u8,
+        hash_len: size_t,
+        sig: *const u8,
+        sig_len: size_t,
+    ) -> bool;
+}
+extern "C" {
+    #[doc = " Encode coordinates"]
+    #[doc = ""]
+    #[doc = " @param [in] coord"]
+    #[doc = "   A pointer to the ec point coordinates in the form x|y"]
+    #[doc = ""]
+    #[doc = " @param [in] len"]
+    #[doc = "   Length of the input coordinates"]
+    #[doc = ""]
+    #[doc = " @param [in] sign"]
+    #[doc = "  Sign of the coordinates"]
+    #[doc = ""]
+    pub fn cx_encode_coord(coord: *mut u8, len: cty::c_int, sign: cty::c_int);
+}
+extern "C" {
+    #[doc = " Decode coordinates."]
+    #[doc = ""]
+    #[doc = " @param [in] coord"]
+    #[doc = "   A pointer to the ec point coordinates in the form x|y"]
+    #[doc = ""]
+    #[doc = " @param [in] len"]
+    #[doc = "   Length of the input coordinates"]
+    #[doc = ""]
+    #[doc = " @return [in] sign"]
+    #[doc = "  Sign of the coordinates"]
+    #[doc = ""]
+    pub fn cx_decode_coord(coord: *mut u8, len: cty::c_int) -> cty::c_int;
+}
 pub const bagl_components_type_e__BAGL_NONE: bagl_components_type_e_ = 0;
 pub const bagl_components_type_e__BAGL_BUTTON: bagl_components_type_e_ = 1;
 pub const bagl_components_type_e__BAGL_LABEL: bagl_components_type_e_ = 2;
