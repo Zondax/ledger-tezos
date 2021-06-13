@@ -147,108 +147,12 @@ impl ApduHandler for Sign {
             Action::Sign => {
                 Self::blind_sign(packet_type, buffer).map_err(|_| Error::ExecutionError)?
             }
-            Action::LegacySign => todo!(),
-            Action::LegacySignWithHash => todo!(),
+            Action::LegacySign => return Err(Error::CommandNotAllowed), //TODO
+            Action::LegacySignWithHash => return Err(Error::CommandNotAllowed), //TODO
             #[cfg(feature = "wallet")]
-            Action::LegacySignUnsafe => todo!(),
+            Action::LegacySignUnsafe => return Err(Error::CommandNotAllowed), //TODO
         };
 
         Ok(())
-    }
-}
-
-pub struct Addr {
-    prefix: [u8; 3],
-    hash: [u8; 20],
-    checksum: [u8; 4],
-}
-
-impl Addr {
-    pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
-        use sys::hash::Sha256;
-        sys::zemu_log_stack("Addr::new\x00");
-
-        let hash = pubkey.hash()?;
-
-        //legacy/src/to_string.c:135
-        let prefix: [u8; 3] = {
-            sys::PIC::new(match pubkey.curve() {
-                Curve::Ed25519 | Curve::Bip32Ed25519 => [6, 161, 159],
-                Curve::Secp256K1 => [6, 161, 161],
-                Curve::Secp256R1 => [6, 161, 164],
-            })
-            .into_inner()
-        };
-
-        #[inline(never)]
-        fn sha256x2(pieces: &[&[u8]]) -> Result<[u8; 32], SysError> {
-            let mut digest = Sha256::new()?;
-            for p in pieces {
-                digest.update(p)?;
-            }
-
-            let x1 = digest.finalize_dirty()?;
-            digest.reset()?;
-            digest.update(&x1[..])?;
-            digest.finalize().map_err(Into::into)
-        }
-
-        //legacy/src/to_string.c:94
-        // hash(hash(prefix + hash))
-        let checksum = sha256x2(&[&prefix[..], &hash[..]])?;
-
-        let checksum = {
-            //but only get the first 4 bytes
-            let mut array = [0; 4];
-            array.copy_from_slice(&checksum[..4]);
-            array
-        };
-
-        Ok(Self {
-            prefix,
-            hash,
-            checksum,
-        })
-    }
-
-    //[u8; PKH_STRING] without null byte
-    // legacy/src/types.h:156
-    pub fn to_base58(&self) -> [u8; 36] {
-        let mut input = {
-            let mut array = [0; 27];
-            array[..3].copy_from_slice(&self.prefix[..]);
-            array[3..3 + 20].copy_from_slice(&self.hash[..]);
-            array[3 + 20..3 + 20 + 4].copy_from_slice(&self.checksum[..]);
-            array
-        };
-
-        let mut out = [0; 36];
-
-        //the expect is ok since we know all the sizes
-        bs58::encode(input)
-            .into(&mut out[..])
-            .expect("encoded in base58 is not of the right length");
-
-        out
-    }
-}
-
-#[cfg(test)]
-impl Addr {
-    pub fn from_parts(prefix: [u8; 3], hash: [u8; 20], checksum: [u8; 4]) -> Self {
-        Self {
-            prefix,
-            hash,
-            checksum,
-        }
-    }
-
-    pub fn bytes(&self) -> std::vec::Vec<u8> {
-        let mut out = std::vec::Vec::with_capacity(3 + 20 + 4);
-        out.extend_from_slice(&self.prefix[..]);
-        out.extend_from_slice(&self.hash[..]);
-        out.extend_from_slice(&self.checksum[..]);
-
-        out
     }
 }
