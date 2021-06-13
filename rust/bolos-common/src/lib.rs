@@ -18,6 +18,9 @@ pub mod hash {
         /// Consume hasher and retrieve output
         fn finalize(self) -> Result<[u8; S], Self::Error>;
 
+        /// Consume hasher and write output to given location
+        fn finalize_into(self, out: &mut [u8; S]) -> Result<(), Self::Error>;
+
         /// Reset the state of the hasher
         fn reset(&mut self) -> Result<(), Self::Error>;
 

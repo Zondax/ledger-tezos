@@ -43,6 +43,12 @@ impl super::Hasher<64> for Sha512 {
         self.finalize_dirty()
     }
 
+    fn finalize_into(mut self, out: &mut [u8; 64]) -> Result<(), Self::Error> {
+        out.copy_from_slice(self.0.finalize_fixed_reset().as_ref());
+
+        Ok(())
+    }
+
     fn reset(&mut self) -> Result<(), Self::Error> {
         self.0.reset();
         Ok(())

@@ -5,19 +5,10 @@ use sha2::digest::Digest;
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_HASH},
-    handlers::PacketType,
-    sys::{new_swapping_buffer, swapping_buffer::SwappingBuffer, PIC},
+    handlers::{resources::BUFFER, PacketType},
 };
 
-const RAM: usize = 0xFF;
-const FLASH: usize = 0xFFFF;
-
-type Buffer = SwappingBuffer<'static, 'static, RAM, FLASH>;
-
-#[bolos::lazy_static]
-static mut BUFFER: Buffer = new_swapping_buffer!(RAM, FLASH);
-
-pub struct Sha256 {}
+pub struct Sha256;
 
 impl ApduHandler for Sha256 {
     #[inline(never)]
@@ -33,8 +24,9 @@ impl ApduHandler for Sha256 {
         match packet {
             //Reset buffer and start loading data
             PacketType::Init => unsafe {
-                BUFFER.reset();
+                BUFFER.lock(Self)?.reset();
                 BUFFER
+                    .acquire(Self)?
                     .write(&apdu_buffer[5..5 + len])
                     .map_err(|_| Error::DataInvalid)?;
                 *tx = 0;
@@ -44,6 +36,7 @@ impl ApduHandler for Sha256 {
             // keep loading data
             PacketType::Add => unsafe {
                 BUFFER
+                    .acquire(Self)?
                     .write(&apdu_buffer[5..5 + len])
                     .map_err(|_| Error::DataInvalid)?;
                 *tx = 0;
@@ -53,11 +46,12 @@ impl ApduHandler for Sha256 {
             // load the last bit and perform sha256
             PacketType::Last => unsafe {
                 BUFFER
+                    .acquire(Self)?
                     .write(&apdu_buffer[5..5 + len])
                     .map_err(|_| Error::DataInvalid)?;
 
                 //only read_exact because we don't care about what's in the rest of the buffer
-                let digest = sha2::Sha256::digest(BUFFER.read_exact());
+                let digest = sha2::Sha256::digest(BUFFER.acquire(Self)?.read_exact());
                 let digest = digest.as_slice();
 
                 if apdu_buffer.len() < digest.len() {
@@ -68,7 +62,8 @@ impl ApduHandler for Sha256 {
                 *tx = digest.len() as u32;
 
                 //reset the buffer for next message
-                BUFFER.reset();
+                BUFFER.acquire(Self)?.reset();
+                BUFFER.release(Self);
                 Ok(())
             },
         }

@@ -2,31 +2,26 @@ use std::convert::TryFrom;
 
 use bolos::{
     crypto::bip32::BIP32Path,
-    hash::{Blake2b, Hasher, HasherId},
-    new_swapping_buffer, SwappingBuffer,
+    hash::{Blake2b, Hasher},
 };
 
-use super::PacketType;
+use super::{resources::BUFFER, PacketType};
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS},
-    crypto::{self, Curve},
+    constants::{ApduError as Error, APDU_INDEX_INS, BIP32_MAX_LENGTH},
+    crypto::Curve,
     dispatcher::{ApduHandler, INS_LEGACY_SIGN, INS_LEGACY_SIGN_WITH_HASH, INS_SIGN},
-    sys::{self, Error as SysError},
+    sys,
 };
 
 #[bolos::lazy_static]
-static mut PATH: Option<(BIP32Path<6>, Curve)> = None;
-
-#[bolos::lazy_static]
-static mut BUFFER: SwappingBuffer<'static, 'static, 0xFF, 0xFFFF> =
-    new_swapping_buffer!(0xFF, 0xFFFF);
+static mut PATH: Option<(BIP32Path<BIP32_MAX_LENGTH>, Curve)> = None;
 
 pub struct Sign;
 
 impl Sign {
     pub const SIGN_HASH_SIZE: usize = 32;
 
-    fn get_derivation_info() -> Result<&'static (BIP32Path<6>, Curve), Error> {
+    fn get_derivation_info() -> Result<&'static (BIP32Path<BIP32_MAX_LENGTH>, Curve), Error> {
         match unsafe { &*PATH } {
             None => Err(Error::ApduCodeConditionsNotSatisfied),
             Some(some) => Ok(some),
@@ -67,9 +62,10 @@ impl Sign {
                 // and the bip32 path as payload only
 
                 let curve = Curve::try_from(buffer[3]).map_err(|_| Error::InvalidP1P2)?;
-                let path = BIP32Path::<6>::read(cdata).map_err(|_| Error::DataInvalid)?;
+                let path =
+                    BIP32Path::<BIP32_MAX_LENGTH>::read(cdata).map_err(|_| Error::DataInvalid)?;
 
-                unsafe { BUFFER.reset() };
+                unsafe { BUFFER.lock(Self)?.reset() };
                 unsafe { PATH.replace((path, curve)) };
             }
             PacketType::Add => {
@@ -78,16 +74,17 @@ impl Sign {
                 //check if we initialized first
                 Self::get_derivation_info()?;
 
-                unsafe { BUFFER.write(cdata) }.map_err(|_| Error::DataInvalid)?;
+                unsafe { BUFFER.acquire(Self)?.write(cdata) }.map_err(|_| Error::DataInvalid)?;
             }
             PacketType::Last => {
                 //this is also pure data, but we need to return data this time!
 
                 let (path, curve) = Self::get_derivation_info()?;
 
-                unsafe { BUFFER.write(cdata) }.map_err(|_| Error::DataInvalid)?;
+                let mut zbuffer = unsafe { BUFFER.acquire(Self)? };
+                zbuffer.write(cdata).map_err(|_| Error::DataInvalid)?;
 
-                let unsigned_hash = Self::blake2b_digest(unsafe { BUFFER.read_exact() })?;
+                let unsigned_hash = Self::blake2b_digest(zbuffer.read_exact())?;
 
                 let (sig_size, sig) = Self::sign(*curve, path, &unsigned_hash[..])?;
 
@@ -101,8 +98,9 @@ impl Sign {
                     .copy_from_slice(&sig[..sig_size]);
 
                 //reset globals to avoid skipping `Init`
+                zbuffer.reset();
+                unsafe { BUFFER.release(Self)? };
                 unsafe { PATH.take() };
-                unsafe { BUFFER.reset() };
             }
         }
 

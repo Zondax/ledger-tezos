@@ -80,10 +80,12 @@ macro_rules! impl_hasher {
     (@__IMPL $ty:ty, $s:tt) => {
         type Error = Error;
 
+        #[inline(never)]
         fn update(&mut self, input: &[u8]) -> Result<(), Self::Error> {
             cx_hash(self.cx_header(), input, None)
         }
 
+        #[inline(never)]
         fn finalize_dirty(&mut self) -> Result<[u8; $s], Self::Error> {
             let mut out = [0; $s];
 
@@ -91,10 +93,19 @@ macro_rules! impl_hasher {
             Ok(out)
         }
 
+        #[inline(never)]
         fn finalize(mut self) -> Result<[u8; $s], Self::Error> {
             self.finalize_dirty()
         }
 
+        #[inline(never)]
+        fn finalize_into(mut self, out: &mut [u8; $s]) -> Result<(), Self::Error> {
+            cx_hash(self.cx_header(), &[], Some(out))?;
+
+            Ok(())
+        }
+
+        #[inline(never)]
         fn reset(&mut self) -> Result<(), Self::Error> {
             self.cx_reset()
         }

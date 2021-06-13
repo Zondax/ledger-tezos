@@ -11,11 +11,13 @@ pub struct Sha512 {
 
 impl Sha512 {
     pub fn new() -> Result<Self, Error> {
-        let mut state = Default::default();
+        let mut this = Self {
+            state: Default::default(),
+        };
 
-        Self::init_state(&mut state)?;
+        Self::init_state(&mut this.state)?;
 
-        Ok(Self { state })
+        Ok(this)
     }
 
     fn init_state(state: &mut cx_sha512_t) -> Result<(), Error> {

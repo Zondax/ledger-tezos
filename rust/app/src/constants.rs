@@ -86,3 +86,5 @@ pub const APDU_INDEX_P2: usize = 3;
 pub const APDU_INDEX_LEN: usize = 4;
 
 pub const APDU_MIN_LENGTH: u32 = 5;
+
+pub const BIP32_MAX_LENGTH: usize = 10;

@@ -17,7 +17,7 @@ impl PublicKey {
     }
 
     #[inline(never)]
-    pub fn hash(&self) -> Result<[u8; 20], Error> {
+    pub fn hash(&self, out: &mut [u8; 20]) -> Result<(), Error> {
         sys::zemu_log_stack("PublicKey::hash\x00");
 
         let mut hasher = Blake2b::new()?;
@@ -43,7 +43,7 @@ impl PublicKey {
             }
         }
 
-        hasher.finalize()
+        hasher.finalize_into(out)
     }
 
     pub fn curve(&self) -> Curve {

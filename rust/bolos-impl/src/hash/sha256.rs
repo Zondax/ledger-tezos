@@ -11,11 +11,13 @@ pub struct Sha256 {
 
 impl Sha256 {
     pub fn new() -> Result<Self, Error> {
-        let mut state = Default::default();
+        let mut this = Self {
+            state: Default::default(),
+        };
 
-        Self::init_state(&mut state)?;
+        Self::init_state(&mut this.state)?;
 
-        Ok(Self { state })
+        Ok(this)
     }
 
     fn init_state(state: &mut cx_sha256_t) -> Result<(), Error> {

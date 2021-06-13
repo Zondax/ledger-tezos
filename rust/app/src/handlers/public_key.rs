@@ -18,6 +18,7 @@ impl GetAddress {
         curve: crypto::Curve,
         path: &sys::crypto::bip32::BIP32Path<B>,
     ) -> Result<crypto::PublicKey, SysError> {
+        sys::zemu_log_stack("GetAddres::new_key\x00");
         let mut pkey = curve.gen_keypair(path)?.into_public();
         pkey.compress().map(|_| pkey)
     }
@@ -28,6 +29,7 @@ impl GetAddress {
         req_confirmation: bool,
         buffer: &mut [u8],
     ) -> Result<u32, Error> {
+        sys::zemu_log_stack("GetAddres::get_public_and_address\x00");
         let mut tx = 0;
 
         let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
@@ -133,6 +135,7 @@ impl ApduHandler for GetAddress {
     }
 }
 
+#[derive(Default)]
 pub struct Addr {
     prefix: [u8; 3],
     hash: [u8; 20],
@@ -145,20 +148,24 @@ impl Addr {
         use sys::hash::{Hasher, Sha256};
         sys::zemu_log_stack("Addr::new\x00");
 
-        let hash = pubkey.hash()?;
+        let mut this: Self = Default::default();
+
+        let hash = pubkey.hash(&mut this.hash)?;
+        sys::zemu_log_stack("Addr::new after hash\x00");
 
         //legacy/src/to_string.c:135
-        let prefix: [u8; 3] = {
-            sys::PIC::new(match pubkey.curve() {
+        this.prefix.copy_from_slice(
+            &sys::PIC::new(match pubkey.curve() {
                 Curve::Ed25519 | Curve::Bip32Ed25519 => [6, 161, 159],
                 Curve::Secp256K1 => [6, 161, 161],
                 Curve::Secp256R1 => [6, 161, 164],
             })
-            .into_inner()
-        };
+            .into_inner()[..],
+        );
 
         #[inline(never)]
-        fn sha256x2(pieces: &[&[u8]]) -> Result<[u8; 32], SysError> {
+        fn sha256x2(pieces: &[&[u8]], out: &mut [u8; 4]) -> Result<(), SysError> {
+            sys::zemu_log_stack("Addr::new::sha256x2\x00");
             let mut digest = Sha256::new()?;
             for p in pieces {
                 digest.update(p)?;
@@ -167,25 +174,19 @@ impl Addr {
             let x1 = digest.finalize_dirty()?;
             digest.reset()?;
             digest.update(&x1[..])?;
-            digest.finalize().map_err(Into::into)
+
+            let complete_digest = digest.finalize()?;
+
+            out.copy_from_slice(&complete_digest[..4]);
+
+            Ok(())
         }
 
         //legacy/src/to_string.c:94
-        // hash(hash(prefix + hash))
-        let checksum = sha256x2(&[&prefix[..], &hash[..]])?;
+        // hash(hash(prefix + hash))[..4]
+        let checksum = sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
 
-        let checksum = {
-            //but only get the first 4 bytes
-            let mut array = [0; 4];
-            array.copy_from_slice(&checksum[..4]);
-            array
-        };
-
-        Ok(Self {
-            prefix,
-            hash,
-            checksum,
-        })
+        Ok(this)
     }
 
     //[u8; PKH_STRING] without null byte
