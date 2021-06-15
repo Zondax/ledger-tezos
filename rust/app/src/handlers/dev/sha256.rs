@@ -150,12 +150,21 @@ mod tests {
         //Init
         buffer[0] = CLA;
         buffer[1] = INS_DEV_HASH;
-        buffer[2] = PacketType::Last.into();
+        buffer[2] = PacketType::Init.into();
         buffer[3] = 0;
         buffer[4] = len as u8;
         buffer[5..5 + len].copy_from_slice(&MSG[..]);
 
         handle_apdu(&mut flags, &mut tx, 5 + len as u32, &mut buffer);
+        assert_error_code!(tx, buffer, Error::Success);
+
+        buffer[0] = CLA;
+        buffer[1] = INS_DEV_HASH;
+        buffer[2] = PacketType::Last.into();
+        buffer[3] = 0;
+        buffer[4] = 0;
+
+        handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
         let expected = sha2::Sha256::digest(&MSG[..]);

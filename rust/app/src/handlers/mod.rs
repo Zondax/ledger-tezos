@@ -116,7 +116,10 @@ mod lock {
         pub fn release(&mut self, acquirer: impl Into<A>) -> Result<(), LockError> {
             let acq = acquirer.into();
             match self.lock {
-                Some(ref a) if a == &acq => Ok(()),
+                Some(ref a) if a == &acq => {
+                    self.lock = None;
+                    Ok(())
+                }
                 Some(_) => Err(LockError::BadId),
                 None => Err(LockError::NotLocked),
             }
@@ -158,6 +161,15 @@ mod lock {
 
             lock.acquire(0).unwrap_err();
             lock.release(0).unwrap_err();
+        }
+
+        #[test]
+        fn lock_released() {
+            let mut lock = build_lock(42);
+            lock.lock(0).unwrap();
+            lock.release(0).unwrap();
+
+            lock.lock(1).unwrap();
         }
     }
 }
