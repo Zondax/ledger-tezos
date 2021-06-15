@@ -1,8 +1,15 @@
 use std::convert::TryFrom;
 
-use crate::sys;
-use bolos::hash::Blake2b;
-use sys::{crypto::bip32::BIP32Path, errors::Error, hash::Hasher};
+use crate::{
+    constants::{EDWARDS_SIGN_BUFFER_MIN_LENGTH, SECP256_SIGN_BUFFER_MIN_LENGTH},
+    sys,
+};
+use bolos::hash::{Blake2b, Sha256};
+use sys::{
+    crypto::bip32::BIP32Path,
+    errors::Error,
+    hash::{Hasher, HasherId},
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey(pub(crate) sys::crypto::ecfp256::PublicKey);
@@ -13,7 +20,7 @@ impl PublicKey {
     }
 
     #[inline(never)]
-    pub fn hash(&self) -> Result<[u8; 20], Error> {
+    pub fn hash(&self, out: &mut [u8; 20]) -> Result<(), Error> {
         sys::zemu_log_stack("PublicKey::hash\x00");
 
         let mut hasher = Blake2b::new()?;
@@ -39,7 +46,7 @@ impl PublicKey {
             }
         }
 
-        hasher.finalize()
+        hasher.finalize_into(out)
     }
 
     pub fn curve(&self) -> Curve {
@@ -122,9 +129,30 @@ pub struct Keypair {
     pub secret: sys::crypto::ecfp256::SecretKey,
 }
 
+pub enum SignError {
+    BufferTooSmall,
+    Sys(Error),
+}
+
 impl Keypair {
     pub fn into_public(self) -> PublicKey {
         self.public
+    }
+
+    pub fn sign(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, SignError> {
+        match self.public.curve() {
+            Curve::Ed25519 | Curve::Bip32Ed25519 if out.len() < EDWARDS_SIGN_BUFFER_MIN_LENGTH => {
+                Err(SignError::BufferTooSmall)
+            }
+            Curve::Secp256K1 | Curve::Secp256R1 if out.len() < SECP256_SIGN_BUFFER_MIN_LENGTH => {
+                Err(SignError::BufferTooSmall)
+            }
+
+            Curve::Ed25519 | Curve::Bip32Ed25519 | Curve::Secp256K1 | Curve::Secp256R1 => self
+                .secret
+                .sign::<Sha256>(data, out) //pass Sha256 for the signature nonce hasher
+                .map_err(|e| SignError::Sys(e)),
+        }
     }
 }
 

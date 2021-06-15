@@ -1,3 +1,5 @@
+use bolos_common::hash::HasherId;
+
 use crate::Error;
 
 use super::{bip32::BIP32Path, Curve, Mode};
@@ -29,6 +31,16 @@ impl AsRef<[u8]> for PublicKey {
 
 pub struct SecretKey {}
 
+impl SecretKey {
+    pub fn sign<H>(&mut self, _data: &[u8], _out: &mut [u8]) -> Result<usize, Error>
+    where
+        H: HasherId,
+        H::Id: Into<u8>,
+    {
+        todo!("sign ecfp256")
+    }
+}
+
 pub struct Keypair {
     pub public: PublicKey,
     pub secret: SecretKey,
@@ -41,5 +53,9 @@ impl Keypair {
         _path: &BIP32Path<B>,
     ) -> Result<Self, Error> {
         todo!("generate keypair ecfp256")
+    }
+
+    pub fn public(&self) -> &PublicKey {
+        &self.public
     }
 }

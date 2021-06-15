@@ -18,9 +18,9 @@ use cfg_if::cfg_if;
 
 use crate::constants::ApduError::{ClaNotSupported, CommandNotAllowed, Success, WrongLength};
 use crate::constants::{ApduError, APDU_INDEX_CLA, APDU_INDEX_INS, APDU_MIN_LENGTH};
-use crate::handlers::legacy_sign::LegacySign;
 use crate::handlers::legacy_version::{LegacyGetVersion, LegacyGit};
 use crate::handlers::public_key::GetAddress;
+use crate::handlers::signing::Sign;
 use crate::handlers::version::GetVersion;
 
 pub const CLA: u8 = 0x80;
@@ -134,7 +134,7 @@ pub fn apdu_dispatch(
         } else if #[cfg(feature = "wallet")] {
             //wallet-only instructions
             match ins {
-                INS_LEGACY_SIGN_UNSAFE => return LegacySign::handle(flags, tx, rx, apdu_buffer),
+                INS_LEGACY_SIGN_UNSAFE => return Sign::handle(flags, tx, rx, apdu_buffer),
                 _ => {}
             }
         }
@@ -151,8 +151,9 @@ pub fn apdu_dispatch(
 
         INS_LEGACY_GIT => LegacyGit::handle(flags, tx, rx, apdu_buffer),
 
-        INS_LEGACY_SIGN => LegacySign::handle(flags, tx, rx, apdu_buffer),
-        INS_LEGACY_SIGN_WITH_HASH => LegacySign::handle(flags, tx, rx, apdu_buffer),
+        INS_LEGACY_SIGN | INS_LEGACY_SIGN_WITH_HASH | INS_SIGN => {
+            Sign::handle(flags, tx, rx, apdu_buffer)
+        }
 
         INS_GET_VERSION => GetVersion::handle(flags, tx, rx, apdu_buffer),
         _ => Err(CommandNotAllowed),

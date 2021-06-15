@@ -1,19 +1,16 @@
 #![allow(unused_imports)]
 
-use crate::raw::{cx_blake2b_t, cx_hash_t, cx_md_t};
+use crate::raw::{cx_hash_t, cx_md_t, cx_sha512_t};
 use crate::{errors::catch, Error};
 
 use super::CxHash;
 
-#[repr(transparent)]
-pub struct Blake2b<const S: usize> {
-    state: cx_blake2b_t,
+pub struct Sha512 {
+    state: cx_sha512_t,
 }
 
-impl<const S: usize> Blake2b<S> {
-    #[inline(never)]
+impl Sha512 {
     pub fn new() -> Result<Self, Error> {
-        zemu_sys::zemu_log_stack("Blake2b::new\x00");
         let mut this = Self {
             state: Default::default(),
         };
@@ -23,28 +20,23 @@ impl<const S: usize> Blake2b<S> {
         Ok(this)
     }
 
-    fn init_state(state: &mut cx_blake2b_t) -> Result<(), Error> {
+    fn init_state(state: &mut cx_sha512_t) -> Result<(), Error> {
         cfg_if! {
             if #[cfg(nanox)] {
                 let might_throw = || unsafe {
-                    crate::raw::cx_blake2b_init(state as *mut _, (S * 8) as u32);
+                    crate::raw::cx_sha512_init(state as *mut _);
                 };
 
                 catch(might_throw)?;
             } else if #[cfg(nanos)] {
-                let r = unsafe {
-                    crate::raw::cx_blake2b_init_no_throw(
-                        state as *mut _,
-                        (S * 8) as u32
-                    )
-                };
-
-                match r {
+                match unsafe { crate::raw::cx_sha512_init_no_throw(
+                    state as *mut _
+                )} {
                     0 => {},
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("blake2b init called in non bolos")
+                todo!("sha512init called in non-bolos")
             }
         }
 
@@ -52,7 +44,7 @@ impl<const S: usize> Blake2b<S> {
     }
 }
 
-impl<const S: usize> CxHash<S> for Blake2b<S> {
+impl CxHash<64> for Sha512 {
     fn cx_init_hasher() -> Result<Self, Error> {
         Self::new()
     }
@@ -66,6 +58,6 @@ impl<const S: usize> CxHash<S> for Blake2b<S> {
     }
 
     fn cx_id() -> cx_md_t {
-        crate::raw::cx_md_e_CX_BLAKE2B
+        crate::raw::cx_md_e_CX_SHA512
     }
 }

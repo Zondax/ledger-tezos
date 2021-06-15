@@ -65,7 +65,8 @@ mod panic {
     }
 }
 
-
+/// Provides miscellaneous utilities for types in this crate
+mod misc;
 //------------------------
     }
 }

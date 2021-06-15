@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
 
-use crate::raw::{cx_hash_t, cx_sha256_t};
+use crate::raw::{cx_hash_t, cx_md_t, cx_sha256_t};
 use crate::{errors::catch, Error};
 
 use super::CxHash;
@@ -11,11 +11,13 @@ pub struct Sha256 {
 
 impl Sha256 {
     pub fn new() -> Result<Self, Error> {
-        let mut state = Default::default();
+        let mut this = Self {
+            state: Default::default(),
+        };
 
-        Self::init_state(&mut state)?;
+        Self::init_state(&mut this.state)?;
 
-        Ok(Self { state })
+        Ok(this)
     }
 
     fn init_state(state: &mut cx_sha256_t) -> Result<(), Error> {
@@ -43,15 +45,19 @@ impl Sha256 {
 }
 
 impl CxHash<32> for Sha256 {
-    fn init_hasher() -> Result<Self, Error> {
+    fn cx_init_hasher() -> Result<Self, Error> {
         Self::new()
     }
 
-    fn reset(&mut self) -> Result<(), Error> {
+    fn cx_reset(&mut self) -> Result<(), Error> {
         Self::init_state(&mut self.state)
     }
 
     fn cx_header(&mut self) -> &mut cx_hash_t {
         &mut self.state.header
+    }
+
+    fn cx_id() -> cx_md_t {
+        crate::raw::cx_md_e_CX_SHA256
     }
 }

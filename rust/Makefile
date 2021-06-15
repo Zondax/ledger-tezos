@@ -29,32 +29,32 @@ prep_generate:
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 generate:
-	- rm bolos/src/bindings/bindingsX.rs
+	- rm bolos-sys/src/bindings/bindingsX.rs
 	bindgen --use-core \
 			--with-derive-default \
 			--ctypes-prefix cty \
-			-o bolos/src/bindings/bindingsX.rs \
-			bolos/bindgen/wrapperX.h -- \
+			-o bolos-sys/src/bindings/bindingsX.rs \
+			bolos-sys/bindgen/wrapperX.h -- \
 			-I$(BOLOS_SDK)/include \
 			-I$(BOLOS_SDK)/lib_ux/include \
 			-I$(BOLOS_SDK)/lib_cxng/include \
 			-I/tmp/bolos/arm-none-eabi/include \
-			-Ibolos/bindgen/include \
+			-Ibolos-sys/bindgen/include \
 			-target thumbv6-none-eabi \
 			-mcpu=cortex-m0 -mthumb
 else ifeq ($(TARGET_NAME),TARGET_NANOS)
 generate:
-	- rm bolos/src/bindings/bindingsS.rs
+	- rm bolos-sys/src/bindings/bindingsS.rs
 	bindgen --use-core \
 		--with-derive-default \
 		--ctypes-prefix cty \
-		-o bolos/src/bindings/bindingsS.rs \
-		bolos/bindgen/wrapperS.h -- \
+		-o bolos-sys/src/bindings/bindingsS.rs \
+		bolos-sys/bindgen/wrapperS.h -- \
 		-I$(BOLOS_SDK)/include \
 		-I$(BOLOS_SDK)/lib_ux/include \
 		-I$(BOLOS_SDK)/lib_cxng/include \
 		-I/tmp/bolos/arm-none-eabi/include \
-		-Ibolos/bindgen/include \
+		-Ibolos-sys/bindgen/include \
 		-target thumbv6-none-eabi \
 		-mcpu=cortex-m0 -mthumb
 else

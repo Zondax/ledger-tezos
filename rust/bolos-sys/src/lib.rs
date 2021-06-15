@@ -48,3 +48,7 @@ pub fn exit_app(status: u8) -> ! {
     unsafe { raw::os_sched_exit(status as _) }
     unsafe { core::hint::unreachable_unchecked() }
 }
+
+/// Contains some impls for items coming from the bindings
+#[cfg(bolos_sdk)]
+mod extra_traits;
