@@ -1,6 +1,9 @@
 use std::convert::TryFrom;
 
-use crate::sys;
+use crate::{
+    constants::{EDWARDS_SIGN_BUFFER_MIN_LENGTH, SECP256_SIGN_BUFFER_MIN_LENGTH},
+    sys,
+};
 use bolos::hash::{Blake2b, Sha256};
 use sys::{
     crypto::bip32::BIP32Path,
@@ -138,10 +141,10 @@ impl Keypair {
 
     pub fn sign(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, SignError> {
         match self.public.curve() {
-            Curve::Ed25519 | Curve::Bip32Ed25519 if out.len() < 64 => {
+            Curve::Ed25519 | Curve::Bip32Ed25519 if out.len() < EDWARDS_SIGN_BUFFER_MIN_LENGTH => {
                 Err(SignError::BufferTooSmall)
             }
-            Curve::Secp256K1 | Curve::Secp256R1 if out.len() < 100 => {
+            Curve::Secp256K1 | Curve::Secp256R1 if out.len() < SECP256_SIGN_BUFFER_MIN_LENGTH => {
                 Err(SignError::BufferTooSmall)
             }
 

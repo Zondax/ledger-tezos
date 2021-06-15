@@ -88,3 +88,6 @@ pub const APDU_INDEX_LEN: usize = 4;
 pub const APDU_MIN_LENGTH: u32 = 5;
 
 pub const BIP32_MAX_LENGTH: usize = 10;
+
+pub const EDWARDS_SIGN_BUFFER_MIN_LENGTH: usize = 64;
+pub const SECP256_SIGN_BUFFER_MIN_LENGTH: usize = 100;

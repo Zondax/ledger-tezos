@@ -40,14 +40,6 @@ where
     }
 }
 
-// impl<'a, T, U: 'a> Deref for FakeLifetimeRef<'a, U, T> {
-//     type Target = T;
-
-//     fn deref(&self) -> &Self::Target {
-//         &self.item
-//     }
-// }
-
 impl<'a, T, U: 'a> Deref for FakeLifetimeMut<'a, U, T>
 where
     T: Deref,
@@ -67,17 +59,3 @@ where
         self.item.deref_mut()
     }
 }
-
-// impl<'a, T, U: 'a> Deref for FakeLifetimeMut<'a, U, T> {
-//     type Target = T;
-
-//     fn deref(&self) -> &Self::Target {
-//         &self.item
-//     }
-// }
-
-// impl<'a, T, U: 'a> DerefMut for FakeLifetimeMut<'a, U, T> {
-//     fn deref_mut(&mut self) -> &mut Self::Target {
-//         &mut self.item
-//     }
-// }
