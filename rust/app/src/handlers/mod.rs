@@ -94,8 +94,8 @@ mod lock {
             let acq = acquirer.into();
             match self.lock {
                 Some(ref a) if a == &acq => Ok(&mut self.item),
-                Some(_) => Err(LockError::Busy),
-                None => {
+                //if it's busy we forcefully acquire the lock
+                Some(_) | None => {
                     self.lock = Some(acq);
                     Ok(&mut self.item)
                 }
@@ -170,6 +170,16 @@ mod lock {
             lock.release(0).unwrap();
 
             lock.lock(1).unwrap();
+        }
+
+        #[test]
+        fn force_lock() {
+            let mut lock = build_lock(2);
+            lock.lock(0).unwrap();
+            lock.lock(1).unwrap();
+
+            lock.acquire(0).unwrap_err();
+            lock.acquire(1).unwrap();
         }
     }
 }
