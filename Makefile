@@ -70,3 +70,12 @@ generate:
 	$(info "Calling app Makefile for target $@")
 	COIN=$(COIN) $(MAKE) -C rust/app $@
 endif
+
+test_all:
+	make zemu_install
+	# test sr25519
+	make clean_build
+	BAKING=yes make
+	make
+	make legacy
+	make zemu_test
