@@ -108,5 +108,3 @@ __Z_INLINE void zemu_log(const char *unused){
 #endif
 
 #pragma clang diagnostic pop
-
-#include "zxformat.h"

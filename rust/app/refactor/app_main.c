@@ -54,7 +54,6 @@ void app_init() {
 //////////////////////////////
 // TODO: Move this to rust
     view_idle_show(0, NULL);
-    zb_init();
 // TODO: Move this to rust
 /////////////////////////////
 }

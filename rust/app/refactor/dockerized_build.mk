@@ -85,7 +85,7 @@ check_python:
 .PHONY: deps bindgen_install
 deps: check_python
 	@echo "Install dependencies"
-	$(CURDIR)/deps/ledger-zxlib/scripts/install_deps.sh
+	$(CURDIR)/install_deps.sh
 
 bindgen_install:
 	cargo install bindgen

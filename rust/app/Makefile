@@ -32,7 +32,7 @@ all: bin/app.elf
 	@echo "APPHEX=\"" >> $(OUTPUT_INSTALLER)
 	@cat $(CURDIR)/bin/app.hex >> $(OUTPUT_INSTALLER)
 	@echo "\"" >> $(OUTPUT_INSTALLER)
-	@cat $(CURDIR)/../../deps/ledger-zxlib/scripts/template.sh >> $(OUTPUT_INSTALLER)
+	@cat $(CURDIR)/refactor/template.sh >> $(OUTPUT_INSTALLER)
 	@chmod +x $(OUTPUT_INSTALLER)
 	@cp $(CURDIR)/bin/* $(CURDIR)/output
 	@cp $(CURDIR)/output/app.elf ${OUTPUT_ELF}
@@ -207,8 +207,6 @@ include $(BOLOS_SDK)/Makefile.glyphs
 
 APP_SOURCE_PATH += $(MY_DIR)/c
 APP_SOURCE_PATH += $(MY_DIR)/refactor
-APP_SOURCE_PATH += $(MY_DIR)/../../deps/ledger-zxlib/include
-APP_SOURCE_PATH += $(MY_DIR)/../../deps/ledger-zxlib/src
 
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
 SDK_SOURCE_PATH += lib_ux

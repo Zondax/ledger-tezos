@@ -20,7 +20,6 @@
 #include "apdu_codes.h"
 #include <os_io_seproxyhal.h>
 #include "coin.h"
-#include "zxformat.h"
 
 extern uint8_t action_addr_len;
 

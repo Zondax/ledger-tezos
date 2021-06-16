@@ -13,18 +13,10 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+#include "zxmacros.h"
 
-#pragma once
-
-#include <stdint.h>
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
+void check_app_canary() {
+#if defined (TARGET_NANOS) || defined(TARGET_NANOX)
+    if (app_stack_canary != APP_STACK_CANARY_MAGIC) handle_stack_overflow();
 #endif
-
-size_t parseHexString(uint8_t *out, uint16_t outLen, const char *input);
-
-#ifdef __cplusplus
 }
-#endif

@@ -26,7 +26,7 @@ DOCKER_LEGACY_APP_BIN=$(DOCKER_LEGACY_APP_SRC)/bin/app.elf
 
 ifeq ($(BOLOS_SDK),)
 	# TODO: use earthly here
-	include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
+	include $(CURDIR)/rust/app/refactor/dockerized_build.mk
 
 lint:
 	cd rust && cargo fmt
