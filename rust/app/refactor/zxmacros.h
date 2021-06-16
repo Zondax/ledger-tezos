@@ -51,29 +51,6 @@ extern void explicit_bzero(void *s, size_t n) __THROW __nonnull ((1));
 #define UNUSED(x) (void)x
 #endif
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define ZX_SWAP(v) (((v) & 0x000000FFu) << 24u | ((v) & 0x0000FF00u) << 8u | ((v) & 0x00FF0000u) >> 8u | ((v) & 0xFF000000u) >> 24u)
-#define HtoNL(v) ZX_SWAP( v )
-#define NtoHL(v) ZX_SWAP( v )
-#else
-#define HtoNL(x) (x)
-#define NtoHL(x) (x)
-#endif
-
-#define SET_NV(DST, TYPE, VAL) { \
-    TYPE nvset_tmp=(VAL); \
-    MEMCPY_NV((void*) PIC(DST), (void *) PIC(&nvset_tmp), sizeof(TYPE)); \
-}
-
-__Z_INLINE void strncpy_s(char *dst, const char *src, size_t dstSize) {
-    MEMZERO(dst, dstSize);
-    strncpy(dst, src, dstSize - 1);
-}
-
-#define sizeof_field(type, member) sizeof(((type *)0)->member)
-#define array_length(array) (sizeof(array) / sizeof((array)[0]))
-
-void zemu_log_stack(const char *ctx);
 
 #ifdef __cplusplus
 }
