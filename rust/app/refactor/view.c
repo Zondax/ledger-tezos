@@ -19,11 +19,11 @@
 #include "coin.h"
 #include "view_internal.h"
 
+#include "zxmacros.h"
 #include "actions.h"
 #include "apdu_codes.h"
 #include "ux.h"
 #include "bagl.h"
-#include "zxmacros.h"
 #include "view_templates.h"
 #include "app_mode.h"
 #include "zxerror.h"
