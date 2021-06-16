@@ -150,7 +150,7 @@ impl Addr {
 
         let mut this: Self = Default::default();
 
-        let _hash = pubkey.hash(&mut this.hash)?;
+        pubkey.hash(&mut this.hash)?;
         sys::zemu_log_stack("Addr::new after hash\x00");
 
         //legacy/src/to_string.c:135
@@ -182,9 +182,7 @@ impl Addr {
             Ok(())
         }
 
-        //legacy/src/to_string.c:94
-        // hash(hash(prefix + hash))[..4]
-        let _checksum = sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
+        sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
 
         Ok(this)
     }
