@@ -14,21 +14,14 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { DEFAULT_START_OPTIONS } from '@zondax/zemu'
-import { APP_SEED, models } from './common'
+import Zemu from '@zondax/zemu'
+import { defaultOptions, models, APP_DERIVATION, curves, cartesianProduct } from './common'
 import TezosApp from '@zondax/ledger-tezos'
-
-const defaultOptions = {
-  ...DEFAULT_START_OPTIONS,
-  logging: true,
-  custom: `-s "${APP_SEED}"`,
-  X11: false,
-}
 
 jest.setTimeout(60000)
 
-describe('Standard', function () {
-  test.each(models)('can start and stop container', async function (m) {
+describe.each(models)('Standard', function (m) {
+  test('can start and stop container', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -37,7 +30,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('main menu', async function (m) {
+  test('main menu', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -47,7 +40,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('get app version', async function (m) {
+  test('get app version', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -66,18 +59,114 @@ describe('Standard', function () {
       await sim.close()
     }
   })
+})
 
-  test.each(models)('get git app', async function (m) {
+describe.each(models)('Standard [%s]; legacy', function (m) {
+  test('get app version', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.getGit()
+      const resp = await app.legacyGetVersion()
+
+      console.log(resp)
+
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('baking')
+      expect(resp.baking).toBe(false)
+      expect(resp).toHaveProperty('major')
+      expect(resp).toHaveProperty('minor')
+      expect(resp).toHaveProperty('patch')
+    } finally {
+      await sim.close()
+    }
+  })
+
+  test('get git app', async function () {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+      const resp = await app.legacyGetGit()
 
       console.log(resp)
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('commit_hash')
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
+describe.each(models)('Standard [%s] - pubkey', function (m) {
+  test.each(curves)('get pubkey and addr %s', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+      const resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
+
+      console.log(resp, m.name)
+
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('publicKey')
+      expect(resp).toHaveProperty('address')
+      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+      expect(resp.address).toContain('tz')
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
+describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
+  test.each(curves)('get pubkey and compute addr %s', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+      const resp = await app.legacyGetPubKey(APP_DERIVATION, curve);
+
+      console.log(resp, m.name)
+
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('publicKey')
+      expect(resp).toHaveProperty('address')
+      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+      expect(resp.address).toContain('tz')
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
+describe.each(models)('Standard [%s]; sign', function (m) {
+    test.each(
+      cartesianProduct(
+          curves,
+          [
+              Buffer.from("francesco@zondax.ch"),
+              Buffer.alloc(300, 0)
+          ]))
+    ('sign message', async function (curve, msg) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+
+      const resp = await app.sign(APP_DERIVATION, curve, msg);
+
+      console.log(resp, m.name)
+
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('hash')
+      expect(resp).toHaveProperty('signature')
+      expect(resp.hash).toEqual(app.sig_hash(msg))
     } finally {
       await sim.close()
     }

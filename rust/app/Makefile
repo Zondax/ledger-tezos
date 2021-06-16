@@ -63,7 +63,7 @@ ifeq ($(COIN),XTZ)
 # Main app configuration
 DEFINES += APP_STANDARD
 APPNAME = "Tezos"
-APPPATH = "44'/5757'"
+APPPATH = "44'/1729'"
 
 else ifeq ($(COIN),XTZ_baker)
 else
@@ -92,7 +92,23 @@ OUTPUT_ELF ?= $(CURDIR)/output/app_x.elf
 OUTPUT_INSTALLER:= $(CURDIR)/pkg/installer_x.sh
 endif
 
+ifdef BAKING
+RUST_FEATURES=--features="baking"
+OUTPUT_ELF:=$(subst .elf,_baking.elf,$(OUTPUT_ELF))
+BAKING=true
+else
+RUST_FEATURES=--features="wallet"
+BAKING=false
+endif
+
+ifeq ($(APP_TESTING),1)
+RUST_FEATURES:=$(RUST_FEATURES),"dev"
+endif
+
+$(info BAKING = [$(BAKING)])
+$(info TARGET_NAME  = [$(TARGET_NAME)])
 $(info ICONNAME  = [$(ICONNAME)])
+$(info OUTPUT_ELF = [$(OUTPUT_ELF)])
 
 ifndef ICONNAME
 $(error ICONNAME is not set)
@@ -117,6 +133,14 @@ DEFINES       += USB_SEGMENT_SIZE=64
 DEFINES       += HAVE_BOLOS_APP_STACK_CANARY
 
 DEFINES       += HAVE_WEBUSB WEBUSB_URL_SIZE_B=0 WEBUSB_URL=""
+
+DEFINES		  += HAVE_ECC
+DEFINES       += HAVE_ECC_TWISTED_EDWARDS HAVE_ED25519_CURVE
+DEFINES		  += HAVE_ECC_WEIERSTRASS HAVE_SECP256K1_CURVE HAVE_SECP256R1_CURVE
+
+DEFINES		  += HAVE_ECDSA HAVE_EDDSA
+
+DEFINES		  += HAVE_HASH HAVE_BLAKE2 HAVE_SHA256 HAVE_SHA512
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=300
@@ -191,7 +215,7 @@ SDK_SOURCE_PATH += lib_ux
 
 .PHONY: rust
 rust:
-	CARGO_HOME="$(CURDIR)/.cargo" cargo build --target thumbv6m-none-eabi --release
+	CARGO_HOME="$(CURDIR)/.cargo" TARGET_NAME=$(TARGET_NAME) cargo build --target thumbv6m-none-eabi --release $(RUST_FEATURES)
 
 .PHONY: rust_clean
 rust_clean:

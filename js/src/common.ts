@@ -5,10 +5,35 @@ export const CHUNK_SIZE = 250;
 export const APP_KEY = "XTZ";
 
 export const INS = {
-  GET_VERSION: 0x00,
-  GET_ADDR_SECP256K1: 0x01,
-  SIGN_SECP256K1: 0x02,
-  GET_GIT: 0x09,
+  GET_VERSION: 0x10,
+  GET_ADDR: 0x11,
+  SIGN: 0x12,
+};
+
+export const LEGACY_INS = {
+  VERSION: 0x00,
+  GIT: 0x09,
+
+  PUBLIC_KEY: 0x02,
+  PROMPT_PUBLIC_KEY: 0x03,
+
+  AUTHORIZE_BAKING: 0x01,
+  DEAUTHORIZE: 0x0C,
+
+  RESET: 0x06,
+  QUERY_MAIN_HWM: 0x08,
+  QUERY_ALL_HWM: 0x0B,
+
+  QUERY_AUTH_KEY: 0x07,
+  QUERY_AUTH_KEY_WITH_CURVE: 0x0D,
+
+  SETUP: 0x0A,
+
+  HMAC: 0x0E,
+
+  SIGN: 0x04,
+  SIGN_WITH_HASH: 0x0F,
+  SIGN_UNSAFE: 0x05,
 };
 
 export const PAYLOAD_TYPE = {
@@ -22,7 +47,19 @@ export const P1_VALUES = {
   SHOW_ADDRESS_IN_DEVICE: 0x01
 };
 
-export const PKLEN = 33;
+export const P2_CURVE = {
+  ED25519_SLIP10: 0,
+  SECP256K1: 1,
+  SECP256R1: 2,
+  ED25519: 3,
+};
+
+export enum Curve {
+  Ed25519_Slip10 = P2_CURVE.ED25519_SLIP10,
+  Secp256K1 = P2_CURVE.SECP256K1,
+  Secp256R1 = P2_CURVE.SECP256R1,
+  Ed25519 = P2_CURVE.ED25519,
+}
 
 export enum LedgerError {
   U2FUnknown = 1,

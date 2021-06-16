@@ -16,5 +16,5 @@
 // FIXME: Refactor so zemu and bolos-FFI are clearly separated as xxx-sys crates
 #![allow(dead_code)]
 
-pub use bolos_sys::*;
+pub use bolos::*;
 pub use zemu_sys::*;

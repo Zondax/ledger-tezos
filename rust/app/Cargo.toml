@@ -10,22 +10,26 @@ name = "rslib"
 crate-type = ["staticlib"]
 
 [features]
-dev = ["sha2", "once_cell"]
-default = ["dev"]
+baking = ["bolos/wear"]
+wallet = []
+dev = ["sha2"]
+default = []
 
 [dependencies]
-bolos-sys = { path = "../bolos" }
+bolos = { path = "../bolos" }
 zemu-sys = { path = "../zemu" }
 
-nom = { version = "6.1.2", default-features = false }
-arrayvec = { version = "0.5.1", default-features = false }
-git-testament = { version = "0.2", default-features = false, git = "https://github.com/becominginsane/git-testament" }
-cfg-if = "1.0.0"
 no-std-compat = { version = "0.4" }
+cfg-if = "1.0.0"
+git-testament = { version = "0.2", default-features = false }
+
+arrayvec = { version = "0.5.1", default-features = false }
+zeroize = { version = "1", default-features = false }
+nom = { version = "6.1.2", default-features = false }
+bs58 = { version = "0.4.0", default-features = false }
 
 #dev
 sha2 = { version = "0.9", default-features = false, optional = true }
-once_cell = { version = "1", default-features = false, optional = true }
 
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"
@@ -33,12 +37,13 @@ panic-halt = "0.2.0"
 [dev-dependencies]
 no-std-compat = { version = "0.4", features = ["std"] }
 serial_test = "0.5"
+hex = "0.4.3"
 
 [profile.release]
 lto = false
 codegen-units = 1
 debug = true
-opt-level = "s"
+opt-level = "z"
 
 [profile.dev]
 panic = "abort"

@@ -10,11 +10,13 @@
     "Ledger"
   ],
   "scripts": {
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles --testPathIgnorePatterns='dev.*'",
+    "test_dev": "jest --detectOpenHandles",
+    "debug": "node debug/debug.mjs debug"
   },
   "dependencies": {
     "@zondax/ledger-tezos": "link:../js",
-    "@zondax/zemu": "^0.14.2"
+    "@zondax/zemu": "^0.14.5"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",

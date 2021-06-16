@@ -21,7 +21,7 @@ EXAMPLE_VUE_DIR?=$(CURDIR)/example_vue
 TESTS_JS_PACKAGE?=
 TESTS_JS_DIR?=
 
-LEDGER_SRC=$(CURDIR)/app
+LEDGER_SRC=$(CURDIR)/rust/app
 DOCKER_APP_SRC=/project
 DOCKER_APP_BIN=$(DOCKER_APP_SRC)/app/bin/app.elf
 
@@ -63,6 +63,8 @@ define run_docker
 	-e SCP_PRIVKEY=$(SCP_PRIVKEY) \
 	-e BOLOS_SDK=$(1) \
 	-e BOLOS_ENV=/opt/bolos \
+	-e BAKING=$(BAKING) \
+	-e APP=$(BAKING) \
 	-u $(USERID) \
 	-v $(shell pwd):/project \
 	-e COIN=$(COIN) \
@@ -71,7 +73,6 @@ define run_docker
 endef
 
 all:
-	@$(MAKE) clean_output
 	@$(MAKE) clean_build
 	@$(MAKE) buildS
 	@$(MAKE) clean_build
@@ -81,10 +82,13 @@ all:
 check_python:
 	@python -c 'import sys; sys.exit(3-sys.version_info.major)' || (echo "The python command does not point to Python 3"; exit 1)
 
-.PHONY: deps
+.PHONY: deps bindgen_install
 deps: check_python
 	@echo "Install dependencies"
 	$(CURDIR)/deps/ledger-zxlib/scripts/install_deps.sh
+
+bindgen_install:
+	cargo install bindgen
 
 .PHONY: pull
 pull:
@@ -97,6 +101,13 @@ build_rustS:
 .PHONY: build_rustX
 build_rustX:
 	$(call run_docker,$(DOCKER_BOLOS_SDKX),make -C $(DOCKER_APP_SRC) rust)
+
+.PHONY: generate_rustS generate_rustX
+generate_rustS:
+	$(MAKE) -C $(CURDIR) TARGET_NAME=TARGET_NANOS BOLOS_SDK=$(CURDIR)/deps/nanos-secure-sdk generate
+
+generate_rustX:
+	$(MAKE) -C $(CURDIR) TARGET_NAME=TARGET_NANOX BOLOS_SDK=$(CURDIR)/deps/nanox-secure-sdk generate
 
 .PHONY: convert_icon
 convert_icon:
@@ -114,7 +125,7 @@ buildX: build_rustX
 .PHONY: clean_output
 clean_output:
 	@echo "Removing output files"
-	@rm -f app/output/app* || true
+	@rm -f rust/app/output/app* || true
 
 .PHONY: clean
 clean_build:
@@ -253,19 +264,19 @@ zemu:
 zemu_val:
 	cd $(TESTS_ZEMU_DIR)/tools && node debug_val.mjs
 
-.PHONY: zemu_debug
-zemu_debug:
-	cd $(TESTS_ZEMU_DIR)/tools && node debug.mjs $(COIN) debug
-
 ########################## TEST Section ###############################
 
 .PHONY: zemu_test
 zemu_test:
 	cd $(TESTS_ZEMU_DIR) && yarn test$(COIN)
 
+.PHONY: zemu_debug
+zemu_debug:
+	cd $(TESTS_ZEMU_DIR) && yarn run debug
+
 .PHONY: rust_test
 rust_test:
-	cd app/rust && cargo test
+	$(MAKE) -C rust test
 
 .PHONY: cpp_test
 cpp_test:

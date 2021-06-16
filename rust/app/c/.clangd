@@ -1,0 +1,2 @@
+CompileFlags:
+    Add: ["-I../../../deps/nanos-secure-sdk/include"]
