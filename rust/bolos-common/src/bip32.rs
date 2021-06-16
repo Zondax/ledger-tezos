@@ -74,7 +74,6 @@ impl<const LEN: usize> BIP32Path<LEN> {
 #[cfg(any(test, feature = "std"))]
 impl<const LEN: usize> BIP32Path<LEN> {
     pub fn new(components: impl IntoIterator<Item = u32>) -> Result<Self, BIP32PathError> {
-        let mut zero = true;
         let mut len = 0;
         let mut components_array = [0; LEN];
 

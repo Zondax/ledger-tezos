@@ -73,7 +73,7 @@ impl std::convert::TryFrom<&[u8]> for ApduError {
             0x6F01 => Ok(Self::SignVerifyError),
             0x9000 => Ok(Self::Success),
             0x9001 => Ok(Self::Busy),
-            err => Err(Self::Error::Unknown(value)),
+            _err => Err(Self::Error::Unknown(value)),
         }
     }
 }

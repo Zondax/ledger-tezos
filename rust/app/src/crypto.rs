@@ -5,11 +5,7 @@ use crate::{
     sys,
 };
 use bolos::hash::{Blake2b, Sha256};
-use sys::{
-    crypto::bip32::BIP32Path,
-    errors::Error,
-    hash::{Hasher, HasherId},
-};
+use sys::{crypto::bip32::BIP32Path, errors::Error, hash::Hasher};
 
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey(pub(crate) sys::crypto::ecfp256::PublicKey);

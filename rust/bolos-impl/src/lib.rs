@@ -18,6 +18,7 @@
 
 #![no_std]
 #![no_builtins]
+#![allow(non_upper_case_globals)]
 
 #[macro_use]
 extern crate cfg_if;
