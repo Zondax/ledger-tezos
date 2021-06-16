@@ -206,6 +206,7 @@ dev_ca_delete2: check_python
 .PHONY: zemu_install
 zemu_install:
 	# and now install everything
+	cd $(TESTS_JS_DIR) && yarn install && yarn build
 	cd $(TESTS_ZEMU_DIR) && yarn install
 
 ########################## TEST Section ###############################
