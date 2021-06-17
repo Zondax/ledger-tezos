@@ -202,7 +202,7 @@ export default class TezosApp {
         if (returnCode === LedgerError.NoErrors && response.length > 2) {
           return {
             hash: response.slice(0, 32),
-            signature: response.slice(32),
+            signature: response.slice(32, -2),
             returnCode: returnCode,
             errorMessage: errorMessage
           };

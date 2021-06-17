@@ -71,9 +71,9 @@ impl SecretKey {
 
         if crv.is_weirstrass() {
             let (parity, size) = bindings::cx_ecdsa_sign::<H>(self, data, out)?;
-            if parity {
-                out[0] |= 0x01;
-            }
+            // if parity {
+            //     out[0] |= 0x01;
+            // }
 
             Ok(size)
         } else if crv.is_twisted_edward() {
@@ -379,7 +379,7 @@ mod bindings {
                             crv as _,
                             &mut sig_len as *mut _
                         )} {
-                            0 => {},
+                            0 => {sig_len *= 2;},
                             err => return Err(err.into()),
                         }
                     },
