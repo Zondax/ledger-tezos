@@ -229,19 +229,16 @@ describe.each(models)('Standard baking [%s]; sign', function (m) {
       expect(resp.hash).toEqual(app.sig_hash(msg))
 
         const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve);
-        const pk_ledger = resp_addr.publicKey.toString('hex');
 
         let signatureOK = true;
         switch (curve) {
             case Curve.Ed25519:
             case Curve.Ed25519_Slip10:
-                expect(resp.signature.byteLength).toEqual(64);
                 signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1,33))
                 break;
 
             case Curve.Secp256K1:
-                let signature = resp.signature;
-                signatureOK = secp.verify(signature, resp.hash, pk_ledger);
+                signatureOK = secp.verify(resp.signature, resp.hash, resp_addr.publicKey);
                 break;
 
             case Curve.Secp256R1:

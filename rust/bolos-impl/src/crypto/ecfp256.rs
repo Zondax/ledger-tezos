@@ -71,6 +71,7 @@ impl SecretKey {
 
         if crv.is_weirstrass() {
             let (parity, size) = bindings::cx_ecdsa_sign::<H>(self, data, out)?;
+            //TODO: check why this was/is here
             // if parity {
             //     out[0] |= 0x01;
             // }
