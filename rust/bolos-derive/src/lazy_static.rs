@@ -68,7 +68,7 @@ fn produce_custom_ty(
                }
             }
 
-            impl core::ops::DerefMut for #struct_name {
+            impl ::core::ops::DerefMut for #struct_name {
                 fn deref_mut(&mut self) -> &mut Self::Target {
                     self.get_mut()
                 }
@@ -116,7 +116,7 @@ fn produce_custom_ty(
                     //SAFETY:
                     // ptr comes from rust so guaranteed to be aligned and not null,
                     // is also initialized (see above), not deallocated (global)
-                    let initialized_val = unsafe { core::ptr::read_volatile(initialized_ptr as *const _) };
+                    let initialized_val = unsafe { ::core::ptr::read_volatile(initialized_ptr as *const _) };
 
                     if initialized_val != 1u8 {
                         //SAFETY:
@@ -140,7 +140,7 @@ fn produce_custom_ty(
                 }
             }
 
-            impl core::ops::Deref for #struct_name {
+            impl ::core::ops::Deref for #struct_name {
                 type Target = #ty;
 
                 fn deref(&self) -> &Self::Target {

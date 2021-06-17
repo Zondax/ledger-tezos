@@ -1,4 +1,5 @@
 use core::ptr::NonNull;
+use bolos_sys::pic::PIC;
 
 pub(self) mod bindings {
     #![allow(non_snake_case)]
@@ -12,8 +13,11 @@ pub(self) mod bindings {
     }
 }
 
+mod manual_vtable;
+use manual_vtable::RefMutDynViewable;
+
 //This is _terribly_ unsafe, as we assume the pointer hasn't been invalidated!
-static mut CURRENT_VIEWABLE: Option<NonNull<dyn Viewable>> = None;
+static mut CURRENT_VIEWABLE: Option<RefMutDynViewable> = None;
 
 pub enum ViewError {
     Unknown,
@@ -59,11 +63,12 @@ pub trait Show: Viewable + Sized {
     // for now we consume the item so we can guarantee
     // safe usage
     fn show(mut self) {
+        //this allows us to keep self in scope without dropping it already
+        let this = &mut self;
+
         //set `CURRENT_VIEWABLE`
         unsafe {
-            let ptr: *mut (dyn Viewable + 'static) =
-                core::mem::transmute(&mut self as &mut dyn Viewable);
-            CURRENT_VIEWABLE.replace(NonNull::new(ptr).unwrap());
+            CURRENT_VIEWABLE.replace(this.into());
         }
         //set view_review
         view_review_init();
@@ -75,18 +80,20 @@ pub trait Show: Viewable + Sized {
 
         //clear view_review
         view_review_uninit();
-        //clear `CURRENT_VIEWABLE`
+        //clear `CURRENT_VIEWABLE` so we can drop soundly
         unsafe {
             CURRENT_VIEWABLE.take();
         }
+
+        //finally, drop self
     }
 }
 
 impl<T: Viewable + Sized> Show for T {}
 
-fn get_current_viewable<'v>() -> Result<&'v mut dyn Viewable, ViewError> {
+fn get_current_viewable<'v>() -> Result<&'v mut RefMutDynViewable, ViewError> {
     match unsafe { CURRENT_VIEWABLE.as_mut() } {
-        Some(non_null) => Ok(unsafe { non_null.as_mut() }),
+        Some(refmut) => Ok(refmut),
         None => Err(ViewError::Unknown),
     }
 }
@@ -94,13 +101,15 @@ fn get_current_viewable<'v>() -> Result<&'v mut dyn Viewable, ViewError> {
 unsafe extern "C" fn viewfunc_get_num_items(num_items: *mut u8) -> bindings::zxerr_t {
     match get_current_viewable() {
         Err(e) => e.into(),
-        Ok(obj) => match obj.num_items() {
-            Ok(n) => {
-                num_items.write(n);
-                bindings::zxerr_t_zxerr_ok
+        Ok(obj) => {
+            match obj.num_items() {
+                Ok(n) => {
+                    num_items.write(n);
+                    bindings::zxerr_t_zxerr_ok
+                }
+                Err(e) => e.into(),
             }
-            Err(e) => e.into(),
-        },
+        }
     }
 }
 

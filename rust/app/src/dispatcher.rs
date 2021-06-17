@@ -66,10 +66,11 @@ pub const INS_SIGN: u8 = 0x12;
 //dev-only
 cfg_if! {
     if #[cfg(feature = "dev")] {
-        use crate::handlers::dev::{Except, Sha256};
+        use crate::handlers::dev::{Except, Sha256, Echo};
 
         pub const INS_DEV_HASH: u8 = 0xF0;
         pub const INS_DEV_EXCEPT: u8 = 0xF1;
+        pub const INS_DEV_ECHO_UI: u8 = 0xF2;
     }
 }
 
@@ -109,6 +110,7 @@ pub fn apdu_dispatch(
             match ins {
                 INS_DEV_HASH => return Sha256::handle(flags, tx, rx, apdu_buffer),
                 INS_DEV_EXCEPT => return Except::handle(flags, tx, rx, apdu_buffer),
+                INS_DEV_ECHO_UI => return Echo::handle(flags, tx, rx, apdu_buffer),
                 _ => {},
             }
         }
