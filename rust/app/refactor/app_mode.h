@@ -1,5 +1,6 @@
 /*******************************************************************************
-*   (c) 2020 Zondax GmbH
+*   (c) 2016 Ledger
+*   (c) 2018 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -13,21 +14,19 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-
 #pragma once
+#include "zxmacros.h"
+#include "stdbool.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/// Return the number of items in the address view
-zxerr_t addr_getNumItems(uint8_t *num_items);
+void app_mode_reset();
 
-/// Gets an specific item from the address view (including paging)
-zxerr_t addr_getItem(int8_t displayIdx,
-                     char *outKey, uint16_t outKeyLen,
-                     char *outValue, uint16_t outValueLen,
-                     uint8_t pageIdx, uint8_t *pageCount);
+bool app_mode_expert();
+
+void app_mode_set_expert(uint8_t val);
 
 #ifdef __cplusplus
 }

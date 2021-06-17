@@ -1,5 +1,4 @@
 /*******************************************************************************
-*   (c) 2016 Ledger
 *   (c) 2018 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,23 +14,46 @@
 *  limitations under the License.
 ********************************************************************************/
 #pragma once
-#include "zxmacros.h"
-#include "stdbool.h"
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "modernize-use-nullptr"
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+#pragma ide diagnostic ignored "OCUnusedMacroInspection"
+#pragma ide diagnostic ignored "modernize-deprecated-headers"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void app_mode_reset();
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include "string.h"
 
-bool app_mode_expert();
+#ifndef __APPLE__
+extern void explicit_bzero(void *s, size_t n) __THROW __nonnull ((1));
+#endif
 
-void app_mode_set_expert(uint8_t val);
+#define __Z_INLINE inline __attribute__((always_inline)) static
+#define NV_ALIGN __attribute__ ((aligned(64)))
 
-bool app_mode_secret();
+#if defined(LEDGER_SPECIFIC)
+#include "bolos_target.h"
+#endif
 
-void app_mode_set_secret(uint8_t val);
+#if defined (TARGET_NANOS) || defined(TARGET_NANOX)
+#include "zxmacros_ledger.h"
+#else
+#include "zxmacros_x64.h"
+#endif
+
+#ifndef UNUSED
+#define UNUSED(x) (void)x
+#endif
+
 
 #ifdef __cplusplus
 }
 #endif
+
+#pragma clang diagnostic pop

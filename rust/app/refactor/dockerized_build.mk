@@ -17,7 +17,6 @@
 .PHONY: all deps build clean load delete check_python show_info_recovery_mode
 
 TESTS_ZEMU_DIR?=$(CURDIR)/zemu
-EXAMPLE_VUE_DIR?=$(CURDIR)/example_vue
 TESTS_JS_PACKAGE?=
 TESTS_JS_DIR?=
 
@@ -36,7 +35,6 @@ INTERACTIVE:=$(shell [ -t 0 ] && echo 1)
 USERID:=$(shell id -u)
 $(info USERID                : $(USERID))
 $(info TESTS_ZEMU_DIR        : $(TESTS_ZEMU_DIR))
-$(info EXAMPLE_VUE_DIR       : $(EXAMPLE_VUE_DIR))
 $(info TESTS_JS_DIR          : $(TESTS_JS_DIR))
 $(info TESTS_JS_PACKAGE      : $(TESTS_JS_PACKAGE))
 
@@ -85,7 +83,7 @@ check_python:
 .PHONY: deps bindgen_install
 deps: check_python
 	@echo "Install dependencies"
-	$(CURDIR)/deps/ledger-zxlib/scripts/install_deps.sh
+	$(CURDIR)/install_deps.sh
 
 bindgen_install:
 	cargo install bindgen
@@ -205,64 +203,11 @@ dev_ca2: check_python
 dev_ca_delete2: check_python
 	@python -m ledgerblue.resetCustomCA --targetId 0x33000004
 
-########################## VUE Section ###############################
-
-.PHONY: vue_install_js_link
-ifeq ($(TESTS_JS_DIR),)
-vue_install_js_link:
-	@echo "No local package defined"
-else
-vue_install_js_link:
-	# First unlink everything
-	cd $(TESTS_JS_DIR) && yarn unlink || true
-	cd $(EXAMPLE_VUE_DIR) && yarn unlink $(TESTS_JS_PACKAGE) || true
-#	# Now build and link
-	cd $(TESTS_JS_DIR) && yarn install && yarn build && yarn link || true
-	cd $(EXAMPLE_VUE_DIR) && yarn link $(TESTS_JS_PACKAGE) && yarn install || true
-	@echo
-	# List linked packages
-	@echo
-	@cd $(EXAMPLE_VUE_DIR) && ( ls -l node_modules ; ls -l node_modules/@* ) | grep ^l || true
-	@echo
-endif
-
-.PHONY: vue
-vue: vue_install_js_link
-	cd $(EXAMPLE_VUE_DIR) && yarn install && yarn serve
-
-########################## VUE Section ###############################
-
-.PHONY: zemu_install_js_link
-ifeq ($(TESTS_JS_DIR),)
-zemu_install_js_link:
-	@echo "No local package defined"
-else
-zemu_install_js_link:
-	# First unlink everything
-	cd $(TESTS_JS_DIR) && yarn unlink || true
-	cd $(TESTS_ZEMU_DIR) && yarn unlink $(TESTS_JS_PACKAGE) || true
-	# Now build and link
-	cd $(TESTS_JS_DIR) && yarn install && yarn build && yarn link || true
-	cd $(TESTS_ZEMU_DIR) && yarn link $(TESTS_JS_PACKAGE) && yarn install || true
-	@echo
-	# List linked packages
-	@echo
-	@cd $(TESTS_ZEMU_DIR) && ( ls -l node_modules ; ls -l node_modules/@* ) | grep ^l || true
-	@echo
-endif
-
 .PHONY: zemu_install
-zemu_install: zemu_install_js_link
+zemu_install:
 	# and now install everything
+	cd $(TESTS_JS_DIR) && yarn install && yarn build
 	cd $(TESTS_ZEMU_DIR) && yarn install
-
-.PHONY: zemu
-zemu:
-	cd $(TESTS_ZEMU_DIR)/tools && node debug.mjs $(COIN)
-
-.PHONY: zemu_val
-zemu_val:
-	cd $(TESTS_ZEMU_DIR)/tools && node debug_val.mjs
 
 ########################## TEST Section ###############################
 
@@ -277,24 +222,3 @@ zemu_debug:
 .PHONY: rust_test
 rust_test:
 	$(MAKE) -C rust test
-
-.PHONY: cpp_test
-cpp_test:
-	mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make
-	cd build && GTEST_COLOR=1 ASAN_OPTIONS=detect_leaks=0 ctest -VV
-
-########################## FUZZING Section ###############################
-
-.PHONY: fuzz_build
-fuzz_build:
-	cmake -B build -DCMAKE_C_COMPILER=clang-11 -DCMAKE_CXX_COMPILER=clang++-11 -DCMAKE_BUILD_TYPE=Debug -DENABLE_FUZZING=1 -DENABLE_SANITIZERS=1 .
-	make -C build
-
-.PHONY: fuzz
-fuzz: fuzz_build
-	./fuzz/run-fuzzers.py
-
-.PHONY: fuzz_crash
-fuzz_crash: FUZZ_LOGGING=1
-fuzz_crash: fuzz_build
-	./fuzz/run-fuzz-crashes.py

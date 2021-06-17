@@ -26,7 +26,7 @@ DOCKER_LEGACY_APP_BIN=$(DOCKER_LEGACY_APP_SRC)/bin/app.elf
 
 ifeq ($(BOLOS_SDK),)
 	# TODO: use earthly here
-	include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
+	include $(CURDIR)/rust/app/refactor/dockerized_build.mk
 
 lint:
 	cd rust && cargo fmt
@@ -70,3 +70,12 @@ generate:
 	$(info "Calling app Makefile for target $@")
 	COIN=$(COIN) $(MAKE) -C rust/app $@
 endif
+
+test_all:
+	make zemu_install
+	# test sr25519
+	make clean_build
+	BAKING=yes make
+	make
+	make legacy
+	make zemu_test

@@ -18,16 +18,13 @@
 #include "view.h"
 #include "coin.h"
 #include "view_internal.h"
-#include "crypto.h"
 
+#include "zxmacros.h"
 #include "actions.h"
 #include "apdu_codes.h"
 #include "ux.h"
 #include "bagl.h"
-#include "zxmacros.h"
 #include "view_templates.h"
-#include "tx.h"
-#include "addr.h"
 #include "app_mode.h"
 #include "zxerror.h"
 

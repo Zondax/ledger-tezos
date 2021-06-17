@@ -38,7 +38,7 @@ impl super::Hasher<32> for Sha256 {
         Ok(*self.0.finalize().as_ref())
     }
 
-    fn finalize_into(mut self, out: &mut [u8; 32]) -> Result<(), Self::Error> {
+    fn finalize_into(self, out: &mut [u8; 32]) -> Result<(), Self::Error> {
         out.copy_from_slice(self.0.finalize().as_ref());
 
         Ok(())

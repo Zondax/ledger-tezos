@@ -66,7 +66,7 @@ impl GetAddress {
         key: crypto::PublicKey,
         buffer: &mut [u8],
     ) -> Result<u32, Error> {
-        let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
+        let _addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
 
         //TODO: show(&addr)
 
@@ -150,7 +150,7 @@ impl Addr {
 
         let mut this: Self = Default::default();
 
-        let hash = pubkey.hash(&mut this.hash)?;
+        pubkey.hash(&mut this.hash)?;
         sys::zemu_log_stack("Addr::new after hash\x00");
 
         //legacy/src/to_string.c:135
@@ -182,9 +182,7 @@ impl Addr {
             Ok(())
         }
 
-        //legacy/src/to_string.c:94
-        // hash(hash(prefix + hash))[..4]
-        let checksum = sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
+        sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
 
         Ok(this)
     }
@@ -192,7 +190,7 @@ impl Addr {
     //[u8; PKH_STRING] without null byte
     // legacy/src/types.h:156
     pub fn to_base58(&self) -> [u8; 36] {
-        let mut input = {
+        let input = {
             let mut array = [0; 27];
             array[..3].copy_from_slice(&self.prefix[..]);
             array[3..3 + 20].copy_from_slice(&self.hash[..]);
