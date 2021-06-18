@@ -1,5 +1,6 @@
-use core::ptr::NonNull;
 use bolos_sys::pic::PIC;
+use bolos_sys::raw::{io_exchange, CHANNEL_APDU, IO_ASYNCH_REPLY, IO_RETURN_AFTER_TX};
+use core::ptr::NonNull;
 
 pub(self) mod bindings {
     #![allow(non_snake_case)]
@@ -17,7 +18,12 @@ mod manual_vtable;
 use manual_vtable::RefMutDynViewable;
 
 //This is _terribly_ unsafe, as we assume the pointer hasn't been invalidated!
+#[bolos_derive::lazy_static]
 static mut CURRENT_VIEWABLE: Option<RefMutDynViewable> = None;
+
+//contains a pointer to the apdu_buffer
+#[bolos_derive::lazy_static]
+static mut APDU_BUFFER: Option<NonNull<[u8]>> = None;
 
 pub enum ViewError {
     Unknown,
@@ -49,27 +55,34 @@ pub trait Viewable {
 
     /// Called when the last item shown has been "accepted"
     ///
-    /// Item must be "acceptable"
-    fn accept(&mut self);
+    /// `out` is the apdu_buffer
+    ///
+    /// Return is number of bytes written to out and the return code
+    fn accept(&mut self, out: &mut [u8]) -> (usize, u16);
 
     /// Called when the last item shows has been "rejected"
+    /// `out` is the apdu_buffer
     ///
-    /// Item must be "rejectable"
-    fn reject(&mut self);
+    /// Return is number of bytes written to out and the return code
+    fn reject(&mut self, out: &mut [u8]) -> (usize, u16);
 }
 
 pub trait Show: Viewable + Sized {
     /// This is to be called when you wish to show the item
+    ///
+    /// `flags` should be the same parameter in `ApduHandler::handle`
     // for now we consume the item so we can guarantee
     // safe usage
-    fn show(mut self) {
-        //this allows us to keep self in scope without dropping it already
-        let this = &mut self;
-
+    fn show(mut self, out: &mut [u8]) -> ! {
         //set `CURRENT_VIEWABLE`
         unsafe {
-            CURRENT_VIEWABLE.replace(this.into());
+            CURRENT_VIEWABLE.replace((&mut self).into());
+            *APDU_BUFFER = NonNull::new(out as *mut [u8]);
         }
+
+        //self will be dropped when `CURRENT_VIEWABLE` is taken
+        ::core::mem::forget(self);
+
         //set view_review
         view_review_init();
 
@@ -78,38 +91,55 @@ pub trait Show: Viewable + Sized {
             bindings::view_review_show();
         }
 
-        //clear view_review
-        view_review_uninit();
-        //clear `CURRENT_VIEWABLE` so we can drop soundly
-        unsafe {
-            CURRENT_VIEWABLE.take();
-        }
+        //keep driving the event loop
+        // this will keep the stack alive
+        // while allowing the ui to handle events
+        drive()
+    }
+}
 
-        //finally, drop self
+fn cleanup_ui() {
+    unsafe {
+        bindings::view_review_init(None, None, None);
+        CURRENT_VIEWABLE.take();
+        APDU_BUFFER.take();
+    }
+}
+
+//keep driving the event loop and io
+// so the ui is "run" here instead of the top level
+fn drive() -> ! {
+    //"give" control to the event code
+    unsafe {
+        io_exchange((CHANNEL_APDU | IO_ASYNCH_REPLY) as u8, 0);
+        core::hint::unreachable_unchecked()
     }
 }
 
 impl<T: Viewable + Sized> Show for T {}
 
-fn get_current_viewable<'v>() -> Result<&'v mut RefMutDynViewable, ViewError> {
-    match unsafe { CURRENT_VIEWABLE.as_mut() } {
-        Some(refmut) => Ok(refmut),
-        None => Err(ViewError::Unknown),
+fn get_current_viewable<'v>() -> Result<(&'v mut RefMutDynViewable, &'v mut [u8]), ViewError> {
+    match unsafe {
+        (
+            CURRENT_VIEWABLE.as_mut(),
+            APDU_BUFFER.as_mut().map(|p| p.as_mut()),
+        )
+    } {
+        (Some(refmut), Some(buf)) => Ok((refmut, buf)),
+        _ => Err(ViewError::Unknown),
     }
 }
 
 unsafe extern "C" fn viewfunc_get_num_items(num_items: *mut u8) -> bindings::zxerr_t {
     match get_current_viewable() {
         Err(e) => e.into(),
-        Ok(obj) => {
-            match obj.num_items() {
-                Ok(n) => {
-                    num_items.write(n);
-                    bindings::zxerr_t_zxerr_ok
-                }
-                Err(e) => e.into(),
+        Ok((obj, _)) => match obj.num_items() {
+            Ok(n) => {
+                num_items.write(n);
+                bindings::zxerr_t_zxerr_ok
             }
-        }
+            Err(e) => e.into(),
+        },
     }
 }
 
@@ -125,7 +155,7 @@ unsafe extern "C" fn viewfunc_get_item(
 ) -> bindings::zxerr_t {
     match get_current_viewable() {
         Err(e) => e.into(),
-        Ok(obj) => {
+        Ok((obj, _)) => {
             let out_key =
                 core::slice::from_raw_parts_mut(out_key as *mut cty::c_uchar, out_key_len as usize);
             let out_val =
@@ -133,7 +163,7 @@ unsafe extern "C" fn viewfunc_get_item(
 
             match obj.render_item(item_n as u8, out_key, out_val, page_idx) {
                 Err(e) => e.into(),
-                Ok(count) => unsafe {
+                Ok(count) => {
                     //asciify
                     out_key
                         .iter_mut()
@@ -157,14 +187,24 @@ unsafe extern "C" fn viewfunc_get_item(
 }
 
 unsafe extern "C" fn viewfunc_accept() {
-    if let Ok(obj) = get_current_viewable() {
-        obj.accept()
+    if let Ok((obj, out)) = get_current_viewable() {
+        let (len, code) = obj.accept(out);
+
+        //set code
+        out[len..len+2].copy_from_slice(&code.to_be_bytes()[..]);
+        cleanup_ui();
+        io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, 2 + len as u16);
     }
 }
 
 unsafe extern "C" fn viewfunc_reject() {
-    if let Ok(obj) = get_current_viewable() {
-        obj.reject()
+    if let Ok((obj, out)) = get_current_viewable() {
+        let (len, code) = obj.reject(out);
+
+        //set code
+        out[len..len+2].copy_from_slice(&code.to_be_bytes()[..]);
+        cleanup_ui();
+        io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, 2 + len as u16);
     }
 }
 
@@ -176,8 +216,4 @@ fn view_review_init() {
             Some(viewfunc_accept),
         );
     }
-}
-
-fn view_review_uninit() {
-    unsafe { bindings::view_review_init(None, None, None) }
 }

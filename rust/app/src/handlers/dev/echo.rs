@@ -33,10 +33,7 @@ impl ApduHandler for Echo {
         let second = std::cmp::min(len - 17, 17);
         this.line2[..second].copy_from_slice(&apdu_buffer[5 + first..5 + first + second]);
 
-        this.show();
-
-        *tx = 0;
-        Ok(())
+        this.show(apdu_buffer)
     }
 }
 
@@ -65,9 +62,13 @@ impl Viewable for Echo {
         Ok(1)
     }
 
-    fn accept(&mut self) {}
+    fn accept(&mut self, _: &mut [u8]) -> (usize, u16) {
+        (0, Error::Success as _)
+    }
 
-    fn reject(&mut self) {}
+    fn reject(&mut self, _: &mut [u8]) -> (usize, u16) {
+        (0, Error::CommandNotAllowed as _)
+    }
 }
 
 #[cfg(test)]
