@@ -242,6 +242,18 @@ export default class TezosApp {
     return blake2.createHash('blake2b', {digestLength: 32}).update(msg).digest();
   }
 
+  DER_TO_RS(sig: Buffer): Buffer {
+    const r_len = sig[3]
+    let skip_first_byte = (r_len == 33) ? 1 : 0
+    const r = sig.slice(4 + skip_first_byte, 4 + skip_first_byte + 32)
+
+    const s_len = sig[5 + r_len]
+    skip_first_byte = (s_len == 33) ? 1 : 0
+    const s = sig.slice(6 + r_len + skip_first_byte, 6 + r_len + skip_first_byte + 32)
+
+    return Buffer.concat([r,s])
+  }
+
 
   //--------------------- lEGACY INSTRUCTIONS
   async legacyGetVersion(): Promise<ResponseLegacyVersion> {

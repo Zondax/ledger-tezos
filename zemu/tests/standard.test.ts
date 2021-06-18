@@ -17,8 +17,9 @@
 import Zemu from '@zondax/zemu'
 import { defaultOptions, models, APP_DERIVATION, curves, cartesianProduct } from './common'
 import TezosApp, {Curve} from '@zondax/ledger-tezos'
-import * as secp from "noble-secp256k1"
+import * as secp256k1 from "noble-secp256k1"
 const ed25519 = require('ed25519-supercop')
+const secp256r1 = require('secp256r1')
 
 
 jest.setTimeout(60000)
@@ -181,10 +182,12 @@ describe.each(models)('Standard [%s]; sign', function (m) {
             break;
 
         case Curve.Secp256K1:
-            signatureOK = secp.verify(resp.signature, resp.hash, resp_addr.publicKey);
+            signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey);
           break;
 
         case Curve.Secp256R1:
+            const sigRS = app.DER_TO_RS(resp.signature);
+            signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
           break;
 
         default:
