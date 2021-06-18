@@ -112,3 +112,33 @@ describe.each(models)('SHA256', function (m) {
         }
     })
 });
+
+describe.each(models)('Echo', function (m) {
+    test.each([
+        Buffer.from("francesco@zondax.ch"),
+    ])('display', async function (msg) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name, X11: true});
+            const app = new TezosAppDev(sim.getTransport());
+            const respRequest = app.display(msg);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+            if (m.name == "nanox") {
+                sim.clickRight(); //move out of "please review"
+            }
+
+            await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-echo`, 1);
+
+            const resp = await respRequest;
+
+            console.log(resp, m.prefix);
+            warn_dev(resp.returnCode);
+
+            expect(resp.returnCode).toEqual(0x9000);
+            expect(resp.errorMessage).toEqual("No errors");
+        } finally {
+            await sim.close();
+        }
+    })
+});
