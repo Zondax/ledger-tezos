@@ -14,7 +14,7 @@ pub struct Echo {
 
 impl ApduHandler for Echo {
     #[inline(never)]
-    fn handle(_: &mut u32, tx: &mut u32, _: u32, apdu_buffer: &mut [u8]) -> Result<(), Error> {
+    fn handle(flags: &mut u32, tx: &mut u32, _: u32, apdu_buffer: &mut [u8]) -> Result<(), Error> {
         if apdu_buffer[APDU_INDEX_INS] != INS_DEV_ECHO_UI {
             return Err(Error::InsNotSupported);
         }
@@ -33,7 +33,7 @@ impl ApduHandler for Echo {
         let second = std::cmp::min(len - 17, 17);
         this.line2[..second].copy_from_slice(&apdu_buffer[5 + first..5 + first + second]);
 
-        this.show(apdu_buffer)
+        unsafe { this.show(flags) }.map_err(|_| Error::ExecutionError)
     }
 }
 
@@ -44,22 +44,26 @@ impl Viewable for Echo {
 
     fn render_item(
         &mut self,
-        _: u8,
+        idx: u8,
         title: &mut [u8],
         message: &mut [u8],
         _: u8,
     ) -> Result<u8, ViewError> {
-        title[..5].copy_from_slice(&PIC::new(b"Echo\x00").into_inner()[..]);
+        if let 0 = idx {
+            title[..5].copy_from_slice(&PIC::new(b"Echo\x00").into_inner()[..]);
 
-        if message.len() < 17 + 17 + 1  {
-            return Err(ViewError::Unknown);
+            if message.len() < 17 + 17 + 1 {
+                return Err(ViewError::Unknown);
+            }
+
+            message[..17].copy_from_slice(&self.line1[..]);
+            message[17..17 + 17].copy_from_slice(&self.line2[..]);
+            message[17 + 17] = 0; //null terminate
+
+            Ok(1)
+        } else {
+            Err(ViewError::NoData)
         }
-        
-        message[..17].copy_from_slice(&self.line1[..]);
-        message[17..17 + 17].copy_from_slice(&self.line2[..]);
-        message[17 + 17] = 0; //null terminate
-
-        Ok(1)
     }
 
     fn accept(&mut self, _: &mut [u8]) -> (usize, u16) {
@@ -100,6 +104,5 @@ mod tests {
 
         handle_apdu(&mut flags, &mut tx, 5 + 35, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
-
     }
 }

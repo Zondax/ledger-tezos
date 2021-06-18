@@ -61,7 +61,7 @@ trait ViewableWithVTable: Viewable + Sized {
             let this = this.cast::<Self>();
 
             ::core::ptr::drop_in_place(this);
-        }
+        },
     };
 }
 impl<T: Viewable> ViewableWithVTable for T {}
@@ -123,11 +123,9 @@ impl RefMutDynViewable {
     pub fn drop_item(&mut self) {
         let to_pic = self.vtable.drop as usize;
         let picced = unsafe { PIC::manual(to_pic) };
-        let ptr: unsafe fn(*mut This) =
-            unsafe { core::mem::transmute(picced) };
+        let ptr: unsafe fn(*mut This) = unsafe { core::mem::transmute(picced) };
 
         unsafe { (ptr)(self.ptr.as_ptr()) }
-
     }
 }
 

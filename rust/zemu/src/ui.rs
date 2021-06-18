@@ -1,5 +1,7 @@
 use bolos_sys::pic::PIC;
-use bolos_sys::raw::{io_exchange, CHANNEL_APDU, IO_ASYNCH_REPLY, IO_RETURN_AFTER_TX};
+use bolos_sys::raw::{
+    io_exchange, G_io_apdu_buffer as APDU_BUFFER, CHANNEL_APDU, IO_ASYNCH_REPLY, IO_RETURN_AFTER_TX,
+};
 use core::ptr::NonNull;
 
 pub(self) mod bindings {
@@ -21,18 +23,20 @@ use manual_vtable::RefMutDynViewable;
 #[bolos_derive::lazy_static]
 static mut CURRENT_VIEWABLE: Option<RefMutDynViewable> = None;
 
-//contains a pointer to the apdu_buffer
-#[bolos_derive::lazy_static]
-static mut APDU_BUFFER: Option<NonNull<[u8]>> = None;
+//no need to lazy static as we won't be reading this before writing
+// (not even dropping, as it's usize)
+static mut BUSY_BYTES: usize = 0;
 
 pub enum ViewError {
     Unknown,
+    NoData,
 }
 
 impl Into<bindings::zxerr_t> for ViewError {
     fn into(self) -> bindings::zxerr_t {
         match self {
             Self::Unknown => bindings::zxerr_t_zxerr_unknown,
+            Self::NoData => bindings::zxerr_t_zxerr_no_data,
         }
     }
 }
@@ -67,21 +71,24 @@ pub trait Viewable {
     fn reject(&mut self, out: &mut [u8]) -> (usize, u16);
 }
 
-pub trait Show: Viewable + Sized {
+pub trait Show: Viewable + Sized + 'static {
     /// This is to be called when you wish to show the item
     ///
-    /// `flags` should be the same parameter in `ApduHandler::handle`
+    /// `flags` is the same `flags` parameter given in `ApduHandler::handle`
+    ///
+    /// It's important to return immediately from this function and give control
+    /// back to the main loop if the return is Ok
+    /// This is also why the function is unsafe, to make sure this postcondition is held
+    ///
+    /// If an error is returned, then `Self` was too big to fit in the global memory
     // for now we consume the item so we can guarantee
     // safe usage
-    fn show(mut self, out: &mut [u8]) -> ! {
+    unsafe fn show(mut self, flags: &mut u32) -> Result<(), ()> {
         //set `CURRENT_VIEWABLE`
         unsafe {
-            CURRENT_VIEWABLE.replace((&mut self).into());
-            *APDU_BUFFER = NonNull::new(out as *mut [u8]);
+            let moved = move_to_global_storage(self).ok_or(())?;
+            CURRENT_VIEWABLE.replace(moved.into());
         }
-
-        //self will be dropped when `CURRENT_VIEWABLE` is taken
-        ::core::mem::forget(self);
 
         //set view_review
         view_review_init();
@@ -91,41 +98,57 @@ pub trait Show: Viewable + Sized {
             bindings::view_review_show();
         }
 
-        //keep driving the event loop
-        // this will keep the stack alive
-        // while allowing the ui to handle events
-        drive()
+        *flags |= IO_ASYNCH_REPLY;
+        //Some(drive())
+        Ok(())
+    }
+}
+
+fn move_to_global_storage<T: Sized>(item: T) -> Option<&'static mut T> {
+    let size = core::mem::size_of::<T>();
+    unsafe {
+        let buf_len = APDU_BUFFER.len();
+        if size > buf_len {
+            //if we don't have enough space
+            // we can even check for a max size, say 64 bytes
+            return None;
+        }
+
+        let new_loc_slice = &mut APDU_BUFFER[buf_len - size..];
+        let new_loc_raw_ptr: *mut u8 = new_loc_slice.as_mut_ptr();
+        let new_loc: *mut T = new_loc_raw_ptr.cast();
+
+        //write but we don't want to drop `new_loc` since
+        // it's not actually valid T data
+        core::ptr::write(new_loc, item);
+
+        //write how many bytes we have occupied
+        BUSY_BYTES = size;
+
+        //we can unwrap as we know this ptr is valid
+        Some(new_loc.as_mut().unwrap())
     }
 }
 
 fn cleanup_ui() {
     unsafe {
         bindings::view_review_init(None, None, None);
+
+        //RefMutDynViewable takes care of dropping the inner item
         CURRENT_VIEWABLE.take();
-        APDU_BUFFER.take();
     }
 }
 
-//keep driving the event loop and io
-// so the ui is "run" here instead of the top level
-fn drive() -> ! {
-    //"give" control to the event code
-    unsafe {
-        io_exchange((CHANNEL_APDU | IO_ASYNCH_REPLY) as u8, 0);
-        core::hint::unreachable_unchecked()
-    }
-}
-
-impl<T: Viewable + Sized> Show for T {}
+impl<T: Viewable + Sized + 'static> Show for T {}
 
 fn get_current_viewable<'v>() -> Result<(&'v mut RefMutDynViewable, &'v mut [u8]), ViewError> {
     match unsafe {
         (
             CURRENT_VIEWABLE.as_mut(),
-            APDU_BUFFER.as_mut().map(|p| p.as_mut()),
+            &mut APDU_BUFFER[..APDU_BUFFER.len() - BUSY_BYTES],
         )
     } {
-        (Some(refmut), Some(buf)) => Ok((refmut, buf)),
+        (Some(refmut), buf) => Ok((refmut, buf)),
         _ => Err(ViewError::Unknown),
     }
 }
@@ -180,7 +203,7 @@ unsafe extern "C" fn viewfunc_get_item(
 
                     page_count.write(count);
                     bindings::zxerr_t_zxerr_ok
-                },
+                }
             }
         }
     }
@@ -191,7 +214,7 @@ unsafe extern "C" fn viewfunc_accept() {
         let (len, code) = obj.accept(out);
 
         //set code
-        out[len..len+2].copy_from_slice(&code.to_be_bytes()[..]);
+        out[len..len + 2].copy_from_slice(&code.to_be_bytes()[..]);
         cleanup_ui();
         io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, 2 + len as u16);
     }
@@ -202,7 +225,7 @@ unsafe extern "C" fn viewfunc_reject() {
         let (len, code) = obj.reject(out);
 
         //set code
-        out[len..len+2].copy_from_slice(&code.to_be_bytes()[..]);
+        out[len..len + 2].copy_from_slice(&code.to_be_bytes()[..]);
         cleanup_ui();
         io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, 2 + len as u16);
     }
