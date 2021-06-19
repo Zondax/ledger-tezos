@@ -4,6 +4,8 @@ use bolos::{
     crypto::bip32::BIP32Path,
     hash::{Blake2b, Hasher},
 };
+use zemu_sys::{Show, ViewError, Viewable};
+use zeroize::Zeroize;
 
 use super::{resources::BUFFER, PacketType};
 use crate::{
@@ -51,7 +53,11 @@ impl Sign {
     }
 
     #[inline(never)]
-    pub fn blind_sign(packet_type: PacketType, buffer: &mut [u8]) -> Result<u32, Error> {
+    pub fn blind_sign(
+        packet_type: PacketType,
+        buffer: &mut [u8],
+        flags: &mut u32,
+    ) -> Result<u32, Error> {
         let mut tx = 0;
         let cdata_len = buffer[4] as usize;
         let cdata = &buffer[5..5 + cdata_len];
@@ -79,28 +85,20 @@ impl Sign {
             PacketType::Last => {
                 //this is also pure data, but we need to return data this time!
 
-                let (path, curve) = Self::get_derivation_info()?;
+                Self::get_derivation_info()?;
 
                 let mut zbuffer = unsafe { BUFFER.acquire(Self)? };
                 zbuffer.write(cdata).map_err(|_| Error::DataInvalid)?;
 
                 let unsigned_hash = Self::blake2b_digest(zbuffer.read_exact())?;
 
-                let (sig_size, sig) = Self::sign(*curve, path, &unsigned_hash[..])?;
+                let ui = BlindSignUi {
+                    hash: unsigned_hash,
+                };
 
-                //write unsigned_hash to buffer
-                tx += Self::SIGN_HASH_SIZE as u32;
-                buffer[0..Self::SIGN_HASH_SIZE].copy_from_slice(&unsigned_hash[..]);
-
-                //wrte signature to buffer
-                tx += sig_size as u32;
-                buffer[Self::SIGN_HASH_SIZE..Self::SIGN_HASH_SIZE + sig_size]
-                    .copy_from_slice(&sig[..sig_size]);
-
-                //reset globals to avoid skipping `Init`
-                zbuffer.reset();
-                unsafe { BUFFER.release(Self)? };
-                unsafe { PATH.take() };
+                return unsafe { ui.show(flags) }
+                    .map_err(|_| Error::ExecutionError)
+                    .map(|_| 0);
             }
         }
 
@@ -126,7 +124,7 @@ enum Action {
 
 impl ApduHandler for Sign {
     #[inline(never)]
-    fn handle(_flags: &mut u32, tx: &mut u32, _rx: u32, buffer: &mut [u8]) -> Result<(), Error> {
+    fn handle(flags: &mut u32, tx: &mut u32, _rx: u32, buffer: &mut [u8]) -> Result<(), Error> {
         sys::zemu_log_stack("Sign::handle\x00");
 
         *tx = 0;
@@ -143,7 +141,7 @@ impl ApduHandler for Sign {
 
         *tx = match action {
             Action::Sign => {
-                Self::blind_sign(packet_type, buffer).map_err(|_| Error::ExecutionError)?
+                Self::blind_sign(packet_type, buffer, flags).map_err(|_| Error::ExecutionError)?
             }
             Action::LegacySign => return Err(Error::CommandNotAllowed), //TODO
             Action::LegacySignWithHash => return Err(Error::CommandNotAllowed), //TODO
@@ -153,4 +151,101 @@ impl ApduHandler for Sign {
 
         Ok(())
     }
+}
+
+struct BlindSignUi {
+    hash: [u8; Sign::SIGN_HASH_SIZE],
+}
+
+impl Viewable for BlindSignUi {
+    fn num_items(&mut self) -> Result<u8, ViewError> {
+        Ok(1)
+    }
+
+    fn render_item(
+        &mut self,
+        item_n: u8,
+        title: &mut [u8],
+        message: &mut [u8],
+        page: u8,
+    ) -> Result<u8, ViewError> {
+        if let 0 = item_n {
+            let title_content = bolos::PIC::new(b"Blind Sign\x00").into_inner();
+
+            title[..title_content.len()].copy_from_slice(title_content);
+
+            let m_len = message.len() - 1; //null byte terminator
+            if m_len <= Sign::SIGN_HASH_SIZE * 2 {
+                let chunk = self
+                    .hash
+                    .chunks(m_len / 2) //divide in non-overlapping chunks
+                    .nth(page as usize) //get the nth chunk
+                    .ok_or(ViewError::Unknown)?;
+
+                hex::encode_to_slice(
+                    chunk,
+                    &mut message[..chunk.len() * 2],
+                )
+                .map_err(|_| ViewError::Unknown)?;
+                message[chunk.len() * 2] = 0; //null terminate
+
+                let n_pages = (Sign::SIGN_HASH_SIZE * 2) / m_len;
+                Ok(1 + n_pages as u8)
+            } else {
+                hex::encode_to_slice(&self.hash[..], &mut message[..Sign::SIGN_HASH_SIZE])
+                    .map_err(|_| ViewError::Unknown)?;
+                message[Sign::SIGN_HASH_SIZE] = 0; //null terminate
+                Ok(1)
+            }
+        } else {
+            Err(ViewError::NoData)
+        }
+    }
+
+    fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
+        let (path, curve) = match Sign::get_derivation_info() {
+            Err(e) => return (0, e as _),
+            Ok(k) => k,
+        };
+
+        let (sig_size, sig) = match Sign::sign(*curve, path, &self.hash[..]) {
+            Err(e) => return (0, e as _),
+            Ok(k) => k,
+        };
+
+        let mut tx = 0;
+
+        //reset globals to avoid skipping `Init`
+        if let Err(e) = cleanup_globals() {
+            return (0, e as _);
+        }
+
+        //write unsigned_hash to buffer
+        tx += Sign::SIGN_HASH_SIZE;
+        out[..Sign::SIGN_HASH_SIZE].copy_from_slice(&self.hash[..]);
+
+        //wrte signature to buffer
+        tx += sig_size;
+        out[Sign::SIGN_HASH_SIZE..Sign::SIGN_HASH_SIZE + sig_size]
+            .copy_from_slice(&sig[..sig_size]);
+
+        (tx, Error::Success as _)
+    }
+
+    fn reject(&mut self, _: &mut [u8]) -> (usize, u16) {
+        let _ = cleanup_globals();
+        (0, Error::CommandNotAllowed as _)
+    }
+}
+
+fn cleanup_globals() -> Result<(), Error> {
+    {
+        let mut zbuffer = unsafe { BUFFER.acquire(Sign)? };
+        zbuffer.reset();
+    }
+
+    unsafe { BUFFER.release(Sign)? };
+    unsafe { PATH.take() };
+
+    Ok(())
 }
