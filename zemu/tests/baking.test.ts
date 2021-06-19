@@ -218,7 +218,15 @@ describe.each(models)('Standard baking [%s]; sign', function (m) {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
-      const resp = await app.sign(APP_DERIVATION, curve, msg);
+      const respReq = app.sign(APP_DERIVATION, curve, msg);
+
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      if (m.name == "nanox") {
+          sim.clickRight();
+      }
+      await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-sign-${msg.length}`, 2);
+
+      const resp = await respReq;
 
       console.log(resp, m.name)
 
