@@ -187,7 +187,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
 
         case Curve.Secp256R1:
             // FIXME: add later
-            // const sigRS = app.DER_TO_RS(resp.signature);
+            // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
             // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
           break;
 
