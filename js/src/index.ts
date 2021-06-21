@@ -202,7 +202,7 @@ export default class TezosApp {
         if (returnCode === LedgerError.NoErrors && response.length > 2) {
           return {
             hash: response.slice(0, 32),
-            signature: response.slice(32),
+            signature: response.slice(32, -2),
             returnCode: returnCode,
             errorMessage: errorMessage
           };
@@ -241,7 +241,6 @@ export default class TezosApp {
     const blake2 = require('blake2');
     return blake2.createHash('blake2b', {digestLength: 32}).update(msg).digest();
   }
-
 
   //--------------------- lEGACY INSTRUCTIONS
   async legacyGetVersion(): Promise<ResponseLegacyVersion> {

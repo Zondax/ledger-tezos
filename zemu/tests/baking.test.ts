@@ -15,8 +15,10 @@
  ******************************************************************************* */
 
 import Zemu, {DeviceModel} from "@zondax/zemu";
-import TezosApp from "@zondax/ledger-tezos";
+import TezosApp, {Curve} from "@zondax/ledger-tezos";
 import { APP_DERIVATION, defaultOptions, curves, cartesianProduct } from './common'
+import * as secp from "noble-secp256k1"
+const ed25519 = require('ed25519-supercop')
 
 const Resolve = require("path").resolve;
 const APP_PATH_S = Resolve("../rust/app/output/app_s_baking.elf");
@@ -225,6 +227,28 @@ describe.each(models)('Standard baking [%s]; sign', function (m) {
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
       expect(resp.hash).toEqual(app.sig_hash(msg))
+
+        const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve);
+
+        let signatureOK = true;
+        switch (curve) {
+            case Curve.Ed25519:
+            case Curve.Ed25519_Slip10:
+                signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1,33))
+                break;
+
+            case Curve.Secp256K1:
+                signatureOK = secp.verify(resp.signature, resp.hash, resp_addr.publicKey);
+                break;
+
+            case Curve.Secp256R1:
+                break;
+
+            default:
+                throw Error("not a valid curve type")
+        }
+        expect(signatureOK).toEqual(true);
+
     } finally {
       await sim.close()
     }
