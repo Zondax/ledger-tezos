@@ -17,7 +17,9 @@ impl<T: Viewable + Sized> Show for T {
 
         self.accept(out);
 
-        unsafe { OUT.take(); }
+        unsafe {
+            OUT.take();
+        }
 
         Ok(())
     }

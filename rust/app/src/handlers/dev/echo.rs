@@ -88,7 +88,7 @@ mod tests {
     use serial_test::serial;
 
     #[test]
-    #[serial(dev_hash)]
+    #[serial(ui)]
     fn apdu_dev_echo() {
         const MSG: [u8; 34] = ['a' as u8; 34];
 

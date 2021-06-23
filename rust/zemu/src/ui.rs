@@ -1,14 +1,15 @@
-use bolos_sys::pic::PIC;
 use bolos_sys::raw::{
     io_exchange, G_io_apdu_buffer as APDU_BUFFER, CHANNEL_APDU, IO_ASYNCH_REPLY, IO_RETURN_AFTER_TX,
 };
-use core::ptr::NonNull;
 
 mod comm;
 pub use comm::*;
 
 pub(self) mod bindings {
     #![allow(non_snake_case)]
+    #![allow(non_uppder_case_globals)]
+    #![allow(non_camel_case_types)]
+
     include!("ui/bindings.rs");
 }
 
@@ -59,20 +60,16 @@ fn move_to_global_storage<T: Sized>(item: T) -> Option<&'static mut T> {
 }
 
 impl<T: Viewable + Sized + 'static> Show for T {
-    unsafe fn show(mut self, flags: &mut u32) -> Result<(), ()> {
+    unsafe fn show(self, flags: &mut u32) -> Result<(), ()> {
         //set `CURRENT_VIEWABLE`
-        unsafe {
-            let moved = move_to_global_storage(self).ok_or(())?;
-            CURRENT_VIEWABLE.replace(moved.into());
-        }
+        let moved = move_to_global_storage(self).ok_or(())?;
+        CURRENT_VIEWABLE.replace(moved.into());
 
         //set view_review
         view_review_init();
 
         //start the show
-        unsafe {
-            bindings::view_review_show();
-        }
+        bindings::view_review_show();
 
         *flags |= IO_ASYNCH_REPLY;
         //Some(drive())
@@ -88,8 +85,6 @@ fn cleanup_ui() {
         CURRENT_VIEWABLE.take();
     }
 }
-
-impl<T: Viewable + Sized + 'static> Show for T {}
 
 fn get_current_viewable<'v>() -> Result<(&'v mut RefMutDynViewable, &'v mut [u8]), ViewError> {
     match unsafe {

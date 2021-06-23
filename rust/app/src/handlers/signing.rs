@@ -246,3 +246,63 @@ fn cleanup_globals() -> Result<(), Error> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        assert_error_code,
+        dispatcher::{handle_apdu, CLA},
+        sys::set_out,
+    };
+    use std::convert::TryInto;
+
+    use serial_test::serial;
+
+    fn prepare_buffer(buffer: &mut [u8; 260], path: &[u32], curve: Curve) -> usize {
+        let crv: u8 = curve.into();
+        let path = BIP32Path::<10>::new(path.into_iter().map(|n| 0x8000_0000 + n))
+            .unwrap()
+            .serialize();
+
+        buffer[3] = crv;
+        buffer[4] = path.len() as u8;
+        buffer[5..5 + path.len()].copy_from_slice(path.as_slice());
+
+        path.len()
+    }
+
+    #[test]
+    #[ignore]
+    #[serial(ui)]
+    fn apdu_blind_sign() {
+        const MSG: [u8; 18] = *b"franceco@zondax.ch";
+
+        let mut flags = 0;
+        let mut tx = 0;
+        let mut buffer = [0; 260];
+
+        buffer[0] = CLA;
+        buffer[1] = INS_SIGN;
+        buffer[2] = PacketType::Init.into();
+        let len = prepare_buffer(&mut buffer, &[44, 1729, 0, 0], Curve::Ed25519);
+
+        handle_apdu(&mut flags, &mut tx, 5 + len as u32, &mut buffer);
+        assert_error_code!(tx, buffer, Error::Success);
+
+        buffer[0] = CLA;
+        buffer[1] = INS_SIGN;
+        buffer[2] = PacketType::Last.into();
+        buffer[3] = 0;
+        buffer[4] = MSG.len() as u8;
+        buffer[5..5 + MSG.len()].copy_from_slice(&MSG[..]);
+
+        set_out(&mut buffer);
+        handle_apdu(&mut flags, &mut tx, 5 + MSG.len() as u32, &mut buffer);
+        assert_error_code!(tx, buffer, Error::Success);
+
+        let out_hash = &buffer[..32];
+        let expected = Blake2b::<32>::digest(&MSG).unwrap();
+        assert_eq!(&expected, out_hash);
+    }
+}
