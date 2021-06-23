@@ -1,4 +1,12 @@
 pub type zxerr_t = cty::c_uint;
+pub const zxerr_t_zxerr_unknown: zxerr_t = 0;
+pub const zxerr_t_zxerr_ok: zxerr_t = 3;
+pub const zxerr_t_zxerr_no_data: zxerr_t = 5;
+pub const zxerr_t_zxerr_buffer_too_small: zxerr_t = 6;
+pub const zxerr_t_zxerr_out_of_bounds: zxerr_t = 9;
+pub const zxerr_t_zxerr_encoding_failed: zxerr_t = 10;
+pub const zxerr_t_zxerr_invalid_crypto_settings: zxerr_t = 12;
+pub const zxerr_t_zxerr_ledger_api_error: zxerr_t = 15;
 
 pub type viewfunc_getNumItems_t =
     ::core::option::Option<unsafe extern "C" fn(num_items: *mut u8) -> zxerr_t>;

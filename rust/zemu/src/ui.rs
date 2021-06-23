@@ -4,16 +4,12 @@ use bolos_sys::raw::{
 };
 use core::ptr::NonNull;
 
+mod comm;
+pub use comm::*;
+
 pub(self) mod bindings {
     #![allow(non_snake_case)]
-
-    cfg_if::cfg_if! {
-        if #[cfg(zemu_sdk)] {
-            include!("ui/bindings.rs");
-        } else {
-            include!("ui/bindings_stub.rs");
-        }
-    }
+    include!("ui/bindings.rs");
 }
 
 mod manual_vtable;
@@ -27,80 +23,12 @@ static mut CURRENT_VIEWABLE: Option<RefMutDynViewable> = None;
 // (not even dropping, as it's usize)
 static mut BUSY_BYTES: usize = 0;
 
-pub enum ViewError {
-    Unknown,
-    NoData,
-}
-
 impl Into<bindings::zxerr_t> for ViewError {
     fn into(self) -> bindings::zxerr_t {
         match self {
             Self::Unknown => bindings::zxerr_t_zxerr_unknown,
             Self::NoData => bindings::zxerr_t_zxerr_no_data,
         }
-    }
-}
-
-pub trait Viewable {
-    /// Return the number of items to render
-    fn num_items(&mut self) -> Result<u8, ViewError>;
-
-    /// Render `item_n` into `title` and `message`
-    ///
-    /// If an item is too long to render in the output, the number of "pages" is returned,
-    /// and each page can be retrieved via the `page` parameter
-    fn render_item(
-        &mut self,
-        item_n: u8,
-        title: &mut [u8],
-        message: &mut [u8],
-        page: u8,
-    ) -> Result<u8, ViewError>;
-
-    /// Called when the last item shown has been "accepted"
-    ///
-    /// `out` is the apdu_buffer
-    ///
-    /// Return is number of bytes written to out and the return code
-    fn accept(&mut self, out: &mut [u8]) -> (usize, u16);
-
-    /// Called when the last item shows has been "rejected"
-    /// `out` is the apdu_buffer
-    ///
-    /// Return is number of bytes written to out and the return code
-    fn reject(&mut self, out: &mut [u8]) -> (usize, u16);
-}
-
-pub trait Show: Viewable + Sized + 'static {
-    /// This is to be called when you wish to show the item
-    ///
-    /// `flags` is the same `flags` parameter given in `ApduHandler::handle`
-    ///
-    /// It's important to return immediately from this function and give control
-    /// back to the main loop if the return is Ok
-    /// This is also why the function is unsafe, to make sure this postcondition is held
-    ///
-    /// If an error is returned, then `Self` was too big to fit in the global memory
-    // for now we consume the item so we can guarantee
-    // safe usage
-    unsafe fn show(mut self, flags: &mut u32) -> Result<(), ()> {
-        //set `CURRENT_VIEWABLE`
-        unsafe {
-            let moved = move_to_global_storage(self).ok_or(())?;
-            CURRENT_VIEWABLE.replace(moved.into());
-        }
-
-        //set view_review
-        view_review_init();
-
-        //start the show
-        unsafe {
-            bindings::view_review_show();
-        }
-
-        *flags |= IO_ASYNCH_REPLY;
-        //Some(drive())
-        Ok(())
     }
 }
 
@@ -127,6 +55,28 @@ fn move_to_global_storage<T: Sized>(item: T) -> Option<&'static mut T> {
 
         //we can unwrap as we know this ptr is valid
         Some(new_loc.as_mut().unwrap())
+    }
+}
+
+impl<T: Viewable + Sized + 'static> Show for T {
+    unsafe fn show(mut self, flags: &mut u32) -> Result<(), ()> {
+        //set `CURRENT_VIEWABLE`
+        unsafe {
+            let moved = move_to_global_storage(self).ok_or(())?;
+            CURRENT_VIEWABLE.replace(moved.into());
+        }
+
+        //set view_review
+        view_review_init();
+
+        //start the show
+        unsafe {
+            bindings::view_review_show();
+        }
+
+        *flags |= IO_ASYNCH_REPLY;
+        //Some(drive())
+        Ok(())
     }
 }
 

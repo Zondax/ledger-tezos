@@ -182,11 +182,8 @@ impl Viewable for BlindSignUi {
                     .nth(page as usize) //get the nth chunk
                     .ok_or(ViewError::Unknown)?;
 
-                hex::encode_to_slice(
-                    chunk,
-                    &mut message[..chunk.len() * 2],
-                )
-                .map_err(|_| ViewError::Unknown)?;
+                hex::encode_to_slice(chunk, &mut message[..chunk.len() * 2])
+                    .map_err(|_| ViewError::Unknown)?;
                 message[chunk.len() * 2] = 0; //null terminate
 
                 let n_pages = (Sign::SIGN_HASH_SIZE * 2) / m_len;

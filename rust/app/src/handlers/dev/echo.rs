@@ -81,6 +81,7 @@ mod tests {
     use crate::{
         assert_error_code,
         dispatcher::{handle_apdu, CLA},
+        sys::set_out,
     };
     use std::convert::TryInto;
 
@@ -89,7 +90,7 @@ mod tests {
     #[test]
     #[serial(dev_hash)]
     fn apdu_dev_echo() {
-        const MSG: [u8; 35] = ['a' as u8; 35];
+        const MSG: [u8; 34] = ['a' as u8; 34];
 
         let mut flags = 0;
         let mut tx = 0;
@@ -99,10 +100,11 @@ mod tests {
         buffer[1] = INS_DEV_ECHO_UI;
         buffer[2] = 0;
         buffer[3] = 0;
-        buffer[4] = 35;
-        buffer[5..5 + 35].copy_from_slice(&MSG[..35]);
+        buffer[4] = 34;
+        buffer[5..5 + 34].copy_from_slice(&MSG[..34]);
 
-        handle_apdu(&mut flags, &mut tx, 5 + 35, &mut buffer);
+        set_out(&mut buffer);
+        handle_apdu(&mut flags, &mut tx, 5 + 34, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
     }
 }
