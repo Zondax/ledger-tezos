@@ -192,9 +192,9 @@ impl Viewable for BlindSignUi {
                 let n_pages = (Sign::SIGN_HASH_SIZE * 2) / m_len;
                 Ok(1 + n_pages as u8)
             } else {
-                hex::encode_to_slice(&self.hash[..], &mut message[..Sign::SIGN_HASH_SIZE])
+                hex::encode_to_slice(&self.hash[..], &mut message[..Sign::SIGN_HASH_SIZE * 2])
                     .map_err(|_| ViewError::Unknown)?;
-                message[Sign::SIGN_HASH_SIZE] = 0; //null terminate
+                message[Sign::SIGN_HASH_SIZE * 2] = 0; //null terminate
                 Ok(1)
             }
         } else {
