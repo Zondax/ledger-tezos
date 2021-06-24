@@ -201,12 +201,10 @@ describe.each(models)('Standard [%s]; sign', function (m) {
       const respReq = app.sign(APP_DERIVATION, curve, msg);
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
-      let steps = 2;
       if (m.name == "nanox") {
           sim.clickRight();
-          steps = 1;
       }
-      await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-sign-${msg.length}`, steps);
+      await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-sign-${msg.length}`, 2);
 
       const resp = await respReq;
 
