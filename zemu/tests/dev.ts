@@ -4,6 +4,7 @@ import { errorCodeToString, processErrorResponse, CLA } from '@zondax/ledger-tez
 const INS = {
   HASH: 0xf0,
   EXCEPT: 0xf1,
+  ECHO: 0xf2,
 }
 
 interface ResponseHash extends ResponseBase {
@@ -71,5 +72,21 @@ export default class TezosAppDev extends TezosApp {
     }
 
     return result
+  }
+
+  async display(message: Buffer): Promise<ResponseBase> {
+    if (message.length > 35) {
+      throw Error('message too long')
+    }
+
+    return this.transport.send(CLA, INS.ECHO, 0, 0, message).then(response => {
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+      }
+    }, processErrorResponse)
   }
 }

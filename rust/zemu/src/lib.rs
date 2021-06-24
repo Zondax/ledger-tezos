@@ -35,3 +35,7 @@ pub fn check_canary() {
         bindings::check_canary();
     }
 }
+
+#[cfg_attr(not(zemu_sdk), path = "ui_mock.rs")]
+mod ui;
+pub use ui::*;

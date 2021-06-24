@@ -3,3 +3,6 @@ pub use sha256::Sha256;
 
 mod exception;
 pub use exception::Except;
+
+mod echo;
+pub use echo::Echo;

@@ -52,3 +52,6 @@ pub fn exit_app(status: u8) -> ! {
 /// Contains some impls for items coming from the bindings
 #[cfg(bolos_sdk)]
 mod extra_traits;
+
+#[cfg(bolos_sdk)]
+pub mod pic;

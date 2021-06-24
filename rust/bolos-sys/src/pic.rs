@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use core::ops::{Deref, DerefMut};
 
 //https://github.com/LedgerHQ/ledger-nanos-sdk/blob/master/src/lib.rs#L179
 /// This struct is to be used when dealing with code memory spaces
@@ -59,9 +59,28 @@ impl<T> PIC<T> {
                 //no difference afaik from &mut and & in this case, since we consume self
                 let ptr = unsafe { super::raw::pic(&self.data as *const T as _) as *const T };
 
+                //we don't want to drop the old location
+                //if the location is unchanged then it will be dropped later anyways
+                core::mem::forget(self);
+
                 unsafe { ptr.read() }
             } else {
                 self.data
+            }
+        }
+    }
+}
+
+impl PIC<()> {
+    //Apply pic manually, interpreting `ptr` as the actual pointer to an _unknwon_ type
+    pub unsafe fn manual(ptr: usize) -> usize {
+        cfg_if::cfg_if! {
+            if #[cfg(bolos_sdk)] {
+                let ptr = unsafe { super::raw::pic(ptr as _) as usize };
+
+                ptr
+            } else {
+                ptr
             }
         }
     }
