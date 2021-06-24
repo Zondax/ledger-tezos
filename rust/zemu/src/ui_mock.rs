@@ -13,13 +13,11 @@ pub fn set_out(buf: &mut [u8]) {
 
 impl<T: Viewable + Sized> Show for T {
     unsafe fn show(mut self, _: &mut u32) -> Result<(), ()> {
-        let out = unsafe { OUT.as_mut() }.ok_or(())?;
+        let out = OUT.as_mut().expect("UI MOCK LAYER NOT INITIALIZED");
 
         self.accept(out);
 
-        unsafe {
-            OUT.take();
-        }
+        OUT.take();
 
         Ok(())
     }

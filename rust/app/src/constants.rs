@@ -57,6 +57,14 @@ impl std::convert::TryFrom<&[u8]> for ApduError {
             u16::from_be_bytes(array)
         };
 
+        Self::try_from(value)
+    }
+}
+
+impl std::convert::TryFrom<u16> for ApduError {
+    type Error = ConvertApduError;
+
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
             0x6400 => Ok(Self::ExecutionError),
             0x6700 => Ok(Self::WrongLength),
@@ -77,7 +85,6 @@ impl std::convert::TryFrom<&[u8]> for ApduError {
         }
     }
 }
-
 // FIXME: Convert this to ApduHeader struct
 pub const APDU_INDEX_CLA: usize = 0;
 pub const APDU_INDEX_INS: usize = 1;

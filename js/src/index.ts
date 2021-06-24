@@ -324,6 +324,26 @@ export default class TezosApp {
     }, processErrorResponse)
   }
 
+  async legacyPromptPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
+    const serializedPath = serializePath(path);
+    return this.transport
+      .send(CLA, LEGACY_INS.PROMPT_PUBLIC_KEY, 0, curve, serializedPath)
+      .then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      const publicKey = response.slice(0, -2);
+      const address = this.publicKeyToAddress(publicKey, curve);
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        publicKey,
+        address
+      }
+    }, processErrorResponse)
+  }
+
   publicKeyToAddress(key: Buffer, curve: Curve): string {
     let prefix;
 

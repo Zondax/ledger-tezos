@@ -1,4 +1,7 @@
+use core::u8;
 use std::convert::TryFrom;
+
+use zemu_sys::{Show, ViewError, Viewable};
 
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
@@ -28,29 +31,32 @@ impl GetAddress {
         key: crypto::PublicKey,
         req_confirmation: bool,
         buffer: &mut [u8],
+        flags: &mut u32,
     ) -> Result<u32, Error> {
         sys::zemu_log_stack("GetAddres::get_public_and_address\x00");
         let mut tx = 0;
 
-        let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
+        let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?;
+        let mut ui = AddrUI {
+            addr,
+            pkey: key,
+            with_addr: true,
+        };
         if req_confirmation {
-            //TODO: show(&addr)
+            return unsafe { ui.show(flags) }
+                .map_err(|_| Error::ExecutionError)
+                .map(|_| 0);
+        } else {
+            //we don't need to show so we execute the "accept" already
+            // this way the "formatting" to `buffer` is all in the ui code
+            let (sz, code) = ui.accept(buffer);
+
+            if code != Error::Success as _ {
+                Err(Error::try_from(code).map_err(|_| Error::ExecutionError)?)
+            } else {
+                Ok(sz as u32)
+            }
         }
-
-        let key = key.as_ref();
-        let len = key.len();
-        //prepend pubkey with len
-        buffer[0] = len as u8;
-        tx += 1;
-
-        buffer[1..1 + len].copy_from_slice(&key);
-        tx += len as u32;
-
-        let alen = addr.len();
-        buffer[1 + len..1 + len + alen].copy_from_slice(&addr[..]);
-        tx += alen as u32;
-
-        Ok(tx)
     }
 
     #[inline(never)]
@@ -65,15 +71,19 @@ impl GetAddress {
     fn legacy_prompt_address_get_public(
         key: crypto::PublicKey,
         buffer: &mut [u8],
+        flags: &mut u32,
     ) -> Result<u32, Error> {
-        let _addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?.to_base58();
+        let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?;
 
-        //TODO: show(&addr)
+        let ui = AddrUI {
+            addr,
+            pkey: key,
+            with_addr: false,
+        };
 
-        let key = key.as_ref();
-        let len = key.len();
-        buffer[..len].copy_from_slice(&key);
-        Ok(len as u32)
+        return unsafe { ui.show(flags) }
+            .map_err(|_| Error::ExecutionError)
+            .map(|_| 0);
     }
 }
 
@@ -91,7 +101,7 @@ enum Action {
 
 impl ApduHandler for GetAddress {
     #[inline(never)]
-    fn handle(_flags: &mut u32, tx: &mut u32, _rx: u32, buffer: &mut [u8]) -> Result<(), Error> {
+    fn handle(flags: &mut u32, tx: &mut u32, _rx: u32, buffer: &mut [u8]) -> Result<(), Error> {
         sys::zemu_log_stack("GetAddress::handle\x00");
 
         *tx = 0;
@@ -123,11 +133,11 @@ impl ApduHandler for GetAddress {
 
         *tx = match action {
             Action::GetPublicAndAddress => {
-                Self::get_public_and_address(key, req_confirmation, buffer)?
+                Self::get_public_and_address(key, req_confirmation, buffer, flags)?
             }
             Action::LegacyGetPublic => Self::legacy_get_public(key, buffer)?,
             Action::LegacyPromptAddressButGetPublic => {
-                Self::legacy_prompt_address_get_public(key, buffer)?
+                Self::legacy_prompt_address_get_public(key, buffer, flags)?
             }
         };
 
@@ -206,6 +216,80 @@ impl Addr {
             .expect("encoded in base58 is not of the right length");
 
         out
+    }
+}
+
+struct AddrUI {
+    addr: Addr,
+    pkey: crypto::PublicKey,
+
+    /// indicates wheter to write `add` to out or not
+    with_addr: bool,
+}
+
+impl Viewable for AddrUI {
+    fn num_items(&mut self) -> Result<u8, ViewError> {
+        Ok(1)
+    }
+
+    fn render_item(
+        &mut self,
+        item_n: u8,
+        title: &mut [u8],
+        message: &mut [u8],
+        page: u8,
+    ) -> Result<u8, ViewError> {
+        if let 0 = item_n {
+            let title_content = bolos::PIC::new(b"Address\x00").into_inner();
+
+            title[..title_content.len()].copy_from_slice(title_content);
+
+            let addr_bytes = self.addr.to_base58();
+            let m_len = message.len() - 1;
+            if addr_bytes.len() > m_len {
+                let chunk = addr_bytes
+                    .chunks(m_len)
+                    .nth(page as usize)
+                    .ok_or(ViewError::Unknown)?;
+
+                let len = std::cmp::min(chunk.len(), m_len);
+                message[..len].copy_from_slice(chunk);
+
+                message[len] = 0;
+                let n_pages = addr_bytes.len() / m_len;
+                Ok(1 + n_pages as u8)
+            } else {
+                message[..addr_bytes.len()].copy_from_slice(&addr_bytes[..]);
+                message[addr_bytes.len()] = 0;
+                Ok(1)
+            }
+        } else {
+            Err(ViewError::NoData)
+        }
+    }
+
+    fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
+        let pkey = self.pkey.as_ref();
+        let mut tx = 0;
+
+        out[tx] = pkey.len() as u8;
+        tx += 1;
+        out[tx..tx + pkey.len()].copy_from_slice(pkey);
+        tx += pkey.len();
+
+        if self.with_addr {
+            let addr = self.addr.to_base58();
+
+            out[tx..tx + addr.len()].copy_from_slice(&addr[..]);
+
+            tx += addr.len();
+        }
+
+        (tx, Error::Success as _)
+    }
+
+    fn reject(&mut self, out: &mut [u8]) -> (usize, u16) {
+        (0, Error::CommandNotAllowed as _)
     }
 }
 
