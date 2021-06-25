@@ -105,12 +105,30 @@ describe.each(models)('Standard [%s]; legacy', function (m) {
 })
 
 describe.each(models)('Standard [%s] - pubkey', function (m) {
-  test.each(curves)('get pubkey and addr %s', async function (curve) {
+  test.each(cartesianProduct(curves, [true, false]))
+  ('get pubkey and addr %s, %s', async function (curve, show) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
+      let resp
+
+      if (show) {
+        const respReq = app.showAddressAndPubKey(APP_DERIVATION, curve)
+
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+
+        let steps = 2;
+        if (m.name == 'nanox') {
+          sim.clickRight()
+          steps = 1;
+        }
+
+        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-pubkey-${curve}`, steps)
+        resp = await respReq
+      } else {
+        resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
+      }
 
       console.log(resp, m.name)
 
@@ -127,12 +145,30 @@ describe.each(models)('Standard [%s] - pubkey', function (m) {
 })
 
 describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
-  test.each(curves)('get pubkey and compute addr %s', async function (curve) {
+  test.each(cartesianProduct(curves, [true, false]))
+  ('get pubkey and compute addr %s, %s', async function (curve, show) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.legacyGetPubKey(APP_DERIVATION, curve);
+      let resp
+
+      if (show) {
+        const respReq = app.legacyPromptPubKey(APP_DERIVATION, curve)
+
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+
+        let steps = 2;
+        if (m.name == 'nanox') {
+          sim.clickRight()
+          steps = 1;
+        }
+
+        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-legacy-pubkey-${curve}`, steps)
+        resp = await respReq
+      } else {
+        resp = await app.legacyGetPubKey(APP_DERIVATION, curve)
+      }
 
       console.log(resp, m.name)
 
