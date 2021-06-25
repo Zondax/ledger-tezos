@@ -23,165 +23,129 @@ const ed25519 = require('ed25519-supercop')
 
 jest.setTimeout(60000)
 
-describe.each(models)('Standard', function (m) {
-  test('can start and stop container', async function () {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-    } finally {
-      await sim.close()
-    }
-  })
-
-  test('main menu', async function () {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 5, -5])
-    } finally {
-      await sim.close()
-    }
-  })
-
-  test('get app version', async function () {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new TezosApp(sim.getTransport())
-      const resp = await app.getVersion()
-
-      console.log(resp)
-
-      expect(resp.returnCode).toEqual(0x9000)
-      expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('testMode')
-      expect(resp).toHaveProperty('major')
-      expect(resp).toHaveProperty('minor')
-      expect(resp).toHaveProperty('patch')
-    } finally {
-      await sim.close()
-    }
-  })
-})
-
-describe.each(models)('Standard [%s]; legacy', function (m) {
-  test('get app version', async function () {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new TezosApp(sim.getTransport())
-      const resp = await app.legacyGetVersion()
-
-      console.log(resp)
-
-      expect(resp.returnCode).toEqual(0x9000)
-      expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('baking')
-      expect(resp.baking).toBe(false)
-      expect(resp).toHaveProperty('major')
-      expect(resp).toHaveProperty('minor')
-      expect(resp).toHaveProperty('patch')
-    } finally {
-      await sim.close()
-    }
-  })
-
-  test('get git app', async function () {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new TezosApp(sim.getTransport())
-      const resp = await app.legacyGetGit()
-
-      console.log(resp)
-      expect(resp.returnCode).toEqual(0x9000)
-      expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('commit_hash')
-    } finally {
-      await sim.close()
-    }
-  })
-})
-
-describe.each(models)('Standard [%s] - pubkey', function (m) {
-  test.each(cartesianProduct(curves, [true, false]))
-  ('get pubkey and addr %s, %s', async function (curve, show) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new TezosApp(sim.getTransport())
-      let resp
-
-      if (show) {
-        const respReq = app.showAddressAndPubKey(APP_DERIVATION, curve)
-
-        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
-
-        let steps = 2;
-        if (m.name == 'nanox') {
-          sim.clickRight()
-          steps = 1;
-        }
-
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-pubkey-${curve}`, steps)
-        resp = await respReq
-      } else {
-        resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
-      }
-
-      console.log(resp, m.name)
-
-      expect(resp.returnCode).toEqual(0x9000)
-      expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('publicKey')
-      expect(resp).toHaveProperty('address')
-      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
-      expect(resp.address).toContain('tz')
-    } finally {
-      await sim.close()
-    }
-  })
-})
-
-describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
-  test.each(cartesianProduct(curves, [true, false]))
-  ('get pubkey and compute addr %s, %s', async function (curve, show) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new TezosApp(sim.getTransport())
-      let resp
-
-      if (show) {
-        const respReq = app.legacyPromptPubKey(APP_DERIVATION, curve)
-
-        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
-
-        let steps = 2;
-        if (m.name == 'nanox') {
-          sim.clickRight()
-          steps = 1;
-        }
-
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-legacy-pubkey-${curve}`, steps)
-        resp = await respReq
-      } else {
-        resp = await app.legacyGetPubKey(APP_DERIVATION, curve)
-      }
-
-      console.log(resp, m.name)
-
-      expect(resp.returnCode).toEqual(0x9000)
-      expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('publicKey')
-      expect(resp).toHaveProperty('address')
-      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
-      expect(resp.address).toContain('tz')
-    } finally {
-      await sim.close()
-    }
-  })
-})
+// describe.each(models)('Standard', function (m) {
+//   test('can start and stop container', async function () {
+//     const sim = new Zemu(m.path)
+//     try {
+//       await sim.start({ ...defaultOptions, model: m.name })
+//     } finally {
+//       await sim.close()
+//     }
+//   })
+//
+//   test('main menu', async function () {
+//     const sim = new Zemu(m.path)
+//     try {
+//       await sim.start({ ...defaultOptions, model: m.name })
+//       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 5, -5])
+//     } finally {
+//       await sim.close()
+//     }
+//   })
+//
+//   test('get app version', async function () {
+//     const sim = new Zemu(m.path)
+//     try {
+//       await sim.start({ ...defaultOptions, model: m.name })
+//       const app = new TezosApp(sim.getTransport())
+//       const resp = await app.getVersion()
+//
+//       console.log(resp)
+//
+//       expect(resp.returnCode).toEqual(0x9000)
+//       expect(resp.errorMessage).toEqual('No errors')
+//       expect(resp).toHaveProperty('testMode')
+//       expect(resp).toHaveProperty('major')
+//       expect(resp).toHaveProperty('minor')
+//       expect(resp).toHaveProperty('patch')
+//     } finally {
+//       await sim.close()
+//     }
+//   })
+// })
+//
+// describe.each(models)('Standard [%s]; legacy', function (m) {
+//   test('get app version', async function () {
+//     const sim = new Zemu(m.path)
+//     try {
+//       await sim.start({ ...defaultOptions, model: m.name })
+//       const app = new TezosApp(sim.getTransport())
+//       const resp = await app.legacyGetVersion()
+//
+//       console.log(resp)
+//
+//       expect(resp.returnCode).toEqual(0x9000)
+//       expect(resp.errorMessage).toEqual('No errors')
+//       expect(resp).toHaveProperty('baking')
+//       expect(resp.baking).toBe(false)
+//       expect(resp).toHaveProperty('major')
+//       expect(resp).toHaveProperty('minor')
+//       expect(resp).toHaveProperty('patch')
+//     } finally {
+//       await sim.close()
+//     }
+//   })
+//
+//   test('get git app', async function () {
+//     const sim = new Zemu(m.path)
+//     try {
+//       await sim.start({ ...defaultOptions, model: m.name })
+//       const app = new TezosApp(sim.getTransport())
+//       const resp = await app.legacyGetGit()
+//
+//       console.log(resp)
+//       expect(resp.returnCode).toEqual(0x9000)
+//       expect(resp.errorMessage).toEqual('No errors')
+//       expect(resp).toHaveProperty('commit_hash')
+//     } finally {
+//       await sim.close()
+//     }
+//   })
+// })
+//
+// describe.each(models)('Standard [%s] - pubkey', function (m) {
+//   test.each(curves)('get pubkey and addr %s', async function (curve) {
+//     const sim = new Zemu(m.path)
+//     try {
+//       await sim.start({ ...defaultOptions, model: m.name })
+//       const app = new TezosApp(sim.getTransport())
+//       const resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
+//
+//       console.log(resp, m.name)
+//
+//       expect(resp.returnCode).toEqual(0x9000)
+//       expect(resp.errorMessage).toEqual('No errors')
+//       expect(resp).toHaveProperty('publicKey')
+//       expect(resp).toHaveProperty('address')
+//       expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+//       expect(resp.address).toContain('tz')
+//     } finally {
+//       await sim.close()
+//     }
+//   })
+// })
+//
+// describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
+//   test.each(curves)('get pubkey and compute addr %s', async function (curve) {
+//     const sim = new Zemu(m.path)
+//     try {
+//       await sim.start({ ...defaultOptions, model: m.name })
+//       const app = new TezosApp(sim.getTransport())
+//       const resp = await app.legacyGetPubKey(APP_DERIVATION, curve);
+//
+//       console.log(resp, m.name)
+//
+//       expect(resp.returnCode).toEqual(0x9000)
+//       expect(resp.errorMessage).toEqual('No errors')
+//       expect(resp).toHaveProperty('publicKey')
+//       expect(resp).toHaveProperty('address')
+//       expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+//       expect(resp.address).toContain('tz')
+//     } finally {
+//       await sim.close()
+//     }
+//   })
+// })
 
 describe.each(models)('Standard [%s]; sign', function (m) {
     test.each(

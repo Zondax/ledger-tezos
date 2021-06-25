@@ -315,16 +315,20 @@ describe.each(models)('Sign baking endorsement [%s] - pubkey', function (m) {
 
             const baker_blob = app.get_endorsement_info(2, 0, Buffer.alloc(32), 5, 2);
 
-            const sig = await app.signBaker(APP_DERIVATION, curve, baker_blob);
-            console.log(sig, m.name);
-            expect(sig.returnCode).toEqual(0x9000);
+            const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob);
 
-            //this should fail as the level is lower than previously signed!!
-            const baker_blob2 = app.get_endorsement_info(2,0, Buffer.alloc(32), 5, 1);
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+            if (m.name == "nanox") {
+                sim.clickRight();
+            }
+            await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-bakersign-endorsement`, 2);
 
-            const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2);
-            console.log(sig2, m.name);
-            expect(sig2.returnCode).not.toEqual(0x9000);
+            const respSig = await respReq;
+
+            console.log(respSig, m.name)
+
+            expect(respSig.returnCode).toEqual(0x9000)
+            expect(respSig.errorMessage).toEqual('No errors')
         }finally {
             await sim.close();
         }
@@ -344,23 +348,28 @@ describe.each(models)('Sign baking blocklevel [%s] - pubkey', function (m) {
 
             const baker_blob = app.get_blocklevel_info(1,0, 5, 1);
 
-            const sig = await app.signBaker(APP_DERIVATION, curve, baker_blob);
-            console.log(sig, m.name);
-            expect(sig.returnCode).toEqual(0x9000);
+            const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob);
 
-            //this should fail as the level is lower than previously signed!!
-            const baker_blob2 = app.get_blocklevel_info(1,0, 4, 1);
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+            if (m.name == "nanox") {
+                sim.clickRight();
+            }
+            await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-bakersign-block`, 1);
 
-            const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2);
-            console.log(sig2, m.name);
-            expect(sig2.returnCode).not.toEqual(0x9000);
+            const respSig = await respReq;
+
+            console.log(respSig, m.name)
+
+            expect(respSig.returnCode).toEqual(0x9000)
+            expect(respSig.errorMessage).toEqual('No errors')
+
         }finally {
             await sim.close();
         }
     });
 })
 
-describe.each(models)('Sign baking blocklevel then endorse [%s] - pubkey', function (m) {
+describe.each(models)('Sign baking blocklevel then endorse [%s]', function (m) {
     test.each(curves)('Sign baking blocklevel then endorse [%s]', async function(curve) {
         const sim = new Zemu(m.path);
         try {
@@ -373,7 +382,15 @@ describe.each(models)('Sign baking blocklevel then endorse [%s] - pubkey', funct
 
             const baker_blob = app.get_blocklevel_info(1,0, 5, 1);
 
-            const sig = await app.signBaker(APP_DERIVATION, curve, baker_blob);
+            const sigreq = app.signBaker(APP_DERIVATION, curve, baker_blob);
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+            if (m.name == "nanox") {
+               await sim.clickRight();
+            }
+
+            await sim.clickRight();
+            await sim.clickBoth();
+            const sig = await sigreq;
             console.log(sig, m.name);
             expect(sig.returnCode).toEqual(0x9000);
 
@@ -387,7 +404,17 @@ describe.each(models)('Sign baking blocklevel then endorse [%s] - pubkey', funct
             //this should success as the level is equal to previously signed but is endorsement!!
             const baker_blob3 = app.get_endorsement_info(2,0, Buffer.alloc(32), 5, 5);
 
-            const sig3 = await app.signBaker(APP_DERIVATION, curve, baker_blob3);
+            const sigreq3 = app.signBaker(APP_DERIVATION, curve, baker_blob3);
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+
+            if (m.name == "nanox") {
+                await sim.clickRight();
+            }
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickBoth();
+
+            const sig3 = await sigreq3;
             console.log(sig3, m.name);
             expect(sig3.returnCode).toEqual(0x9000);
 
