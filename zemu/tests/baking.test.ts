@@ -241,6 +241,162 @@ describe.each(models)('Standard baking [%s]; legacy - pubkey', function (m) {
   })
 })
 
+describe.each(models)('Authorize baking [%s] - pubkey', function (m) {
+    test.each(curves)('Authorize baking pubkey %s', async function(curve) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name});
+            const app = new TezosApp(sim.getTransport());
+            const resp = await app.authorizeBaking(APP_DERIVATION, curve);
+
+            console.log(resp, m.name);
+            expect(resp.returnCode).toEqual(0x9000);
+        }finally {
+            await sim.close();
+        }
+    });
+})
+
+describe.each(models)('Authorize/Deauthorize baking full-cycle [%s] - pubkey', function (m) {
+    test.each(curves)('Authorize baking pubkey %s', async function(curve) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name});
+            const app = new TezosApp(sim.getTransport());
+            const resp = await app.authorizeBaking(APP_DERIVATION, curve);
+
+            console.log(resp, m.name);
+            expect(resp.returnCode).toEqual(0x9000);
+
+            const query = await app.queryAuthKeyWithCurve();
+
+            console.log(query, m.name);
+            expect(query.returnCode).toEqual(0x9000);
+            expect(query.curve).toEqual(curve);
+
+            const query2 = await app.deauthorizeBaking();
+
+            console.log(query2, m.name);
+            expect(query2.returnCode).toEqual(0x9000);
+
+            const query3 = await app.queryAuthKeyWithCurve();
+
+            console.log(query3, m.name);
+            expect(query3.returnCode).not.toEqual(0x9000);
+
+            const query4 = await app.authorizeBaking(APP_DERIVATION, curve);
+
+            console.log(query4, m.name);
+            expect(query4.returnCode).toEqual(0x9000);
+
+            const query5 = await app.queryAuthKeyWithCurve();
+
+            console.log(query5, m.name);
+            expect(query5.returnCode).toEqual(0x9000);
+            expect(query5.curve).toEqual(curve);
+
+
+        }finally {
+            await sim.close();
+        }
+    });
+})
+
+describe.each(models)('Sign baking endorsement [%s] - pubkey', function (m) {
+    test.each(curves)('Sign baking endorsement [%s]', async function(curve) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name});
+            const app = new TezosApp(sim.getTransport());
+            const resp = await app.authorizeBaking(APP_DERIVATION, curve);
+
+            console.log(resp, m.name);
+            expect(resp.returnCode).toEqual(0x9000);
+
+            const baker_blob = app.get_endorsement_info(2, 0, Buffer.alloc(32), 5, 2);
+
+            const sig = await app.signBaker(APP_DERIVATION, curve, baker_blob);
+            console.log(sig, m.name);
+            expect(sig.returnCode).toEqual(0x9000);
+
+            //this should fail as the level is lower than previously signed!!
+            const baker_blob2 = app.get_endorsement_info(2,0, Buffer.alloc(32), 5, 1);
+
+            const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2);
+            console.log(sig2, m.name);
+            expect(sig2.returnCode).not.toEqual(0x9000);
+        }finally {
+            await sim.close();
+        }
+    });
+})
+
+describe.each(models)('Sign baking blocklevel [%s] - pubkey', function (m) {
+    test.each(curves)('Sign baking blocklevel [%s]', async function(curve) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name});
+            const app = new TezosApp(sim.getTransport());
+            const resp = await app.authorizeBaking(APP_DERIVATION, curve);
+
+            console.log(resp, m.name);
+            expect(resp.returnCode).toEqual(0x9000);
+
+            const baker_blob = app.get_blocklevel_info(1,0, 5, 1);
+
+            const sig = await app.signBaker(APP_DERIVATION, curve, baker_blob);
+            console.log(sig, m.name);
+            expect(sig.returnCode).toEqual(0x9000);
+
+            //this should fail as the level is lower than previously signed!!
+            const baker_blob2 = app.get_blocklevel_info(1,0, 4, 1);
+
+            const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2);
+            console.log(sig2, m.name);
+            expect(sig2.returnCode).not.toEqual(0x9000);
+        }finally {
+            await sim.close();
+        }
+    });
+})
+
+describe.each(models)('Sign baking blocklevel then endorse [%s] - pubkey', function (m) {
+    test.each(curves)('Sign baking blocklevel then endorse [%s]', async function(curve) {
+        const sim = new Zemu(m.path);
+        try {
+            await sim.start({...defaultOptions, model: m.name});
+            const app = new TezosApp(sim.getTransport());
+            const resp = await app.authorizeBaking(APP_DERIVATION, curve);
+
+            console.log(resp, m.name);
+            expect(resp.returnCode).toEqual(0x9000);
+
+            const baker_blob = app.get_blocklevel_info(1,0, 5, 1);
+
+            const sig = await app.signBaker(APP_DERIVATION, curve, baker_blob);
+            console.log(sig, m.name);
+            expect(sig.returnCode).toEqual(0x9000);
+
+            //this should fail as the level is equal to previously signed!!
+            const baker_blob2 = app.get_blocklevel_info(1,0, 5, 1);
+
+            const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2);
+            console.log(sig2, m.name);
+            expect(sig2.returnCode).not.toEqual(0x9000);
+
+            //this should success as the level is equal to previously signed but is endorsement!!
+            const baker_blob3 = app.get_endorsement_info(2,0, Buffer.alloc(32), 5, 5);
+
+            const sig3 = await app.signBaker(APP_DERIVATION, curve, baker_blob3);
+            console.log(sig3, m.name);
+            expect(sig3.returnCode).toEqual(0x9000);
+
+        }finally {
+            await sim.close();
+        }
+    });
+})
+
 describe.each(models)('Standard baking [%s]; sign', function (m) {
   test.each(
       cartesianProduct(
@@ -297,7 +453,7 @@ describe.each(models)('Standard baking [%s]; sign', function (m) {
     } finally {
       await sim.close()
     }
-  })
+  });
 })
 
 describe.each(models)('Standard baking [%s]; legacy - sign with hash', function (m) {

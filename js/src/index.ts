@@ -16,7 +16,7 @@
  ******************************************************************************* */
 import Transport from "@ledgerhq/hw-transport";
 import { serializePath, sha256x2 } from "./helper";
-import { ResponseBase, ResponseAddress, ResponseAppInfo, ResponseSign, ResponseVersion,
+import { ResponseBase, ResponseAddress, ResponseQueryAuthKey, ResponseAppInfo, ResponseSign, ResponseVersion,
          ResponseLegacyVersion, ResponseLegacyGit, ResponseLegacyHWM } from "./types";
 import {
   CHUNK_SIZE,
@@ -58,6 +58,55 @@ function processGetAddrResponse(response: Buffer) {
     errorMessage: errorCodeToString(returnCode)
   };
 }
+
+function processAuthorizeBakingResponse(response: Buffer) {
+  let partialResponse = response;
+
+  const errorCodeData = partialResponse.slice(-2);
+  const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]);
+
+  //get public key len (variable)
+  const PKLEN = partialResponse[0];
+  const publicKey = Buffer.from(partialResponse.slice(1, 1 + PKLEN));
+
+  return {
+    publicKey,
+    returnCode,
+    errorMessage: errorCodeToString(returnCode)
+  };
+}
+
+function processDeAuthorizeBakingResponse(response: Buffer) {
+  let partialResponse = response;
+
+  const errorCodeData = partialResponse.slice(-2);
+  const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]);
+
+  return {
+    returnCode,
+    errorMessage: errorCodeToString(returnCode)
+  };
+}
+
+function processQueryAuthKeyWithCurve(response: Buffer) {
+  let partialResponse = response;
+
+  const errorCodeData = partialResponse.slice(-2);
+  const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]);
+
+  //get public key len (variable)
+  const curve = partialResponse[0];
+  const len_path = partialResponse[1];
+  const bip32 = partialResponse.slice(2, 2 + 4 *len_path)
+
+  return {
+    curve,
+    bip32,
+    returnCode,
+    errorMessage: errorCodeToString(returnCode)
+  };
+}
+
 
 export default class TezosApp {
     transport;
@@ -165,6 +214,25 @@ export default class TezosApp {
       .then(processGetAddrResponse, processErrorResponse);
   }
 
+  async authorizeBaking(path: string, curve: Curve): Promise<ResponseAddress> {
+    const serializedPath = serializePath(path);
+    return this.transport
+        .send(CLA, INS.AUTHORIZE_BAKING, 0x01, curve, serializedPath, [LedgerError.NoErrors])
+        .then(processAuthorizeBakingResponse, processErrorResponse);
+  }
+
+  async deauthorizeBaking(): Promise<ResponseBase> {
+    return this.transport
+        .send(CLA, INS.DEAUTHORIZE_BAKING, 0x01, 0x00, Buffer.alloc(0), [LedgerError.NoErrors])
+        .then(processDeAuthorizeBakingResponse, processErrorResponse);
+  }
+
+  async queryAuthKeyWithCurve(): Promise<ResponseQueryAuthKey> {
+    return this.transport
+        .send(CLA, INS.QUERY_AUTH_KEY_WITH_CURVE, 0x01, 0x00, Buffer.alloc(0), [LedgerError.NoErrors])
+        .then(processQueryAuthKeyWithCurve, processErrorResponse);
+  }
+
   async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, legacy: boolean = false, curve?: Curve, ins: number = INS.SIGN): Promise<ResponseSign> {
     let payloadType = PAYLOAD_TYPE.ADD;
     let p2 = 0;
@@ -221,6 +289,45 @@ export default class TezosApp {
       }, processErrorResponse);
   }
 
+  get_endorsement_info(preemble: number, chain_id: number, branch: Buffer, tag: number, level: number): Buffer {
+    let result = Buffer.alloc(42);
+    result.writeUInt8(preemble, 0);
+    result.writeUInt32BE(chain_id, 1);
+    branch.copy(result, 5);
+    result.writeUInt8(tag, 37);
+    result.writeUInt32BE(level, 38);
+    return result;
+  }
+
+  get_blocklevel_info(preemble: number, chain_id: number, level: number, proto: number): Buffer {
+    let result = Buffer.alloc(10);
+    result.writeUInt8(preemble, 0);
+    result.writeUInt32BE(chain_id, 1);
+    result.writeUInt32BE(level, 5);
+    result.writeUInt8(proto, 9);
+    return result;
+  }
+
+  async signBaker(path: string, curve: Curve, message: Buffer) {
+    return this.signGetChunks(path, message).then(chunks => {
+      return this.signSendChunk(INS.BAKER_SIGN, 1, chunks.length, chunks[0], curve).then(async response => {
+        let result = {
+          returnCode: response.returnCode,
+          errorMessage: response.errorMessage,
+          signature: null as null | Buffer,
+        };
+        for (let i = 1; i < chunks.length; i += 1) {
+          // eslint-disable-next-line no-await-in-loop
+          result = await this.signSendChunk(INS.BAKER_SIGN, 1 + i, chunks.length, chunks[i]);
+          if (result.returnCode !== LedgerError.NoErrors) {
+            break;
+          }
+        }
+        return result;
+      }, processErrorResponse);
+    }, processErrorResponse);
+  }
+
 
   async sign(path: string, curve: Curve, message: Buffer) {
     return this.signGetChunks(path, message).then(chunks => {
@@ -232,7 +339,7 @@ export default class TezosApp {
         };
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i]);
+          result = await this.signSendChunk(INS.SIGN, 1 + i, chunks.length, chunks[i]);
           if (result.returnCode !== LedgerError.NoErrors) {
             break;
           }

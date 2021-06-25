@@ -73,6 +73,19 @@ impl LegacyHWM {
             .and_then(|_| unsafe { TEST.format() })
             .map_err(|_| Error::ExecutionError)
     }
+
+    pub fn write(wm: WaterMark) -> Result<(), Error> {
+        let data: [u8; 52] = wm.into();
+
+        unsafe { MAIN.write(data.clone()) }.map_err(|_| Error::ExecutionError)
+    }
+
+    pub fn read() -> Result<WaterMark, Error> {
+        let main_wm: WaterMark = unsafe { MAIN.read() }
+            .map_err(|_| Error::ExecutionError)?
+            .into();
+        Ok(main_wm)
+    }
 }
 
 impl ApduHandler for LegacyHWM {
@@ -122,14 +135,15 @@ impl ApduHandler for LegacyHWM {
     }
 }
 
-struct WaterMark {
-    level: u32,
-    endorsement: bool,
+#[derive(Debug, PartialEq, Clone)]
+pub struct WaterMark {
+    pub level: u32,
+    pub endorsement: bool,
 }
 
 impl From<&[u8; 52]> for WaterMark {
     fn from(from: &[u8; 52]) -> Self {
-        let endorsement = from[1] >= 1;
+        let endorsement = from[0] >= 1;
 
         let level = {
             let mut array = [0; 4];
@@ -148,7 +162,7 @@ impl From<WaterMark> for [u8; 52] {
         let level = from.level.to_be_bytes();
         out[1..5].copy_from_slice(&level[..]);
 
-        out[1] = from.endorsement as _;
+        out[0] = self.endorsement as _;
         out
     }
 }
@@ -165,6 +179,7 @@ impl WaterMark {
 #[cfg(test)]
 mod tests {
     use super::{LegacyHWM, ALL_HWM_LEN, MAINNET_CHAIN_ID, MAIN_HWM_LEN};
+    use crate::handlers::hwm::WaterMark;
     use crate::{
         assert_error_code,
         constants::ApduError,
@@ -174,6 +189,16 @@ mod tests {
     };
     use serial_test::serial;
     use std::convert::TryInto;
+
+    #[test]
+    fn test_watermark() {
+        let mut bytes_init = [0xff; 52];
+        bytes_init[0] = 0u8;
+        let hw = WaterMark::from(&bytes_init);
+        let bytes: [u8; 52] = hw.clone().into();
+        let hw2 = WaterMark::from(&bytes);
+        assert_eq!(hw, hw2);
+    }
 
     #[test]
     #[serial(hwm)]

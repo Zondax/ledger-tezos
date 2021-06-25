@@ -19,7 +19,6 @@ import { defaultOptions, models, APP_DERIVATION, curves, cartesianProduct } from
 import TezosApp, {Curve} from '@zondax/ledger-tezos'
 import * as secp256k1 from "noble-secp256k1"
 const ed25519 = require('ed25519-supercop')
-const secp256r1 = require('secp256r1')
 
 
 jest.setTimeout(60000)
