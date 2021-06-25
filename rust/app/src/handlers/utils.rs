@@ -1,3 +1,5 @@
+use core::convert::TryFrom;
+
 use crate::constants::ApduError;
 
 #[repr(u8)]
@@ -86,6 +88,53 @@ impl PacketType for LegacyPacketType {
         match self {
             Self::InitAndLast | Self::HashAndLast | Self::AddAndLast => true,
             _ => false,
+        }
+    }
+}
+
+/// Utility struct to encapsulate the different packet types
+pub enum PacketTypes {
+    Z(ZPacketType),
+    Legacy(LegacyPacketType),
+}
+
+impl PacketTypes {
+    pub fn new(p1: u8, is_legacy: bool) -> Result<Self, ()> {
+        if !is_legacy {
+            Self::new_z(p1)
+        } else {
+            Self::new_legacy(p1)
+        }
+    }
+
+    pub fn new_z(p1: u8) -> Result<Self, ()> {
+        ZPacketType::try_from(p1).map(Self::Z)
+    }
+
+    pub fn new_legacy(p1: u8) -> Result<Self, ()> {
+        LegacyPacketType::try_from(p1).map(Self::Legacy)
+    }
+}
+
+impl PacketType for PacketTypes {
+    fn is_init(&self) -> bool {
+        match self {
+            Self::Z(z) => z.is_init(),
+            Self::Legacy(l) => l.is_init(),
+        }
+    }
+
+    fn is_last(&self) -> bool {
+        match self {
+            Self::Z(z) => z.is_last(),
+            Self::Legacy(l) => l.is_last(),
+        }
+    }
+
+    fn is_next(&self) -> bool {
+        match self {
+            Self::Z(z) => z.is_next(),
+            Self::Legacy(l) => l.is_next(),
         }
     }
 }
