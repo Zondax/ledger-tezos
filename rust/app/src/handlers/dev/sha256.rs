@@ -5,7 +5,7 @@ use sha2::digest::Digest;
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_HASH},
-    handlers::{resources::BUFFER, PacketTypes, PacketType},
+    handlers::{resources::BUFFER, PacketType, PacketTypes},
 };
 
 pub struct Sha256;

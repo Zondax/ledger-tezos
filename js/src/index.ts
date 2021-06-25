@@ -165,7 +165,7 @@ export default class TezosApp {
       .then(processGetAddrResponse, processErrorResponse);
   }
 
-  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, curve?: Curve): Promise<ResponseSign> {
+  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, legacy: boolean = false, curve?: Curve, ins: number = INS.SIGN): Promise<ResponseSign> {
     let payloadType = PAYLOAD_TYPE.ADD;
     let p2 = 0;
     if (chunkIdx === 1) {
@@ -176,11 +176,16 @@ export default class TezosApp {
       p2 = curve;
     }
     if (chunkIdx === chunkNum) {
-      payloadType = PAYLOAD_TYPE.LAST;
+      if (!legacy) {
+        payloadType = PAYLOAD_TYPE.LAST;
+      } else {
+        //when legacy, mark as last instead of setting last
+        payloadType |= 0x80;
+      }
     }
 
     return this.transport
-      .send(CLA, INS.SIGN, payloadType, p2, chunk, [
+      .send(CLA, ins, payloadType, p2, chunk, [
         LedgerError.NoErrors,
         LedgerError.DataIsInvalid,
         LedgerError.BadKeyHandle,
@@ -219,7 +224,7 @@ export default class TezosApp {
 
   async sign(path: string, curve: Curve, message: Buffer) {
     return this.signGetChunks(path, message).then(chunks => {
-      return this.signSendChunk(1, chunks.length, chunks[0], curve).then(async response => {
+      return this.signSendChunk(1, chunks.length, chunks[0], false, curve).then(async response => {
         let result = {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
@@ -389,5 +394,25 @@ export default class TezosApp {
     const bs58 = require('bs58');
 
     return bs58.encode(Buffer.concat([prefix, hash, checksum]));
+  }
+
+  async legacySignWithHash(path: string, curve: Curve, message: Buffer) {
+    return this.signGetChunks(path, message).then(chunks => {
+      return this.signSendChunk(1, chunks.length, chunks[0], true, curve, LEGACY_INS.SIGN_WITH_HASH).then(async response => {
+        let result = {
+          returnCode: response.returnCode,
+          errorMessage: response.errorMessage,
+          signature: null as null | Buffer,
+        };
+        for (let i = 1; i < chunks.length; i += 1) {
+          // eslint-disable-next-line no-await-in-loop
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], true, curve, LEGACY_INS.SIGN_WITH_HASH);
+          if (result.returnCode !== LedgerError.NoErrors) {
+            break;
+          }
+        }
+        return result;
+      }, processErrorResponse);
+    }, processErrorResponse);
   }
 }

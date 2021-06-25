@@ -54,6 +54,7 @@ impl Sign {
 
     #[inline(never)]
     pub fn blind_sign(
+        send_hash: bool,
         packet_type: PacketTypes,
         buffer: &mut [u8],
         flags: &mut u32,
@@ -71,18 +72,19 @@ impl Sign {
 
             unsafe { BUFFER.lock(Self)?.reset() };
             unsafe { PATH.replace((path, curve)) };
-        } else if packet_type.is_next() {
+
+            return Ok(0);
+        }
+
+        //from here on we should have curve and path to continue
+
+        Self::get_derivation_info()?;
+
+        if packet_type.is_next() {
             //this is pure data
-
-            //check if we initialized first
-            Self::get_derivation_info()?;
-
             unsafe { BUFFER.acquire(Self)?.write(cdata) }.map_err(|_| Error::DataInvalid)?;
         } else if packet_type.is_last() {
-            //this is also pure data, but we need to return data this time!
-
-            Self::get_derivation_info()?;
-
+            //this is pure data, but we need to return something now
             let mut zbuffer = unsafe { BUFFER.acquire(Self)? };
             zbuffer.write(cdata).map_err(|_| Error::DataInvalid)?;
 
@@ -90,13 +92,12 @@ impl Sign {
 
             let ui = BlindSignUi {
                 hash: unsigned_hash,
+                send_hash,
             };
 
             return unsafe { ui.show(flags) }
                 .map_err(|_| Error::ExecutionError)
                 .map(|_| 0);
-        } else {
-            return Err(Error::InvalidP1P2);
         }
 
         Ok(0)
@@ -137,13 +138,15 @@ impl ApduHandler for Sign {
         let packet_type = PacketTypes::new(buffer[2], is_legacy).map_err(|_| Error::InvalidP1P2)?;
 
         *tx = match action {
-            Action::Sign => {
-                Self::blind_sign(packet_type, buffer, flags).map_err(|_| Error::ExecutionError)?
+            Action::Sign | Action::LegacySignWithHash => {
+                Self::blind_sign(true, packet_type, buffer, flags)
+                    .map_err(|_| Error::ExecutionError)?
             }
-            Action::LegacySign => return Err(Error::CommandNotAllowed), //TODO
-            Action::LegacySignWithHash => return Err(Error::CommandNotAllowed), //TODO
+            Action::LegacySign => Self::blind_sign(false, packet_type, buffer, flags)
+                .map_err(|_| Error::ExecutionError)?,
             #[cfg(feature = "wallet")]
-            Action::LegacySignUnsafe => return Err(Error::CommandNotAllowed), //TODO
+            Action::LegacySignUnsafe => Self::blind_sign(false, packet_type, buffer, flags)
+                .map_err(|_| Error::ExecutionError)?,
         };
 
         Ok(())
@@ -152,6 +155,7 @@ impl ApduHandler for Sign {
 
 struct BlindSignUi {
     hash: [u8; Sign::SIGN_HASH_SIZE],
+    send_hash: bool,
 }
 
 impl Viewable for BlindSignUi {
@@ -215,8 +219,10 @@ impl Viewable for BlindSignUi {
         }
 
         //write unsigned_hash to buffer
-        tx += Sign::SIGN_HASH_SIZE;
-        out[..Sign::SIGN_HASH_SIZE].copy_from_slice(&self.hash[..]);
+        if self.send_hash {
+            tx += Sign::SIGN_HASH_SIZE;
+            out[..Sign::SIGN_HASH_SIZE].copy_from_slice(&self.hash[..]);
+        }
 
         //wrte signature to buffer
         tx += sig_size;
@@ -250,7 +256,7 @@ mod tests {
     use crate::{
         assert_error_code,
         dispatcher::{handle_apdu, CLA},
-        handlers::ZPacketType,
+        handlers::{LegacyPacketType, ZPacketType},
         sys::set_out,
     };
     use std::convert::TryInto;
@@ -291,6 +297,40 @@ mod tests {
         buffer[0] = CLA;
         buffer[1] = INS_SIGN;
         buffer[2] = ZPacketType::Last.into();
+        buffer[3] = 0;
+        buffer[4] = MSG.len() as u8;
+        buffer[5..5 + MSG.len()].copy_from_slice(&MSG[..]);
+
+        set_out(&mut buffer);
+        handle_apdu(&mut flags, &mut tx, 5 + MSG.len() as u32, &mut buffer);
+        assert_error_code!(tx, buffer, Error::Success);
+
+        let out_hash = &buffer[..32];
+        let expected = Blake2b::<32>::digest(&MSG).unwrap();
+        assert_eq!(&expected, out_hash);
+    }
+
+    #[test]
+    #[ignore]
+    #[serial(ui)]
+    fn apdu_blind_sign_legacy() {
+        const MSG: [u8; 18] = *b"franceco@zondax.ch";
+
+        let mut flags = 0;
+        let mut tx = 0;
+        let mut buffer = [0; 260];
+
+        buffer[0] = CLA;
+        buffer[1] = INS_LEGACY_SIGN_WITH_HASH;
+        buffer[2] = LegacyPacketType::Init.into();
+        let len = prepare_buffer(&mut buffer, &[44, 1729, 0, 0], Curve::Ed25519);
+
+        handle_apdu(&mut flags, &mut tx, 5 + len as u32, &mut buffer);
+        assert_error_code!(tx, buffer, Error::Success);
+
+        buffer[0] = CLA;
+        buffer[1] = INS_SIGN;
+        buffer[2] = LegacyPacketType::AddAndLast.into();
         buffer[3] = 0;
         buffer[4] = MSG.len() as u8;
         buffer[5..5 + MSG.len()].copy_from_slice(&MSG[..]);
