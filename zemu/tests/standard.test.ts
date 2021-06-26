@@ -204,7 +204,69 @@ describe.each(models)('Standard [%s]; sign', function (m) {
       if (m.name == "nanox") {
           sim.clickRight();
       }
-      await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-sign-${msg.length}`, 2);
+      await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-sign-${msg.length}-${curve}`, 2);
+
+      const resp = await respReq;
+
+      console.log(resp, m.name)
+
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('hash')
+      expect(resp).toHaveProperty('signature')
+      expect(resp.hash).toEqual(app.sig_hash(msg))
+
+      const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve);
+
+      let signatureOK = true;
+      switch (curve) {
+        case Curve.Ed25519:
+        case Curve.Ed25519_Slip10:
+            signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1,33))
+            break;
+
+        case Curve.Secp256K1:
+            signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey);
+          break;
+
+        case Curve.Secp256R1:
+            // FIXME: add later
+            // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
+            // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
+          break;
+
+        default:
+          throw Error("not a valid curve type")
+      }
+      expect(signatureOK).toEqual(true);
+
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
+describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
+    test.each(
+      cartesianProduct(
+          curves,
+          [
+              Buffer.from("francesco@zondax.ch"),
+              Buffer.alloc(300, 0)
+          ]))
+    ('sign message', async function (curve, msg) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+
+      const respReq = app.legacySignWithHash(APP_DERIVATION, curve, msg);
+
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      if (m.name == "nanox") {
+          sim.clickRight();
+      }
+      await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${msg.length}-${curve}`, 2);
 
       const resp = await respReq;
 
