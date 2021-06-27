@@ -22,6 +22,7 @@ use crate::handlers::legacy_version::{LegacyGetVersion, LegacyGit};
 use crate::handlers::public_key::GetAddress;
 use crate::handlers::signing::Sign;
 use crate::handlers::version::GetVersion;
+use crate::utils::{ApduBufferRead, ApduBufferWrite};
 
 pub const CLA: u8 = 0x80;
 
@@ -84,32 +85,23 @@ cfg_if! {
 }
 
 pub trait ApduHandler {
-    fn handle(
-        _flags: &mut u32,
-        tx: &mut u32,
-        _rx: u32,
-        apdu_buffer: &mut [u8],
-    ) -> Result<(), ApduError>;
+    fn handle<'apdu>(
+        flags: &mut u32,
+        apdu_buffer: ApduBufferRead<'apdu>,
+    ) -> (ApduBufferWrite<'apdu>, Option<ApduError>);
 }
 
-pub fn apdu_dispatch(
+pub fn apdu_dispatch<'apdu>(
     flags: &mut u32,
-    tx: &mut u32,
-    rx: u32,
-    apdu_buffer: &mut [u8],
-) -> Result<(), ApduError> {
+    apdu_buffer: ApduBufferRead<'apdu>,
+) -> (ApduBufferWrite<'apdu>, Option<ApduError>) {
     *flags = 0;
-    *tx = 0;
 
-    if rx < APDU_MIN_LENGTH {
-        return Err(WrongLength);
+    if apdu_buffer.cla() != CLA {
+        return (apdu_buffer.write(), Some(ClaNotSupported));
     }
 
-    if apdu_buffer[APDU_INDEX_CLA] != CLA {
-        return Err(ClaNotSupported);
-    }
-
-    let ins = apdu_buffer[APDU_INDEX_INS];
+    let ins = apdu_buffer.ins();
 
     // Reference for legacy API https://github.com/obsidiansystems/ledger-app-tezos/blob/58797b2f9606c5a30dd1ccc9e5b9962e45e10356/src/main.c#L16-L31
 
@@ -117,9 +109,9 @@ pub fn apdu_dispatch(
     cfg_if! {
         if #[cfg(feature = "dev")] {
             match ins {
-                INS_DEV_HASH => return Sha256::handle(flags, tx, rx, apdu_buffer),
-                INS_DEV_EXCEPT => return Except::handle(flags, tx, rx, apdu_buffer),
-                INS_DEV_ECHO_UI => return Echo::handle(flags, tx, rx, apdu_buffer),
+                INS_DEV_HASH => return Sha256::handle(flags, apdu_buffer),
+                INS_DEV_EXCEPT => return Except::handle(flags, apdu_buffer),
+                INS_DEV_ECHO_UI => return Echo::handle(flags, apdu_buffer),
                 _ => {},
             }
         }
@@ -130,28 +122,28 @@ pub fn apdu_dispatch(
         if #[cfg(feature = "baking")] {
             //baking-only instructions
             match ins {
-                INS_LEGACY_RESET => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
-                INS_LEGACY_QUERY_MAIN_HWM => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
-                INS_LEGACY_QUERY_ALL_HWM => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
+                INS_LEGACY_RESET |
+                INS_LEGACY_QUERY_MAIN_HWM |
+                INS_LEGACY_QUERY_ALL_HWM => return LegacyHWM::handle(flags, apdu_buffer),
 
-                INS_AUTHORIZE_BAKING => return Baking::handle(flags, tx, rx, apdu_buffer),
-                INS_DEAUTHORIZE_BAKING => return Baking::handle(flags, tx, rx, apdu_buffer),
-                INS_QUERY_AUTH_KEY_WITH_CURVE => return Baking::handle(flags, tx, rx, apdu_buffer),
-                INS_BAKER_SIGN => return Baking::handle(flags, tx, rx, apdu_buffer),
+                INS_AUTHORIZE_BAKING |
+                INS_DEAUTHORIZE_BAKING |
+                INS_QUERY_AUTH_KEY_WITH_CURVE |
+                INS_BAKER_SIGN => return Baking::handle(flags apdu_buffer),
 
-                INS_LEGACY_AUTHORIZE_BAKING => return Err(CommandNotAllowed),
-                INS_LEGACY_QUERY_AUTH_KEY => return Err(CommandNotAllowed),
-                INS_LEGACY_SETUP => return Err(CommandNotAllowed),
-                INS_LEGACY_DEAUTHORIZE => return Err(CommandNotAllowed),
-                INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => return Err(CommandNotAllowed),
-                INS_LEGACY_HMAC => return Err(CommandNotAllowed),
+                INS_LEGACY_AUTHORIZE_BAKING |
+                INS_LEGACY_QUERY_AUTH_KEY |
+                INS_LEGACY_SETUP |
+                INS_LEGACY_DEAUTHORIZE |
+                INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE |
+                INS_LEGACY_HMAC => return (apdu_buffer.write(), Some(CommandNotAllowed)),
                 _ => {}
             }
         } else if #[cfg(feature = "wallet")] {
             //wallet-only instructions
             #[allow(clippy::single_match)]
             match ins {
-                INS_LEGACY_SIGN_UNSAFE => return Sign::handle(flags, tx, rx, apdu_buffer),
+                INS_LEGACY_SIGN_UNSAFE => return Sign::handle(flags, apdu_buffer),
                 _ => {}
             }
         }
@@ -160,36 +152,53 @@ pub fn apdu_dispatch(
     //common instructions
     // FIXME: Unify using the trait
     match ins {
-        INS_LEGACY_GET_VERSION => LegacyGetVersion::handle(flags, tx, rx, apdu_buffer),
+        INS_LEGACY_GET_VERSION => LegacyGetVersion::handle(flags, apdu_buffer),
 
         INS_LEGACY_GET_PUBLIC_KEY | INS_LEGACY_PROMPT_PUBLIC_KEY | INS_GET_ADDRESS => {
-            GetAddress::handle(flags, tx, rx, apdu_buffer)
+            GetAddress::handle(flags, apdu_buffer)
         }
 
-        INS_LEGACY_GIT => LegacyGit::handle(flags, tx, rx, apdu_buffer),
+        INS_LEGACY_GIT => LegacyGit::handle(flags, apdu_buffer),
 
-        INS_LEGACY_SIGN | INS_LEGACY_SIGN_WITH_HASH | INS_SIGN => {
-            Sign::handle(flags, tx, rx, apdu_buffer)
-        }
+        INS_LEGACY_SIGN | INS_LEGACY_SIGN_WITH_HASH | INS_SIGN => Sign::handle(flags, apdu_buffer),
 
-        INS_GET_VERSION => GetVersion::handle(flags, tx, rx, apdu_buffer),
-        _ => Err(CommandNotAllowed),
+        INS_GET_VERSION => GetVersion::handle(flags, apdu_buffer),
+        _ => (apdu_buffer.write(), Some(CommandNotAllowed)),
     }
 }
 
 pub fn handle_apdu(flags: &mut u32, tx: &mut u32, rx: u32, apdu_buffer: &mut [u8]) {
     crate::sys::zemu_log_stack("handle_apdu\x00");
-    let response = apdu_dispatch(flags, tx, rx, apdu_buffer);
 
-    // Retrieve error code or use 0x9000 if ok
-    let error_bytes: [u8; 2] = response
-        .map_or_else(|e: ApduError| e as u16, |_| Success as u16)
-        .to_be_bytes();
-    let error_position = *tx as usize;
+    let n = {
+        //construct reader
+        let read = ApduBufferRead::new(apdu_buffer, rx);
+        match read {
+            Ok(r) => {
+                //pass to dispatch
+                let (write, mby_err) = apdu_dispatch(flags, r);
 
-    // Copy error code at the end of the response
-    apdu_buffer[error_position..error_position + 2].clone_from_slice(&error_bytes);
-    *tx += 2;
+                //close with error (if an error was given)
+                // or success (if no error)
+                write.close(mby_err)
+            }
+            //if failed to construct read, then it's too small
+            Err(_) => ApduBufferWrite::new(apdu_buffer).close(Some(ApduError::WrongLength)),
+        }
+    };
+
+    match n {
+        //if we got an error writing the code, then only write at the first 2 bytes
+        Err(_) => {
+            let err = ApduError::OutputBufferTooSmall as u16;
+            apdu_buffer[0..2].copy_from_slice(&err.to_be_bytes()[..]);
+            *tx = 2;
+        }
+        //otherwise set tx to the number returned by the writer
+        Ok(n) => {
+            *tx = n as u32;
+        }
+    }
 }
 
 #[cfg(test)]
