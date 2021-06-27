@@ -1,13 +1,8 @@
 version: 2.1
 jobs:
-  build:
-    parameters:
-      baking:
-        type: string
+  checks:
     docker:
       - image: zondax/rust-ci:latest
-    environment:
-      BAKING: << parameters.baking >>
     steps:
       - checkout
       - run:
@@ -28,6 +23,17 @@ jobs:
             cd ~/project/rust
             cargo audit --version
             cargo audit
+
+  build:
+    parameters:
+      baking:
+        type: string
+    docker:
+      - image: zondax/rust-ci:latest
+    environment:
+      BAKING: << parameters.baking >>
+    steps:
+      - checkout
       - run:
           name: run rust tests
           command: |
@@ -194,6 +200,8 @@ workflows:
 
   default:
     jobs:
+      - checks:
+          <<: *no-tags
       - build:
           <<: *no-tags
           matrix:
