@@ -29,26 +29,32 @@ pub struct Echo {
 
 impl ApduHandler for Echo {
     #[inline(never)]
-    fn handle(flags: &mut u32, tx: &mut u32, _: u32, apdu_buffer: &mut [u8]) -> Result<(), Error> {
-        if apdu_buffer[APDU_INDEX_INS] != INS_DEV_ECHO_UI {
-            return Err(Error::InsNotSupported);
+    fn handle<'apdu>(flags: &mut u32, apdu_buffer: ApduBufferRead<'apdu>) -> (ApduBufferWrite<'apdu>, Option<ApduError>) {
+        if apdu_buffer.ins() != INS_DEV_ECHO_UI {
+            return (apdu_buffer.write(), Some(Error::InsNotSupported));
         }
-        *tx = 0;
 
         let mut this: Echo = Default::default();
-        let len = apdu_buffer[4] as usize;
+        let payload = match apdu_buffer.payload() {
+            Ok(p) => p,
+            Err(e) => return (apdu_buffer.write(), Some(Error::WrongLength)),
+        };
+        let len = payload.len();
 
         if len > 17 + 17 {
-            return Err(Error::WrongLength);
+            return (apdu_buffer.write(), Some(Error::WrongLength));
         }
 
         let first = std::cmp::min(len, 17);
-        this.line1[..first].copy_from_slice(&apdu_buffer[5..5 + first]);
+        this.line1[..first].copy_from_slice(&payload[..first]);
 
         let second = std::cmp::min(len - 17, 17);
-        this.line2[..second].copy_from_slice(&apdu_buffer[5 + first..5 + first + second]);
+        this.line2[..second].copy_from_slice(&payload[first..first + second]);
 
-        unsafe { this.show(flags) }.map_err(|_| Error::ExecutionError)
+        match unsafe { this.show(flags) } {
+            Ok(_) => (apdu_buffer.write(), None),
+            Err(_) => (apdu_buffer.write(), Some(Error::ExecutionError))
+        }
     }
 }
 
