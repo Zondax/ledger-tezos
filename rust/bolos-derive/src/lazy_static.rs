@@ -77,7 +77,7 @@ fn produce_custom_ty(
     } else {
         return Err(Error::new(
             is_mut.span(),
-            format!("non-mut static items are not supported!"),
+            "non-mut static items are not supported!".to_string(),
         ));
     };
 

@@ -32,10 +32,7 @@ impl BufferState {
 #[cfg(test)]
 impl BufferState {
     const fn is_ram(&self) -> bool {
-        match self {
-            Self::WritingToRam(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::WritingToRam(_))
     }
 
     const fn is_flash(&self) -> bool {
@@ -211,11 +208,7 @@ mod tests {
         assert!(buffer.write(MSG).is_err());
 
         //find first occurence of MSG in buffer
-        assert!(buffer
-            .read()
-            .windows(MSG.len())
-            .position(|w| w == MSG)
-            .is_some())
+        assert!(buffer.read().windows(MSG.len()).any(|w| w == MSG))
     }
 
     #[test]

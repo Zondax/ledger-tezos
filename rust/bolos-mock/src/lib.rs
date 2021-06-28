@@ -5,7 +5,6 @@ cfg_if::cfg_if! {
     if #[cfg(not(bolos_sdk))] {
 
 extern crate std;
-use std::prelude::v1::*;
 
 /// Wrapper for 'os_sched_exit'
 /// Exit application with status

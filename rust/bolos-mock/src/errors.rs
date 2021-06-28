@@ -10,9 +10,7 @@ impl From<u16> for SyscallError {
 }
 
 impl Into<()> for SyscallError {
-    fn into(self) -> () {
-        ()
-    }
+    fn into(self) -> () {}
 }
 
 impl Into<u16> for SyscallError {

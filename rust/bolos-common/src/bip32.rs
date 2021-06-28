@@ -18,7 +18,7 @@ pub enum BIP32PathError {
 impl<const LEN: usize> BIP32Path<LEN> {
     ///Attempt to read a BIP32 Path from the provided input bytes
     pub fn read(input: &[u8]) -> Result<Self, BIP32PathError> {
-        if input.len() < 1 {
+        if input.is_empty() {
             return Err(BIP32PathError::ZeroLength);
         }
         let blen = input.len() - 1;

@@ -37,23 +37,15 @@ impl Into<u8> for Curve {
 
 impl Curve {
     pub fn is_weirstrass(&self) -> bool {
-        match self {
-            Self::Secp256K1 | Self::Secp256R1 => true,
-            _ => false,
-        }
+        matches!(self, Self::Secp256K1 | Self::Secp256R1)
     }
 
     pub fn is_twisted_edward(&self) -> bool {
-        match self {
-            Self::Ed25519 => true,
-            _ => false,
-        }
+        matches!(self, Self::Ed25519)
     }
 
     pub fn is_montgomery(&self) -> bool {
-        match self {
-            _ => false,
-        }
+        false
     }
 }
 

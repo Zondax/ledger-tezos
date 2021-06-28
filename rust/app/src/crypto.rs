@@ -147,7 +147,7 @@ impl Keypair {
             Curve::Ed25519 | Curve::Bip32Ed25519 | Curve::Secp256K1 | Curve::Secp256R1 => self
                 .secret
                 .sign::<Sha256>(data, out) //pass Sha256 for the signature nonce hasher
-                .map_err(|e| SignError::Sys(e)),
+                .map_err(SignError::Sys),
         }
     }
 }
