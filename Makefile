@@ -72,6 +72,7 @@ generate:
 endif
 
 test_all:
+	make rust_test
 	make zemu_install
 	make clean_build
 	BAKING=yes make

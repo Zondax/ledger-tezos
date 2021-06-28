@@ -15,12 +15,6 @@
 ********************************************************************************/
 #pragma once
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "modernize-use-nullptr"
-#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
-#pragma ide diagnostic ignored "OCUnusedMacroInspection"
-#pragma ide diagnostic ignored "modernize-deprecated-headers"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,10 +23,6 @@ extern "C" {
 #include <stdint.h>
 #include <stdio.h>
 #include "string.h"
-
-#ifndef __APPLE__
-extern void explicit_bzero(void *s, size_t n) __THROW __nonnull ((1));
-#endif
 
 #define __Z_INLINE inline __attribute__((always_inline)) static
 #define NV_ALIGN __attribute__ ((aligned(64)))
@@ -44,7 +34,7 @@ extern void explicit_bzero(void *s, size_t n) __THROW __nonnull ((1));
 #if defined (TARGET_NANOS) || defined(TARGET_NANOX)
 #include "zxmacros_ledger.h"
 #else
-#include "zxmacros_x64.h"
+#error "Not supported"
 #endif
 
 #ifndef UNUSED
@@ -55,5 +45,3 @@ extern void explicit_bzero(void *s, size_t n) __THROW __nonnull ((1));
 #ifdef __cplusplus
 }
 #endif
-
-#pragma clang diagnostic pop
