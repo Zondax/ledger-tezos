@@ -33,17 +33,9 @@ impl<const LEN: usize> BIP32Path<LEN> {
         let len = input[0] as usize;
         if len == 0 {
             return Err(BIP32PathError::ZeroLength);
-        }
-
-        if len > LEN {
+        } else if len > LEN || blen / 4 > len {
             return Err(BIP32PathError::TooMuchData);
-        }
-
-        if blen / 4 > len {
-            return Err(BIP32PathError::TooMuchData);
-        }
-
-        if blen / 4 < len {
+        } else if blen / 4 < len {
             return Err(BIP32PathError::NotEnoughData);
         }
 

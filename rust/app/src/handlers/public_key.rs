@@ -287,7 +287,7 @@ impl Viewable for AddrUI {
         (tx, Error::Success as _)
     }
 
-    fn reject(&mut self, _out: &mut [u8]) -> (usize, u16) {
+    fn reject(&mut self, _: &mut [u8]) -> (usize, u16) {
         (0, Error::CommandNotAllowed as _)
     }
 }
