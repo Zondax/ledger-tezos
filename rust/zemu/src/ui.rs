@@ -7,7 +7,7 @@ pub use comm::*;
 
 pub(self) mod bindings {
     #![allow(non_snake_case)]
-    #![allow(non_uppder_case_globals)]
+    #![allow(non_upper_case_globals)]
     #![allow(non_camel_case_types)]
 
     include!("ui/bindings.rs");

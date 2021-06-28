@@ -118,7 +118,7 @@ int main(void) {
                 // TODO: Move this to rust?
                 if (!app_init_done) {
                     io_app_init();
-                    app_init();                 // TODO: Move this to rust?
+                    view_idle_show(0, NULL);        // TODO: Move this to rust?
                     app_init_done = 1;
                     check_canary();
                 }

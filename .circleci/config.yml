@@ -1,15 +1,14 @@
 version: 2.1
 jobs:
-  build:
-    parameters:
-      baking:
-        type: string
+  checks:
     docker:
       - image: zondax/rust-ci:latest
-    environment:
-      BAKING: << parameters.baking >>
     steps:
       - checkout
+      - run:
+          name: show versions
+          command: |
+            rustup show
       - run:
           name: rustfmt
           command: |
@@ -21,13 +20,30 @@ jobs:
           command: |
             cd ~/project/rust
             cargo clippy --version
-            cargo clippy --all-features --all-targets || true
+            cargo clippy --features wallet --all-targets
+      - run:
+          name: clippy
+          command: |
+            cd ~/project/rust
+            cargo clippy --version
+            cargo clippy --features baking --all-targets
       - run:
           name: audit
           command: |
             cd ~/project/rust
             cargo audit --version
             cargo audit
+
+  build:
+    parameters:
+      baking:
+        type: string
+    docker:
+      - image: zondax/rust-ci:latest
+    environment:
+      BAKING: << parameters.baking >>
+    steps:
+      - checkout
       - run:
           name: run rust tests
           command: |
@@ -48,7 +64,7 @@ jobs:
       - run:
           name: Build baker app
           environment:
-            BAKING: yes
+            BAKING: 'yes'
           command: |
             source /home/zondax/.cargo/env
             make
@@ -85,7 +101,7 @@ jobs:
       - run:
           name: Build Ledger app (Baking)
           environment:
-            BAKING: yes
+            BAKING: 'yes'
           command: |
             make
       - run:
@@ -121,7 +137,7 @@ jobs:
       - run:
           name: Build Baking
           environment:
-            BAKING: yes
+            BAKING: 'yes'
           command: |
             source /home/zondax/.cargo/env
             cd /home/zondax/project
@@ -194,6 +210,8 @@ workflows:
 
   default:
     jobs:
+      - checks:
+          <<: *no-tags
       - build:
           <<: *no-tags
           matrix:

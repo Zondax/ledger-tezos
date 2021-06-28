@@ -18,7 +18,7 @@ pub enum BIP32PathError {
 impl<const LEN: usize> BIP32Path<LEN> {
     ///Attempt to read a BIP32 Path from the provided input bytes
     pub fn read(input: &[u8]) -> Result<Self, BIP32PathError> {
-        if input.len() < 1 {
+        if input.is_empty() {
             return Err(BIP32PathError::ZeroLength);
         }
         let blen = input.len() - 1;
@@ -33,11 +33,17 @@ impl<const LEN: usize> BIP32Path<LEN> {
         let len = input[0] as usize;
         if len == 0 {
             return Err(BIP32PathError::ZeroLength);
-        } else if len > LEN {
+        }
+
+        if len > LEN {
             return Err(BIP32PathError::TooMuchData);
-        } else if blen / 4 > len {
+        }
+
+        if blen / 4 > len {
             return Err(BIP32PathError::TooMuchData);
-        } else if blen / 4 < len {
+        }
+
+        if blen / 4 < len {
             return Err(BIP32PathError::NotEnoughData);
         }
 
@@ -52,7 +58,7 @@ impl<const LEN: usize> BIP32Path<LEN> {
                 array
             })
             //convert to u32
-            .map(|bytes| u32::from_be_bytes(bytes));
+            .map(u32::from_be_bytes);
 
         let mut components_array = [0; LEN];
         for (i, component) in components.enumerate() {

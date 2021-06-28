@@ -34,7 +34,6 @@ impl GetAddress {
         flags: &mut u32,
     ) -> Result<u32, Error> {
         sys::zemu_log_stack("GetAddres::get_public_and_address\x00");
-        let mut tx = 0;
 
         let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?;
         let mut ui = AddrUI {
@@ -43,9 +42,9 @@ impl GetAddress {
             with_addr: true,
         };
         if req_confirmation {
-            return unsafe { ui.show(flags) }
+            unsafe { ui.show(flags) }
                 .map_err(|_| Error::ExecutionError)
-                .map(|_| 0);
+                .map(|_| 0)
         } else {
             //we don't need to show so we execute the "accept" already
             // this way the "formatting" to `buffer` is all in the ui code
@@ -70,7 +69,7 @@ impl GetAddress {
     #[inline(never)]
     fn legacy_prompt_address_get_public(
         key: crypto::PublicKey,
-        buffer: &mut [u8],
+        _buffer: &mut [u8],
         flags: &mut u32,
     ) -> Result<u32, Error> {
         let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?;
@@ -81,9 +80,9 @@ impl GetAddress {
             with_addr: false,
         };
 
-        return unsafe { ui.show(flags) }
+        unsafe { ui.show(flags) }
             .map_err(|_| Error::ExecutionError)
-            .map(|_| 0);
+            .map(|_| 0)
     }
 }
 
@@ -223,7 +222,7 @@ struct AddrUI {
     addr: Addr,
     pkey: crypto::PublicKey,
 
-    /// indicates wheter to write `add` to out or not
+    /// indicates whether to write `add` to out or not
     with_addr: bool,
 }
 
@@ -288,7 +287,7 @@ impl Viewable for AddrUI {
         (tx, Error::Success as _)
     }
 
-    fn reject(&mut self, out: &mut [u8]) -> (usize, u16) {
+    fn reject(&mut self, _out: &mut [u8]) -> (usize, u16) {
         (0, Error::CommandNotAllowed as _)
     }
 }

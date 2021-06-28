@@ -41,6 +41,8 @@ typedef void (*viewfunc_accept_t)();
 zxerr_t secret_enabled();
 #endif
 
+void zemu_log_stack(char *ctx);
+
 /// view_init (initializes UI)
 void view_init();
 

@@ -5,7 +5,6 @@ use bolos::{
     hash::{Blake2b, Hasher},
 };
 use zemu_sys::{Show, ViewError, Viewable};
-use zeroize::Zeroize;
 
 use super::{resources::BUFFER, PacketType, PacketTypes};
 use crate::{
@@ -85,7 +84,7 @@ impl Sign {
             unsafe { BUFFER.acquire(Self)?.write(cdata) }.map_err(|_| Error::DataInvalid)?;
         } else if packet_type.is_last() {
             //this is pure data, but we need to return something now
-            let mut zbuffer = unsafe { BUFFER.acquire(Self)? };
+            let zbuffer = unsafe { BUFFER.acquire(Self)? };
             zbuffer.write(cdata).map_err(|_| Error::DataInvalid)?;
 
             let unsigned_hash = Self::blake2b_digest(zbuffer.read_exact())?;
@@ -240,7 +239,7 @@ impl Viewable for BlindSignUi {
 
 fn cleanup_globals() -> Result<(), Error> {
     {
-        let mut zbuffer = unsafe { BUFFER.acquire(Sign)? };
+        let zbuffer = unsafe { BUFFER.acquire(Sign)? };
         zbuffer.reset();
     }
 

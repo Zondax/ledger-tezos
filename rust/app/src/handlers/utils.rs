@@ -1,7 +1,5 @@
 use core::convert::TryFrom;
 
-use crate::constants::ApduError;
-
 #[repr(u8)]
 pub enum ZPacketType {
     Init = 0,
@@ -85,10 +83,10 @@ impl PacketType for LegacyPacketType {
     }
 
     fn is_last(&self) -> bool {
-        match self {
-            Self::InitAndLast | Self::HashAndLast | Self::AddAndLast => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Self::InitAndLast | Self::HashAndLast | Self::AddAndLast
+        )
     }
 }
 
