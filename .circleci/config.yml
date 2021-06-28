@@ -6,6 +6,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: show versions
+          command: |
+            rustup show
+      - run:
           name: rustfmt
           command: |
             cd ~/project/rust
@@ -16,7 +20,13 @@ jobs:
           command: |
             cd ~/project/rust
             cargo clippy --version
-            cargo clippy --all-features --all-targets || true
+            cargo clippy --features wallet --all-targets
+      - run:
+          name: clippy
+          command: |
+            cd ~/project/rust
+            cargo clippy --version
+            cargo clippy --features baking --all-targets
       - run:
           name: audit
           command: |
@@ -54,7 +64,7 @@ jobs:
       - run:
           name: Build baker app
           environment:
-            BAKING: yes
+            BAKING: 'yes'
           command: |
             source /home/zondax/.cargo/env
             make
@@ -91,7 +101,7 @@ jobs:
       - run:
           name: Build Ledger app (Baking)
           environment:
-            BAKING: yes
+            BAKING: 'yes'
           command: |
             make
       - run:
@@ -127,7 +137,7 @@ jobs:
       - run:
           name: Build Baking
           environment:
-            BAKING: yes
+            BAKING: 'yes'
           command: |
             source /home/zondax/.cargo/env
             cd /home/zondax/project
