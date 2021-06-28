@@ -60,9 +60,9 @@ fn move_to_global_storage<T: Sized>(item: T) -> Option<&'static mut T> {
 }
 
 impl<T: Viewable + Sized + 'static> Show for T {
-    unsafe fn show(self, flags: &mut u32) -> Result<(), ()> {
+    unsafe fn show(self, flags: &mut u32) -> Result<(), ShowTooBig> {
         //set `CURRENT_VIEWABLE`
-        let moved = move_to_global_storage(self).ok_or(())?;
+        let moved = move_to_global_storage(self).ok_or(ShowTooBig)?;
         CURRENT_VIEWABLE.replace(moved.into());
 
         //set view_review

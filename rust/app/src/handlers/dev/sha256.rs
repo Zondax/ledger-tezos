@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, prelude::v1::*};
+use std::prelude::v1::*;
 
 use sha2::digest::Digest;
 
@@ -61,7 +61,7 @@ impl ApduHandler for Sha256 {
 
                 //reset the buffer for next message
                 BUFFER.acquire(Self)?.reset();
-                BUFFER.release(Self);
+                let _ = BUFFER.release(Self);
                 Ok(())
             }
         } else {
@@ -133,7 +133,7 @@ mod tests {
         handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
-        let expected = sha2::Sha256::digest(&MSG[..]);
+        let expected = sha2::Sha256::digest(&MSG);
         let digest = &buffer[..tx as usize - 2];
         assert_eq!(digest, expected.as_slice());
     }
@@ -154,7 +154,7 @@ mod tests {
         buffer[2] = ZPacketType::Init.into();
         buffer[3] = 0;
         buffer[4] = len as u8;
-        buffer[5..5 + len].copy_from_slice(&MSG[..]);
+        buffer[5..5 + len].copy_from_slice(MSG);
 
         handle_apdu(&mut flags, &mut tx, 5 + len as u32, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
@@ -168,7 +168,7 @@ mod tests {
         handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
-        let expected = sha2::Sha256::digest(&MSG[..]);
+        let expected = sha2::Sha256::digest(&MSG);
         let digest = &buffer[..tx as usize - 2];
         assert_eq!(digest, expected.as_slice());
     }

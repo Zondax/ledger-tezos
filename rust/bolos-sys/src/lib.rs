@@ -18,6 +18,7 @@
 
 //! This crate provides bindings for Ledger's BOLOS, as well as wrappers and utilities
 
+#[allow(unused_imports)]
 #[macro_use]
 extern crate cfg_if;
 

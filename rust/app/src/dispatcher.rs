@@ -135,6 +135,7 @@ pub fn apdu_dispatch(
             }
         } else if #[cfg(feature = "wallet")] {
             //wallet-only instructions
+            #[allow(clippy::single_match)]
             match ins {
                 INS_LEGACY_SIGN_UNSAFE => return Sign::handle(flags, tx, rx, apdu_buffer),
                 _ => {}

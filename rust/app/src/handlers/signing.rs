@@ -264,7 +264,7 @@ mod tests {
 
     fn prepare_buffer(buffer: &mut [u8; 260], path: &[u32], curve: Curve) -> usize {
         let crv: u8 = curve.into();
-        let path = BIP32Path::<10>::new(path.into_iter().map(|n| 0x8000_0000 + n))
+        let path = BIP32Path::<10>::new(path.iter().map(|n| 0x8000_0000 + n))
             .unwrap()
             .serialize();
 

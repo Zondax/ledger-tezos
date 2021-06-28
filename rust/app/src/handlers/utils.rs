@@ -20,9 +20,9 @@ impl std::convert::TryFrom<u8> for ZPacketType {
     }
 }
 
-impl Into<u8> for ZPacketType {
-    fn into(self) -> u8 {
-        self as _
+impl From<ZPacketType> for u8 {
+    fn from(from: ZPacketType) -> Self {
+        from as _
     }
 }
 
@@ -52,9 +52,9 @@ impl std::convert::TryFrom<u8> for LegacyPacketType {
     }
 }
 
-impl Into<u8> for LegacyPacketType {
-    fn into(self) -> u8 {
-        self as _
+impl From<LegacyPacketType> for u8 {
+    fn from(from: LegacyPacketType) -> Self {
+        from as _
     }
 }
 

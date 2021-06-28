@@ -33,17 +33,20 @@ pub trait Viewable {
     fn reject(&mut self, out: &mut [u8]) -> (usize, u16);
 }
 
+pub struct ShowTooBig;
+
 pub trait Show: Viewable + Sized {
     /// This is to be called when you wish to show the item
     ///
     /// `flags` is the same `flags` parameter given in `ApduHandler::handle`
     ///
+    /// If an error is returned, then `Self` was too big to fit in the global memory
+    ///
+    /// # Safety
     /// It's important to return immediately from this function and give control
     /// back to the main loop if the return is Ok
     /// This is also why the function is unsafe, to make sure this postcondition is held
-    ///
-    /// If an error is returned, then `Self` was too big to fit in the global memory
     // for now we consume the item so we can guarantee
     // safe usage
-    unsafe fn show(self, flags: &mut u32) -> Result<(), ()>;
+    unsafe fn show(self, flags: &mut u32) -> Result<(), ShowTooBig>;
 }
