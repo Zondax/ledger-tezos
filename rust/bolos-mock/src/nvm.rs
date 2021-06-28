@@ -59,6 +59,10 @@ impl<const N: usize> NVM<N> {
     }
 
     /// This function is unsafe because you shouldn't be writing to this slice directly
+    ///
+    /// # Safety
+    /// To correctly write to the underlying slice, it's important that this struct or `nvm_write`
+    /// is used, otherwise the write will fail
     pub unsafe fn get_mut(&mut self) -> &mut [u8; N] {
         &mut self.0
     }

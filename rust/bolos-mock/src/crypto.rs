@@ -24,14 +24,13 @@ impl TryFrom<u8> for Curve {
     }
 }
 
-impl Into<u8> for Curve {
-    fn into(self) -> u8 {
-        let n = match self {
+impl From<Curve> for u8 {
+    fn from(from: Curve) -> Self {
+        match from {
             Curve::Secp256K1 => 1,
             Curve::Secp256R1 => 2,
             Curve::Ed25519 => 3,
-        };
-        n as u8
+        }
     }
 }
 
@@ -69,15 +68,13 @@ impl TryFrom<u8> for Mode {
     }
 }
 
-impl Into<u8> for Mode {
-    fn into(self) -> u8 {
-        let n = match self {
+impl From<Mode> for u8 {
+    fn from(from: Mode) -> Self {
+        match from {
             Mode::BIP32 => 0,
             Mode::Ed25519Slip10 => 1,
             // Mode::Slip21 => HDW_SLIP21,
-        };
-
-        n as u8
+        }
     }
 }
 

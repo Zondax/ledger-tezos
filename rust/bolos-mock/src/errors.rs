@@ -9,22 +9,21 @@ impl From<u16> for SyscallError {
     }
 }
 
-impl Into<()> for SyscallError {
-    fn into(self) -> () {}
+impl From<SyscallError> for () {
+    fn from(_: SyscallError) -> Self {}
 }
 
-impl Into<u16> for SyscallError {
-    fn into(self) -> u16 {
-        match self {
+impl From<SyscallError> for u16 {
+    fn from(from: SyscallError) -> Self {
+        match from {
             SyscallError::Code(e) => e,
         }
     }
 }
 
-impl Into<u32> for SyscallError {
-    fn into(self) -> u32 {
-        let u: u16 = self.into();
-        u as u32
+impl From<SyscallError> for u32 {
+    fn from(from: SyscallError) -> Self {
+        u16::from(from) as u32
     }
 }
 

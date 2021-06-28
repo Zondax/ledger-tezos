@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, prelude::v1::*};
+use std::prelude::v1::*;
 
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
@@ -90,7 +90,7 @@ mod tests {
     #[test]
     #[serial(ui)]
     fn apdu_dev_echo() {
-        const MSG: [u8; 34] = ['a' as u8; 34];
+        const MSG: [u8; 34] = [b'a'; 34];
 
         let mut flags = 0;
         let mut tx = 0;

@@ -287,12 +287,13 @@ impl Viewable for AddrUI {
         (tx, Error::Success as _)
     }
 
-    fn reject(&mut self, _out: &mut [u8]) -> (usize, u16) {
+    fn reject(&mut self, _: &mut [u8]) -> (usize, u16) {
         (0, Error::CommandNotAllowed as _)
     }
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 impl Addr {
     pub fn from_parts(prefix: [u8; 3], hash: [u8; 20], checksum: [u8; 4]) -> Self {
         Self {
@@ -345,7 +346,7 @@ mod tests {
 
     fn prepare_buffer<const LEN: usize>(buffer: &mut [u8; 260], path: &[u32], curve: Curve) {
         let crv: u8 = curve.into();
-        let path = BIP32Path::<LEN>::new(path.into_iter().map(|n| 0x8000_0000 + n))
+        let path = BIP32Path::<LEN>::new(path.iter().map(|n| 0x8000_0000 + n))
             .unwrap()
             .serialize();
 

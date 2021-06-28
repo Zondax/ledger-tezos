@@ -18,7 +18,7 @@ pub(self) struct Slot<'nvm> {
 
 #[derive(Debug)]
 enum SlotError {
-    CRC { expected: u32, found: u32 },
+    Crc { expected: u32, found: u32 },
 }
 
 impl<'nvm> Slot<'nvm> {
@@ -64,10 +64,10 @@ impl<'nvm> Slot<'nvm> {
 
         let expected = Self::crc32(cnt, payload);
         if crc != expected {
-            Err(SlotError::CRC {
+            return Err(SlotError::Crc {
                 expected,
                 found: crc,
-            })?;
+            });
         }
 
         Ok(Slot {
@@ -116,8 +116,8 @@ impl<'nvm> Slot<'nvm> {
 
         Slot {
             counter,
-            crc,
             payload,
+            crc,
         }
     }
 }
@@ -130,7 +130,7 @@ pub struct NVMWearSlot {
 
 #[derive(Debug)]
 pub enum WearError {
-    CRC { expected: u32, found: u32 },
+    Crc { expected: u32, found: u32 },
     NVMWrite,
     Uninitialized,
 }
@@ -142,9 +142,9 @@ impl NVMWearSlot {
         }
     }
 
-    pub fn with_baking<'m, const ARRAY_SIZE: usize, const BYTES: usize>(
-        storage: &'m mut PIC<NVM<BYTES>>,
-    ) -> &'m mut PIC<[NVMWearSlot; ARRAY_SIZE]> {
+    pub fn with_baking<const ARRAY_SIZE: usize, const BYTES: usize>(
+        storage: &mut PIC<NVM<BYTES>>,
+    ) -> &mut PIC<[NVMWearSlot; ARRAY_SIZE]> {
         //we need to make sure we passed the right details
         assert_eq!(BYTES, 64 * ARRAY_SIZE);
 
@@ -161,7 +161,7 @@ impl NVMWearSlot {
 
     pub(self) fn as_slot(&self) -> Result<Slot<'_>, WearError> {
         Slot::from_storage(&self.storage)
-            .map_err(|SlotError::CRC { expected, found }| WearError::CRC { expected, found })
+            .map_err(|SlotError::Crc { expected, found }| WearError::Crc { expected, found })
     }
 
     /// Clears out all data on the slot
@@ -254,7 +254,7 @@ impl<'s, const S: usize> Wear<'s, S> {
         let slot = self.slots.get_ref()[self.idx()].as_slot()?;
 
         if slot.counter == 0 {
-            return Err(WearError::Uninitialized);
+            Err(WearError::Uninitialized)
         } else {
             Ok(slot.payload)
         }

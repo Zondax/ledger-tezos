@@ -20,13 +20,13 @@ jobs:
           command: |
             cd ~/project/rust
             cargo clippy --version
-            cargo clippy --features wallet --all-targets
+            cargo clippy --features "wallet","dev" --all-targets
       - run:
           name: clippy
           command: |
             cd ~/project/rust
             cargo clippy --version
-            cargo clippy --features baking --all-targets
+            cargo clippy --features "baking","dev" --all-targets
       - run:
           name: audit
           command: |

@@ -5,9 +5,7 @@
 
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
-    dispatcher::{
-        ApduHandler, INS_LEGACY_QUERY_ALL_HWM, INS_LEGACY_QUERY_MAIN_HWM, INS_LEGACY_RESET,
-    },
+    dispatcher::ApduHandler,
     sys::{new_wear_leveller, wear_leveller::Wear},
 };
 
@@ -36,7 +34,7 @@ impl LegacyHWM {
         let wm = WaterMark::reset(level);
         let data: [u8; 52] = wm.into();
 
-        unsafe { MAIN.write(data.clone()) }.map_err(|_| Error::ExecutionError)?;
+        unsafe { MAIN.write(data) }.map_err(|_| Error::ExecutionError)?;
         unsafe { TEST.write(data) }.map_err(|_| Error::ExecutionError)
     }
 
@@ -69,6 +67,7 @@ impl LegacyHWM {
         Ok(out)
     }
 
+    #[allow(dead_code)]
     pub fn format() -> Result<(), Error> {
         unsafe { MAIN.format() }
             .and_then(|_| unsafe { TEST.format() })
@@ -79,43 +78,46 @@ impl LegacyHWM {
 impl ApduHandler for LegacyHWM {
     #[inline(never)]
     fn handle(_: &mut u32, tx: &mut u32, _: u32, apdu: &mut [u8]) -> Result<(), Error> {
-        match apdu[APDU_INDEX_INS] {
-            INS_LEGACY_RESET => {
-                let level = {
-                    let mut array = [0; 4];
-                    array.copy_from_slice(&apdu[5..9]);
-                    u32::from_be_bytes(array)
-                };
+        use crate::dispatcher::{
+            INS_LEGACY_QUERY_ALL_HWM, INS_LEGACY_QUERY_MAIN_HWM, INS_LEGACY_RESET,
+        };
 
-                Self::reset(level)
+        let ins = apdu[APDU_INDEX_INS];
+
+        if ins == INS_LEGACY_RESET {
+            let level = {
+                let mut array = [0; 4];
+                array.copy_from_slice(&apdu[5..9]);
+                u32::from_be_bytes(array)
+            };
+
+            Self::reset(level)
+        } else if ins == INS_LEGACY_QUERY_MAIN_HWM {
+            let payload = Self::hwm()?;
+            let len = payload.len();
+
+            if apdu.len() < len {
+                return Err(Error::OutputBufferTooSmall);
             }
-            INS_LEGACY_QUERY_MAIN_HWM => {
-                let payload = Self::hwm()?;
-                let len = payload.len();
 
-                if apdu.len() < len {
-                    return Err(Error::OutputBufferTooSmall);
-                }
+            apdu[..len].copy_from_slice(&payload[..]);
+            *tx = len as u32;
 
-                apdu[..len].copy_from_slice(&payload[..]);
-                *tx = len as u32;
+            Ok(())
+        } else if ins == INS_LEGACY_QUERY_ALL_HWM {
+            let payload = Self::all_hwm()?;
+            let len = payload.len();
 
-                Ok(())
+            if apdu.len() < len {
+                return Err(Error::OutputBufferTooSmall);
             }
-            INS_LEGACY_QUERY_ALL_HWM => {
-                let payload = Self::all_hwm()?;
-                let len = payload.len();
 
-                if apdu.len() < len {
-                    return Err(Error::OutputBufferTooSmall);
-                }
+            apdu[..len].copy_from_slice(&payload[..]);
+            *tx = len as u32;
 
-                apdu[..len].copy_from_slice(&payload[..]);
-                *tx = len as u32;
-
-                Ok(())
-            }
-            _ => Err(Error::InsNotSupported),
+            Ok(())
+        } else {
+            Err(Error::InsNotSupported)
         }
     }
 }
@@ -135,18 +137,18 @@ impl From<&[u8; 52]> for WaterMark {
             u32::from_be_bytes(array)
         };
 
-        Self { endorsement, level }
+        Self { level, endorsement }
     }
 }
 
-impl Into<[u8; 52]> for WaterMark {
-    fn into(self) -> [u8; 52] {
+impl From<WaterMark> for [u8; 52] {
+    fn from(from: WaterMark) -> Self {
         let mut out = [0; 52];
 
-        let level = self.level.to_be_bytes();
+        let level = from.level.to_be_bytes();
         out[1..5].copy_from_slice(&level[..]);
 
-        out[1] = self.endorsement as _;
+        out[1] = from.endorsement as _;
         out
     }
 }
