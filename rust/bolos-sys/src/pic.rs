@@ -76,7 +76,7 @@ impl PIC<()> {
     pub unsafe fn manual(ptr: usize) -> usize {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {
-                let ptr = unsafe { super::raw::pic(ptr as _) as usize };
+                let ptr = super::raw::pic(ptr as _) as usize;
 
                 ptr
             } else {

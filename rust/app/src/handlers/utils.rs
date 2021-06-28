@@ -1,7 +1,5 @@
 use core::convert::TryFrom;
 
-use crate::constants::ApduError;
-
 #[repr(u8)]
 pub enum ZPacketType {
     Init = 0,

@@ -21,6 +21,10 @@ impl PublicKey {
     pub fn len(&self) -> usize {
         todo!("len ecfp256 pubkey")
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl AsRef<[u8]> for PublicKey {

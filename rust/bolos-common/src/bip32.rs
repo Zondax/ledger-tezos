@@ -58,7 +58,7 @@ impl<const LEN: usize> BIP32Path<LEN> {
                 array
             })
             //convert to u32
-            .map(|bytes| u32::from_be_bytes(bytes));
+            .map(u32::from_be_bytes);
 
         let mut components_array = [0; LEN];
         for (i, component) in components.enumerate() {
