@@ -2,8 +2,7 @@ use std::convert::TryFrom;
 
 use nom::{
     bytes::complete::take,
-    number::complete::{be_u32, le_u32, le_u64, le_u8},
-    IResult,
+    number::complete::{be_u32, le_u8},
 };
 
 use zemu_sys::{Show, ViewError, Viewable};
@@ -13,7 +12,7 @@ use bolos::{
     hash::{Blake2b, Hasher},
 };
 
-use crate::constants::{ApduError, APDU_INDEX_P1, APDU_INDEX_P2};
+use crate::constants::{APDU_INDEX_P1, APDU_INDEX_P2};
 use crate::handlers::parser_common::ParserError;
 use crate::handlers::PacketType;
 use crate::{
@@ -167,8 +166,6 @@ impl BlockData {
 static mut BAKINGPATH: WearLeveller =
     new_wear_leveller!(N_PAGES_BAKINGPATH).expect("NVM might be corrupted");
 
-pub const BIP32_MAX_BYTES_LENGTH: usize = 1 + 4 * BIP32_MAX_LENGTH;
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct Bip32PathAndCurve {
     pub curve: crypto::Curve,
@@ -186,7 +183,7 @@ impl Bip32PathAndCurve {
     pub fn try_from_bytes(from: &[u8; 52]) -> Result<Self, Error> {
         let curve = crypto::Curve::try_from(from[0]).map_err(|_| Error::DataInvalid)?;
         let components_length = from[1];
-        if (components_length > BIP32_MAX_LENGTH as u8) {
+        if components_length > BIP32_MAX_LENGTH as u8 {
             return Err(Error::WrongLength);
         }
         let path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(
@@ -243,7 +240,7 @@ impl Baking {
         //Check if the current baking path in NVM is un-initialized
         let current_path = unsafe { BAKINGPATH.read() };
         if let Err(error_msg) = current_path {
-            if (error_msg != WearError::Uninitialized) {
+            if error_msg != WearError::Uninitialized {
                 //Something else went wrong
                 Err(Error::ExecutionError)
             } else {
@@ -275,19 +272,19 @@ impl Baking {
 
     #[inline(never)]
     fn deauthorize_baking(req_confirmation: bool) -> Result<u32, Error> {
-        if (!req_confirmation) {
+        if !req_confirmation {
             return Err(Error::ApduCodeConditionsNotSatisfied);
         }
         //TODO: show confirmation of deletion on screen
         //FIXME: check if we need to format the HWM??
         LegacyHWM::format()?;
         Self::check_and_delete_path()?;
-        Ok((0))
+        Ok(0)
     }
 
     #[inline(never)]
     fn authorize_baking(req_confirmation: bool, buffer: &mut [u8]) -> Result<u32, Error> {
-        if (!req_confirmation) {
+        if !req_confirmation {
             return Err(Error::ApduCodeConditionsNotSatisfied);
         }
 
@@ -304,17 +301,17 @@ impl Baking {
         let key = GetAddress::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
         let path_and_data = Bip32PathAndCurve::new(curve, bip32_path);
         Self::check_and_store_path(path_and_data)?;
-        let pkLen = Self::get_public(key, &mut buffer[1..])?;
-        buffer[0] = pkLen as u8;
+        let pk_len = Self::get_public(key, &mut buffer[1..])?;
+        buffer[0] = pk_len as u8;
 
         LegacyHWM::reset(0).map_err(|_| Error::Busy)?;
 
-        Ok(pkLen + 1)
+        Ok(pk_len + 1)
     }
 
     #[inline(never)]
     fn query_authkey(req_confirmation: bool, buffer: &mut [u8]) -> Result<u32, Error> {
-        if (req_confirmation) {
+        if req_confirmation {
             //TODO show confirmation on screen??
         }
         //Check if the current baking path in NVM is initialized
@@ -326,12 +323,12 @@ impl Baking {
         Bip32PathAndCurve::try_from_bytes(&current_path)?;
         let bip32_pathsize = current_path[1] as usize;
         buffer[0..1 + 4 * bip32_pathsize].copy_from_slice(&current_path[1..2 + 4 * bip32_pathsize]);
-        Ok((1 + 4 * bip32_pathsize as u32))
+        Ok(1 + 4 * bip32_pathsize as u32)
     }
 
     #[inline(never)]
     fn query_authkey_withcurve(req_confirmation: bool, buffer: &mut [u8]) -> Result<u32, Error> {
-        if (req_confirmation) {
+        if req_confirmation {
             //TODO show confirmation on screen??
         }
         //Check if the current baking path in NVM is initialized
@@ -343,7 +340,7 @@ impl Baking {
         Bip32PathAndCurve::try_from_bytes(&current_path)?;
         let bip32_pathsize = current_path[1] as usize;
         buffer[0..2 + 4 * bip32_pathsize].copy_from_slice(&current_path[0..2 + 4 * bip32_pathsize]);
-        Ok((2 + 4 * bip32_pathsize as u32))
+        Ok(2 + 4 * bip32_pathsize as u32)
     }
 
     //FIXME: grab this from signing.rs
@@ -364,7 +361,7 @@ impl Baking {
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
         let nvm_bip = Bip32PathAndCurve::try_from_bytes(&current_path)?;
 
-        if (nvm_bip.path != *path || nvm_bip.curve != *curve) {
+        if nvm_bip.path != *path || nvm_bip.curve != *curve {
             //TODO: show that bip32 paths don't match??
             return Err(Error::DataInvalid);
         } else {
@@ -377,7 +374,7 @@ impl Baking {
         let cdata_len = buffer[4] as usize;
         let cdata = &buffer[5..5 + cdata_len];
         let packet_type = PacketType::try_from(buffer[2]).map_err(|_| Error::InvalidP1P2)?;
-        let bakingUI: BakingSignUI;
+        let baking_ui: BakingSignUI;
         match packet_type {
             PacketType::Init => {
                 //first packet contains the curve data on the second parameter
@@ -399,7 +396,7 @@ impl Baking {
                 //this should not happen as there is only 1 packet??
             }
             PacketType::Last => {
-                let (path, curve) = Self::get_derivation_info()?;
+                let (_path, _curve) = Self::get_derivation_info()?;
 
                 let hw = LegacyHWM::read()?;
                 //do watermarks checks
@@ -414,11 +411,11 @@ impl Baking {
                     Preemble::EndorsementPreemble => {
                         let (_, endorsement) =
                             EndorsementData::from_bytes(&cdata).map_err(|_| Error::DataInvalid)?;
-                        if (!endorsement.validate_with_watermark(&hw)) {
+                        if !endorsement.validate_with_watermark(&hw) {
                             return Err(Error::DataInvalid);
                             //TODO: show endorsement data on screen
                         }
-                        bakingUI = BakingSignUI {
+                        baking_ui = BakingSignUI {
                             endorsement: Some(endorsement),
                             blocklevel: None,
                         };
@@ -427,11 +424,11 @@ impl Baking {
                         let (_, blockdata) =
                             BlockData::from_bytes(&cdata).map_err(|_| Error::DataInvalid)?;
 
-                        if (!blockdata.validate_with_watermark(&hw)) {
+                        if !blockdata.validate_with_watermark(&hw) {
                             return Err(Error::DataInvalid);
                         }
                         //TODO: show blocklevel on screen
-                        bakingUI = BakingSignUI {
+                        baking_ui = BakingSignUI {
                             endorsement: None,
                             blocklevel: Some(blockdata),
                         };
@@ -460,7 +457,7 @@ impl Baking {
                     }
                 }
 
-                return unsafe { bakingUI.show(flags) }
+                return unsafe { baking_ui.show(flags) }
                     .map_err(|_| Error::ExecutionError)
                     .map(|_| 0);
             }
@@ -473,12 +470,33 @@ struct BakingSignUI {
     pub blocklevel: Option<BlockData>,
 }
 
+fn write_u32_to_buffer(num: u32, buffer: &mut [u8]) -> Result<usize, Error> {
+    //TODO: use a zxlib function for this
+    let mut num_size: usize = 0;
+    if num == 0 {
+        buffer[0] = 48;
+        num_size = 1;
+    } else {
+        let mut digits = num;
+        while digits > 0 {
+            buffer[num_size] = (48 + digits % 10) as u8; //0x30 + digit
+            digits /= 10;
+            num_size += 1;
+            if num_size >= buffer.len() {
+                return Err(Error::OutputBufferTooSmall);
+            }
+        }
+    }
+    buffer.reverse();
+    Ok(num_size)
+}
+
 impl Viewable for BakingSignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
         if self.endorsement.is_some() {
-            Ok(1)
+            Ok(4)
         } else if self.blocklevel.is_some() {
-            Ok(1)
+            Ok(3)
         } else {
             Err(ViewError::NoData)
         }
@@ -491,10 +509,17 @@ impl Viewable for BakingSignUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
-        if let 0 = item_n {
-            if let Some(endorsement) = &self.endorsement {
-                let title_content = bolos::PIC::new(b"Baking End\x00").into_inner();
+        if let Some(endorsement) = &self.endorsement {
+            if item_n == 0 {
+                let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
+                title[..title_content.len()].copy_from_slice(title_content);
 
+                let message_content = bolos::PIC::new(b"Endorsement\x00").into_inner();
+                message[..message_content.len()].copy_from_slice(message_content);
+                return Ok(1);
+            }
+            if item_n == 1 {
+                let title_content = bolos::PIC::new(b"Branch\x00").into_inner();
                 title[..title_content.len()].copy_from_slice(title_content);
 
                 let m_len = message.len() - 1; //null byte terminator
@@ -511,32 +536,77 @@ impl Viewable for BakingSignUI {
                     message[chunk.len() * 2] = 0; //null terminate
 
                     let n_pages = (32 * 2) / m_len;
-                    Ok(1 + n_pages as u8)
+                    return Ok(1 + n_pages as u8);
                 } else {
                     hex::encode_to_slice(&endorsement.branch.0[..], &mut message[..64])
                         .map_err(|_| ViewError::Unknown)?;
                     message[64] = 0; //null terminate
-                    Ok(1)
+                    return Ok(1);
                 }
-            } else if let Some(_) = &self.blocklevel {
-                let title_content = bolos::PIC::new(b"Baking Block\x00").into_inner();
-
+            }
+            if item_n == 2 {
+                let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                hex::encode_to_slice(&[0u8; 6], &mut message[..12]);
-                message[12] = 0;
-                Ok(1)
-            } else {
-                Err(ViewError::NoData)
+                let mut buffer = [0u8; 100];
+                let num_digits = write_u32_to_buffer(endorsement.level, &mut buffer)
+                    .map_err(|_| ViewError::Unknown)?;
+                message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
+                message[num_digits] = 0;
+                return Ok(1);
             }
+            if item_n == 3 {
+                let title_content = bolos::PIC::new(b"ChainID\x00").into_inner();
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mut buffer = [0u8; 100];
+                let num_digits = write_u32_to_buffer(endorsement.chain_id, &mut buffer)
+                    .map_err(|_| ViewError::Unknown)?;
+                message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
+                message[num_digits] = 0;
+                return Ok(1);
+            }
+            return Err(ViewError::NoData);
+        } else if let Some(block) = &self.blocklevel {
+            if item_n == 0 {
+                let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let message_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
+                message[..message_content.len()].copy_from_slice(message_content);
+                return Ok(1);
+            }
+            if item_n == 1 {
+                let title_content = bolos::PIC::new(b"Chain_ID\x00").into_inner();
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mut buffer = [0u8; 100];
+                let num_digits = write_u32_to_buffer(block.chain_id, &mut buffer)
+                    .map_err(|_| ViewError::Unknown)?;
+                message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
+                message[num_digits] = 0;
+                return Ok(1);
+            }
+            if item_n == 2 {
+                let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mut buffer = [0u8; 100];
+                let num_digits = write_u32_to_buffer(block.level, &mut buffer)
+                    .map_err(|_| ViewError::Unknown)?;
+                message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
+                message[num_digits] = 0;
+                return Ok(1);
+            }
+            return Err(ViewError::NoData);
         } else {
-            Err(ViewError::NoData)
+            return Err(ViewError::NoData);
         }
     }
 
     fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
-        let mut blocklevel: u32 = 0;
-        let mut is_endorsement: bool = false;
+        let blocklevel: u32;
+        let is_endorsement: bool;
         if let Some(endorsement) = &self.endorsement {
             blocklevel = endorsement.level;
             is_endorsement = true;
@@ -575,11 +645,11 @@ impl Viewable for BakingSignUI {
 
         let mut sig = [0; 100];
 
-        let unsigned_hash = [0u8; 32];
+        let unsigned_hash = [0u8; 32]; //FIXME: sign the hash of the datablob
 
         let sz = keypair
             .sign(&unsigned_hash, &mut sig[..])
-            .unwrap_or_else(|e| 0);
+            .unwrap_or_else(|_| 0);
         if sz == 0 {
             return (0, Error::ExecutionError as _);
         }

@@ -321,7 +321,7 @@ describe.each(models)('Sign baking endorsement [%s] - pubkey', function (m) {
             if (m.name == "nanox") {
                 sim.clickRight();
             }
-            await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-bakersign-endorsement`, 2);
+            await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-bakersign-endorsement`, 5);
 
             const respSig = await respReq;
 
@@ -346,7 +346,7 @@ describe.each(models)('Sign baking blocklevel [%s] - pubkey', function (m) {
             console.log(resp, m.name);
             expect(resp.returnCode).toEqual(0x9000);
 
-            const baker_blob = app.get_blocklevel_info(1,0, 5, 1);
+            const baker_blob = app.get_blocklevel_info(1,0, 123456, 1);
 
             const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob);
 
@@ -354,7 +354,7 @@ describe.each(models)('Sign baking blocklevel [%s] - pubkey', function (m) {
             if (m.name == "nanox") {
                 sim.clickRight();
             }
-            await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-bakersign-block`, 1);
+            await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-bakersign-block`, 3);
 
             const respSig = await respReq;
 
@@ -387,7 +387,8 @@ describe.each(models)('Sign baking blocklevel then endorse [%s]', function (m) {
             if (m.name == "nanox") {
                await sim.clickRight();
             }
-
+            await sim.clickRight();
+            await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
             const sig = await sigreq;
@@ -410,6 +411,9 @@ describe.each(models)('Sign baking blocklevel then endorse [%s]', function (m) {
             if (m.name == "nanox") {
                 await sim.clickRight();
             }
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickRight();
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
