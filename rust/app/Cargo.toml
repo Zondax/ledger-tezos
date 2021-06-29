@@ -10,7 +10,7 @@ name = "rslib"
 crate-type = ["staticlib"]
 
 [features]
-baking = ["bolos/wear"]
+baking = ["bolos/flash-slot"]
 wallet = []
 dev = ["sha2"]
 default = []

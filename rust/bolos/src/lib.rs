@@ -26,10 +26,10 @@ extern crate cfg_if;
 pub use bolos_derive::*;
 
 cfg_if! {
-    if #[cfg(feature = "wear")] {
+    if #[cfg(feature = "flash-slot")] {
         #[macro_use]
-        pub mod wear_leveller;
-        pub use wear_leveller::Wear;
+        pub mod flash_slot;
+        pub use flash_slot::Wear;
     }
 }
 

@@ -21,7 +21,7 @@
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::ApduHandler,
-    sys::{new_wear_leveller, wear_leveller::Wear},
+    sys::{new_flash_slot, flash_slot::Wear},
 };
 
 const N_PAGES: usize = 8;
@@ -36,10 +36,10 @@ const ALL_HWM_LEN: usize = 12;
 const MAINNET_CHAIN_ID: u32 = 0x7A06A770;
 
 #[bolos::lazy_static]
-static mut MAIN: WearLeveller = new_wear_leveller!(N_PAGES).expect("NVM might be corrupted");
+static mut MAIN: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
 
 #[bolos::lazy_static]
-static mut TEST: WearLeveller = new_wear_leveller!(N_PAGES).expect("NVM might be corrupted");
+static mut TEST: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
 
 pub struct LegacyHWM {}
 

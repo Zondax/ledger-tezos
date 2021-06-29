@@ -289,9 +289,9 @@ impl<'s, const S: usize> Wear<'s, S> {
 }
 
 #[macro_export]
-macro_rules! new_wear_leveller {
+macro_rules! new_flash_slot {
     ($slots:expr) => {{
-        use $crate::wear_leveller::{NVMWearSlot, Wear, PAGE_SIZE, ZEROED_STORAGE};
+        use $crate::flash_slot::{NVMWearSlot, Wear, PAGE_SIZE, ZEROED_STORAGE};
 
         const SLOTS: usize = $slots;
         const BYTES: usize = SLOTS * PAGE_SIZE;
@@ -313,7 +313,7 @@ mod tests {
 
     #[test]
     fn macro_works() {
-        let mut wear = new_wear_leveller!(2).expect("no nvm/crc issues");
+        let mut wear = new_flash_slot!(2).expect("no nvm/crc issues");
 
         assert_eq!(0, wear.idx());
         assert_eq!(2, wear.slots().len())
@@ -321,7 +321,7 @@ mod tests {
 
     #[test]
     fn idx_increase() {
-        let mut wear = new_wear_leveller!(5).expect("no nvm/crc issues");
+        let mut wear = new_flash_slot!(5).expect("no nvm/crc issues");
 
         wear.write([42; SLOT_SIZE]).expect("no nvm issues");
         assert_eq!(1, wear.idx());
@@ -329,7 +329,7 @@ mod tests {
 
     #[test]
     fn idx_loop() {
-        let mut wear = new_wear_leveller!(2).expect("no nvm/crc issues");
+        let mut wear = new_flash_slot!(2).expect("no nvm/crc issues");
         assert_eq!(0, wear.idx());
 
         wear.write([42; SLOT_SIZE]).expect("no nvm issues");
@@ -340,7 +340,7 @@ mod tests {
 
     #[test]
     fn counter_increase() {
-        let mut wear = new_wear_leveller!(2).expect("no nvm/crc issues");
+        let mut wear = new_flash_slot!(2).expect("no nvm/crc issues");
         assert_eq!(0, *wear.counter());
 
         wear.write([0; SLOT_SIZE]).expect("no nvm issues");
@@ -352,7 +352,7 @@ mod tests {
 
     #[test]
     fn read_back() {
-        let mut wear = new_wear_leveller!(1).expect("no nvm/crc issues");
+        let mut wear = new_flash_slot!(1).expect("no nvm/crc issues");
 
         const MSG: [u8; SLOT_SIZE] = [42; SLOT_SIZE];
 
@@ -362,7 +362,7 @@ mod tests {
 
     #[test]
     fn no_uninitialized_read() {
-        let wear = new_wear_leveller!(1).expect("no nvm/crc issues");
+        let wear = new_flash_slot!(1).expect("no nvm/crc issues");
 
         wear.read()
             .expect_err("can't read without writing once first");
@@ -370,7 +370,7 @@ mod tests {
 
     #[test]
     fn format() {
-        let mut wear = new_wear_leveller!(1).expect("no nvm/crc issues");
+        let mut wear = new_flash_slot!(1).expect("no nvm/crc issues");
 
         wear.write([42; SLOT_SIZE]).expect("no nvm issues");
         wear.write([24; SLOT_SIZE]).expect("no nvm issues");
