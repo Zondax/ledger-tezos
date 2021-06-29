@@ -75,7 +75,7 @@ impl AsRef<[u8]> for PublicKey {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Curve {
     Ed25519,
     Secp256K1,

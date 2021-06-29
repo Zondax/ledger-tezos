@@ -143,7 +143,7 @@ pub struct NVMWearSlot {
     storage: NVM<64>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum WearError {
     Crc { expected: u32, found: u32 },
     NVMWrite,

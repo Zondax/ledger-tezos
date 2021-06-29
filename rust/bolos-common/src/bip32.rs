@@ -14,7 +14,7 @@
 *  limitations under the License.
 ********************************************************************************/
 /// Struct representing a BIP32 derivation path, with up to LEN components
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct BIP32Path<const LEN: usize> {
     len: u8,
     components: [u32; LEN],
