@@ -68,13 +68,12 @@ impl SecretKey {
         H::Id: Into<u8>,
     {
         let crv = self.curve;
-
         if crv.is_weirstrass() {
             let (parity, size) = bindings::cx_ecdsa_sign::<H>(self, data, out)?;
-            //TODO: check why this was/is here
-            // if parity {
-            //     out[0] |= 0x01;
-            // }
+            //FIXME: if this is part of generic crate, this should not be here as it is non-standard!
+            if parity {
+                out[0] |= 0x01;
+            }
 
             Ok(size)
         } else if crv.is_twisted_edward() {

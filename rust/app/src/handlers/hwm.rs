@@ -163,7 +163,7 @@ impl From<WaterMark> for [u8; 52] {
         let level = from.level.to_be_bytes();
         out[1..5].copy_from_slice(&level[..]);
 
-        out[0] = self.endorsement as _;
+        out[0] = from.endorsement as _;
         out
     }
 }

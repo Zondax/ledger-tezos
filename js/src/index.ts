@@ -310,7 +310,7 @@ export default class TezosApp {
 
   async signBaker(path: string, curve: Curve, message: Buffer) {
     return this.signGetChunks(path, message).then(chunks => {
-      return this.signSendChunk(INS.BAKER_SIGN, 1, chunks.length, chunks[0], curve).then(async response => {
+      return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.BAKER_SIGN).then(async response => {
         let result = {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
@@ -318,7 +318,7 @@ export default class TezosApp {
         };
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(INS.BAKER_SIGN, 1 + i, chunks.length, chunks[i]);
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.BAKER_SIGN);
           if (result.returnCode !== LedgerError.NoErrors) {
             break;
           }
@@ -331,7 +331,7 @@ export default class TezosApp {
 
   async sign(path: string, curve: Curve, message: Buffer) {
     return this.signGetChunks(path, message).then(chunks => {
-      return this.signSendChunk(1, chunks.length, chunks[0], false, curve).then(async response => {
+      return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.SIGN).then(async response => {
         let result = {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
@@ -339,7 +339,7 @@ export default class TezosApp {
         };
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(INS.SIGN, 1 + i, chunks.length, chunks[i]);
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.SIGN);
           if (result.returnCode !== LedgerError.NoErrors) {
             break;
           }

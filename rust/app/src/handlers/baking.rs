@@ -14,7 +14,7 @@ use bolos::{
 
 use crate::constants::{APDU_INDEX_P1, APDU_INDEX_P2};
 use crate::handlers::parser_common::ParserError;
-use crate::handlers::PacketType;
+use crate::handlers::{PacketType, PacketTypes};
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS, BIP32_MAX_LENGTH},
     crypto::{self, Curve},
@@ -58,11 +58,8 @@ pub enum Preemble {
 
 impl Preemble {
     #[inline(never)]
-    pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], Self, ParserError> {
-        let version_res = le_u8(bytes)?;
-        let tx_version =
-            Self::from_u8(version_res.1).ok_or(ParserError::parser_unexpected_error)?;
-        Ok((version_res.0, tx_version))
+    pub fn to_u8(&self) -> u8 {
+        *self as u8
     }
 
     #[inline(never)]
@@ -96,11 +93,13 @@ impl Branch {
     }
 }
 
+pub const ENDORSEMENTDATA_LENGTH: usize = 42;
+
 pub struct EndorsementData {
     pub baker_preemble: Preemble,
     pub chain_id: u32,
     pub branch: Branch,
-    pub tag: u8,
+    pub tag: u8, //TODO: what to do with this??
     pub level: u32,
 }
 
@@ -125,17 +124,30 @@ impl EndorsementData {
     }
 
     #[inline(never)]
+    pub fn to_bytes(&self) -> [u8; ENDORSEMENTDATA_LENGTH] {
+        let mut result = [0u8; ENDORSEMENTDATA_LENGTH];
+        result[0] = self.baker_preemble.to_u8();
+        result[1..5].copy_from_slice(&self.chain_id.to_be_bytes());
+        result[5..37].copy_from_slice(&self.branch.0);
+        result[37..41].copy_from_slice(&self.level.to_be_bytes());
+        result[41] = self.tag;
+        result
+    }
+
+    #[inline(never)]
     pub fn validate_with_watermark(&self, hw: &WaterMark) -> bool {
         is_valid_blocklevel(self.level)
             && (self.level > hw.level || (hw.level == self.level && !hw.endorsement))
     }
 }
 
+pub const BLOCKDATA_LENGTH: usize = 10;
+
 pub struct BlockData {
     pub baker_preemble: Preemble,
     pub chain_id: u32,
     pub level: u32,
-    pub proto: u8,
+    pub proto: u8, //FIXME: what to do with this byte?
 }
 
 impl BlockData {
@@ -154,6 +166,16 @@ impl BlockData {
             proto,
         };
         Ok((rem, result))
+    }
+
+    #[inline(never)]
+    pub fn to_bytes(&self) -> [u8; BLOCKDATA_LENGTH] {
+        let mut result = [0u8; BLOCKDATA_LENGTH];
+        result[0] = self.baker_preemble.to_u8();
+        result[1..5].copy_from_slice(&self.chain_id.to_be_bytes());
+        result[5..9].copy_from_slice(&self.level.to_be_bytes());
+        result[9] = self.proto;
+        result
     }
 
     #[inline(never)]
@@ -370,97 +392,105 @@ impl Baking {
     }
 
     #[inline(never)]
-    fn baker_sign(buffer: &mut [u8], flags: &mut u32) -> Result<u32, Error> {
+    fn baker_sign(
+        packet_type: PacketTypes,
+        buffer: &mut [u8],
+        flags: &mut u32,
+    ) -> Result<u32, Error> {
         let cdata_len = buffer[4] as usize;
         let cdata = &buffer[5..5 + cdata_len];
-        let packet_type = PacketType::try_from(buffer[2]).map_err(|_| Error::InvalidP1P2)?;
         let baking_ui: BakingSignUI;
-        match packet_type {
-            PacketType::Init => {
-                //first packet contains the curve data on the second parameter
-                // and the bip32 path as payload only
+        if packet_type.is_init() {
+            //first packet contains the curve data on the second parameter
+            // and the bip32 path as payload only
 
-                let curve = Curve::try_from(buffer[3]).map_err(|_| Error::InvalidP1P2)?;
-                let path =
-                    BIP32Path::<BIP32_MAX_LENGTH>::read(cdata).map_err(|_| Error::DataInvalid)?;
+            let curve = Curve::try_from(buffer[3]).map_err(|_| Error::InvalidP1P2)?;
+            let path =
+                BIP32Path::<BIP32_MAX_LENGTH>::read(cdata).map_err(|_| Error::DataInvalid)?;
 
-                //Check if the current baking path in NVM is initialized
-                Self::check_with_nvm_pathandcurve(&curve, &path)?;
+            //Check if the current baking path in NVM is initialized
+            Self::check_with_nvm_pathandcurve(&curve, &path)?;
 
-                unsafe { PATH.replace((path, curve)) };
+            unsafe { PATH.replace((path, curve)) };
 
-                Ok(0)
-            }
-            PacketType::Add => {
-                return Err(Error::InsNotSupported);
-                //this should not happen as there is only 1 packet??
-            }
-            PacketType::Last => {
-                let (_path, _curve) = Self::get_derivation_info()?;
+            Ok(0)
+        } else if packet_type.is_next() {
+            return Err(Error::InsNotSupported);
+            //this should not happen as there is only 1 packet??
+        } else if packet_type.is_last() {
+            let (_path, _curve) = Self::get_derivation_info()?;
 
-                let hw = LegacyHWM::read()?;
-                //do watermarks checks
+            let hw = LegacyHWM::read()?;
+            //do watermarks checks
 
-                let preemble = Preemble::from_u8(cdata[0]).ok_or(Error::DataInvalid)?;
+            let preemble = Preemble::from_u8(cdata[0]).ok_or(Error::DataInvalid)?;
 
-                match preemble {
-                    Preemble::InvalidPreemble => {
-                        return Err(Error::DataInvalid);
-                    }
-
-                    Preemble::EndorsementPreemble => {
-                        let (_, endorsement) =
-                            EndorsementData::from_bytes(&cdata).map_err(|_| Error::DataInvalid)?;
-                        if !endorsement.validate_with_watermark(&hw) {
-                            return Err(Error::DataInvalid);
-                            //TODO: show endorsement data on screen
-                        }
-                        baking_ui = BakingSignUI {
-                            endorsement: Some(endorsement),
-                            blocklevel: None,
-                        };
-                    }
-                    Preemble::BlockPreemble => {
-                        let (_, blockdata) =
-                            BlockData::from_bytes(&cdata).map_err(|_| Error::DataInvalid)?;
-
-                        if !blockdata.validate_with_watermark(&hw) {
-                            return Err(Error::DataInvalid);
-                        }
-                        //TODO: show blocklevel on screen
-                        baking_ui = BakingSignUI {
-                            endorsement: None,
-                            blocklevel: Some(blockdata),
-                        };
-                    }
-
-                    Preemble::GenericPreemble => {
-                        /*
-                                        case MAGIC_BYTE_UNSAFE_OP: {
-                            if (!G.maybe_ops.is_valid) PARSE_ERROR();
-
-                            // Must be self-delegation signed by the *authorized* baking key
-                            if (bip32_path_with_curve_eq(&global.path_with_curve, &N_data.baking_key) &&
-
-                                // ops->signing is generated from G.bip32_path and G.curve
-                                COMPARE(&G.maybe_ops.v.operation.source, &G.maybe_ops.v.signing) == 0 &&
-                                COMPARE(&G.maybe_ops.v.operation.destination, &G.maybe_ops.v.signing) == 0) {
-                                ui_callback_t const ok_c = send_hash ? sign_with_hash_ok : sign_without_hash_ok;
-                                prompt_register_delegate(ok_c, sign_reject);
-                            }
-                            THROW(EXC_SECURITY);
-                            break;
-                        }
-                         */
-                        //not implemnted yet
-                        return Err(Error::DataInvalid);
-                    }
+            match preemble {
+                Preemble::InvalidPreemble => {
+                    return Err(Error::DataInvalid);
                 }
 
-                return unsafe { baking_ui.show(flags) }
-                    .map_err(|_| Error::ExecutionError)
-                    .map(|_| 0);
+                Preemble::EndorsementPreemble => {
+                    let (_, endorsement) =
+                        EndorsementData::from_bytes(&cdata).map_err(|_| Error::DataInvalid)?;
+                    if !endorsement.validate_with_watermark(&hw) {
+                        return Err(Error::DataInvalid);
+                        //TODO: show endorsement data on screen
+                    }
+
+                    let digest = Self::blake2b_digest(&endorsement.to_bytes())?;
+
+                    baking_ui = BakingSignUI {
+                        endorsement: Some(endorsement),
+                        blocklevel: None,
+                        digest,
+                    };
+                }
+                Preemble::BlockPreemble => {
+                    let (_, blockdata) =
+                        BlockData::from_bytes(&cdata).map_err(|_| Error::DataInvalid)?;
+
+                    if !blockdata.validate_with_watermark(&hw) {
+                        return Err(Error::DataInvalid);
+                    }
+
+                    let digest = Self::blake2b_digest(&blockdata.to_bytes())?;
+                    //TODO: show blocklevel on screen
+                    baking_ui = BakingSignUI {
+                        endorsement: None,
+                        blocklevel: Some(blockdata),
+                        digest,
+                    };
+                }
+
+                Preemble::GenericPreemble => {
+                    /*
+                                    case MAGIC_BYTE_UNSAFE_OP: {
+                        if (!G.maybe_ops.is_valid) PARSE_ERROR();
+
+                        // Must be self-delegation signed by the *authorized* baking key
+                        if (bip32_path_with_curve_eq(&global.path_with_curve, &N_data.baking_key) &&
+
+                            // ops->signing is generated from G.bip32_path and G.curve
+                            COMPARE(&G.maybe_ops.v.operation.source, &G.maybe_ops.v.signing) == 0 &&
+                            COMPARE(&G.maybe_ops.v.operation.destination, &G.maybe_ops.v.signing) == 0) {
+                            ui_callback_t const ok_c = send_hash ? sign_with_hash_ok : sign_without_hash_ok;
+                            prompt_register_delegate(ok_c, sign_reject);
+                        }
+                        THROW(EXC_SECURITY);
+                        break;
+                    }
+                     */
+                    //not implemnted yet
+                    return Err(Error::DataInvalid);
+                }
             }
+
+            return unsafe { baking_ui.show(flags) }
+                .map_err(|_| Error::ExecutionError)
+                .map(|_| 0);
+        } else {
+            return Err(Error::DataInvalid);
         }
     }
 }
@@ -468,6 +498,7 @@ impl Baking {
 struct BakingSignUI {
     pub endorsement: Option<EndorsementData>,
     pub blocklevel: Option<BlockData>,
+    pub digest: [u8; 32],
 }
 
 fn write_u32_to_buffer(num: u32, buffer: &mut [u8]) -> Result<usize, Error> {
@@ -645,10 +676,8 @@ impl Viewable for BakingSignUI {
 
         let mut sig = [0; 100];
 
-        let unsigned_hash = [0u8; 32]; //FIXME: sign the hash of the datablob
-
         let sz = keypair
-            .sign(&unsigned_hash, &mut sig[..])
+            .sign(&self.digest, &mut sig[..])
             .unwrap_or_else(|_| 0);
         if sz == 0 {
             return (0, Error::ExecutionError as _);
@@ -663,7 +692,7 @@ impl Viewable for BakingSignUI {
 
         //write unsigned_hash to buffer
         tx += 32;
-        out[0..32].copy_from_slice(&unsigned_hash);
+        out[0..32].copy_from_slice(&self.digest);
 
         //wrte signature to buffer
         tx += sz;
@@ -702,8 +731,10 @@ impl ApduHandler for Baking {
             INS_BAKER_SIGN => Action::BakerSign,
             _ => return Err(Error::InsNotSupported),
         };
-
+        let is_legacy = false; //FIXME: take this from action type
         let req_confirmation = buffer[APDU_INDEX_P1] >= 1;
+
+        let packet_type = PacketTypes::new(buffer[2], is_legacy).map_err(|_| Error::InvalidP1P2)?;
 
         *tx = match action {
             Action::AuthorizeBaking => Self::authorize_baking(req_confirmation, buffer)?,
@@ -716,7 +747,7 @@ impl ApduHandler for Baking {
                 Self::query_authkey_withcurve(req_confirmation, buffer)?
             }
             Action::LegacyQueryAuthKeyWithCurve => 0,
-            Action::BakerSign => Self::baker_sign(buffer, flags)?,
+            Action::BakerSign => Self::baker_sign(packet_type, buffer, flags)?,
         };
 
         Ok(())

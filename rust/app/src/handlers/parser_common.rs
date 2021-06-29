@@ -1,11 +1,5 @@
 #![allow(non_camel_case_types, non_upper_case_globals, non_snake_case)]
-use nom::{
-    branch::permutation,
-    bytes::complete::take,
-    combinator::{iterator, map_parser},
-    error::ErrorKind,
-    number::complete::{be_u32, le_u32, le_u64, le_u8},
-};
+use nom::error::ErrorKind;
 
 #[repr(u32)]
 #[derive(Copy, Clone, Debug, PartialEq)]
