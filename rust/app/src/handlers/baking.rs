@@ -735,15 +735,15 @@ impl ApduHandler for Baking {
 
         *tx = match action {
             Action::AuthorizeBaking => Self::authorize_baking(req_confirmation, buffer)?,
-            Action::LegacyAuthorize => 32,
+            Action::LegacyAuthorize => return Err(Error::CommandNotAllowed),
             Action::DeAuthorizeBaking => Self::deauthorize_baking(req_confirmation)?,
-            Action::LegacyDeAuthorize => 0,
+            Action::LegacyDeAuthorize => return Err(Error::CommandNotAllowed),
             Action::QueryAuthKey => Self::query_authkey(req_confirmation, buffer)?,
-            Action::LegacyQueryAuthKey => 0,
+            Action::LegacyQueryAuthKey => return Err(Error::CommandNotAllowed),
             Action::QueryAuthKeyWithCurve => {
                 Self::query_authkey_withcurve(req_confirmation, buffer)?
             }
-            Action::LegacyQueryAuthKeyWithCurve => 0,
+            Action::LegacyQueryAuthKeyWithCurve => return Err(Error::CommandNotAllowed),
             Action::BakerSign => Self::baker_sign(packet_type, buffer, flags)?,
         };
 
