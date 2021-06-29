@@ -8,6 +8,12 @@ export interface ResponseAddress extends ResponseBase {
   address: string;
 }
 
+export interface ResponseQueryAuthKey extends ResponseBase {
+  publicKey: Buffer;
+  curve: number;
+}
+
+
 export interface ResponseVersion extends ResponseBase {
   testMode: boolean;
   major: number;

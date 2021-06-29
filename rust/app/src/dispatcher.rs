@@ -25,6 +25,9 @@ use crate::handlers::version::GetVersion;
 
 pub const CLA: u8 = 0x80;
 
+#[cfg(feature = "baking")]
+use crate::handlers::baking::Baking;
+
 cfg_if! {
     if #[cfg(feature = "baking")] {
         //baking-only legacy instructions
@@ -37,6 +40,12 @@ cfg_if! {
         pub const INS_LEGACY_DEAUTHORIZE: u8 = 0xC;
         pub const INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE: u8 = 0xD;
         pub const INS_LEGACY_HMAC: u8 = 0xE;
+
+        pub const INS_AUTHORIZE_BAKING: u8 = 0xA1;
+        pub const INS_DEAUTHORIZE_BAKING: u8 = 0xAC;
+        pub const INS_QUERY_AUTH_KEY: u8 = 0xA7;
+        pub const INS_QUERY_AUTH_KEY_WITH_CURVE: u8 = 0xAD;
+        pub const INS_BAKER_SIGN: u8 = 0xAF;
 
         //baking-only legacy imports
         use crate::handlers::hwm::LegacyHWM;
@@ -124,6 +133,11 @@ pub fn apdu_dispatch(
                 INS_LEGACY_RESET => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
                 INS_LEGACY_QUERY_MAIN_HWM => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
                 INS_LEGACY_QUERY_ALL_HWM => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
+
+                INS_AUTHORIZE_BAKING => return Baking::handle(flags, tx, rx, apdu_buffer),
+                INS_DEAUTHORIZE_BAKING => return Baking::handle(flags, tx, rx, apdu_buffer),
+                INS_QUERY_AUTH_KEY_WITH_CURVE => return Baking::handle(flags, tx, rx, apdu_buffer),
+                INS_BAKER_SIGN => return Baking::handle(flags, tx, rx, apdu_buffer),
 
                 INS_LEGACY_AUTHORIZE_BAKING => return Err(CommandNotAllowed),
                 INS_LEGACY_QUERY_AUTH_KEY => return Err(CommandNotAllowed),

@@ -1,4 +1,5 @@
 pub mod legacy_version;
+pub mod parser_common;
 pub mod public_key;
 pub mod signing;
 pub mod version;
@@ -8,6 +9,9 @@ pub mod dev;
 
 #[cfg(feature = "baking")]
 pub mod hwm;
+
+#[cfg(feature = "baking")]
+pub mod baking;
 
 mod utils;
 pub(self) use utils::*;

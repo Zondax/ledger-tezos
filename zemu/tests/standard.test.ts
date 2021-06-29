@@ -19,7 +19,6 @@ import { defaultOptions, models, APP_DERIVATION, curves, cartesianProduct } from
 import TezosApp, {Curve} from '@zondax/ledger-tezos'
 import * as secp256k1 from "noble-secp256k1"
 const ed25519 = require('ed25519-supercop')
-const secp256r1 = require('secp256r1')
 
 
 jest.setTimeout(60000)
@@ -111,24 +110,7 @@ describe.each(models)('Standard [%s] - pubkey', function (m) {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      let resp
-
-      if (show) {
-        const respReq = app.showAddressAndPubKey(APP_DERIVATION, curve)
-
-        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
-
-        let steps = 2;
-        if (m.name == 'nanox') {
-          sim.clickRight()
-          steps = 1;
-        }
-
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-pubkey-${curve}`, steps)
-        resp = await respReq
-      } else {
-        resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
-      }
+      const resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
       console.log(resp, m.name)
 
@@ -146,29 +128,11 @@ describe.each(models)('Standard [%s] - pubkey', function (m) {
 
 describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
   test.each(cartesianProduct(curves, [true, false]))
-  ('get pubkey and compute addr %s, %s', async function (curve, show) {
-    const sim = new Zemu(m.path)
+  ('get pubkey and compute addr %s, %s', async function (curve, show) {    const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      let resp
-
-      if (show) {
-        const respReq = app.legacyPromptPubKey(APP_DERIVATION, curve)
-
-        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
-
-        let steps = 2;
-        if (m.name == 'nanox') {
-          sim.clickRight()
-          steps = 1;
-        }
-
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-legacy-pubkey-${curve}`, steps)
-        resp = await respReq
-      } else {
-        resp = await app.legacyGetPubKey(APP_DERIVATION, curve)
-      }
+      const resp = await app.legacyGetPubKey(APP_DERIVATION, curve);
 
       console.log(resp, m.name)
 
@@ -226,6 +190,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
             break;
 
         case Curve.Secp256K1:
+            resp.signature[0] = 0x30;
             signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey);
           break;
 
@@ -288,6 +253,7 @@ describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
             break;
 
         case Curve.Secp256K1:
+            resp.signature[0] = 0x30;
             signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey);
           break;
 
