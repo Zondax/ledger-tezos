@@ -93,7 +93,7 @@ impl LegacyHWM {
     pub fn write(wm: WaterMark) -> Result<(), Error> {
         let data: [u8; 52] = wm.into();
 
-        unsafe { MAIN.write(data.clone()) }.map_err(|_| Error::ExecutionError)
+        unsafe { MAIN.write(data) }.map_err(|_| Error::ExecutionError)
     }
 
     pub fn read() -> Result<WaterMark, Error> {

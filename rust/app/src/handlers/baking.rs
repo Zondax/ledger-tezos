@@ -25,9 +25,9 @@ use crate::{
     },
     handlers::hwm::{LegacyHWM, WaterMark},
     handlers::public_key::GetAddress,
-    sys::{self, new_wear_leveller, wear_leveller::Wear},
+    sys::{self, flash_slot::Wear, new_flash_slot},
 };
-use bolos::wear_leveller::WearError;
+use bolos::flash_slot::WearError;
 
 const N_PAGES_BAKINGPATH: usize = 1;
 
@@ -79,6 +79,8 @@ impl TryFrom<u8> for Preemble {
 pub struct Branch(pub [u8; 32]);
 
 impl Branch {
+    pub const HEX_LEN: usize = 32 * 2;
+
     #[inline(never)]
     pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], Self, ParserError> {
         let (raw, branchbytes) = take(32usize)(bytes)?;
@@ -181,7 +183,7 @@ impl BlockData {
 
 #[bolos::lazy_static]
 static mut BAKINGPATH: WearLeveller =
-    new_wear_leveller!(N_PAGES_BAKINGPATH).expect("NVM might be corrupted");
+    new_flash_slot!(N_PAGES_BAKINGPATH).expect("NVM might be corrupted");
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Bip32PathAndCurve {
@@ -200,24 +202,27 @@ impl Bip32PathAndCurve {
     pub fn try_from_bytes(from: &[u8; 52]) -> Result<Self, Error> {
         let curve = crypto::Curve::try_from(from[0]).map_err(|_| Error::DataInvalid)?;
         let components_length = from[1];
+
         if components_length > BIP32_MAX_LENGTH as u8 {
             return Err(Error::WrongLength);
         }
+
         let path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(
             &from[1..(2 + components_length * 4).into()],
         )
         .map_err(|_| Error::DataInvalid)?;
+
         Ok(Self { curve, path })
     }
 }
 
-impl Into<[u8; 52]> for Bip32PathAndCurve {
-    fn into(self) -> [u8; 52] {
+impl From<Bip32PathAndCurve> for [u8; 52] {
+    fn from(from: Bip32PathAndCurve) -> Self {
         let mut out = [0; 52];
 
-        let curve = self.curve.into();
+        let curve = from.curve.into();
         out[0] = curve;
-        let components = self.path.components();
+        let components = from.path.components();
         out[1] = components.len() as u8;
         for i in 0..components.len() {
             out[2 + i * 4..2 + (i + 1) * 4].copy_from_slice(&components[i].to_be_bytes()[..]);
@@ -277,7 +282,7 @@ impl Baking {
     fn check_and_delete_path() -> Result<(), Error> {
         //Check if the current baking path in NVM is initialized
         let current_path = unsafe { BAKINGPATH.read() };
-        if let Err(_) = current_path {
+        if current_path.is_err() {
             //There was no initial path
             Err(Error::ApduCodeConditionsNotSatisfied)
         } else {
@@ -380,7 +385,7 @@ impl Baking {
 
         if nvm_bip.path != *path || nvm_bip.curve != *curve {
             //TODO: show that bip32 paths don't match??
-            return Err(Error::DataInvalid);
+            Err(Error::DataInvalid)
         } else {
             Ok(())
         }
@@ -410,7 +415,7 @@ impl Baking {
 
             Ok(0)
         } else if packet_type.is_next() {
-            return Err(Error::InsNotSupported);
+            Err(Error::InsNotSupported)
             //this should not happen as there is only 1 packet??
         } else if packet_type.is_last() {
             let (_path, _curve) = Self::get_derivation_info()?;
@@ -481,11 +486,11 @@ impl Baking {
                 }
             }
 
-            return unsafe { baking_ui.show(flags) }
+            unsafe { baking_ui.show(flags) }
                 .map_err(|_| Error::ExecutionError)
-                .map(|_| 0);
+                .map(|_| 0)
         } else {
-            return Err(Error::DataInvalid);
+            Err(Error::DataInvalid)
         }
     }
 }
@@ -537,98 +542,114 @@ impl Viewable for BakingSignUI {
         page: u8,
     ) -> Result<u8, ViewError> {
         if let Some(endorsement) = &self.endorsement {
-            let branch_hex_len: usize = endorsement.branch.0.len() * 2;
-            if item_n == 0 {
-                let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
-                title[..title_content.len()].copy_from_slice(title_content);
+            const BRANCH_HEX_LEN: usize = Branch::HEX_LEN;
 
-                let message_content = bolos::PIC::new(b"Endorsement\x00").into_inner();
-                message[..message_content.len()].copy_from_slice(message_content);
-                return Ok(1);
-            }
-            if item_n == 1 {
-                let title_content = bolos::PIC::new(b"Branch\x00").into_inner();
-                title[..title_content.len()].copy_from_slice(title_content);
+            match item_n {
+                0 => {
+                    let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
+                    title[..title_content.len()].copy_from_slice(title_content);
 
-                let m_len = message.len() - 1; //null byte terminator
-                if m_len <= branch_hex_len {
-                    let chunk = endorsement
-                        .branch
-                        .0
-                        .chunks(m_len / 2) //divide in non-overlapping chunks
-                        .nth(page as usize) //get the nth chunk
-                        .ok_or(ViewError::Unknown)?;
+                    let message_content = bolos::PIC::new(b"Endorsement\x00").into_inner();
+                    message[..message_content.len()].copy_from_slice(message_content);
 
-                    hex::encode_to_slice(chunk, &mut message[..chunk.len() * 2])
-                        .map_err(|_| ViewError::Unknown)?;
-                    message[chunk.len() * 2] = 0; //null terminate
-
-                    let n_pages = branch_hex_len / m_len;
-                    return Ok(1 + n_pages as u8);
-                } else {
-                    hex::encode_to_slice(&endorsement.branch.0[..], &mut message[..branch_hex_len])
-                        .map_err(|_| ViewError::Unknown)?;
-                    message[branch_hex_len] = 0; //null terminate
-                    return Ok(1);
+                    Ok(1)
                 }
-            }
-            if item_n == 2 {
-                let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
-                title[..title_content.len()].copy_from_slice(title_content);
+                1 => {
+                    let title_content = bolos::PIC::new(b"Branch\x00").into_inner();
+                    title[..title_content.len()].copy_from_slice(title_content);
 
-                let mut buffer = [0u8; 100];
-                let num_digits = write_u32_to_ui_buffer(endorsement.level, &mut buffer)
-                    .map_err(|_| ViewError::Unknown)?;
-                message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                message[num_digits] = 0;
-                return Ok(1);
-            }
-            if item_n == 3 {
-                let title_content = bolos::PIC::new(b"ChainID\x00").into_inner();
-                title[..title_content.len()].copy_from_slice(title_content);
+                    let m_len = message.len() - 1; //null byte terminator
+                    if m_len <= BRANCH_HEX_LEN {
+                        let chunk = endorsement
+                            .branch
+                            .0
+                            .chunks(m_len / 2) //divide in non-overlapping chunks
+                            .nth(page as usize) //get the nth chunk
+                            .ok_or(ViewError::Unknown)?;
 
-                let mut buffer = [0u8; 100];
-                let num_digits = write_u32_to_ui_buffer(endorsement.chain_id, &mut buffer)
-                    .map_err(|_| ViewError::Unknown)?;
-                message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                message[num_digits] = 0;
-                return Ok(1);
+                        hex::encode_to_slice(chunk, &mut message[..chunk.len() * 2])
+                            .map_err(|_| ViewError::Unknown)?;
+                        message[chunk.len() * 2] = 0; //null terminate
+
+                        let n_pages = BRANCH_HEX_LEN / m_len;
+
+                        Ok(1 + n_pages as u8)
+                    } else {
+                        hex::encode_to_slice(
+                            &endorsement.branch.0[..],
+                            &mut message[..BRANCH_HEX_LEN],
+                        )
+                        .map_err(|_| ViewError::Unknown)?;
+                        message[BRANCH_HEX_LEN] = 0; //null terminate
+
+                        Ok(1)
+                    }
+                }
+                2 => {
+                    let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
+                    title[..title_content.len()].copy_from_slice(title_content);
+
+                    let mut buffer = [0u8; 100];
+                    let num_digits = write_u32_to_ui_buffer(endorsement.level, &mut buffer)
+                        .map_err(|_| ViewError::Unknown)?;
+                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
+                    message[num_digits] = 0;
+
+                    Ok(1)
+                }
+                3 => {
+                    let title_content = bolos::PIC::new(b"ChainID\x00").into_inner();
+                    title[..title_content.len()].copy_from_slice(title_content);
+
+                    let mut buffer = [0u8; 100];
+                    let num_digits = write_u32_to_ui_buffer(endorsement.chain_id, &mut buffer)
+                        .map_err(|_| ViewError::Unknown)?;
+                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
+                    message[num_digits] = 0;
+
+                    Ok(1)
+                }
+                _ => Err(ViewError::NoData),
             }
-            return Err(ViewError::NoData);
         } else if let Some(block) = &self.blocklevel {
-            if item_n == 0 {
-                let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
-                title[..title_content.len()].copy_from_slice(title_content);
+            match item_n {
+                0 => {
+                    let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
+                    title[..title_content.len()].copy_from_slice(title_content);
 
-                let message_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
-                message[..message_content.len()].copy_from_slice(message_content);
-                return Ok(1);
-            }
-            if item_n == 1 {
-                let title_content = bolos::PIC::new(b"Chain_ID\x00").into_inner();
-                title[..title_content.len()].copy_from_slice(title_content);
+                    let message_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
+                    message[..message_content.len()].copy_from_slice(message_content);
 
-                let mut buffer = [0u8; 100];
-                let num_digits = write_u32_to_ui_buffer(block.chain_id, &mut buffer)
-                    .map_err(|_| ViewError::Unknown)?;
-                message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                message[num_digits] = 0;
-                return Ok(1);
-            }
-            if item_n == 2 {
-                let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
-                title[..title_content.len()].copy_from_slice(title_content);
+                    Ok(1)
+                }
+                1 => {
+                    let title_content = bolos::PIC::new(b"Chain_ID\x00").into_inner();
+                    title[..title_content.len()].copy_from_slice(title_content);
 
-                let mut buffer = [0u8; 100];
-                let num_digits = write_u32_to_ui_buffer(block.level, &mut buffer)
-                    .map_err(|_| ViewError::Unknown)?;
-                message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                message[num_digits] = 0;
-                return Ok(1);
+                    let mut buffer = [0u8; 100];
+                    let num_digits = write_u32_to_ui_buffer(block.chain_id, &mut buffer)
+                        .map_err(|_| ViewError::Unknown)?;
+                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
+                    message[num_digits] = 0;
+
+                    Ok(1)
+                }
+                2 => {
+                    let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
+                    title[..title_content.len()].copy_from_slice(title_content);
+
+                    let mut buffer = [0u8; 100];
+                    let num_digits = write_u32_to_ui_buffer(block.level, &mut buffer)
+                        .map_err(|_| ViewError::Unknown)?;
+                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
+                    message[num_digits] = 0;
+
+                    Ok(1)
+                }
+                _ => Err(ViewError::NoData),
             }
-            return Err(ViewError::NoData);
         } else {
-            return Err(ViewError::NoData);
+            Err(ViewError::NoData)
         }
     }
 
@@ -673,9 +694,7 @@ impl Viewable for BakingSignUI {
 
         let mut sig = [0; 100];
 
-        let sz = keypair
-            .sign(&self.digest, &mut sig[..])
-            .unwrap_or_else(|_| 0);
+        let sz = keypair.sign(&self.digest, &mut sig[..]).unwrap_or(0);
         if sz == 0 {
             return (0, Error::ExecutionError as _);
         }
@@ -689,7 +708,7 @@ impl Viewable for BakingSignUI {
 
         //write unsigned_hash to buffer
         tx += 32;
-        out[0..32].copy_from_slice(&self.digest);
+        out[..32].copy_from_slice(&self.digest);
 
         //wrte signature to buffer
         tx += sz;
@@ -735,16 +754,17 @@ impl ApduHandler for Baking {
 
         *tx = match action {
             Action::AuthorizeBaking => Self::authorize_baking(req_confirmation, buffer)?,
-            Action::LegacyAuthorize => return Err(Error::CommandNotAllowed),
             Action::DeAuthorizeBaking => Self::deauthorize_baking(req_confirmation)?,
-            Action::LegacyDeAuthorize => return Err(Error::CommandNotAllowed),
             Action::QueryAuthKey => Self::query_authkey(req_confirmation, buffer)?,
-            Action::LegacyQueryAuthKey => return Err(Error::CommandNotAllowed),
             Action::QueryAuthKeyWithCurve => {
                 Self::query_authkey_withcurve(req_confirmation, buffer)?
             }
-            Action::LegacyQueryAuthKeyWithCurve => return Err(Error::CommandNotAllowed),
             Action::BakerSign => Self::baker_sign(packet_type, buffer, flags)?,
+
+            Action::LegacyAuthorize
+            | Action::LegacyDeAuthorize
+            | Action::LegacyQueryAuthKey
+            | Action::LegacyQueryAuthKeyWithCurve => return Err(Error::CommandNotAllowed),
         };
 
         Ok(())
@@ -757,21 +777,19 @@ mod tests {
     use bolos::crypto::bip32::BIP32Path;
 
     use super::*;
-    use crate::dispatcher::{handle_apdu, CLA, INS_AUTHORIZE_BAKING};
-    use crate::{assert_error_code, crypto::Curve};
-
-    use std::vec;
 
     #[test]
     fn check_bip32andpath_frombytes() {
         let curve = crypto::Curve::Ed25519;
         let pathdata = &[44, 1729, 0, 0];
+
         let path =
-            BIP32Path::<BIP32_MAX_LENGTH>::new(pathdata.into_iter().map(|n| 0x8000_0000 + n))
-                .unwrap();
+            BIP32Path::<BIP32_MAX_LENGTH>::new(pathdata.iter().map(|n| 0x8000_0000 + n)).unwrap();
         let path_and_curve = Bip32PathAndCurve::new(curve, path);
+
         let data: [u8; 52] = path_and_curve.clone().into();
         let derived = Bip32PathAndCurve::try_from_bytes(&data);
+
         assert!(derived.is_ok());
         assert_eq!(derived.unwrap(), path_and_curve);
     }
