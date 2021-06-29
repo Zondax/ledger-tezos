@@ -104,7 +104,8 @@ describe.each(models)('Standard [%s]; legacy', function (m) {
 })
 
 describe.each(models)('Standard [%s] - pubkey', function (m) {
-  test.each(curves)('get pubkey and addr %s', async function (curve) {
+  test.each(cartesianProduct(curves, [true, false]))
+  ('get pubkey and addr %s, %s', async function (curve, show) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -126,8 +127,8 @@ describe.each(models)('Standard [%s] - pubkey', function (m) {
 })
 
 describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
-  test.each(curves)('get pubkey and compute addr %s', async function (curve) {
-    const sim = new Zemu(m.path)
+  test.each(cartesianProduct(curves, [true, false]))
+  ('get pubkey and compute addr %s, %s', async function (curve, show) {    const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())

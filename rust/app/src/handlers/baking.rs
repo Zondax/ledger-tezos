@@ -50,38 +50,33 @@ enum Action {
 #[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Preemble {
-    InvalidPreemble = 0x00,
+    InvalidPreemble = 0x00, //FIXME: should we error when this is the Preemble?
     BlockPreemble = 0x01,
     EndorsementPreemble = 0x02,
     GenericPreemble = 0x03,
 }
 
-impl Preemble {
-    #[inline(never)]
-    pub fn to_u8(&self) -> u8 {
-        *self as u8
+impl From<Preemble> for u8 {
+    fn from(from: Preemble) -> Self {
+        from as u8
     }
+}
 
-    #[inline(never)]
-    pub fn from_u8(v: u8) -> Option<Self> {
-        match v {
-            0x00 => Some(Self::InvalidPreemble),
-            0x01 => Some(Self::BlockPreemble),
-            0x02 => Some(Self::EndorsementPreemble),
-            0x03 => Some(Self::GenericPreemble),
-            _ => None,
+impl TryFrom<u8> for Preemble {
+    type Error = Error;
+    fn try_from(from: u8) -> Result<Self, Error> {
+        match from {
+            0x00 => Ok(Self::InvalidPreemble),
+            0x01 => Ok(Self::BlockPreemble),
+            0x02 => Ok(Self::EndorsementPreemble),
+            0x03 => Ok(Self::GenericPreemble),
+            _ => Err(Error::DataInvalid),
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Branch(pub [u8; 32]);
-
-//return !(lvl & 0xC0000000);
-#[inline(never)]
-pub fn is_valid_blocklevel(level: u32) -> bool {
-    level.leading_zeros() > 0
-}
 
 impl Branch {
     #[inline(never)]
@@ -93,7 +88,7 @@ impl Branch {
     }
 }
 
-pub const ENDORSEMENTDATA_LENGTH: usize = 42;
+pub const ENDORSEMENT_DATA_LENGTH: usize = 42;
 
 pub struct EndorsementData {
     pub baker_preemble: Preemble,
@@ -107,8 +102,8 @@ impl EndorsementData {
     #[inline(never)]
     pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], Self, ParserError> {
         let (rem, preemble) = le_u8(bytes)?;
-        let baker_preemble =
-            Preemble::from_u8(preemble).ok_or(ParserError::parser_unexpected_error)?;
+        let baker_preemble: Preemble =
+            Preemble::try_from(preemble).map_err(|_| ParserError::parser_unexpected_error)?;
         let (rem, chain_id) = be_u32(rem)?;
         let (rem, branch) = Branch::from_bytes(rem)?;
         let (rem, tag) = le_u8(rem)?;
@@ -124,9 +119,9 @@ impl EndorsementData {
     }
 
     #[inline(never)]
-    pub fn to_bytes(&self) -> [u8; ENDORSEMENTDATA_LENGTH] {
-        let mut result = [0u8; ENDORSEMENTDATA_LENGTH];
-        result[0] = self.baker_preemble.to_u8();
+    pub fn to_bytes(&self) -> [u8; ENDORSEMENT_DATA_LENGTH] {
+        let mut result = [0u8; ENDORSEMENT_DATA_LENGTH];
+        result[0] = self.baker_preemble.into();
         result[1..5].copy_from_slice(&self.chain_id.to_be_bytes());
         result[5..37].copy_from_slice(&self.branch.0);
         result[37..41].copy_from_slice(&self.level.to_be_bytes());
@@ -136,7 +131,7 @@ impl EndorsementData {
 
     #[inline(never)]
     pub fn validate_with_watermark(&self, hw: &WaterMark) -> bool {
-        is_valid_blocklevel(self.level)
+        WaterMark::is_valid_blocklevel(self.level)
             && (self.level > hw.level || (hw.level == self.level && !hw.endorsement))
     }
 }
@@ -155,7 +150,7 @@ impl BlockData {
     pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], Self, ParserError> {
         let (rem, preemble) = le_u8(bytes)?;
         let baker_preemble =
-            Preemble::from_u8(preemble).ok_or(ParserError::parser_unexpected_error)?;
+            Preemble::try_from(preemble).map_err(|_| ParserError::parser_context_invalid_chars)?;
         let (rem, chain_id) = be_u32(rem)?;
         let (rem, level) = be_u32(rem)?;
         let (rem, proto) = le_u8(rem)?;
@@ -171,7 +166,7 @@ impl BlockData {
     #[inline(never)]
     pub fn to_bytes(&self) -> [u8; BLOCKDATA_LENGTH] {
         let mut result = [0u8; BLOCKDATA_LENGTH];
-        result[0] = self.baker_preemble.to_u8();
+        result[0] = self.baker_preemble.into();
         result[1..5].copy_from_slice(&self.chain_id.to_be_bytes());
         result[5..9].copy_from_slice(&self.level.to_be_bytes());
         result[9] = self.proto;
@@ -180,7 +175,7 @@ impl BlockData {
 
     #[inline(never)]
     pub fn validate_with_watermark(&self, hw: &WaterMark) -> bool {
-        is_valid_blocklevel(self.level) && (self.level > hw.level)
+        WaterMark::is_valid_blocklevel(self.level) && (self.level > hw.level)
     }
 }
 
@@ -423,7 +418,7 @@ impl Baking {
             let hw = LegacyHWM::read()?;
             //do watermarks checks
 
-            let preemble = Preemble::from_u8(cdata[0]).ok_or(Error::DataInvalid)?;
+            let preemble = Preemble::try_from(cdata[0])?;
 
             match preemble {
                 Preemble::InvalidPreemble => {
@@ -501,7 +496,7 @@ struct BakingSignUI {
     pub digest: [u8; 32],
 }
 
-fn write_u32_to_buffer(num: u32, buffer: &mut [u8]) -> Result<usize, Error> {
+fn write_u32_to_ui_buffer(num: u32, buffer: &mut [u8]) -> Result<usize, Error> {
     //TODO: use a zxlib function for this
     let mut num_size: usize = 0;
     if num == 0 {
@@ -522,6 +517,7 @@ fn write_u32_to_buffer(num: u32, buffer: &mut [u8]) -> Result<usize, Error> {
     Ok(num_size)
 }
 
+//FIXME: split the below code for endorsements and blocklevel signing
 impl Viewable for BakingSignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
         if self.endorsement.is_some() {
@@ -541,6 +537,7 @@ impl Viewable for BakingSignUI {
         page: u8,
     ) -> Result<u8, ViewError> {
         if let Some(endorsement) = &self.endorsement {
+            let branch_hex_len: usize = endorsement.branch.0.len() * 2;
             if item_n == 0 {
                 let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
                 title[..title_content.len()].copy_from_slice(title_content);
@@ -554,7 +551,7 @@ impl Viewable for BakingSignUI {
                 title[..title_content.len()].copy_from_slice(title_content);
 
                 let m_len = message.len() - 1; //null byte terminator
-                if m_len <= 64 {
+                if m_len <= branch_hex_len {
                     let chunk = endorsement
                         .branch
                         .0
@@ -566,12 +563,12 @@ impl Viewable for BakingSignUI {
                         .map_err(|_| ViewError::Unknown)?;
                     message[chunk.len() * 2] = 0; //null terminate
 
-                    let n_pages = (32 * 2) / m_len;
+                    let n_pages = branch_hex_len / m_len;
                     return Ok(1 + n_pages as u8);
                 } else {
-                    hex::encode_to_slice(&endorsement.branch.0[..], &mut message[..64])
+                    hex::encode_to_slice(&endorsement.branch.0[..], &mut message[..branch_hex_len])
                         .map_err(|_| ViewError::Unknown)?;
-                    message[64] = 0; //null terminate
+                    message[branch_hex_len] = 0; //null terminate
                     return Ok(1);
                 }
             }
@@ -580,7 +577,7 @@ impl Viewable for BakingSignUI {
                 title[..title_content.len()].copy_from_slice(title_content);
 
                 let mut buffer = [0u8; 100];
-                let num_digits = write_u32_to_buffer(endorsement.level, &mut buffer)
+                let num_digits = write_u32_to_ui_buffer(endorsement.level, &mut buffer)
                     .map_err(|_| ViewError::Unknown)?;
                 message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
                 message[num_digits] = 0;
@@ -591,7 +588,7 @@ impl Viewable for BakingSignUI {
                 title[..title_content.len()].copy_from_slice(title_content);
 
                 let mut buffer = [0u8; 100];
-                let num_digits = write_u32_to_buffer(endorsement.chain_id, &mut buffer)
+                let num_digits = write_u32_to_ui_buffer(endorsement.chain_id, &mut buffer)
                     .map_err(|_| ViewError::Unknown)?;
                 message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
                 message[num_digits] = 0;
@@ -612,7 +609,7 @@ impl Viewable for BakingSignUI {
                 title[..title_content.len()].copy_from_slice(title_content);
 
                 let mut buffer = [0u8; 100];
-                let num_digits = write_u32_to_buffer(block.chain_id, &mut buffer)
+                let num_digits = write_u32_to_ui_buffer(block.chain_id, &mut buffer)
                     .map_err(|_| ViewError::Unknown)?;
                 message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
                 message[num_digits] = 0;
@@ -623,7 +620,7 @@ impl Viewable for BakingSignUI {
                 title[..title_content.len()].copy_from_slice(title_content);
 
                 let mut buffer = [0u8; 100];
-                let num_digits = write_u32_to_buffer(block.level, &mut buffer)
+                let num_digits = write_u32_to_ui_buffer(block.level, &mut buffer)
                     .map_err(|_| ViewError::Unknown)?;
                 message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
                 message[num_digits] = 0;

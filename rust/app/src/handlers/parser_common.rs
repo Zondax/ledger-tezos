@@ -7,9 +7,10 @@ use nom::error::ErrorKind;
 /// the parse_error_t in c,
 /// we redeclare it here, just for interpolation
 /// purposes
+
+//TODO: make this CamelCase
 pub enum ParserError {
     // Generic errors
-    parser_ok = 0,
     parser_no_data,
     parser_init_context_empty,
     parser_display_idx_out_of_range,

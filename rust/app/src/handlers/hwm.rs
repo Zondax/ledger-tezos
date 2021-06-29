@@ -175,6 +175,12 @@ impl WaterMark {
             endorsement: false,
         }
     }
+
+    //return !(lvl & 0xC0000000);
+    #[inline(never)]
+    pub fn is_valid_blocklevel(level: u32) -> bool {
+        level.leading_zeros() > 0
+    }
 }
 
 #[cfg(test)]
