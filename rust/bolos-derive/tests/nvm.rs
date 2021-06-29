@@ -14,8 +14,8 @@
  *  limitations under the License.
  ********************************************************************************/
 
-use bolos_derive::*;
 use bolos::{NVM, PIC};
+use bolos_derive::*;
 
 #[test]
 fn check_access() {

@@ -21,7 +21,7 @@
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::ApduHandler,
-    sys::{new_flash_slot, flash_slot::Wear},
+    sys::{flash_slot::Wear, new_flash_slot},
 };
 
 const N_PAGES: usize = 8;
