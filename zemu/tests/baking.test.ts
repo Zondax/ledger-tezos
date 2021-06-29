@@ -469,6 +469,7 @@ describe.each(models)('Standard baking [%s]; sign', function (m) {
                 break;
 
             case Curve.Secp256K1:
+                resp.signature[0] = 0x30;
                 signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey);
                 break;
 
@@ -528,6 +529,7 @@ describe.each(models)('Standard baking [%s]; legacy - sign with hash', function 
             break;
 
         case Curve.Secp256K1:
+            resp.signature[0] = 0x30;
             signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey);
           break;
 
