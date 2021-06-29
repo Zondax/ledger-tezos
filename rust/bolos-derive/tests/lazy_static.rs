@@ -12,14 +12,21 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-********************************************************************************/
-pub use bolos_common::hash::{Hasher, HasherId};
 
-mod blake2b;
-pub use blake2b::Blake2b;
+*******************************************************************************/
+use bolos_derive::*;
 
-mod sha256;
-pub use sha256::Sha256;
+#[lazy_static]
+static mut SOMETHING: u32 = 33;
 
-mod sha512;
-pub use sha512::Sha512;
+#[test]
+fn check_lazy() {
+    let something: &mut __IMPL_LAZY_SOMETHING::__LAZY_SOMETHING = unsafe { &mut SOMETHING };
+    let something = &mut **something;
+
+    assert_eq!(33, *something);
+
+    *something += 1;
+
+    assert_eq!(34, *something);
+}

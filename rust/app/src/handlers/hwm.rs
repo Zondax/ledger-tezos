@@ -1,3 +1,18 @@
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 //! This module contains all implementation for all High water mark (HWM) things
 //!
 //! * Handler
@@ -6,7 +21,7 @@
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::ApduHandler,
-    sys::{new_wear_leveller, wear_leveller::Wear},
+    sys::{flash_slot::Wear, new_flash_slot},
 };
 
 const N_PAGES: usize = 8;
@@ -22,10 +37,10 @@ const MAINNET_CHAIN_ID: u32 = 0x7A06A770;
 //TODO: how about other chains?
 
 #[bolos::lazy_static]
-static mut MAIN: WearLeveller = new_wear_leveller!(N_PAGES).expect("NVM might be corrupted");
+static mut MAIN: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
 
 #[bolos::lazy_static]
-static mut TEST: WearLeveller = new_wear_leveller!(N_PAGES).expect("NVM might be corrupted");
+static mut TEST: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
 
 pub struct LegacyHWM {}
 
@@ -78,7 +93,7 @@ impl LegacyHWM {
     pub fn write(wm: WaterMark) -> Result<(), Error> {
         let data: [u8; 52] = wm.into();
 
-        unsafe { MAIN.write(data.clone()) }.map_err(|_| Error::ExecutionError)
+        unsafe { MAIN.write(data) }.map_err(|_| Error::ExecutionError)
     }
 
     pub fn read() -> Result<WaterMark, Error> {
