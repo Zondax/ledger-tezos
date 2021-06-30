@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
     #define MENU_MAIN_APP_LINE1             "Tezos"
-    #define MENU_MAIN_APP_LINE2             "Ready"
-    #define APPVERSION_LINE1                "Tezos"
+    #define MENU_MAIN_APP_LINE2             "DO NOT USE"
+    #define APPVERSION_LINE1                "DO NOT USE"
     #define APPVERSION_LINE2                ("v" APPVERSION)
 
 #ifdef __cplusplus
