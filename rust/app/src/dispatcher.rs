@@ -25,6 +25,9 @@ use crate::handlers::version::GetVersion;
 
 pub const CLA: u8 = 0x80;
 
+#[cfg(feature = "baking")]
+use crate::handlers::baking::Baking;
+
 cfg_if! {
     if #[cfg(feature = "baking")] {
         //baking-only legacy instructions
@@ -37,6 +40,12 @@ cfg_if! {
         pub const INS_LEGACY_DEAUTHORIZE: u8 = 0xC;
         pub const INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE: u8 = 0xD;
         pub const INS_LEGACY_HMAC: u8 = 0xE;
+
+        pub const INS_AUTHORIZE_BAKING: u8 = 0xA1;
+        pub const INS_DEAUTHORIZE_BAKING: u8 = 0xAC;
+        pub const INS_QUERY_AUTH_KEY: u8 = 0xA7;
+        pub const INS_QUERY_AUTH_KEY_WITH_CURVE: u8 = 0xAD;
+        pub const INS_BAKER_SIGN: u8 = 0xAF;
 
         //baking-only legacy imports
         use crate::handlers::hwm::LegacyHWM;
@@ -66,10 +75,11 @@ pub const INS_SIGN: u8 = 0x12;
 //dev-only
 cfg_if! {
     if #[cfg(feature = "dev")] {
-        use crate::handlers::dev::{Except, Sha256};
+        use crate::handlers::dev::{Except, Sha256, Echo};
 
         pub const INS_DEV_HASH: u8 = 0xF0;
         pub const INS_DEV_EXCEPT: u8 = 0xF1;
+        pub const INS_DEV_ECHO_UI: u8 = 0xF2;
     }
 }
 
@@ -109,6 +119,7 @@ pub fn apdu_dispatch(
             match ins {
                 INS_DEV_HASH => return Sha256::handle(flags, tx, rx, apdu_buffer),
                 INS_DEV_EXCEPT => return Except::handle(flags, tx, rx, apdu_buffer),
+                INS_DEV_ECHO_UI => return Echo::handle(flags, tx, rx, apdu_buffer),
                 _ => {},
             }
         }
@@ -123,6 +134,11 @@ pub fn apdu_dispatch(
                 INS_LEGACY_QUERY_MAIN_HWM => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
                 INS_LEGACY_QUERY_ALL_HWM => return LegacyHWM::handle(flags, tx, rx, apdu_buffer),
 
+                INS_AUTHORIZE_BAKING => return Baking::handle(flags, tx, rx, apdu_buffer),
+                INS_DEAUTHORIZE_BAKING => return Baking::handle(flags, tx, rx, apdu_buffer),
+                INS_QUERY_AUTH_KEY_WITH_CURVE => return Baking::handle(flags, tx, rx, apdu_buffer),
+                INS_BAKER_SIGN => return Baking::handle(flags, tx, rx, apdu_buffer),
+
                 INS_LEGACY_AUTHORIZE_BAKING => return Err(CommandNotAllowed),
                 INS_LEGACY_QUERY_AUTH_KEY => return Err(CommandNotAllowed),
                 INS_LEGACY_SETUP => return Err(CommandNotAllowed),
@@ -133,6 +149,7 @@ pub fn apdu_dispatch(
             }
         } else if #[cfg(feature = "wallet")] {
             //wallet-only instructions
+            #[allow(clippy::single_match)]
             match ins {
                 INS_LEGACY_SIGN_UNSAFE => return Sign::handle(flags, tx, rx, apdu_buffer),
                 _ => {}

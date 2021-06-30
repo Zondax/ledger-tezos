@@ -4,8 +4,16 @@
 [![npm version](https://badge.fury.io/js/%40zondax%2Fledger-tezos.svg)](https://badge.fury.io/js/%40zondax%2Fledger-tezos)
 [![CircleCI](https://circleci.com/gh/Zondax/ledger-tezos.svg?style=shield&circle-token=78fc17389c26edbfd7267cdc1aaf79a43fde94cd)](https://circleci.com/gh/Zondax/ledger-tezos)
 
-**This app is still work in progress!**
+> # This app is still work in progress!
+> # DO NOT USE YET!
+>
+> -------------------
+>
+> ![zondax](docs/zondax.jpg)
+>
+>_Please visit our website at [zondax.ch](zondax.ch)_
 
+------------------
 This project contains the Tezos app for Ledger Nano S and X.
 
 - Ledger Nano S/X BOLOS app

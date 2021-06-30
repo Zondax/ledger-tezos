@@ -47,12 +47,12 @@ legacy_impl:
 
 legacy_wallet:
 	BAKING=tezos_wallet $(MAKE) legacy_impl
-	- mkdir legacy/output
+	- mkdir -p legacy/output || true
 	mv legacy/bin/app.elf legacy/output/app.elf
 
 legacy_baking:
 	BAKING=tezos_baking $(MAKE) legacy_impl
-	- mkdir legacy/output
+	- mkdir -p legacy/output || true
 	mv legacy/bin/app.elf legacy/output/app_baking.elf
 
 .PHONY: clean_legacy
@@ -72,8 +72,8 @@ generate:
 endif
 
 test_all:
+	make rust_test
 	make zemu_install
-	# test sr25519
 	make clean_build
 	BAKING=yes make
 	make

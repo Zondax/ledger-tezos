@@ -1,3 +1,18 @@
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 pub use bolos_common::bip32;
 
 use std::convert::TryFrom;
@@ -24,36 +39,27 @@ impl TryFrom<u8> for Curve {
     }
 }
 
-impl Into<u8> for Curve {
-    fn into(self) -> u8 {
-        let n = match self {
+impl From<Curve> for u8 {
+    fn from(from: Curve) -> Self {
+        match from {
             Curve::Secp256K1 => 1,
             Curve::Secp256R1 => 2,
             Curve::Ed25519 => 3,
-        };
-        n as u8
+        }
     }
 }
 
 impl Curve {
     pub fn is_weirstrass(&self) -> bool {
-        match self {
-            Self::Secp256K1 | Self::Secp256R1 => true,
-            _ => false,
-        }
+        matches!(self, Self::Secp256K1 | Self::Secp256R1)
     }
 
     pub fn is_twisted_edward(&self) -> bool {
-        match self {
-            Self::Ed25519 => true,
-            _ => false,
-        }
+        matches!(self, Self::Ed25519)
     }
 
     pub fn is_montgomery(&self) -> bool {
-        match self {
-            _ => false,
-        }
+        false
     }
 }
 
@@ -77,15 +83,13 @@ impl TryFrom<u8> for Mode {
     }
 }
 
-impl Into<u8> for Mode {
-    fn into(self) -> u8 {
-        let n = match self {
+impl From<Mode> for u8 {
+    fn from(from: Mode) -> Self {
+        match from {
             Mode::BIP32 => 0,
             Mode::Ed25519Slip10 => 1,
             // Mode::Slip21 => HDW_SLIP21,
-        };
-
-        n as u8
+        }
     }
 }
 

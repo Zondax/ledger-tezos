@@ -21,7 +21,6 @@
 
 #include "zxmacros.h"
 #include "actions.h"
-#include "apdu_codes.h"
 #include "ux.h"
 #include "bagl.h"
 #include "view_templates.h"

@@ -63,6 +63,9 @@ rust/app/.cargo/registry
 rust/app/output
 rust/app/pkg
 rust/app/.cargo/git
+rust/app/target
+rust/**/target
+.vscode/*.log
 \zemu/snapshots-tmp
 
 

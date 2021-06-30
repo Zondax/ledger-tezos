@@ -26,28 +26,12 @@
     #include "ux.h"
     #define NV_CONST const
     #define NV_VOLATILE volatile
-    #define IS_UX_ALLOWED (G_ux_params.len != BOLOS_UX_IGNORE && G_ux_params.len != BOLOS_UX_CONTINUE)
-
-    #define MEMMOVE os_memmove
-    #define MEMSET os_memset
-    #define MEMCPY os_memcpy
-    #define MEMCMP os_memcmp
-    #define MEMZERO explicit_bzero
 #else
     #include "os_io_seproxyhal.h"
     #define NV_CONST
     #define NV_VOLATILE
-    #define IS_UX_ALLOWED (ux.params.len != BOLOS_UX_IGNORE && ux.params.len != BOLOS_UX_CONTINUE)
-
-    #define MEMCPY memmove
-    #define MEMMOVE memmove
-    #define MEMSET memset
-    #define MEMCMP memcmp
-    #define MEMZERO explicit_bzero
-
 #endif
 
-#define CHECK_APP_CANARY() check_app_canary();
 #define APP_STACK_CANARY_MAGIC 0xDEAD0031
 extern unsigned int app_stack_canary;
 

@@ -16,6 +16,7 @@
 #![allow(dead_code)]
 
 #[macro_export]
+#[cfg(test)]
 macro_rules! assert_error_code {
     ($tx:expr, $buffer:ident, $expected:expr) => {
         let pos: usize = $tx as _;

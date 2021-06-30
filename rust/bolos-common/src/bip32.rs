@@ -1,5 +1,20 @@
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 /// Struct representing a BIP32 derivation path, with up to LEN components
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct BIP32Path<const LEN: usize> {
     len: u8,
     components: [u32; LEN],
@@ -18,7 +33,7 @@ pub enum BIP32PathError {
 impl<const LEN: usize> BIP32Path<LEN> {
     ///Attempt to read a BIP32 Path from the provided input bytes
     pub fn read(input: &[u8]) -> Result<Self, BIP32PathError> {
-        if input.len() < 1 {
+        if input.is_empty() {
             return Err(BIP32PathError::ZeroLength);
         }
         let blen = input.len() - 1;
@@ -33,9 +48,7 @@ impl<const LEN: usize> BIP32Path<LEN> {
         let len = input[0] as usize;
         if len == 0 {
             return Err(BIP32PathError::ZeroLength);
-        } else if len > LEN {
-            return Err(BIP32PathError::TooMuchData);
-        } else if blen / 4 > len {
+        } else if len > LEN || blen / 4 > len {
             return Err(BIP32PathError::TooMuchData);
         } else if blen / 4 < len {
             return Err(BIP32PathError::NotEnoughData);
@@ -52,7 +65,7 @@ impl<const LEN: usize> BIP32Path<LEN> {
                 array
             })
             //convert to u32
-            .map(|bytes| u32::from_be_bytes(bytes));
+            .map(u32::from_be_bytes);
 
         let mut components_array = [0; LEN];
         for (i, component) in components.enumerate() {

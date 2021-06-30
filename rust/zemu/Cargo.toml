@@ -5,4 +5,8 @@ authors = ["becominginsane <francesco@zondax.ch>"]
 edition = "2018"
 
 [dependencies]
+bolos-sys = { version = "0.1", path = "../bolos-sys" }
+bolos-derive = { version = "0.1", path = "../bolos-derive" }
+
 cfg-if = "1.0.0"
+cty = "0.2.1"

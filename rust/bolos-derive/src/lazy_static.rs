@@ -1,3 +1,18 @@
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
@@ -68,7 +83,7 @@ fn produce_custom_ty(
                }
             }
 
-            impl core::ops::DerefMut for #struct_name {
+            impl ::core::ops::DerefMut for #struct_name {
                 fn deref_mut(&mut self) -> &mut Self::Target {
                     self.get_mut()
                 }
@@ -77,7 +92,7 @@ fn produce_custom_ty(
     } else {
         return Err(Error::new(
             is_mut.span(),
-            format!("non-mut static items are not supported!"),
+            "non-mut static items are not supported!".to_string(),
         ));
     };
 
@@ -116,7 +131,7 @@ fn produce_custom_ty(
                     //SAFETY:
                     // ptr comes from rust so guaranteed to be aligned and not null,
                     // is also initialized (see above), not deallocated (global)
-                    let initialized_val = unsafe { core::ptr::read_volatile(initialized_ptr as *const _) };
+                    let initialized_val = unsafe { ::core::ptr::read_volatile(initialized_ptr as *const _) };
 
                     if initialized_val != 1u8 {
                         //SAFETY:
@@ -140,7 +155,7 @@ fn produce_custom_ty(
                 }
             }
 
-            impl core::ops::Deref for #struct_name {
+            impl ::core::ops::Deref for #struct_name {
                 type Target = #ty;
 
                 fn deref(&self) -> &Self::Target {

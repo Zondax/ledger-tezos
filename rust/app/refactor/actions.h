@@ -16,26 +16,21 @@
 #pragma once
 
 #include <stdint.h>
-#include "cx.h"
-#include "apdu_codes.h"
 #include <os_io_seproxyhal.h>
-#include "coin.h"
+#include "inttypes.h"
+#include "zxmacros.h"
 
-extern uint8_t action_addr_len;
+#define APDU_CODE_DATA_INVALID              0x6984
+#define APDU_CODE_COMMAND_NOT_ALLOWED       0x6986
 
-__Z_INLINE void app_sign() {
-    set_code(G_io_apdu_buffer, 0, APDU_CODE_OK);
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 0);
+__Z_INLINE void set_code(uint8_t *buffer, uint8_t offset, uint16_t value) {
+    *(buffer + offset) = (uint8_t) (value >> 8);
+    *(buffer + offset + 1) = (uint8_t) (value & 0xFF);
 }
 
 __Z_INLINE void app_reject() {
     set_code(G_io_apdu_buffer, 0, APDU_CODE_COMMAND_NOT_ALLOWED);
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 0);
-}
-
-__Z_INLINE void app_reply_address() {
-    set_code(G_io_apdu_buffer, action_addr_len, APDU_CODE_OK);
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, action_addr_len + 2);
+    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
 
 __Z_INLINE void app_reply_error() {

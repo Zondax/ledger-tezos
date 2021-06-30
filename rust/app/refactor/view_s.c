@@ -18,7 +18,6 @@
 #include "app_mode.h"
 #include "view.h"
 #include "view_internal.h"
-#include "apdu_codes.h"
 #include "ux.h"
 #include "bagl.h"
 #include "zxmacros.h"

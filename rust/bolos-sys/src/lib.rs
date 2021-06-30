@@ -18,6 +18,7 @@
 
 //! This crate provides bindings for Ledger's BOLOS, as well as wrappers and utilities
 
+#[allow(unused_imports)]
 #[macro_use]
 extern crate cfg_if;
 
@@ -52,3 +53,6 @@ pub fn exit_app(status: u8) -> ! {
 /// Contains some impls for items coming from the bindings
 #[cfg(bolos_sdk)]
 mod extra_traits;
+
+#[cfg(bolos_sdk)]
+pub mod pic;

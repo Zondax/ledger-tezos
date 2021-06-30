@@ -19,7 +19,6 @@
 #include "view.h"
 #include "view_internal.h"
 #include "actions.h"
-#include "apdu_codes.h"
 #include "glyphs.h"
 #include "bagl.h"
 #include "zxmacros.h"

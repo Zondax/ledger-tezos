@@ -8,6 +8,10 @@ export const INS = {
   GET_VERSION: 0x10,
   GET_ADDR: 0x11,
   SIGN: 0x12,
+  AUTHORIZE_BAKING: 0xA1,
+  DEAUTHORIZE_BAKING: 0xAC,
+  QUERY_AUTH_KEY_WITH_CURVE: 0xAD,
+  BAKER_SIGN: 0xAF,
 };
 
 export const LEGACY_INS = {

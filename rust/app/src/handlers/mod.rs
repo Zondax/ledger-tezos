@@ -1,4 +1,20 @@
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 pub mod legacy_version;
+pub mod parser_common;
 pub mod public_key;
 pub mod signing;
 pub mod version;
@@ -9,33 +25,10 @@ pub mod dev;
 #[cfg(feature = "baking")]
 pub mod hwm;
 
-mod utils {
-    #[repr(u8)]
-    pub enum PacketType {
-        Init = 0,
-        Add = 1,
-        Last = 2,
-    }
+#[cfg(feature = "baking")]
+pub mod baking;
 
-    impl std::convert::TryFrom<u8> for PacketType {
-        type Error = ();
-
-        fn try_from(from: u8) -> Result<Self, ()> {
-            match from {
-                0 => Ok(Self::Init),
-                1 => Ok(Self::Add),
-                2 => Ok(Self::Last),
-                _ => Err(()),
-            }
-        }
-    }
-
-    impl Into<u8> for PacketType {
-        fn into(self) -> u8 {
-            self as _
-        }
-    }
-}
+mod utils;
 pub(self) use utils::*;
 
 pub(self) mod resources {

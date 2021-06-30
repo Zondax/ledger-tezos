@@ -1,3 +1,18 @@
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 use std::convert::TryFrom;
 
 use crate::{
@@ -60,7 +75,7 @@ impl AsRef<[u8]> for PublicKey {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Curve {
     Ed25519,
     Secp256K1,
@@ -82,25 +97,23 @@ impl TryFrom<u8> for Curve {
     }
 }
 
-impl Into<u8> for Curve {
-    fn into(self) -> u8 {
-        match self {
-            Self::Ed25519 => 0,
-            Self::Secp256K1 => 1,
-            Self::Secp256R1 => 2,
-            Self::Bip32Ed25519 => 3,
+impl From<Curve> for u8 {
+    fn from(from: Curve) -> Self {
+        match from {
+            Curve::Ed25519 => 0,
+            Curve::Secp256K1 => 1,
+            Curve::Secp256R1 => 2,
+            Curve::Bip32Ed25519 => 3,
         }
     }
 }
 
-impl Into<sys::crypto::Curve> for &Curve {
-    fn into(self) -> sys::crypto::Curve {
-        use sys::crypto::Curve as CCurve;
-
-        match self {
-            Curve::Ed25519 | Curve::Bip32Ed25519 => CCurve::Ed25519,
-            Curve::Secp256K1 => CCurve::Secp256K1,
-            Curve::Secp256R1 => CCurve::Secp256R1,
+impl From<&Curve> for sys::crypto::Curve {
+    fn from(from: &Curve) -> Self {
+        match from {
+            Curve::Ed25519 | Curve::Bip32Ed25519 => Self::Ed25519,
+            Curve::Secp256K1 => Self::Secp256K1,
+            Curve::Secp256R1 => Self::Secp256R1,
         }
     }
 }
@@ -115,6 +128,8 @@ impl TryFrom<sys::crypto::Curve> for Curve {
             CCurve::Ed25519 => Ok(Self::Bip32Ed25519),
             CCurve::Secp256K1 => Ok(Self::Secp256K1),
             CCurve::Secp256R1 => Ok(Self::Secp256R1),
+            #[allow(unreachable_patterns)]
+            //this isn't actually unreachable because CCurve mock is just incomplete
             _ => Err(()),
         }
     }
@@ -147,7 +162,7 @@ impl Keypair {
             Curve::Ed25519 | Curve::Bip32Ed25519 | Curve::Secp256K1 | Curve::Secp256R1 => self
                 .secret
                 .sign::<Sha256>(data, out) //pass Sha256 for the signature nonce hasher
-                .map_err(|e| SignError::Sys(e)),
+                .map_err(SignError::Sys),
         }
     }
 }

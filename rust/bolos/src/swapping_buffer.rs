@@ -1,3 +1,18 @@
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 use super::{
     nvm::{NVMError, NVM},
     PIC,
@@ -32,10 +47,7 @@ impl BufferState {
 #[cfg(test)]
 impl BufferState {
     const fn is_ram(&self) -> bool {
-        match self {
-            Self::WritingToRam(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::WritingToRam(_))
     }
 
     const fn is_flash(&self) -> bool {
@@ -81,7 +93,7 @@ impl<'r, 'f, const RAM: usize, const FLASH: usize> SwappingBuffer<'r, 'f, RAM, F
     /// switching to the second buffer if needed.
     ///
     /// Will copy the first buffer into the second before switching.
-    /// Switching is permanent unless [`reset`] is called
+    /// Switching is permanent unless [`Self::reset`] is called
     ///
     /// # Errors
     /// This function will error if the second buffer is smaller than the requested amount,
@@ -211,11 +223,7 @@ mod tests {
         assert!(buffer.write(MSG).is_err());
 
         //find first occurence of MSG in buffer
-        assert!(buffer
-            .read()
-            .windows(MSG.len())
-            .position(|w| w == MSG)
-            .is_some())
+        assert!(buffer.read().windows(MSG.len()).any(|w| w == MSG))
     }
 
     #[test]

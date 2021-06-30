@@ -33,8 +33,8 @@ pub(self) use bolos_sys::raw;
 
 pub use bolos_sys::exit_app;
 
-pub mod pic;
-pub use pic::PIC;
+pub use bolos_sys::pic;
+pub use bolos_sys::pic::PIC;
 
 pub mod nvm;
 pub use nvm::NVM;

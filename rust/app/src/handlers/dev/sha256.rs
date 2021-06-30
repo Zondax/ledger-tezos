@@ -1,11 +1,26 @@
-use std::{convert::TryFrom, prelude::v1::*};
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
+use std::prelude::v1::*;
 
 use sha2::digest::Digest;
 
 use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_HASH},
-    handlers::{resources::BUFFER, PacketType},
+    handlers::{resources::BUFFER, PacketType, PacketTypes},
 };
 
 pub struct Sha256;
@@ -18,12 +33,10 @@ impl ApduHandler for Sha256 {
         }
         *tx = 0;
 
-        let packet = PacketType::try_from(apdu_buffer[2]).map_err(|_| Error::InvalidP1P2)?;
+        let packet = PacketTypes::new(apdu_buffer[2], false).map_err(|_| Error::InvalidP1P2)?;
         let len = apdu_buffer[4] as usize;
-
-        match packet {
-            //Reset buffer and start loading data
-            PacketType::Init => unsafe {
+        if packet.is_init() {
+            unsafe {
                 BUFFER.lock(Self)?.reset();
                 BUFFER
                     .acquire(Self)?
@@ -32,9 +45,9 @@ impl ApduHandler for Sha256 {
                 *tx = 0;
 
                 Ok(())
-            },
-            // keep loading data
-            PacketType::Add => unsafe {
+            }
+        } else if packet.is_next() {
+            unsafe {
                 BUFFER
                     .acquire(Self)?
                     .write(&apdu_buffer[5..5 + len])
@@ -42,9 +55,9 @@ impl ApduHandler for Sha256 {
                 *tx = 0;
 
                 Ok(())
-            },
-            // load the last bit and perform sha256
-            PacketType::Last => unsafe {
+            }
+        } else if packet.is_last() {
+            unsafe {
                 BUFFER
                     .acquire(Self)?
                     .write(&apdu_buffer[5..5 + len])
@@ -63,9 +76,11 @@ impl ApduHandler for Sha256 {
 
                 //reset the buffer for next message
                 BUFFER.acquire(Self)?.reset();
-                BUFFER.release(Self);
+                let _ = BUFFER.release(Self);
                 Ok(())
-            },
+            }
+        } else {
+            Err(Error::InvalidP1P2)
         }
     }
 }
@@ -76,6 +91,7 @@ mod tests {
     use crate::{
         assert_error_code,
         dispatcher::{handle_apdu, CLA},
+        handlers::ZPacketType,
     };
     use std::convert::TryInto;
 
@@ -93,7 +109,7 @@ mod tests {
         //Init
         buffer[0] = CLA;
         buffer[1] = INS_DEV_HASH;
-        buffer[2] = PacketType::Init.into();
+        buffer[2] = ZPacketType::Init.into();
         buffer[3] = 0;
         buffer[4] = 255;
         buffer[5..].copy_from_slice(&MSG[..255]);
@@ -109,7 +125,7 @@ mod tests {
 
             buffer[0] = CLA;
             buffer[1] = INS_DEV_HASH;
-            buffer[2] = PacketType::Add.into();
+            buffer[2] = ZPacketType::Add.into();
             buffer[3] = 0;
             buffer[4] = len as u8;
 
@@ -125,14 +141,14 @@ mod tests {
         tx = 0;
         buffer[0] = CLA;
         buffer[1] = INS_DEV_HASH;
-        buffer[2] = PacketType::Last.into();
+        buffer[2] = ZPacketType::Last.into();
         buffer[3] = 0;
         buffer[4] = 0;
 
         handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
-        let expected = sha2::Sha256::digest(&MSG[..]);
+        let expected = sha2::Sha256::digest(&MSG);
         let digest = &buffer[..tx as usize - 2];
         assert_eq!(digest, expected.as_slice());
     }
@@ -150,24 +166,24 @@ mod tests {
         //Init
         buffer[0] = CLA;
         buffer[1] = INS_DEV_HASH;
-        buffer[2] = PacketType::Init.into();
+        buffer[2] = ZPacketType::Init.into();
         buffer[3] = 0;
         buffer[4] = len as u8;
-        buffer[5..5 + len].copy_from_slice(&MSG[..]);
+        buffer[5..5 + len].copy_from_slice(MSG);
 
         handle_apdu(&mut flags, &mut tx, 5 + len as u32, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
         buffer[0] = CLA;
         buffer[1] = INS_DEV_HASH;
-        buffer[2] = PacketType::Last.into();
+        buffer[2] = ZPacketType::Last.into();
         buffer[3] = 0;
         buffer[4] = 0;
 
         handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
-        let expected = sha2::Sha256::digest(&MSG[..]);
+        let expected = sha2::Sha256::digest(&MSG);
         let digest = &buffer[..tx as usize - 2];
         assert_eq!(digest, expected.as_slice());
     }

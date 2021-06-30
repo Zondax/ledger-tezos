@@ -1,4 +1,4 @@
-import { DeviceModel, DEFAULT_START_OPTIONS } from '@zondax/zemu'
+import { DEFAULT_START_OPTIONS, DeviceModel } from '@zondax/zemu'
 import { Curve } from '@zondax/ledger-tezos'
 
 const Resolve = require('path').resolve
@@ -13,12 +13,7 @@ export const models: DeviceModel[] = [
   { name: 'nanox', prefix: 'X', path: APP_PATH_X },
 ]
 
-export const curves: Curve[] = [
-    Curve.Ed25519,
-    Curve.Ed25519_Slip10,
-    Curve.Secp256K1,
-    Curve.Secp256R1
-];
+export const curves: Curve[] = [Curve.Ed25519, Curve.Ed25519_Slip10, Curve.Secp256K1, Curve.Secp256R1]
 
 export const defaultOptions = {
   ...DEFAULT_START_OPTIONS,
