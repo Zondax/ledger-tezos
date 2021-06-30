@@ -1,5 +1,5 @@
 import TezosApp, { LedgerError, ResponseBase } from '@zondax/ledger-tezos'
-import { errorCodeToString, processErrorResponse, CLA } from '@zondax/ledger-tezos/dist/common'
+import { CLA, errorCodeToString, processErrorResponse } from '@zondax/ledger-tezos/dist/common'
 
 const INS = {
   HASH: 0xf0,
