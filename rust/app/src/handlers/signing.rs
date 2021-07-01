@@ -153,7 +153,8 @@ impl ApduHandler for Sign {
             _ => return Err(Error::InsNotSupported),
         };
 
-        let packet_type = PacketTypes::new(buffer.p1(), is_legacy).map_err(|_| Error::InvalidP1P2)?;
+        let packet_type =
+            PacketTypes::new(buffer.p1(), is_legacy).map_err(|_| Error::InvalidP1P2)?;
 
         *tx = match action {
             Action::Sign | Action::LegacySignWithHash => {
