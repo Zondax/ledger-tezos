@@ -166,7 +166,7 @@ jobs:
                                     -r ${CIRCLE_PROJECT_REPONAME} \
                                     -c ${CIRCLE_SHA1} \
                                     $(/home/zondax/project/rust/app/pkg/installer_s.sh version) \
-                                    /home/zondax/project/rust/rust/app/pkg/installer_s.sh
+                                    /home/zondax/project/rust/app/pkg/installer_s.sh
 
   publish_npm_package:
     docker:
