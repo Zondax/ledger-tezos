@@ -21,26 +21,31 @@ use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_HASH},
     handlers::{resources::BUFFER, PacketType, PacketTypes},
+    utils::ApduBufferRead,
 };
 
 pub struct Sha256;
 
 impl ApduHandler for Sha256 {
     #[inline(never)]
-    fn handle(_: &mut u32, tx: &mut u32, _: u32, apdu_buffer: &mut [u8]) -> Result<(), Error> {
-        if apdu_buffer[APDU_INDEX_INS] != INS_DEV_HASH {
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        apdu_buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
+        if apdu_buffer.ins() != INS_DEV_HASH {
             return Err(Error::InsNotSupported);
         }
-        *tx = 0;
 
-        let packet = PacketTypes::new(apdu_buffer[2], false).map_err(|_| Error::InvalidP1P2)?;
-        let len = apdu_buffer[4] as usize;
+        let packet = PacketTypes::new(apdu_buffer.p1(), false).map_err(|_| Error::InvalidP1P2)?;
+        let payload = apdu_buffer.payload().map_err(|_| Error::DataInvalid)?;
         if packet.is_init() {
             unsafe {
                 BUFFER.lock(Self)?.reset();
                 BUFFER
                     .acquire(Self)?
-                    .write(&apdu_buffer[5..5 + len])
+                    .write(payload)
                     .map_err(|_| Error::DataInvalid)?;
                 *tx = 0;
 
@@ -50,7 +55,7 @@ impl ApduHandler for Sha256 {
             unsafe {
                 BUFFER
                     .acquire(Self)?
-                    .write(&apdu_buffer[5..5 + len])
+                    .write(payload)
                     .map_err(|_| Error::DataInvalid)?;
                 *tx = 0;
 
@@ -60,12 +65,14 @@ impl ApduHandler for Sha256 {
             unsafe {
                 BUFFER
                     .acquire(Self)?
-                    .write(&apdu_buffer[5..5 + len])
+                    .write(payload)
                     .map_err(|_| Error::DataInvalid)?;
 
                 //only read_exact because we don't care about what's in the rest of the buffer
                 let digest = sha2::Sha256::digest(BUFFER.acquire(Self)?.read_exact());
                 let digest = digest.as_slice();
+
+                let apdu_buffer = apdu_buffer.write();
 
                 if apdu_buffer.len() < digest.len() {
                     return Err(Error::OutputBufferTooSmall);

@@ -27,6 +27,7 @@ use crate::{
     crypto::Curve,
     dispatcher::{ApduHandler, INS_LEGACY_SIGN, INS_LEGACY_SIGN_WITH_HASH, INS_SIGN},
     sys,
+    utils::ApduBufferRead,
 };
 
 #[bolos::lazy_static]
@@ -70,17 +71,16 @@ impl Sign {
     pub fn blind_sign(
         send_hash: bool,
         packet_type: PacketTypes,
-        buffer: &mut [u8],
+        buffer: ApduBufferRead<'_>,
         flags: &mut u32,
     ) -> Result<u32, Error> {
-        let cdata_len = buffer[4] as usize;
-        let cdata = &buffer[5..5 + cdata_len];
+        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
 
         if packet_type.is_init() {
             //first packet contains the curve data on the second parameter
             // and the bip32 path as payload only
 
-            let curve = Curve::try_from(buffer[3]).map_err(|_| Error::InvalidP1P2)?;
+            let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
             let path =
                 BIP32Path::<BIP32_MAX_LENGTH>::read(cdata).map_err(|_| Error::DataInvalid)?;
 
@@ -136,11 +136,15 @@ enum Action {
 
 impl ApduHandler for Sign {
     #[inline(never)]
-    fn handle(flags: &mut u32, tx: &mut u32, _rx: u32, buffer: &mut [u8]) -> Result<(), Error> {
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
         sys::zemu_log_stack("Sign::handle\x00");
 
         *tx = 0;
-        let (is_legacy, action) = match buffer[APDU_INDEX_INS] {
+        let (is_legacy, action) = match buffer.ins() {
             INS_SIGN => (false, Action::Sign),
             INS_LEGACY_SIGN => (true, Action::LegacySign),
             INS_LEGACY_SIGN_WITH_HASH => (true, Action::LegacySignWithHash),
@@ -149,7 +153,7 @@ impl ApduHandler for Sign {
             _ => return Err(Error::InsNotSupported),
         };
 
-        let packet_type = PacketTypes::new(buffer[2], is_legacy).map_err(|_| Error::InvalidP1P2)?;
+        let packet_type = PacketTypes::new(buffer.p1(), is_legacy).map_err(|_| Error::InvalidP1P2)?;
 
         *tx = match action {
             Action::Sign | Action::LegacySignWithHash => {

@@ -16,6 +16,7 @@
 use crate::constants::{ApduError, APDU_INDEX_INS};
 use crate::dispatcher::{ApduHandler, INS_LEGACY_GET_VERSION, INS_LEGACY_GIT};
 use crate::handlers::version::{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
+use crate::utils::ApduBufferRead;
 use crate::{constants::ApduError::InsNotSupported, utils::BAKING};
 
 pub struct LegacyGetVersion {}
@@ -32,16 +33,16 @@ impl LegacyGit {
 
 impl ApduHandler for LegacyGetVersion {
     #[inline(never)]
-    fn handle(
-        _flags: &mut u32,
+    fn handle<'apdu>(
+        _: &mut u32,
         tx: &mut u32,
-        _rx: u32,
-        apdu_buffer: &mut [u8],
+        apdu_buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), ApduError> {
-        if apdu_buffer[APDU_INDEX_INS] != INS_LEGACY_GET_VERSION {
+        if apdu_buffer.ins() != INS_LEGACY_GET_VERSION {
             return Err(InsNotSupported);
         }
 
+        let apdu_buffer = apdu_buffer.write();
         // https://github.com/obsidiansystems/ledger-app-tezos/blob/58797b2f9606c5a30dd1ccc9e5b9962e45e10356/src/apdu.c#L24
         apdu_buffer[0] = BAKING as _;
         apdu_buffer[1] = VERSION_MAJOR;
@@ -55,18 +56,18 @@ impl ApduHandler for LegacyGetVersion {
 
 impl ApduHandler for LegacyGit {
     #[inline(never)]
-    fn handle(
-        _flags: &mut u32,
+    fn handle<'apdu>(
+        _: &mut u32,
         tx: &mut u32,
-        _rx: u32,
-        apdu_buffer: &mut [u8],
+        apdu_buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), ApduError> {
-        if apdu_buffer[APDU_INDEX_INS] != INS_LEGACY_GIT {
+        if apdu_buffer.ins() != INS_LEGACY_GIT {
             return Err(InsNotSupported);
         }
 
         let commit = &Self::commit_hash()[..Self::COMMIT_HASH_LEN];
 
+        let apdu_buffer = apdu_buffer.write();
         if apdu_buffer.len() < commit.len() {
             return Err(ApduError::OutputBufferTooSmall);
         }

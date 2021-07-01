@@ -107,6 +107,7 @@ impl<'apdu> ApduBufferRead<'apdu> {
     }
 
     /// Alias to idx APDU_INDEX_INS
+    //TODO: remove so we dispatch only at the dispatcher level
     pub fn ins(&self) -> u8 {
         self.inner[APDU_INDEX_INS]
     }
@@ -137,64 +138,8 @@ impl<'apdu> ApduBufferRead<'apdu> {
         //we checked the size beforehand
     }
 
-    /// Convert to a writer
-    ///
-    /// # Note
-    ///
-    /// There's no way to directly convert from a writer to a reader,
-    /// because the methods would become invalidated since they could be overriden
-    pub fn write(self) -> ApduBufferWrite<'apdu> {
-        ApduBufferWrite::new(self.inner)
-    }
-}
-
-pub struct ApduBufferWrite<'apdu> {
-    inner: &'apdu mut [u8],
-    tx: usize,
-}
-
-pub enum ApduBufferWriteError {
-    /// Attempted to write in the buffer too much data
-    TooMuchData { got: usize, remaining: usize },
-}
-
-impl<'apdu> ApduBufferWrite<'apdu> {
-    pub fn new(buf: &'apdu mut [u8]) -> Self {
-        Self { inner: buf, tx: 0 }
-    }
-
-    /// Append a byte slice to the buffer
-    ///
-    /// Returns the number of bytes written (which should match data.len())
-    /// or an error if the remaining space for the buffer was too small
-    pub fn append(&mut self, data: &[u8]) -> Result<usize, ApduBufferWriteError> {
-        let rem = self.inner.len() - self.tx;
-        let len = data.len();
-
-        if len > rem {
-            Err(ApduBufferWriteError::TooMuchData {
-                got: len,
-                remaining: rem,
-            })
-        } else {
-            self.inner[self.tx..self.tx + len].copy_from_slice(data);
-            Ok(len)
-        }
-    }
-
-    /// Set the closing code and return the total number of bytes written
-    pub fn close(self, code: Option<ApduError>) -> Result<usize, ApduBufferWriteError> {
-        let code = code.unwrap_or(ApduError::Success) as u16;
-
-        let rem = self.inner.len() - self.tx;
-        if rem < 2 {
-            Err(ApduBufferWriteError::TooMuchData {
-                got: 2,
-                remaining: rem,
-            })
-        } else {
-            self.inner[self.tx..self.tx + 2].copy_from_slice(&code.to_be_bytes()[..]);
-            Ok(self.tx + 2)
-        }
+    /// Discard the structure to obtain the inner slice for writing
+    pub fn write(self) -> &'apdu mut [u8] {
+        self.inner
     }
 }

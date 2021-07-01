@@ -19,6 +19,7 @@ use crate::{
     constants::{ApduError as Error, APDU_INDEX_INS},
     dispatcher::{ApduHandler, INS_DEV_ECHO_UI},
     sys::{Show, ViewError, Viewable, PIC},
+    utils::ApduBufferRead,
 };
 
 #[derive(Default)]
@@ -29,20 +30,22 @@ pub struct Echo {
 
 impl ApduHandler for Echo {
     #[inline(never)]
-    fn handle<'apdu>(flags: &mut u32, apdu_buffer: ApduBufferRead<'apdu>) -> (ApduBufferWrite<'apdu>, Option<ApduError>) {
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        apdu_buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
         if apdu_buffer.ins() != INS_DEV_ECHO_UI {
-            return (apdu_buffer.write(), Some(Error::InsNotSupported));
+            return Err(Error::InsNotSupported);
         }
 
         let mut this: Echo = Default::default();
-        let payload = match apdu_buffer.payload() {
-            Ok(p) => p,
-            Err(e) => return (apdu_buffer.write(), Some(Error::WrongLength)),
-        };
+        let payload = apdu_buffer.payload().map_err(|_| Error::DataInvalid)?;
         let len = payload.len();
 
         if len > 17 + 17 {
-            return (apdu_buffer.write(), Some(Error::WrongLength));
+            return Err(Error::WrongLength);
         }
 
         let first = std::cmp::min(len, 17);
@@ -52,8 +55,8 @@ impl ApduHandler for Echo {
         this.line2[..second].copy_from_slice(&payload[first..first + second]);
 
         match unsafe { this.show(flags) } {
-            Ok(_) => (apdu_buffer.write(), None),
-            Err(_) => (apdu_buffer.write(), Some(Error::ExecutionError))
+            Ok(_) => Ok(()),
+            Err(_) => Err(Error::ExecutionError),
         }
     }
 }
