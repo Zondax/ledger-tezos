@@ -16,9 +16,10 @@
 use std::prelude::v1::*;
 
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS},
+    constants::ApduError as Error,
     dispatcher::{ApduHandler, INS_DEV_ECHO_UI},
     sys::{Show, ViewError, Viewable, PIC},
+    utils::ApduBufferRead,
 };
 
 #[derive(Default)]
@@ -29,26 +30,34 @@ pub struct Echo {
 
 impl ApduHandler for Echo {
     #[inline(never)]
-    fn handle(flags: &mut u32, tx: &mut u32, _: u32, apdu_buffer: &mut [u8]) -> Result<(), Error> {
-        if apdu_buffer[APDU_INDEX_INS] != INS_DEV_ECHO_UI {
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        apdu_buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
+        if apdu_buffer.ins() != INS_DEV_ECHO_UI {
             return Err(Error::InsNotSupported);
         }
-        *tx = 0;
 
         let mut this: Echo = Default::default();
-        let len = apdu_buffer[4] as usize;
+        let payload = apdu_buffer.payload().map_err(|_| Error::DataInvalid)?;
+        let len = payload.len();
 
         if len > 17 + 17 {
             return Err(Error::WrongLength);
         }
 
         let first = std::cmp::min(len, 17);
-        this.line1[..first].copy_from_slice(&apdu_buffer[5..5 + first]);
+        this.line1[..first].copy_from_slice(&payload[..first]);
 
         let second = std::cmp::min(len - 17, 17);
-        this.line2[..second].copy_from_slice(&apdu_buffer[5 + first..5 + first + second]);
+        this.line2[..second].copy_from_slice(&payload[first..first + second]);
 
-        unsafe { this.show(flags) }.map_err(|_| Error::ExecutionError)
+        match unsafe { this.show(flags) } {
+            Ok(_) => Ok(()),
+            Err(_) => Err(Error::ExecutionError),
+        }
     }
 }
 

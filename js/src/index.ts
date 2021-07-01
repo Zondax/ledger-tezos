@@ -233,7 +233,7 @@ export default class TezosApp {
         .then(processQueryAuthKeyWithCurve, processErrorResponse);
   }
 
-  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, legacy: boolean = false, curve?: Curve, ins: number = INS.SIGN): Promise<ResponseSign> {
+  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, legacy = false, curve?: Curve, ins: number = INS.SIGN): Promise<ResponseSign> {
     let payloadType = PAYLOAD_TYPE.ADD;
     let p2 = 0;
     if (chunkIdx === 1) {

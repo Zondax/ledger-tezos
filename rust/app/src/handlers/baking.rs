@@ -12,11 +12,10 @@ use bolos::{
     hash::{Blake2b, Hasher},
 };
 
-use crate::constants::{APDU_INDEX_P1, APDU_INDEX_P2};
 use crate::handlers::parser_common::ParserError;
 use crate::handlers::{PacketType, PacketTypes};
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS, BIP32_MAX_LENGTH},
+    constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::{self, Curve},
     dispatcher::{
         ApduHandler, INS_AUTHORIZE_BAKING, INS_BAKER_SIGN, INS_DEAUTHORIZE_BAKING,
@@ -26,6 +25,7 @@ use crate::{
     handlers::hwm::{LegacyHWM, WaterMark},
     handlers::public_key::GetAddress,
     sys::{self, flash_slot::Wear, new_flash_slot},
+    utils::ApduBufferRead,
 };
 use bolos::flash_slot::WearError;
 
@@ -305,24 +305,22 @@ impl Baking {
     }
 
     #[inline(never)]
-    fn authorize_baking(req_confirmation: bool, buffer: &mut [u8]) -> Result<u32, Error> {
+    fn authorize_baking(req_confirmation: bool, buffer: ApduBufferRead<'_>) -> Result<u32, Error> {
         if !req_confirmation {
             return Err(Error::ApduCodeConditionsNotSatisfied);
         }
 
-        let curve =
-            crypto::Curve::try_from(buffer[APDU_INDEX_P2]).map_err(|_| Error::InvalidP1P2)?;
+        let curve = crypto::Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
 
-        let cdata_len = buffer[4] as usize;
-        if cdata_len > buffer[5..].len() {
-            return Err(Error::DataInvalid);
-        }
-        let cdata = &buffer[5..5 + cdata_len];
+        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
         let bip32_path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(cdata)
             .map_err(|_| Error::DataInvalid)?;
+
         let key = GetAddress::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
         let path_and_data = Bip32PathAndCurve::new(curve, bip32_path);
         Self::check_and_store_path(path_and_data)?;
+
+        let buffer = buffer.write();
         let pk_len = Self::get_public(key, &mut buffer[1..])?;
         buffer[0] = pk_len as u8;
 
@@ -343,7 +341,9 @@ impl Baking {
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
         Bip32PathAndCurve::try_from_bytes(&current_path)?;
+
         let bip32_pathsize = current_path[1] as usize;
+
         buffer[0..1 + 4 * bip32_pathsize].copy_from_slice(&current_path[1..2 + 4 * bip32_pathsize]);
         Ok(1 + 4 * bip32_pathsize as u32)
     }
@@ -360,7 +360,9 @@ impl Baking {
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
         Bip32PathAndCurve::try_from_bytes(&current_path)?;
+
         let bip32_pathsize = current_path[1] as usize;
+
         buffer[0..2 + 4 * bip32_pathsize].copy_from_slice(&current_path[0..2 + 4 * bip32_pathsize]);
         Ok(2 + 4 * bip32_pathsize as u32)
     }
@@ -394,17 +396,17 @@ impl Baking {
     #[inline(never)]
     fn baker_sign(
         packet_type: PacketTypes,
-        buffer: &mut [u8],
+        buffer: ApduBufferRead<'_>,
         flags: &mut u32,
     ) -> Result<u32, Error> {
-        let cdata_len = buffer[4] as usize;
-        let cdata = &buffer[5..5 + cdata_len];
+        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
         let baking_ui: BakingSignUI;
+
         if packet_type.is_init() {
             //first packet contains the curve data on the second parameter
             // and the bip32 path as payload only
 
-            let curve = Curve::try_from(buffer[3]).map_err(|_| Error::InvalidP1P2)?;
+            let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
             let path =
                 BIP32Path::<BIP32_MAX_LENGTH>::read(cdata).map_err(|_| Error::DataInvalid)?;
 
@@ -731,11 +733,15 @@ fn cleanup_globals() -> Result<(), Error> {
 
 impl ApduHandler for Baking {
     #[inline(never)]
-    fn handle(flags: &mut u32, tx: &mut u32, _rx: u32, buffer: &mut [u8]) -> Result<(), Error> {
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
         sys::zemu_log_stack("Baking::handle\x00");
 
         *tx = 0;
-        let action = match buffer[APDU_INDEX_INS] {
+        let action = match buffer.ins() {
             INS_AUTHORIZE_BAKING => Action::AuthorizeBaking,
             INS_LEGACY_AUTHORIZE_BAKING => Action::LegacyAuthorize,
             INS_LEGACY_DEAUTHORIZE => Action::LegacyDeAuthorize,
@@ -748,16 +754,18 @@ impl ApduHandler for Baking {
             _ => return Err(Error::InsNotSupported),
         };
         let is_legacy = false; //FIXME: take this from action type
-        let req_confirmation = buffer[APDU_INDEX_P1] >= 1;
 
-        let packet_type = PacketTypes::new(buffer[2], is_legacy).map_err(|_| Error::InvalidP1P2)?;
+        //read P1, one exludes the other
+        let req_confirmation = buffer.p1() >= 1;
+        let packet_type =
+            PacketTypes::new(buffer.p1(), is_legacy).map_err(|_| Error::InvalidP1P2)?;
 
         *tx = match action {
             Action::AuthorizeBaking => Self::authorize_baking(req_confirmation, buffer)?,
             Action::DeAuthorizeBaking => Self::deauthorize_baking(req_confirmation)?,
-            Action::QueryAuthKey => Self::query_authkey(req_confirmation, buffer)?,
+            Action::QueryAuthKey => Self::query_authkey(req_confirmation, buffer.write())?,
             Action::QueryAuthKeyWithCurve => {
-                Self::query_authkey_withcurve(req_confirmation, buffer)?
+                Self::query_authkey_withcurve(req_confirmation, buffer.write())?
             }
             Action::BakerSign => Self::baker_sign(packet_type, buffer, flags)?,
 

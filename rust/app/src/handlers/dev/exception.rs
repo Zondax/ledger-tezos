@@ -15,8 +15,9 @@
 ********************************************************************************/
 use crate::sys::errors::{catch, throw_raw, Error as SysError};
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS},
+    constants::ApduError as Error,
     dispatcher::{ApduHandler, INS_DEV_EXCEPT},
+    utils::ApduBufferRead,
 };
 use std::convert::TryFrom;
 
@@ -24,14 +25,18 @@ pub struct Except {}
 
 impl ApduHandler for Except {
     #[inline(never)]
-    fn handle(_: &mut u32, tx: &mut u32, _: u32, buffer: &mut [u8]) -> Result<(), Error> {
-        if buffer[APDU_INDEX_INS] != INS_DEV_EXCEPT {
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
+        if buffer.ins() != INS_DEV_EXCEPT {
             return Err(Error::InsNotSupported);
         }
-        *tx = 0;
 
-        let do_catch = buffer[2] >= 1;
-        let exception = buffer[3];
+        let do_catch = buffer.p1() >= 1;
+        let exception = buffer.p2();
 
         #[allow(unreachable_code)]
         let call = move || {
@@ -49,6 +54,7 @@ impl ApduHandler for Except {
         // otherwise... don't know yet!
         let res = if do_catch { catch(call) } else { Ok(call()) };
 
+        let buffer = buffer.write();
         match res {
             //if exception was unspecified, then the call returns false,
             //so we can match against it and return our error

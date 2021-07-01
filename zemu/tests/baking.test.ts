@@ -241,8 +241,8 @@ describe.each(models)('Standard baking [%s]; legacy - pubkey', function (m) {
   })
 })
 
-describe.each(models)('Authorize baking [%s] - pubkey', function (m) {
-  test.each(curves)('Authorize baking pubkey %s', async function (curve) {
+describe.each(models)('Standard baking [%s] - authorize', function (m) {
+  test.each(curves)('Authorize baking %s', async function (curve) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -255,10 +255,8 @@ describe.each(models)('Authorize baking [%s] - pubkey', function (m) {
       await sim.close()
     }
   })
-})
 
-describe.each(models)('Authorize/Deauthorize baking full-cycle [%s] - pubkey', function (m) {
-  test.each(curves)('Authorize baking pubkey %s', async function (curve) {
+  test.each(curves)('Authorize/Deauthorize full-cycle %s', async function (curve) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -300,8 +298,8 @@ describe.each(models)('Authorize/Deauthorize baking full-cycle [%s] - pubkey', f
   })
 })
 
-describe.each(models)('Sign baking endorsement [%s] - pubkey', function (m) {
-  test.each(curves)('Sign baking endorsement [%s]', async function (curve) {
+describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function (m) {
+  test.each(curves)('Sign endorsement [%s]', async function (curve) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -331,10 +329,8 @@ describe.each(models)('Sign baking endorsement [%s] - pubkey', function (m) {
       await sim.close()
     }
   })
-})
 
-describe.each(models)('Sign baking blocklevel [%s] - pubkey', function (m) {
-  test.each(curves)('Sign baking blocklevel [%s]', async function (curve) {
+  test.each(curves)('Sign blocklevel [%s]', async function (curve) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -364,10 +360,8 @@ describe.each(models)('Sign baking blocklevel [%s] - pubkey', function (m) {
       await sim.close()
     }
   })
-})
 
-describe.each(models)('Sign baking blocklevel then endorse [%s]', function (m) {
-  test.each(curves)('Sign baking blocklevel then endorse [%s]', async function (curve) {
+  test.each(curves)('Sign blocklevel then endorse [%s]', async function (curve) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -424,7 +418,7 @@ describe.each(models)('Sign baking blocklevel then endorse [%s]', function (m) {
   })
 })
 
-describe.each(models)('Standard baking [%s]; sign', function (m) {
+describe.each(models)('Standard baking [%s] - sign', function (m) {
   test.each(cartesianProduct(curves, [Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)]))(
     'sign message',
     async function (curve, msg) {
