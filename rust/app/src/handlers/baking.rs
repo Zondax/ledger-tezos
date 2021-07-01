@@ -754,10 +754,11 @@ impl ApduHandler for Baking {
             _ => return Err(Error::InsNotSupported),
         };
         let is_legacy = false; //FIXME: take this from action type
-        let req_confirmation = buffer.p1() >= 1;
 
+        //read P1, one exludes the other
+        let req_confirmation = buffer.p1() >= 1;
         let packet_type =
-            PacketTypes::new(buffer.p2(), is_legacy).map_err(|_| Error::InvalidP1P2)?;
+            PacketTypes::new(buffer.p1(), is_legacy).map_err(|_| Error::InvalidP1P2)?;
 
         *tx = match action {
             Action::AuthorizeBaking => Self::authorize_baking(req_confirmation, buffer)?,
