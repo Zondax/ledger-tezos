@@ -16,7 +16,7 @@
 #![allow(dead_code)]
 
 use crate::constants::{
-    ApduError, APDU_INDEX_CLA, APDU_INDEX_INS, APDU_INDEX_LEN, APDU_INDEX_P1, APDU_INDEX_P2,
+    APDU_INDEX_CLA, APDU_INDEX_INS, APDU_INDEX_LEN, APDU_INDEX_P1, APDU_INDEX_P2,
     APDU_MIN_LENGTH,
 };
 
@@ -87,8 +87,6 @@ impl<'apdu> ApduBufferRead<'apdu> {
     /// The function checks if there's at least the minimum required number of bytes (APDU_MIN_LENGTH)
     /// and if the byte slice is at least as long as rx
     pub fn new(buf: &'apdu mut [u8], rx: u32) -> Result<Self, ApduBufferReadError> {
-        let len = buf.len();
-
         //check buf is at least 4
         Self::check_min_len(buf.len(), APDU_MIN_LENGTH as usize, None)?;
 
@@ -127,8 +125,6 @@ impl<'apdu> ApduBufferRead<'apdu> {
     /// It's expected the buffer to have the prepended len at idx APDU_INDEX_LEN,
     /// thus the data would start at idx 5 until len - 5
     pub fn payload(&self) -> Result<&[u8], ApduBufferReadError> {
-        let len = self.inner.len();
-
         let plen = self.inner[APDU_INDEX_LEN] as usize;
         //check that the buffer is long enough for the payload
         Self::check_min_len(self.inner.len(), plen as usize, APDU_MIN_LENGTH as usize)

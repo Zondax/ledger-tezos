@@ -12,11 +12,10 @@ use bolos::{
     hash::{Blake2b, Hasher},
 };
 
-use crate::constants::{APDU_INDEX_P1, APDU_INDEX_P2};
 use crate::handlers::parser_common::ParserError;
 use crate::handlers::{PacketType, PacketTypes};
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS, BIP32_MAX_LENGTH},
+    constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::{self, Curve},
     dispatcher::{
         ApduHandler, INS_AUTHORIZE_BAKING, INS_BAKER_SIGN, INS_DEAUTHORIZE_BAKING,

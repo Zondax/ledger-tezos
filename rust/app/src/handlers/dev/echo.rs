@@ -16,7 +16,7 @@
 use std::prelude::v1::*;
 
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS},
+    constants::ApduError as Error,
     dispatcher::{ApduHandler, INS_DEV_ECHO_UI},
     sys::{Show, ViewError, Viewable, PIC},
     utils::ApduBufferRead,

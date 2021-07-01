@@ -19,10 +19,10 @@
 //! * Legacy Handler
 
 use crate::{
-    utils::ApduBufferRead,
-    constants::{ApduError as Error, APDU_INDEX_INS},
+    constants::ApduError as Error,
     dispatcher::ApduHandler,
     sys::{flash_slot::Wear, new_flash_slot},
+    utils::ApduBufferRead,
 };
 
 const N_PAGES: usize = 8;

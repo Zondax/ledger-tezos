@@ -13,8 +13,8 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use crate::constants::ApduError;
 use crate::constants::ApduError::InsNotSupported;
-use crate::constants::{ApduError, APDU_INDEX_INS};
 use crate::dispatcher::{ApduHandler, INS_GET_VERSION};
 use crate::utils::ApduBufferRead;
 

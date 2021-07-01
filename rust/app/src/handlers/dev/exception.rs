@@ -15,7 +15,7 @@
 ********************************************************************************/
 use crate::sys::errors::{catch, throw_raw, Error as SysError};
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS},
+    constants::ApduError as Error,
     dispatcher::{ApduHandler, INS_DEV_EXCEPT},
     utils::ApduBufferRead,
 };

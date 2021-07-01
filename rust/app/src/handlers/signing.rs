@@ -23,7 +23,7 @@ use zemu_sys::{Show, ViewError, Viewable};
 
 use super::{resources::BUFFER, PacketType, PacketTypes};
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS, BIP32_MAX_LENGTH},
+    constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
     dispatcher::{ApduHandler, INS_LEGACY_SIGN, INS_LEGACY_SIGN_WITH_HASH, INS_SIGN},
     sys,

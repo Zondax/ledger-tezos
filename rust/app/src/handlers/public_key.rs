@@ -18,9 +18,15 @@ use std::convert::TryFrom;
 
 use zemu_sys::{Show, ViewError, Viewable};
 
-use crate::{constants::{ApduError as Error, APDU_INDEX_INS}, crypto, dispatcher::{
+use crate::{
+    constants::ApduError as Error,
+    crypto,
+    dispatcher::{
         ApduHandler, INS_GET_ADDRESS, INS_LEGACY_GET_PUBLIC_KEY, INS_LEGACY_PROMPT_PUBLIC_KEY,
-    }, sys::{self, Error as SysError}, utils::{ApduBufferRead, ApduBufferReadError}};
+    },
+    sys::{self, Error as SysError},
+    utils::ApduBufferRead,
+};
 
 pub struct GetAddress;
 
