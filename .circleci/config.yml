@@ -145,13 +145,13 @@ jobs:
       - run:
           name: Copy baking artifacts
           command: |
-            mv /home/zondax/project/app/pkg/installer_s.sh /home/zondax/project/app/pkg/installer_baking_s.sh
+            mv /home/zondax/project/rust/app/pkg/installer_s.sh /home/zondax/project/rust/app/pkg/installer_baking_s.sh
             /home/zondax/go/bin/ghr -t ${GITHUB_TOKEN} \
                                     -u ${CIRCLE_PROJECT_USERNAME} \
                                     -r ${CIRCLE_PROJECT_REPONAME} \
                                     -c ${CIRCLE_SHA1} \
-                                    -delete $(/home/zondax/project/app/pkg/installer_baking_s.sh version) \
-                                    /home/zondax/project/app/pkg/installer_baking_s.sh
+                                    -delete $(/home/zondax/project/rust/app/pkg/installer_baking_s.sh version) \
+                                    /home/zondax/project/rust/app/pkg/installer_baking_s.sh
       - run:
           name: Build
           command: |
@@ -165,8 +165,8 @@ jobs:
                                     -u ${CIRCLE_PROJECT_USERNAME} \
                                     -r ${CIRCLE_PROJECT_REPONAME} \
                                     -c ${CIRCLE_SHA1} \
-                                    -delete $(/home/zondax/project/app/pkg/installer_s.sh version) \
-                                    /home/zondax/project/app/pkg/installer_s.sh
+                                    $(/home/zondax/project/rust/app/pkg/installer_s.sh version) \
+                                    /home/zondax/project/rust/app/pkg/installer_s.sh
 
   publish_npm_package:
     docker:
