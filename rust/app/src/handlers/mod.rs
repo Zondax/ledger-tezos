@@ -29,9 +29,9 @@ pub mod hwm;
 pub mod baking;
 
 mod utils;
-pub(self) use utils::*;
+pub use utils::*;
 
-pub(self) mod resources {
+pub mod resources {
     use super::lock::Lock;
     use bolos::{lazy_static, new_swapping_buffer, SwappingBuffer};
 
@@ -60,4 +60,4 @@ pub(self) mod resources {
     }
 }
 
-mod lock;
+pub mod lock;
