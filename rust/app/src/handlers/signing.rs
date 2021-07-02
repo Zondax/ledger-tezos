@@ -21,7 +21,6 @@ use bolos::{
 };
 use zemu_sys::{Show, ViewError, Viewable};
 
-use super::{resources::BUFFER, PacketType, PacketTypes};
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,

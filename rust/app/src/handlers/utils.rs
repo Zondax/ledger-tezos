@@ -129,9 +129,7 @@ impl PacketTypes {
     }
 
     pub fn try_either(p1: u8) -> Result<Self, ()> {
-        ZPacketType::try_from(p1)
-            .map(Self::Z)
-            .or_else(|_| LegacyPacketType::try_from(p1).map(Self::Legacy))
+        Self::new(p1, false).or_else(|_| Self::new(p1, true))
     }
 }
 
