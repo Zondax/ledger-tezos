@@ -29,9 +29,9 @@ pub mod hwm;
 pub mod baking;
 
 mod utils;
-pub(self) use utils::*;
+pub use utils::*;
 
-pub(self) mod resources {
+pub mod resources {
     use super::lock::Lock;
     use bolos::{lazy_static, new_swapping_buffer, SwappingBuffer};
 
@@ -44,6 +44,8 @@ pub(self) mod resources {
         Sign,
         #[cfg(feature = "dev")]
         Sha256,
+        #[cfg(feature = "baking")]
+        Baking,
     }
 
     impl From<super::signing::Sign> for BUFFERAccessors {
@@ -58,6 +60,13 @@ pub(self) mod resources {
             Self::Sha256
         }
     }
+
+    #[cfg(feature = "baking")]
+    impl From<super::baking::Baking> for BUFFERAccessors {
+        fn from(_: super::baking::Baking) -> Self {
+            Self::Baking
+        }
+    }
 }
 
-mod lock;
+pub mod lock;

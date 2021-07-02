@@ -127,6 +127,10 @@ impl PacketTypes {
     pub fn new_legacy(p1: u8) -> Result<Self, ()> {
         LegacyPacketType::try_from(p1).map(Self::Legacy)
     }
+
+    pub fn try_either(p1: u8) -> Result<Self, ()> {
+        Self::new(p1, false).or_else(|_| Self::new(p1, true))
+    }
 }
 
 impl PacketType for PacketTypes {
