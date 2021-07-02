@@ -44,6 +44,8 @@ pub mod resources {
         Sign,
         #[cfg(feature = "dev")]
         Sha256,
+        #[cfg(feature = "baking")]
+        Baking,
     }
 
     impl From<super::signing::Sign> for BUFFERAccessors {
@@ -56,6 +58,13 @@ pub mod resources {
     impl From<super::dev::Sha256> for BUFFERAccessors {
         fn from(_: super::dev::Sha256) -> Self {
             Self::Sha256
+        }
+    }
+
+    #[cfg(feature = "baking")]
+    impl From<super::baking::Baking> for BUFFERAccessors {
+        fn from(_: super::baking::Baking) -> Self {
+            Self::Baking
         }
     }
 }

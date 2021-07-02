@@ -13,7 +13,6 @@ use bolos::{
 };
 
 use crate::handlers::parser_common::ParserError;
-use crate::handlers::{PacketType, PacketTypes};
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::{self, Curve},
@@ -25,7 +24,7 @@ use crate::{
     handlers::hwm::{LegacyHWM, WaterMark},
     handlers::public_key::GetAddress,
     sys::{self, flash_slot::Wear, new_flash_slot},
-    utils::ApduBufferRead,
+    utils::{ApduBufferRead, Uploader},
 };
 use bolos::flash_slot::WearError;
 
@@ -247,15 +246,6 @@ impl Baking {
         Ok(len as u32)
     }
 
-    //FIXME: ideally grab this function from signing.rs?
-    #[inline(never)]
-    fn get_derivation_info() -> Result<&'static (BIP32Path<BIP32_MAX_LENGTH>, Curve), Error> {
-        match unsafe { &*PATH } {
-            None => Err(Error::ApduCodeConditionsNotSatisfied),
-            Some(some) => Ok(some),
-        }
-    }
-
     //FIXME: make this part of impl Bip32PathAndCurve?
     #[inline(never)]
     fn check_and_store_path(path_and_curve: Bip32PathAndCurve) -> Result<(), Error> {
@@ -394,40 +384,22 @@ impl Baking {
     }
 
     #[inline(never)]
-    fn baker_sign(
-        packet_type: PacketTypes,
-        buffer: ApduBufferRead<'_>,
-        flags: &mut u32,
-    ) -> Result<u32, Error> {
-        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
-        let baking_ui: BakingSignUI;
+    fn baker_sign(buffer: ApduBufferRead<'_>, flags: &mut u32) -> Result<u32, Error> {
+        if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
+            let curve = Curve::try_from(upload.p2).map_err(|_| Error::InvalidP1P2)?;
+            let path = BIP32Path::<BIP32_MAX_LENGTH>::read(upload.first)
+                .map_err(|_| Error::DataInvalid)?;
 
-        if packet_type.is_init() {
-            //first packet contains the curve data on the second parameter
-            // and the bip32 path as payload only
-
-            let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
-            let path =
-                BIP32Path::<BIP32_MAX_LENGTH>::read(cdata).map_err(|_| Error::DataInvalid)?;
-
-            //Check if the current baking path in NVM is initialized
             Self::check_with_nvm_pathandcurve(&curve, &path)?;
 
             unsafe { PATH.replace((path, curve)) };
-
-            Ok(0)
-        } else if packet_type.is_next() {
-            Err(Error::InsNotSupported)
-            //this should not happen as there is only 1 packet??
-        } else if packet_type.is_last() {
-            let (_path, _curve) = Self::get_derivation_info()?;
-
             let hw = LegacyHWM::read()?;
             //do watermarks checks
 
+            let cdata = upload.data;
             let preemble = Preemble::try_from(cdata[0])?;
 
-            match preemble {
+            let baking_ui = match preemble {
                 Preemble::InvalidPreemble => {
                     return Err(Error::DataInvalid);
                 }
@@ -442,11 +414,11 @@ impl Baking {
 
                     let digest = Self::blake2b_digest(&endorsement.to_bytes())?;
 
-                    baking_ui = BakingSignUI {
+                    BakingSignUI {
                         endorsement: Some(endorsement),
                         blocklevel: None,
                         digest,
-                    };
+                    }
                 }
                 Preemble::BlockPreemble => {
                     let (_, blockdata) =
@@ -458,11 +430,11 @@ impl Baking {
 
                     let digest = Self::blake2b_digest(&blockdata.to_bytes())?;
                     //TODO: show blocklevel on screen
-                    baking_ui = BakingSignUI {
+                    BakingSignUI {
                         endorsement: None,
                         blocklevel: Some(blockdata),
                         digest,
-                    };
+                    }
                 }
 
                 Preemble::GenericPreemble => {
@@ -486,13 +458,13 @@ impl Baking {
                     //not implemnted yet
                     return Err(Error::DataInvalid);
                 }
-            }
+            };
 
             unsafe { baking_ui.show(flags) }
                 .map_err(|_| Error::ExecutionError)
                 .map(|_| 0)
         } else {
-            Err(Error::DataInvalid)
+            Ok(0)
         }
     }
 }
@@ -753,12 +725,8 @@ impl ApduHandler for Baking {
             INS_BAKER_SIGN => Action::BakerSign,
             _ => return Err(Error::InsNotSupported),
         };
-        let is_legacy = false; //FIXME: take this from action type
 
-        //read P1, one exludes the other
         let req_confirmation = buffer.p1() >= 1;
-        let packet_type =
-            PacketTypes::new(buffer.p1(), is_legacy).map_err(|_| Error::InvalidP1P2)?;
 
         *tx = match action {
             Action::AuthorizeBaking => Self::authorize_baking(req_confirmation, buffer)?,
@@ -767,7 +735,7 @@ impl ApduHandler for Baking {
             Action::QueryAuthKeyWithCurve => {
                 Self::query_authkey_withcurve(req_confirmation, buffer.write())?
             }
-            Action::BakerSign => Self::baker_sign(packet_type, buffer, flags)?,
+            Action::BakerSign => Self::baker_sign(buffer, flags)?,
 
             Action::LegacyAuthorize
             | Action::LegacyDeAuthorize
