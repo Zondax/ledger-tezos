@@ -51,10 +51,10 @@ impl Sign {
         path: &BIP32Path<LEN>,
         data: &[u8],
     ) -> Result<(usize, [u8; 100]), Error> {
-        let mut keypair = curve.gen_keypair(path).map_err(|_| Error::ExecutionError)?;
+        let sk = curve.to_secret(path);
 
         let mut out = [0; 100];
-        let sz = keypair
+        let sz = sk
             .sign(data, &mut out[..])
             .map_err(|_| Error::ExecutionError)?;
 

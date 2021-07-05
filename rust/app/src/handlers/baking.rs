@@ -661,14 +661,11 @@ impl Viewable for BakingSignUI {
             Ok(k) => k,
         };
 
-        let mut keypair = match bip32_nvm.curve.gen_keypair(&bip32_nvm.path) {
-            Err(_) => return (0, Error::ExecutionError as _),
-            Ok(k) => k,
-        };
+        let secret = bip32_nvm.curve.to_secret(&bip32_nvm.path);
 
         let mut sig = [0; 100];
 
-        let sz = keypair.sign(&self.digest, &mut sig[..]).unwrap_or(0);
+        let sz = secret.sign(&self.digest, &mut sig[..]).unwrap_or(0);
         if sz == 0 {
             return (0, Error::ExecutionError as _);
         }
