@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@zondax/ledger-tezos": "link:../js",
-    "@zondax/zemu": "^0.15.0"
+    "@zondax/zemu": "^0.16.0"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",
