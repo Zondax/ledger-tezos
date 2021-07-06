@@ -38,7 +38,7 @@ impl GetAddress {
         path: &sys::crypto::bip32::BIP32Path<B>,
     ) -> Result<crypto::PublicKey, SysError> {
         sys::zemu_log_stack("GetAddres::new_key\x00");
-        let mut pkey = curve.gen_keypair(path)?.into_public();
+        let mut pkey = curve.to_secret(path).into_public()?;
         pkey.compress().map(|_| pkey)
     }
 

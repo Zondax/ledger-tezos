@@ -48,33 +48,28 @@ impl AsRef<[u8]> for PublicKey {
     }
 }
 
-pub struct SecretKey {}
+pub struct SecretKey<const B: usize> {
+    curve: Curve,
+}
 
-impl SecretKey {
-    pub fn sign<H>(&mut self, _data: &[u8], _out: &mut [u8]) -> Result<usize, Error>
+impl<const B: usize> SecretKey<B> {
+    pub const fn new(_mode: Mode, curve: Curve, _path: BIP32Path<B>) -> Self {
+        Self { curve }
+    }
+
+    pub const fn curve(&self) -> Curve {
+        self.curve
+    }
+
+    pub fn public(&self) -> Result<PublicKey, Error> {
+        todo!("secret to public")
+    }
+
+    pub fn sign<H>(&self, _data: &[u8], _out: &mut [u8]) -> Result<usize, Error>
     where
         H: HasherId,
         H::Id: Into<u8>,
     {
         todo!("sign ecfp256")
-    }
-}
-
-pub struct Keypair {
-    pub public: PublicKey,
-    pub secret: SecretKey,
-}
-
-impl Keypair {
-    pub fn generate<const B: usize>(
-        _mode: Mode,
-        _curve: Curve,
-        _path: &BIP32Path<B>,
-    ) -> Result<Self, Error> {
-        todo!("generate keypair ecfp256")
-    }
-
-    pub fn public(&self) -> &PublicKey {
-        &self.public
     }
 }

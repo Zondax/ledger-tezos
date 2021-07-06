@@ -108,8 +108,8 @@ impl From<Curve> for u8 {
     }
 }
 
-impl From<&Curve> for sys::crypto::Curve {
-    fn from(from: &Curve) -> Self {
+impl From<Curve> for sys::crypto::Curve {
+    fn from(from: Curve) -> Self {
         match from {
             Curve::Ed25519 | Curve::Bip32Ed25519 => Self::Ed25519,
             Curve::Secp256K1 => Self::Secp256K1,
@@ -135,23 +135,42 @@ impl TryFrom<sys::crypto::Curve> for Curve {
     }
 }
 
-pub struct Keypair {
-    pub public: PublicKey,
-    pub secret: sys::crypto::ecfp256::SecretKey,
-}
+pub struct SecretKey<const B: usize>(sys::crypto::ecfp256::SecretKey<B>);
 
 pub enum SignError {
     BufferTooSmall,
     Sys(Error),
 }
 
-impl Keypair {
-    pub fn into_public(self) -> PublicKey {
-        self.public
+impl<const B: usize> SecretKey<B> {
+    pub fn new(curve: Curve, path: BIP32Path<B>) -> Self {
+        use sys::crypto::Mode;
+
+        let mode = match curve {
+            Curve::Ed25519 => Mode::Ed25519Slip10,
+            _ => Mode::BIP32,
+        };
+        Self(sys::crypto::ecfp256::SecretKey::new(
+            mode,
+            curve.into(),
+            path,
+        ))
     }
 
-    pub fn sign(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, SignError> {
-        match self.public.curve() {
+    pub fn into_public(self) -> Result<PublicKey, Error> {
+        self.0.public().map(PublicKey)
+    }
+
+    pub fn curve(&self) -> Curve {
+        use std::convert::TryInto;
+        //this unwrap is ok because the curve
+        // can only be initialized by the library and not the user
+
+        self.0.curve().try_into().unwrap()
+    }
+
+    pub fn sign(&self, data: &[u8], out: &mut [u8]) -> Result<usize, SignError> {
+        match self.curve() {
             Curve::Ed25519 | Curve::Bip32Ed25519 if out.len() < EDWARDS_SIGN_BUFFER_MIN_LENGTH => {
                 Err(SignError::BufferTooSmall)
             }
@@ -160,7 +179,7 @@ impl Keypair {
             }
 
             Curve::Ed25519 | Curve::Bip32Ed25519 | Curve::Secp256K1 | Curve::Secp256R1 => self
-                .secret
+                .0
                 .sign::<Sha256>(data, out) //pass Sha256 for the signature nonce hasher
                 .map_err(SignError::Sys),
         }
@@ -168,19 +187,7 @@ impl Keypair {
 }
 
 impl Curve {
-    pub fn gen_keypair<const B: usize>(&self, path: &BIP32Path<B>) -> Result<Keypair, Error> {
-        use sys::crypto::Mode;
-
-        let mode = match self {
-            Self::Ed25519 => Mode::Ed25519Slip10,
-
-            _ => Default::default(),
-        };
-
-        let kp = sys::crypto::ecfp256::Keypair::generate(mode, self.into(), path)?;
-        Ok(Keypair {
-            public: PublicKey(kp.public),
-            secret: kp.secret,
-        })
+    pub fn to_secret<const B: usize>(self, path: &BIP32Path<B>) -> SecretKey<B> {
+        SecretKey::new(self, *path)
     }
 }

@@ -58,33 +58,58 @@ impl AsRef<[u8]> for PublicKey {
     }
 }
 
-pub struct SecretKey {
+pub struct SecretKey<const B: usize> {
+    mode: Mode,
     curve: Curve,
-    pub len: usize,
-    pub d: Zeroizing<[u8; 32]>,
+    path: BIP32Path<B>,
 }
 
-impl SecretKey {
-    fn as_raw_mut(&mut self) -> FakeLifetimeMut<'_, Self, Zeroizing<cx_ecfp_private_key_t>> {
-        let curve: u8 = self.curve.into();
-
-        let sk = Zeroizing::new(cx_ecfp_private_key_t {
-            curve: curve as u32,
-            d_len: self.len as _,
-            d: *self.d,
-        });
-
-        FakeLifetimeMut::new(self, sk)
+impl<const B: usize> SecretKey<B> {
+    pub const fn new(mode: Mode, curve: Curve, path: BIP32Path<B>) -> Self {
+        Self { mode, curve, path }
     }
 
-    pub fn sign<H>(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, Error>
+    pub const fn curve(&self) -> Curve {
+        self.curve
+    }
+
+    fn generate(&self) -> Result<Zeroizing<cx_ecfp_private_key_t>, Error> {
+        // Prepare secret key data with the ledger's key
+        let mut sk_data =
+            super::bindings::os_perso_derive_node_with_seed_key(self.mode, self.curve, &self.path)?;
+
+        // Use the secret key data to prepare a secret key
+        let sk_r = cx_ecfp_init_private_key(self.curve, Some(&sk_data[..]));
+        // let's zeroize the sk_data right away before we return
+        sk_data.zeroize();
+
+        //map secret so Zeroizing to make sure it's zeroed out on drop
+        sk_r.map(Zeroizing::new)
+    }
+
+    pub fn public(&self) -> Result<PublicKey, Error> {
+        //Get secret key
+        let sk = self.generate()?;
+
+        //get keypair with the generated secret key
+        // discard secret key as it's not necessary anymore
+        let (_, pk) = cx_ecfp_generate_pair(Some(self), self.curve)?;
+
+        Ok(PublicKey {
+            curve: self.curve,
+            len: pk.W_len as usize,
+            w: pk.W,
+        })
+    }
+
+    pub fn sign<H>(&self, data: &[u8], out: &mut [u8]) -> Result<usize, Error>
     where
         H: HasherId,
         H::Id: Into<u8>,
     {
         let crv = self.curve;
         if crv.is_weirstrass() {
-            let (parity, size) = bindings::cx_ecdsa_sign::<H>(self, data, out)?;
+            let (parity, size) = bindings::cx_ecdsa_sign::<H, B>(self, data, out)?;
             //FIXME: if this is part of generic crate, this should not be here as it is non-standard!
             if parity {
                 out[0] |= 0x01;
@@ -101,60 +126,10 @@ impl SecretKey {
     }
 }
 
-pub struct Keypair {
-    pub public: PublicKey,
-    pub secret: SecretKey,
-}
-
-impl Keypair {
-    pub fn generate<const B: usize>(
-        mode: Mode,
-        curve: Curve,
-        path: &BIP32Path<B>,
-    ) -> Result<Self, Error> {
-        // Prepare secret key data with the ledger's key
-        let mut sk_data = super::bindings::os_perso_derive_node_with_seed_key(mode, curve, path)?;
-
-        // Use the secret key data to prepare a secret key
-        let sk_r = cx_ecfp_init_private_key(curve, Some(&sk_data[..]));
-        // let's zeroize the sk_data right away before we return
-        sk_data.zeroize();
-
-        // bubble up error or get the secret key
-        let sk = sk_r?;
-
-        // Use the secret key to generate a keypair
-        let (mut sk, pk) = cx_ecfp_generate_pair(curve, Some(sk))?;
-
-        let rs_sk = SecretKey {
-            curve,
-            len: sk.d_len as usize,
-            d: Zeroizing::new(sk.d),
-        };
-        //erase old sensitive data right away
-        sk.d.zeroize();
-
-        let rs_pk = PublicKey {
-            curve,
-            len: pk.W_len as usize,
-            w: pk.W,
-        };
-
-        Ok(Self {
-            public: rs_pk,
-            secret: rs_sk,
-        })
-    }
-
-    pub fn public(&self) -> &PublicKey {
-        &self.public
-    }
-}
-
 mod bindings {
     use super::{catch, Curve, Error, HasherId, SecretKey};
     use crate::raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t};
-    use zeroize::Zeroize;
+    use zeroize::{Zeroize, Zeroizing};
 
     pub fn cx_edward_compress_point(curve: Curve, p: &mut [u8]) -> Result<usize, Error> {
         let curve: u8 = curve.into();
@@ -229,17 +204,18 @@ mod bindings {
         Ok(out)
     }
 
-    pub fn cx_ecfp_generate_pair(
+    pub fn cx_ecfp_generate_pair<const B: usize>(
+        sk: Option<&SecretKey<B>>,
         curve: Curve,
-        sk: Option<cx_ecfp_private_key_t>,
-    ) -> Result<(cx_ecfp_private_key_t, cx_ecfp_public_key_t), Error> {
+    ) -> Result<(Zeroizing<cx_ecfp_private_key_t>, cx_ecfp_public_key_t), Error> {
         let curve: u8 = curve.into();
 
         let (mut sk, keep) = match sk {
-            Some(sk) => (sk, true),
-            None => (Default::default(), false),
+            Some(sk) => (sk.generate()?, true),
+            None => (Zeroizing::new(Default::default()), false),
         };
         let mut pk = cx_ecfp_public_key_t::default();
+        let sk_mut_ref: &mut cx_ecfp_private_key_t = &mut sk;
 
         cfg_if! {
             if #[cfg(nanox)] {
@@ -247,25 +223,25 @@ mod bindings {
                     crate::raw::cx_ecfp_generate_pair(
                         curve as _,
                         &mut pk as *mut _,
-                        &mut sk as *mut _,
+                        sk_mut_ref as *mut _,
                         keep as u8 as _,
                     );
                 };
 
                 if let Err(e) = catch(might_throw) {
-                    sk.d.zeroize();
+                    sk.zeroize();
                     return Err(e.into());
                 }
             } else if #[cfg(nanos)] {
                 match unsafe { crate::raw::cx_ecfp_generate_pair_no_throw(
                     curve as _,
                     &mut pk as *mut _,
-                    &mut sk as *mut _,
+                    sk_mut_ref as *mut _,
                     keep,
                 )} {
                     0 => (),
                     err => {
-                        sk.d.zeroize();
+                        sk.zeroize();
                         return Err(err.into())
                     },
                 }
@@ -279,8 +255,8 @@ mod bindings {
 
     //first item says if Y is odd when computing k.G
     // second item in the tuple is the number of bytes written to `sig_out`
-    pub fn cx_ecdsa_sign<H>(
-        sk: &mut SecretKey,
+    pub fn cx_ecdsa_sign<H, const B: usize>(
+        sk: &SecretKey<B>,
         data: &[u8],
         sig_out: &mut [u8],
     ) -> Result<(bool, usize), Error>
@@ -294,8 +270,9 @@ mod bindings {
 
         let crv = sk.curve;
 
-        let mut raw_sk = sk.as_raw_mut();
-        let raw_sk = &mut *raw_sk as *const _;
+        let mut raw_sk = sk.generate()?;
+        let raw_sk: &mut cx_ecfp_private_key_t = &mut raw_sk;
+        let raw_sk = raw_sk as *const _;
 
         let (data, data_len) = (data.as_ptr(), data.len() as u32);
         let sig = sig_out.as_mut_ptr();
@@ -343,8 +320,8 @@ mod bindings {
         Ok((info == crate::raw::CX_ECCINFO_PARITY_ODD, sig_len as usize))
     }
 
-    pub fn cx_eddsa_sign(
-        sk: &mut SecretKey,
+    pub fn cx_eddsa_sign<const B: usize>(
+        sk: &SecretKey<B>,
         data: &[u8],
         sig_out: &mut [u8],
     ) -> Result<usize, Error> {
@@ -352,8 +329,9 @@ mod bindings {
 
         let crv = sk.curve;
 
-        let mut raw_sk = sk.as_raw_mut();
-        let raw_sk = &mut *raw_sk as *const _;
+        let mut raw_sk = sk.generate()?;
+        let raw_sk: &mut cx_ecfp_private_key_t = &mut raw_sk;
+        let raw_sk = raw_sk as *const _;
 
         let (data, data_len) = (data.as_ptr(), data.len() as u32);
         let sig = sig_out.as_mut_ptr();
