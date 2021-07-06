@@ -150,7 +150,11 @@ impl<const B: usize> SecretKey<B> {
             Curve::Ed25519 => Mode::Ed25519Slip10,
             _ => Mode::BIP32,
         };
-        Self(sys::crypto::ecfp256::SecretKey::new(mode, curve.into(), path))
+        Self(sys::crypto::ecfp256::SecretKey::new(
+            mode,
+            curve.into(),
+            path,
+        ))
     }
 
     pub fn into_public(self) -> Result<PublicKey, Error> {
@@ -183,7 +187,7 @@ impl<const B: usize> SecretKey<B> {
 }
 
 impl Curve {
-    pub fn to_secret<const B: usize>(&self, path: &BIP32Path<B>) -> SecretKey<B> {
-        SecretKey::new(*self, *path)
+    pub fn to_secret<const B: usize>(self, path: &BIP32Path<B>) -> SecretKey<B> {
+        SecretKey::new(self, *path)
     }
 }
