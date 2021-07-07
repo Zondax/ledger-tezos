@@ -9,15 +9,12 @@ jobs:
     steps:
       - id: get-user
         run: echo "::set-output name=uid_gid::$(id -u):$(id -g)"
-
+        
   checks:
     needs: configure
     runs-on: ubuntu-latest
     container:
-      image: harbor.int.zondax.net/zondax/rust-ci:latest
-      credentials:
-        username: ${{ secrets.HARBOR_USER}}
-        password: ${{ secrets.HARBOR_PASSWORD}}
+      image: zondax/rust-ci:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -51,10 +48,7 @@ jobs:
     needs: configure
     runs-on: ubuntu-latest
     container:
-      image: harbor.int.zondax.net/zondax/rust-ci:latest
-      credentials:
-        username: ${{ secrets.HARBOR_USER}}
-        password: ${{ secrets.HARBOR_PASSWORD}}
+      image: zondax/rust-ci:latest
     env:
       BAKING: "yes"
     steps:
@@ -83,12 +77,14 @@ jobs:
         with:
           submodules: true
       - name: Build baker app
+        shell: bash -l {0}
         env:
           BAKING: 'yes'
         run: |
           source $HOME/.cargo/env
           make
       - name: Build standard app
+        shell: bash -l {0}
         run: |
           source $HOME/.cargo/env
           make
