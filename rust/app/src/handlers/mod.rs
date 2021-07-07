@@ -14,10 +14,13 @@
 *  limitations under the License.
 ********************************************************************************/
 pub mod legacy_version;
-pub mod parser_common;
 pub mod public_key;
 pub mod signing;
 pub mod version;
+
+pub mod parser_common;
+
+pub mod legacy;
 
 #[cfg(feature = "dev")]
 pub mod dev;

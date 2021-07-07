@@ -22,6 +22,9 @@ use crate::handlers::legacy_version::{LegacyGetVersion, LegacyGit};
 use crate::handlers::public_key::GetAddress;
 use crate::handlers::signing::Sign;
 use crate::handlers::version::GetVersion;
+
+use crate::handlers::legacy::signing::{LegacySign, LegacySignWithHash};
+
 use crate::utils::ApduBufferRead;
 
 pub const CLA: u8 = 0x80;
@@ -54,6 +57,9 @@ cfg_if! {
     } else if #[cfg(feature = "wallet")] {
         //wallet-only legacy instructions
         pub const INS_LEGACY_SIGN_UNSAFE: u8 = 0x5;
+
+        //wallet-only legacy imports
+        use crate::handlers::legacy::signing::LegacySignUnsafe;
 
         //wallet-only new instructions
     }
@@ -145,7 +151,7 @@ pub fn apdu_dispatch<'apdu>(
             //wallet-only instructions
             #[allow(clippy::single_match)]
             match ins {
-                INS_LEGACY_SIGN_UNSAFE => return Sign::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_SIGN_UNSAFE => return LegacySignUnsafe::handle(flags, tx, apdu_buffer),
                 _ => {}
             }
         }
@@ -162,9 +168,9 @@ pub fn apdu_dispatch<'apdu>(
 
         INS_LEGACY_GIT => LegacyGit::handle(flags, tx, apdu_buffer),
 
-        INS_LEGACY_SIGN | INS_LEGACY_SIGN_WITH_HASH | INS_SIGN => {
-            Sign::handle(flags, tx, apdu_buffer)
-        }
+        INS_LEGACY_SIGN => LegacySign::handle(flags, tx, apdu_buffer),
+        INS_LEGACY_SIGN_WITH_HASH => LegacySignWithHash::handle(flags, tx, apdu_buffer),
+        INS_SIGN => Sign::handle(flags, tx, apdu_buffer),
 
         INS_GET_VERSION => GetVersion::handle(flags, tx, apdu_buffer),
         _ => Err(CommandNotAllowed),
