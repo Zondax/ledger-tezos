@@ -18,8 +18,7 @@ use crate::{
     crypto::{self, Curve},
     dispatcher::{
         ApduHandler, INS_AUTHORIZE_BAKING, INS_BAKER_SIGN, INS_DEAUTHORIZE_BAKING,
-        INS_LEGACY_AUTHORIZE_BAKING, INS_LEGACY_DEAUTHORIZE, INS_LEGACY_QUERY_AUTH_KEY,
-        INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE, INS_QUERY_AUTH_KEY, INS_QUERY_AUTH_KEY_WITH_CURVE,
+        INS_QUERY_AUTH_KEY, INS_QUERY_AUTH_KEY_WITH_CURVE,
     },
     handlers::hwm::{WaterMark, HWM},
     handlers::public_key::GetAddress,
@@ -35,13 +34,9 @@ type WearLeveller = Wear<'static, N_PAGES_BAKINGPATH>;
 #[derive(Debug, Clone, Copy)]
 enum Action {
     AuthorizeBaking,
-    LegacyAuthorize,
     DeAuthorizeBaking,
-    LegacyDeAuthorize,
     QueryAuthKey,
-    LegacyQueryAuthKey,
     QueryAuthKeyWithCurve,
-    LegacyQueryAuthKeyWithCurve,
     BakerSign,
 }
 
@@ -712,13 +707,9 @@ impl ApduHandler for Baking {
         *tx = 0;
         let action = match buffer.ins() {
             INS_AUTHORIZE_BAKING => Action::AuthorizeBaking,
-            INS_LEGACY_AUTHORIZE_BAKING => Action::LegacyAuthorize,
-            INS_LEGACY_DEAUTHORIZE => Action::LegacyDeAuthorize,
             INS_DEAUTHORIZE_BAKING => Action::DeAuthorizeBaking,
             INS_QUERY_AUTH_KEY => Action::QueryAuthKey,
-            INS_LEGACY_QUERY_AUTH_KEY => Action::LegacyQueryAuthKey,
             INS_QUERY_AUTH_KEY_WITH_CURVE => Action::QueryAuthKeyWithCurve,
-            INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => Action::LegacyQueryAuthKeyWithCurve,
             INS_BAKER_SIGN => Action::BakerSign,
             _ => return Err(Error::InsNotSupported),
         };
@@ -733,11 +724,6 @@ impl ApduHandler for Baking {
                 Self::query_authkey_withcurve(req_confirmation, buffer.write())?
             }
             Action::BakerSign => Self::baker_sign(buffer, flags)?,
-
-            Action::LegacyAuthorize
-            | Action::LegacyDeAuthorize
-            | Action::LegacyQueryAuthKey
-            | Action::LegacyQueryAuthKeyWithCurve => return Err(Error::CommandNotAllowed),
         };
 
         Ok(())

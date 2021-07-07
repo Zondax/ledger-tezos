@@ -53,6 +53,7 @@ cfg_if! {
 
         //baking-only legacy imports
         use crate::handlers::legacy::hwm::{LegacyResetHWM, LegacyQueryMainHWM, LegacyQueryAllHWM};
+        use crate::handlers::legacy::baking::{LegacyAuthorize, LegacyDeAuthorize, LegacyQueryAuthKey, LegacyQueryAuthKeyWithCurve};
 
         //baking-only new instructions
         use crate::handlers::baking::Baking;
@@ -141,11 +142,12 @@ pub fn apdu_dispatch<'apdu>(
                 INS_QUERY_AUTH_KEY_WITH_CURVE |
                 INS_BAKER_SIGN => return Baking::handle(flags, tx, apdu_buffer),
 
-                INS_LEGACY_AUTHORIZE_BAKING |
-                INS_LEGACY_QUERY_AUTH_KEY |
+                INS_LEGACY_AUTHORIZE_BAKING => return LegacyAuthorize::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_QUERY_AUTH_KEY => return LegacyQueryAuthKey::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_DEAUTHORIZE => return LegacyDeAuthorize::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => return LegacyQueryAuthKeyWithCurve::handle(flags, tx, apdu_buffer),
+
                 INS_LEGACY_SETUP |
-                INS_LEGACY_DEAUTHORIZE |
-                INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE |
                 INS_LEGACY_HMAC => return Err(CommandNotAllowed),
                 _ => {}
             }

@@ -20,3 +20,6 @@ pub mod version;
 
 #[cfg(feature = "baking")]
 pub mod hwm;
+
+#[cfg(feature = "baking")]
+pub mod baking;
