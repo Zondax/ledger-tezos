@@ -21,24 +21,28 @@ pub struct LegacyQueryAuthKey;
 pub struct LegacyQueryAuthKeyWithCurve;
 
 impl ApduHandler for LegacyAuthorize {
+    #[inline(never)]
     fn handle<'apdu>(_: &mut u32, _: &mut u32, _: ApduBufferRead<'apdu>) -> Result<(), Error> {
         Err(Error::CommandNotAllowed)
     }
 }
 
 impl ApduHandler for LegacyDeAuthorize {
+    #[inline(never)]
     fn handle<'apdu>(_: &mut u32, _: &mut u32, _: ApduBufferRead<'apdu>) -> Result<(), Error> {
         Err(Error::CommandNotAllowed)
     }
 }
 
 impl ApduHandler for LegacyQueryAuthKey {
+    #[inline(never)]
     fn handle<'apdu>(_: &mut u32, _: &mut u32, _: ApduBufferRead<'apdu>) -> Result<(), Error> {
         Err(Error::CommandNotAllowed)
     }
 }
 
 impl ApduHandler for LegacyQueryAuthKeyWithCurve {
+    #[inline(never)]
     fn handle<'apdu>(_: &mut u32, _: &mut u32, _: ApduBufferRead<'apdu>) -> Result<(), Error> {
         Err(Error::CommandNotAllowed)
     }

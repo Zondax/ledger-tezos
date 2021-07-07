@@ -28,6 +28,7 @@ pub struct LegacyQueryMainHWM;
 pub struct LegacyQueryAllHWM;
 
 impl ApduHandler for LegacyResetHWM {
+    #[inline(never)]
     fn handle<'apdu>(
         _: &mut u32,
         tx: &mut u32,
@@ -48,6 +49,7 @@ impl ApduHandler for LegacyResetHWM {
 }
 
 impl ApduHandler for LegacyQueryMainHWM {
+    #[inline(never)]
     fn handle<'apdu>(
         _: &mut u32,
         tx: &mut u32,
@@ -71,6 +73,7 @@ impl ApduHandler for LegacyQueryMainHWM {
 }
 
 impl ApduHandler for LegacyQueryAllHWM {
+    #[inline(never)]
     fn handle<'apdu>(
         _: &mut u32,
         tx: &mut u32,

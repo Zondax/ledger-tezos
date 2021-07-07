@@ -28,6 +28,7 @@ pub struct LegacySignWithHash;
 pub struct LegacySignUnsafe;
 
 impl ApduHandler for LegacySign {
+    #[inline(never)]
     fn handle<'apdu>(
         flags: &mut u32,
         tx: &mut u32,
@@ -42,6 +43,7 @@ impl ApduHandler for LegacySign {
 }
 
 impl ApduHandler for LegacySignWithHash {
+    #[inline(never)]
     fn handle<'apdu>(
         flags: &mut u32,
         tx: &mut u32,
@@ -59,6 +61,7 @@ impl ApduHandler for LegacySignWithHash {
 
 #[cfg(feature = "wallet")]
 impl ApduHandler for LegacySignUnsafe {
+    #[inline(never)]
     fn handle<'apdu>(
         flags: &mut u32,
         tx: &mut u32,

@@ -27,6 +27,7 @@ pub struct LegacyGetPublic;
 pub struct LegacyPromptAddress;
 
 impl ApduHandler for LegacyGetPublic {
+    #[inline(never)]
     fn handle<'apdu>(
         _: &mut u32,
         tx: &mut u32,
@@ -56,6 +57,7 @@ impl ApduHandler for LegacyGetPublic {
 }
 
 impl ApduHandler for LegacyPromptAddress {
+    #[inline(never)]
     fn handle<'apdu>(
         flags: &mut u32,
         tx: &mut u32,
