@@ -26,22 +26,22 @@ jobs:
           rustup show
       - name: rustfmt
         run: |
-          cd ~/project/rust
+          cd rust
           cargo fmt --version
           cargo fmt -- --check
       - name: clippy
         run: |
-          cd ~/project/rust
+          cd rust
           cargo clippy --version
           cargo clippy --features "wallet","dev" --all-targets
       - name: clippy
         run: |
-          cd ~/project/rust
+          cd rust
           cargo clippy --version
           cargo clippy --features "baking","dev" --all-targets
       - name: audit
         run: |
-          cd ~/project/rust
+          cd rust
           cargo audit --version
           cargo audit
 
@@ -60,7 +60,6 @@ jobs:
           submodules: true
       - name: run rust tests
         run: |
-          cd ~/project
           make rust_test
 
 
@@ -71,8 +70,9 @@ jobs:
       image: zondax/builder-bolos:latest
       options: --user ${{ needs.configure.outputs.uid_gid }}
     env:
-      BOLOS_SDK: /home/zondax/project/deps/nanos-secure-sdk
+      BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
       BOLOS_ENV: /opt/bolos
+      HOME: /home/zondax_circle
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -82,11 +82,9 @@ jobs:
         env:
           BAKING: 'yes'
         run: |
-          cd ~/project
-          source /home/zondax/.cargo/env
+          source $HOME/.cargo/env
           make
       - name: Build standard app
         run: |
-          cd ~/project
-          source /home/zondax/.cargo/env
+          source $HOME/.cargo/env
           make
