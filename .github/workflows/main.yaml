@@ -14,8 +14,11 @@ jobs:
     needs: configure
     runs-on: ubuntu-latest
     container:
-      image: zondax/rust-ci:latest
+      image: harbor.int.zondax.net/zondax/rust-ci:latest
       options: --user ${{ needs.configure.outputs.uid_gid }}
+      credentials:
+        username: ${{ secrets.HARBOR_USER}}
+        password: ${{ secrets.HARBOR_PASSWORD}}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -49,8 +52,11 @@ jobs:
     needs: configure
     runs-on: ubuntu-latest
     container:
-      image: zondax/rust-ci:latest
+      image: harbor.int.zondax.net/zondax/rust-ci:latest
       options: --user ${{ needs.configure.outputs.uid_gid }}
+      credentials:
+        username: ${{ secrets.HARBOR_USER}}
+        password: ${{ secrets.HARBOR_PASSWORD}}
     env:
       BAKING: "yes"
     steps:
