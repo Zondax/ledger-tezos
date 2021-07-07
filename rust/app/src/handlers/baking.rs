@@ -21,7 +21,7 @@ use crate::{
         INS_LEGACY_AUTHORIZE_BAKING, INS_LEGACY_DEAUTHORIZE, INS_LEGACY_QUERY_AUTH_KEY,
         INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE, INS_QUERY_AUTH_KEY, INS_QUERY_AUTH_KEY_WITH_CURVE,
     },
-    handlers::hwm::{LegacyHWM, WaterMark},
+    handlers::legacy::hwm::{LegacyHWM, WaterMark},
     handlers::public_key::GetAddress,
     sys::{self, flash_slot::Wear, new_flash_slot},
     utils::{ApduBufferRead, Uploader},

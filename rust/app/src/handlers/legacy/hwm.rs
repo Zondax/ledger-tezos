@@ -202,8 +202,7 @@ impl WaterMark {
 
 #[cfg(test)]
 mod tests {
-    use super::{LegacyHWM, ALL_HWM_LEN, MAINNET_CHAIN_ID, MAIN_HWM_LEN};
-    use crate::handlers::hwm::WaterMark;
+    use super::{LegacyHWM, WaterMark, ALL_HWM_LEN, MAINNET_CHAIN_ID, MAIN_HWM_LEN};
     use crate::{
         assert_error_code,
         constants::ApduError,

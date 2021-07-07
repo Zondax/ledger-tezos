@@ -17,3 +17,6 @@
 pub mod public_key;
 pub mod signing;
 pub mod version;
+
+#[cfg(feature = "baking")]
+pub mod hwm;

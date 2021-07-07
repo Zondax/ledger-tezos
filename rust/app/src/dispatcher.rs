@@ -18,12 +18,14 @@ use cfg_if::cfg_if;
 
 use crate::constants::ApduError;
 use crate::constants::ApduError::{ClaNotSupported, CommandNotAllowed};
-use crate::handlers::legacy_version::{LegacyGetVersion, LegacyGit};
+
 use crate::handlers::public_key::GetAddress;
 use crate::handlers::signing::Sign;
 use crate::handlers::version::GetVersion;
 
+use crate::handlers::legacy::public_key::{LegacyGetPublic, LegacyPromptAddress};
 use crate::handlers::legacy::signing::{LegacySign, LegacySignWithHash};
+use crate::handlers::legacy::version::{LegacyGetVersion, LegacyGit};
 
 use crate::utils::ApduBufferRead;
 
@@ -50,7 +52,7 @@ cfg_if! {
         pub const INS_BAKER_SIGN: u8 = 0xAF;
 
         //baking-only legacy imports
-        use crate::handlers::hwm::LegacyHWM;
+        use crate::handlers::legacy::hwm::LegacyHWM;
 
         //baking-only new instructions
         use crate::handlers::baking::Baking;
@@ -162,9 +164,9 @@ pub fn apdu_dispatch<'apdu>(
     match ins {
         INS_LEGACY_GET_VERSION => LegacyGetVersion::handle(flags, tx, apdu_buffer),
 
-        INS_LEGACY_GET_PUBLIC_KEY | INS_LEGACY_PROMPT_PUBLIC_KEY | INS_GET_ADDRESS => {
-            GetAddress::handle(flags, tx, apdu_buffer)
-        }
+        INS_LEGACY_GET_PUBLIC_KEY => LegacyGetPublic::handle(flags, tx, apdu_buffer),
+        INS_LEGACY_PROMPT_PUBLIC_KEY => LegacyPromptAddress::handle(flags, tx, apdu_buffer),
+        INS_GET_ADDRESS => GetAddress::handle(flags, tx, apdu_buffer),
 
         INS_LEGACY_GIT => LegacyGit::handle(flags, tx, apdu_buffer),
 
