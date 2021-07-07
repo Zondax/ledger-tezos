@@ -1,0 +1,78 @@
+name: Build
+on: [push]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/rust-ci:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: show versions
+        run: |
+          rustup show
+      - name: rustfmt
+        run: |
+          cd ~/project/rust
+          cargo fmt --version
+          cargo fmt -- --check
+      - name: clippy
+        run: |
+          cd ~/project/rust
+          cargo clippy --version
+          cargo clippy --features "wallet","dev" --all-targets
+      - name: clippy
+        run: |
+          cd ~/project/rust
+          cargo clippy --version
+          cargo clippy --features "baking","dev" --all-targets
+      - name: audit
+        run: |
+          cd ~/project/rust
+          cargo audit --version
+          cargo audit
+
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/rust-ci:latest
+    env:
+      BAKING: "yes"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: run rust tests
+        run: |
+          cd ~/project
+          make rust_test
+
+
+  build_ledger:
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/builder-bolos:latest
+    env:
+      BOLOS_SDK: /home/zondax/project/deps/nanos-secure-sdk
+      BOLOS_ENV: /opt/bolos
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build baker app
+        env:
+          BAKING: 'yes'
+        run: |
+          cd ~/project
+          source /home/zondax/.cargo/env
+          make
+      - name: Build standard app
+        run: |
+          cd ~/project
+          source /home/zondax/.cargo/env
+          make
