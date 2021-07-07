@@ -19,196 +19,89 @@
 //! * Legacy Handler
 
 use crate::{
-    constants::ApduError as Error,
-    dispatcher::ApduHandler,
-    sys::{flash_slot::Wear, new_flash_slot},
+    constants::ApduError as Error, dispatcher::ApduHandler, handlers::hwm::HWM,
     utils::ApduBufferRead,
 };
 
-const N_PAGES: usize = 8;
+pub struct LegacyResetHWM;
+pub struct LegacyQueryMainHWM;
+pub struct LegacyQueryAllHWM;
 
-type WearLeveller = Wear<'static, N_PAGES>;
+impl ApduHandler for LegacyResetHWM {
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
 
-const MAIN_HWM_LEN: usize = 4;
-const ALL_HWM_LEN: usize = 12;
-
-// Mainnet Chain ID: NetXdQprcVkpaWU
-// types.h:61,0
-const MAINNET_CHAIN_ID: u32 = 0x7A06A770;
-//TODO: how about other chains?
-
-#[bolos::lazy_static]
-static mut MAIN: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
-
-#[bolos::lazy_static]
-static mut TEST: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
-
-pub struct LegacyHWM {}
-
-impl LegacyHWM {
-    //apdu_baking.c:39,0
-    pub fn reset(level: u32) -> Result<(), Error> {
-        let wm = WaterMark::reset(level);
-        let data: [u8; 52] = wm.into();
-
-        unsafe { MAIN.write(data) }.map_err(|_| Error::ExecutionError)?;
-        unsafe { TEST.write(data) }.map_err(|_| Error::ExecutionError)
-    }
-
-    //apdu_baking.c:74,0
-    pub fn hwm() -> Result<[u8; MAIN_HWM_LEN], Error> {
-        let wm: WaterMark = unsafe { MAIN.read() }
-            .map_err(|_| Error::ExecutionError)?
-            .into();
-
-        Ok(wm.level.to_be_bytes())
-    }
-
-    //apdu_baking.c:66,0
-    pub fn all_hwm() -> Result<[u8; ALL_HWM_LEN], Error> {
-        let main_wm: WaterMark = unsafe { MAIN.read() }
-            .map_err(|_| Error::ExecutionError)?
-            .into();
-        let main_wm = main_wm.level.to_be_bytes();
-
-        let test_wm: WaterMark = unsafe { TEST.read() }
-            .map_err(|_| Error::ExecutionError)?
-            .into();
-        let test_wm = test_wm.level.to_be_bytes();
-
-        let mut out = [0; 12];
-        out[..4].copy_from_slice(&main_wm[..]);
-        out[4..8].copy_from_slice(&test_wm[..]);
-        out[8..].copy_from_slice(&MAINNET_CHAIN_ID.to_be_bytes()[..]);
-
-        Ok(out)
-    }
-
-    #[allow(dead_code)]
-    pub fn format() -> Result<(), Error> {
-        unsafe { MAIN.format() }
-            .and_then(|_| unsafe { TEST.format() })
-            .map_err(|_| Error::ExecutionError)
-    }
-
-    pub fn write(wm: WaterMark) -> Result<(), Error> {
-        let data: [u8; 52] = wm.into();
-
-        unsafe { MAIN.write(data) }.map_err(|_| Error::ExecutionError)
-    }
-
-    pub fn read() -> Result<WaterMark, Error> {
-        let main_wm: WaterMark = unsafe { MAIN.read() }
-            .map_err(|_| Error::ExecutionError)?
-            .into();
-        Ok(main_wm)
-    }
-}
-
-impl ApduHandler for LegacyHWM {
-    #[inline(never)]
-    fn handle<'apdu>(_: &mut u32, tx: &mut u32, apdu: ApduBufferRead<'apdu>) -> Result<(), Error> {
-        use crate::dispatcher::{
-            INS_LEGACY_QUERY_ALL_HWM, INS_LEGACY_QUERY_MAIN_HWM, INS_LEGACY_RESET,
-        };
-
-        let ins = apdu.ins();
-        let apdu = apdu.write();
-
-        if ins == INS_LEGACY_RESET {
-            let level = {
-                let mut array = [0; 4];
-                array.copy_from_slice(&apdu[5..9]);
-                u32::from_be_bytes(array)
-            };
-
-            Self::reset(level)
-        } else if ins == INS_LEGACY_QUERY_MAIN_HWM {
-            let payload = Self::hwm()?;
-            let len = payload.len();
-
-            if apdu.len() < len {
-                return Err(Error::OutputBufferTooSmall);
-            }
-
-            apdu[..len].copy_from_slice(&payload[..]);
-            *tx = len as u32;
-
-            Ok(())
-        } else if ins == INS_LEGACY_QUERY_ALL_HWM {
-            let payload = Self::all_hwm()?;
-            let len = payload.len();
-
-            if apdu.len() < len {
-                return Err(Error::OutputBufferTooSmall);
-            }
-
-            apdu[..len].copy_from_slice(&payload[..]);
-            *tx = len as u32;
-
-            Ok(())
-        } else {
-            Err(Error::InsNotSupported)
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct WaterMark {
-    pub level: u32,
-    pub endorsement: bool,
-}
-
-impl From<&[u8; 52]> for WaterMark {
-    fn from(from: &[u8; 52]) -> Self {
-        let endorsement = from[0] >= 1;
+        let payload = buffer.payload().map_err(|_| Error::DataInvalid)?;
 
         let level = {
             let mut array = [0; 4];
-            array.copy_from_slice(&from[1..5]);
+            array.copy_from_slice(&payload[..4]);
             u32::from_be_bytes(array)
         };
 
-        Self { level, endorsement }
+        HWM::reset(level)
     }
 }
 
-impl From<WaterMark> for [u8; 52] {
-    fn from(from: WaterMark) -> Self {
-        let mut out = [0; 52];
+impl ApduHandler for LegacyQueryMainHWM {
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
 
-        let level = from.level.to_be_bytes();
-        out[1..5].copy_from_slice(&level[..]);
+        let hwm = HWM::hwm()?;
+        let len = hwm.len();
 
-        out[0] = from.endorsement as _;
-        out
-    }
-}
-
-impl WaterMark {
-    pub fn reset(level: u32) -> Self {
-        Self {
-            level,
-            endorsement: false,
+        let buffer = buffer.write();
+        if buffer.len() < len {
+            return Err(Error::OutputBufferTooSmall);
         }
-    }
 
-    //return !(lvl & 0xC0000000);
-    #[inline(never)]
-    pub fn is_valid_blocklevel(level: u32) -> bool {
-        level.leading_zeros() > 0
+        buffer[..len].copy_from_slice(&hwm[..]);
+        *tx = len as u32;
+
+        Ok(())
+    }
+}
+
+impl ApduHandler for LegacyQueryAllHWM {
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
+
+        let hwm = HWM::all_hwm()?;
+        let len = hwm.len();
+
+        let buffer = buffer.write();
+        if buffer.len() < len {
+            return Err(Error::OutputBufferTooSmall);
+        }
+
+        buffer[..len].copy_from_slice(&hwm[..]);
+        *tx = len as u32;
+
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{LegacyHWM, WaterMark, ALL_HWM_LEN, MAINNET_CHAIN_ID, MAIN_HWM_LEN};
     use crate::{
         assert_error_code,
         constants::ApduError,
         dispatcher::{
             handle_apdu, CLA, INS_LEGACY_QUERY_ALL_HWM, INS_LEGACY_QUERY_MAIN_HWM, INS_LEGACY_RESET,
         },
+        handlers::hwm::*,
     };
     use serial_test::serial;
     use std::convert::TryInto;
@@ -235,7 +128,7 @@ mod tests {
         let reset_level = reset_level.to_be_bytes();
 
         //reset state (problematic with other tests)
-        LegacyHWM::format().expect("couldn't format");
+        HWM::format().expect("couldn't format");
 
         buffer[..5].copy_from_slice(&[CLA, INS_LEGACY_RESET, 0, 0, reset_level.len() as u8]);
         buffer[5..rx].copy_from_slice(&reset_level[..]);
@@ -244,7 +137,7 @@ mod tests {
         assert_error_code!(tx, buffer, ApduError::Success);
         assert_eq!(tx as usize, 2);
 
-        let hwm = LegacyHWM::all_hwm().expect("failed retrieving all hwm");
+        let hwm = HWM::all_hwm().expect("failed retrieving all hwm");
         assert_eq!(&reset_level[..], &hwm[..4]); //main
         assert_eq!(&reset_level[..], &hwm[4..8]); //test
     }
@@ -259,12 +152,12 @@ mod tests {
 
         let len = MAIN_HWM_LEN;
         //reset state (problematic with other tests)
-        LegacyHWM::format().expect("couldn't format");
+        HWM::format().expect("couldn't format");
 
         //need to write at least once
-        LegacyHWM::reset(0).expect("couldn't reset");
+        HWM::reset(0).expect("couldn't reset");
 
-        let hwm = LegacyHWM::hwm().expect("failed retrieving hwm");
+        let hwm = HWM::hwm().expect("failed retrieving hwm");
 
         buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_MAIN_HWM, 0, 0, 0]);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
@@ -283,9 +176,9 @@ mod tests {
         let mut buffer = [0; 260];
 
         //reset state (problematic with other tests)
-        LegacyHWM::format().expect("couldn't format");
+        HWM::format().expect("couldn't format");
 
-        let err = LegacyHWM::hwm().expect_err("succeed retrieving hwm");
+        let err = HWM::hwm().expect_err("succeed retrieving hwm");
         assert_eq!(err, ApduError::ExecutionError);
 
         buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_MAIN_HWM, 0, 0, 0]);
@@ -305,13 +198,13 @@ mod tests {
 
         let len = ALL_HWM_LEN;
         //reset state (problematic with other tests)
-        LegacyHWM::format().expect("couldn't format");
+        HWM::format().expect("couldn't format");
 
         //need to write at least once
-        LegacyHWM::reset(0).expect("couldn't reset");
+        HWM::reset(0).expect("couldn't reset");
 
-        let hwm = LegacyHWM::all_hwm().expect("failed retrieving all hwm");
-        let main = LegacyHWM::hwm().expect("failed retrieving main hwm");
+        let hwm = HWM::all_hwm().expect("failed retrieving all hwm");
+        let main = HWM::hwm().expect("failed retrieving main hwm");
 
         buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_ALL_HWM, 0, 0, 0]);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
@@ -335,7 +228,7 @@ mod tests {
     #[serial(hwm)]
     pub fn trash_01() {
         //reset state (problematic with other tests)
-        LegacyHWM::format().expect("couldn't format");
+        HWM::format().expect("couldn't format");
 
         let req = hex::decode("80060000040000002a").unwrap();
 

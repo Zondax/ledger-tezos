@@ -21,6 +21,9 @@ pub mod parser_common;
 
 pub mod legacy;
 
+#[cfg(feature = "baking")]
+pub mod hwm;
+
 #[cfg(feature = "dev")]
 pub mod dev;
 

@@ -52,7 +52,7 @@ cfg_if! {
         pub const INS_BAKER_SIGN: u8 = 0xAF;
 
         //baking-only legacy imports
-        use crate::handlers::legacy::hwm::LegacyHWM;
+        use crate::handlers::legacy::hwm::{LegacyResetHWM, LegacyQueryMainHWM, LegacyQueryAllHWM};
 
         //baking-only new instructions
         use crate::handlers::baking::Baking;
@@ -132,9 +132,9 @@ pub fn apdu_dispatch<'apdu>(
         if #[cfg(feature = "baking")] {
             //baking-only instructions
             match ins {
-                INS_LEGACY_RESET |
-                INS_LEGACY_QUERY_MAIN_HWM |
-                INS_LEGACY_QUERY_ALL_HWM => return LegacyHWM::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_RESET => return LegacyResetHWM::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_QUERY_MAIN_HWM => return LegacyQueryMainHWM::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_QUERY_ALL_HWM => return LegacyQueryAllHWM::handle(flags, tx, apdu_buffer),
 
                 INS_AUTHORIZE_BAKING |
                 INS_DEAUTHORIZE_BAKING |

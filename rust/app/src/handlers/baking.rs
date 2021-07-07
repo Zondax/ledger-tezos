@@ -21,7 +21,7 @@ use crate::{
         INS_LEGACY_AUTHORIZE_BAKING, INS_LEGACY_DEAUTHORIZE, INS_LEGACY_QUERY_AUTH_KEY,
         INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE, INS_QUERY_AUTH_KEY, INS_QUERY_AUTH_KEY_WITH_CURVE,
     },
-    handlers::legacy::hwm::{LegacyHWM, WaterMark},
+    handlers::hwm::{WaterMark, HWM},
     handlers::public_key::GetAddress,
     sys::{self, flash_slot::Wear, new_flash_slot},
     utils::{ApduBufferRead, Uploader},
@@ -289,7 +289,7 @@ impl Baking {
         }
         //TODO: show confirmation of deletion on screen
         //FIXME: check if we need to format the HWM??
-        LegacyHWM::format()?;
+        HWM::format()?;
         Self::check_and_delete_path()?;
         Ok(0)
     }
@@ -314,7 +314,7 @@ impl Baking {
         let pk_len = Self::get_public(key, &mut buffer[1..])?;
         buffer[0] = pk_len as u8;
 
-        LegacyHWM::reset(0).map_err(|_| Error::Busy)?;
+        HWM::reset(0).map_err(|_| Error::Busy)?;
 
         Ok(pk_len + 1)
     }
@@ -393,7 +393,7 @@ impl Baking {
             Self::check_with_nvm_pathandcurve(&curve, &path)?;
 
             unsafe { PATH.replace((path, curve)) };
-            let hw = LegacyHWM::read()?;
+            let hw = HWM::read()?;
             //do watermarks checks
 
             let cdata = upload.data;
@@ -643,7 +643,7 @@ impl Viewable for BakingSignUI {
             level: blocklevel,
             endorsement: is_endorsement,
         };
-        match LegacyHWM::write(new_hw) {
+        match HWM::write(new_hw) {
             Err(_) => return (0, Error::ExecutionError as _),
             Ok(()) => (),
         }
