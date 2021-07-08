@@ -47,6 +47,19 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: zondax/rust-ci:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: run rust tests
+        run: |
+          make rust_test
+
+  build-baking:
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/rust-ci:latest
     env:
       BAKING: "yes"
     steps:
@@ -86,7 +99,6 @@ jobs:
         run: |
           source $HOME/.cargo/env
           make
-
 
   test_zemu:
     runs-on: ubuntu-latest
@@ -128,3 +140,37 @@ jobs:
         run: |
           export PATH=~/.cargo/bin:$PATH
           make zemu_test
+
+
+  build_package:
+    needs: [ configure, checks, build, build-baking, test_zemu ]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/builder-bolos:latest
+      options: --user ${{ needs.configure.outputs.uid_gid }}
+    env:
+      BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
+      BOLOS_ENV: /opt/bolos
+      HOME: /home/zondax_circle
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build Ledger app (Baking)
+        env:
+          BAKING: 'yes'
+        shell: bash -l {0}
+        run: |
+          source $HOME/.cargo/env
+          make
+      - name: Copy baking artifacts
+        run: |
+          mv /home/zondax/project/rust/app/pkg/installer_s.sh /home/zondax/project/rust/app/pkg/installer_baking_s.sh
+          /home/zondax/go/bin/ghr -t ${GITHUB_TOKEN} \
+                                  -u ${CIRCLE_PROJECT_USERNAME} \
+                                  -r ${CIRCLE_PROJECT_REPONAME} \
+                                  -c ${CIRCLE_SHA1} \
+                                  -delete $(/home/zondax/project/rust/app/pkg/installer_baking_s.sh version) \
+                                  /home/zondax/project/rust/app/pkg/installer_baking_s.sh
