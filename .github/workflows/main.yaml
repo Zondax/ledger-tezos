@@ -9,9 +9,8 @@ jobs:
     steps:
       - id: get-user
         run: echo "::set-output name=uid_gid::$(id -u):$(id -g)"
-        
+
   checks:
-    needs: configure
     runs-on: ubuntu-latest
     container:
       image: zondax/rust-ci:latest
@@ -45,7 +44,6 @@ jobs:
           cargo audit
 
   build:
-    needs: configure
     runs-on: ubuntu-latest
     container:
       image: zondax/rust-ci:latest
@@ -88,3 +86,45 @@ jobs:
         run: |
           source $HOME/.cargo/env
           make
+
+
+  test_zemu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: git submodule update --init --recursive
+      - run: apt-get update -y && apt-get install -y libusb-1.0.0 libudev-dev
+      - name: Install rust
+        run: |
+          apt-get update
+          apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
+      - name: Install node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.17.0'
+      - name: Install yarn
+        run: |
+          npm install -g yarn
+      - name: Build Ledger app (Baking)
+        env:
+          BAKING: 'yes'
+        run: |
+          make
+      - name: Build Ledger app
+        run: |
+          make
+      - name: Build legacy app
+        run: |
+          make legacy
+      - name: Build/Install build js deps
+        run: |
+          export PATH=~/.cargo/bin:$PATH
+          make zemu_install
+      - name: Run zemu tests
+        run: |
+          export PATH=~/.cargo/bin:$PATH
+          make zemu_test
