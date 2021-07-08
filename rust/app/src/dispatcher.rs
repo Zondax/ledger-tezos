@@ -52,11 +52,13 @@ cfg_if! {
         pub const INS_BAKER_SIGN: u8 = 0xAF;
 
         //baking-only legacy imports
-        use crate::handlers::legacy::hwm::{LegacyResetHWM, LegacyQueryMainHWM, LegacyQueryAllHWM};
-        use crate::handlers::legacy::baking::{LegacyAuthorize, LegacyDeAuthorize, LegacyQueryAuthKey, LegacyQueryAuthKeyWithCurve};
-
+        use crate::handlers::legacy::hwm::{LegacyResetHWM, LegacyQueryMainHWM,
+                                           LegacyQueryAllHWM};
+        use crate::handlers::legacy::baking::{LegacyAuthorize, LegacyDeAuthorize,
+                                              LegacyQueryAuthKey, LegacyQueryAuthKeyWithCurve};
         //baking-only new instructions
-        use crate::handlers::baking::Baking;
+        use crate::handlers::baking::{AuthorizeBaking, DeAuthorizeBaking, QueryAuthKey,
+                                      QueryAuthKeyWithCurve, BakerSign};
     } else if #[cfg(feature = "wallet")] {
         //wallet-only legacy instructions
         pub const INS_LEGACY_SIGN_UNSAFE: u8 = 0x5;
@@ -137,14 +139,15 @@ pub fn apdu_dispatch<'apdu>(
                 INS_LEGACY_QUERY_MAIN_HWM => return LegacyQueryMainHWM::handle(flags, tx, apdu_buffer),
                 INS_LEGACY_QUERY_ALL_HWM => return LegacyQueryAllHWM::handle(flags, tx, apdu_buffer),
 
-                INS_AUTHORIZE_BAKING |
-                INS_DEAUTHORIZE_BAKING |
-                INS_QUERY_AUTH_KEY_WITH_CURVE |
-                INS_BAKER_SIGN => return Baking::handle(flags, tx, apdu_buffer),
+                INS_AUTHORIZE_BAKING => return AuthorizeBaking::handle(flags, tx, apdu_buffer),
+                INS_DEAUTHORIZE_BAKING => return DeAuthorizeBaking::handle(flags, tx, apdu_buffer),
+                INS_QUERY_AUTH_KEY => return QueryAuthKey::handle(flags, tx, apdu_buffer),
+                INS_QUERY_AUTH_KEY_WITH_CURVE => return QueryAuthKeyWithCurve::handle(flags, tx, apdu_buffer),
+                INS_BAKER_SIGN => return BakerSign::handle(flags, tx, apdu_buffer),
 
                 INS_LEGACY_AUTHORIZE_BAKING => return LegacyAuthorize::handle(flags, tx, apdu_buffer),
-                INS_LEGACY_QUERY_AUTH_KEY => return LegacyQueryAuthKey::handle(flags, tx, apdu_buffer),
                 INS_LEGACY_DEAUTHORIZE => return LegacyDeAuthorize::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_QUERY_AUTH_KEY => return LegacyQueryAuthKey::handle(flags, tx, apdu_buffer),
                 INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => return LegacyQueryAuthKeyWithCurve::handle(flags, tx, apdu_buffer),
 
                 INS_LEGACY_SETUP |
