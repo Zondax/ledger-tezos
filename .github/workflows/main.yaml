@@ -96,11 +96,11 @@ jobs:
         with:
           submodules: true
       - run: git submodule update --init --recursive
-      - run: apt-get update -y && apt-get install -y libusb-1.0.0 libudev-dev
+      - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
       - name: Install rust
         run: |
-          apt-get update
-          apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
+          sudo apt-get update
+          sudo apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
       - name: Install node
         uses: actions/setup-node@v2
