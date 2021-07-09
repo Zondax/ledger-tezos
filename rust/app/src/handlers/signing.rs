@@ -24,7 +24,7 @@ use zemu_sys::{Show, ViewError, Viewable};
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
-    dispatcher::{ApduHandler, INS_LEGACY_SIGN, INS_LEGACY_SIGN_WITH_HASH, INS_SIGN},
+    dispatcher::ApduHandler,
     sys,
     utils::{ApduBufferRead, Uploader},
 };
@@ -95,22 +95,6 @@ impl Sign {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-enum Action {
-    //NEW API: TODO
-    Sign,
-
-    //LEGACY API: TODO
-    LegacySign,
-
-    //LEGACY API: TODO
-    LegacySignWithHash,
-
-    #[cfg(feature = "wallet")]
-    //LEGACY API: TODO
-    LegacySignUnsafe,
-}
-
 impl ApduHandler for Sign {
     #[inline(never)]
     fn handle<'apdu>(
@@ -121,28 +105,9 @@ impl ApduHandler for Sign {
         sys::zemu_log_stack("Sign::handle\x00");
 
         *tx = 0;
-        let action = match buffer.ins() {
-            INS_SIGN => Action::Sign,
-            INS_LEGACY_SIGN => Action::LegacySign,
-            INS_LEGACY_SIGN_WITH_HASH => Action::LegacySignWithHash,
-            #[cfg(feature = "wallet")]
-            crate::dispatcher::INS_LEGACY_SIGN_UNSAFE => Action::LegacySignUnsafe,
-            _ => return Err(Error::InsNotSupported),
-        };
 
         if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
-            *tx = match action {
-                Action::Sign | Action::LegacySignWithHash => {
-                    Self::blind_sign(true, upload.p2, upload.first, upload.data, flags)?
-                }
-                Action::LegacySign => {
-                    Self::blind_sign(false, upload.p2, upload.first, upload.data, flags)?
-                }
-                #[cfg(feature = "wallet")]
-                Action::LegacySignUnsafe => {
-                    Self::blind_sign(false, upload.p2, upload.first, upload.data, flags)?
-                }
-            };
+            *tx = Self::blind_sign(true, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())
@@ -245,8 +210,8 @@ mod tests {
     use super::*;
     use crate::{
         assert_error_code,
-        dispatcher::{handle_apdu, CLA},
-        handlers::{LegacyPacketType, ZPacketType},
+        dispatcher::{handle_apdu, CLA, INS_SIGN},
+        handlers::ZPacketType,
         sys::set_out,
     };
     use std::convert::TryInto;
@@ -287,40 +252,6 @@ mod tests {
         buffer[0] = CLA;
         buffer[1] = INS_SIGN;
         buffer[2] = ZPacketType::Last.into();
-        buffer[3] = 0;
-        buffer[4] = MSG.len() as u8;
-        buffer[5..5 + MSG.len()].copy_from_slice(&MSG[..]);
-
-        set_out(&mut buffer);
-        handle_apdu(&mut flags, &mut tx, 5 + MSG.len() as u32, &mut buffer);
-        assert_error_code!(tx, buffer, Error::Success);
-
-        let out_hash = &buffer[..32];
-        let expected = Blake2b::<32>::digest(&MSG).unwrap();
-        assert_eq!(&expected, out_hash);
-    }
-
-    #[test]
-    #[ignore]
-    #[serial(ui)]
-    fn apdu_blind_sign_legacy() {
-        const MSG: [u8; 18] = *b"franceco@zondax.ch";
-
-        let mut flags = 0;
-        let mut tx = 0;
-        let mut buffer = [0; 260];
-
-        buffer[0] = CLA;
-        buffer[1] = INS_LEGACY_SIGN_WITH_HASH;
-        buffer[2] = LegacyPacketType::Init.into();
-        let len = prepare_buffer(&mut buffer, &[44, 1729, 0, 0], Curve::Ed25519);
-
-        handle_apdu(&mut flags, &mut tx, 5 + len as u32, &mut buffer);
-        assert_error_code!(tx, buffer, Error::Success);
-
-        buffer[0] = CLA;
-        buffer[1] = INS_SIGN;
-        buffer[2] = LegacyPacketType::AddAndLast.into();
         buffer[3] = 0;
         buffer[4] = MSG.len() as u8;
         buffer[5..5 + MSG.len()].copy_from_slice(&MSG[..]);

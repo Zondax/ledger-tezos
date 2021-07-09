@@ -71,7 +71,6 @@ impl<'apdu> ApduBufferRead<'apdu> {
     }
 
     /// Alias to idx APDU_INDEX_INS
-    //TODO: remove so we dispatch only at the dispatcher level
     pub fn ins(&self) -> u8 {
         self.inner[APDU_INDEX_INS]
     }

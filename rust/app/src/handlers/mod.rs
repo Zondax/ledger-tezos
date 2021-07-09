@@ -13,17 +13,19 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-pub mod legacy_version;
-pub mod parser_common;
 pub mod public_key;
 pub mod signing;
 pub mod version;
 
-#[cfg(feature = "dev")]
-pub mod dev;
+pub mod parser_common;
+
+pub mod legacy;
 
 #[cfg(feature = "baking")]
 pub mod hwm;
+
+#[cfg(feature = "dev")]
+pub mod dev;
 
 #[cfg(feature = "baking")]
 pub mod baking;

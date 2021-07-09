@@ -18,10 +18,15 @@ use cfg_if::cfg_if;
 
 use crate::constants::ApduError;
 use crate::constants::ApduError::{ClaNotSupported, CommandNotAllowed};
-use crate::handlers::legacy_version::{LegacyGetVersion, LegacyGit};
+
 use crate::handlers::public_key::GetAddress;
 use crate::handlers::signing::Sign;
 use crate::handlers::version::GetVersion;
+
+use crate::handlers::legacy::public_key::{LegacyGetPublic, LegacyPromptAddress};
+use crate::handlers::legacy::signing::{LegacySign, LegacySignWithHash};
+use crate::handlers::legacy::version::{LegacyGetVersion, LegacyGit};
+
 use crate::utils::ApduBufferRead;
 
 pub const CLA: u8 = 0x80;
@@ -47,13 +52,19 @@ cfg_if! {
         pub const INS_BAKER_SIGN: u8 = 0xAF;
 
         //baking-only legacy imports
-        use crate::handlers::hwm::LegacyHWM;
-
+        use crate::handlers::legacy::hwm::{LegacyResetHWM, LegacyQueryMainHWM,
+                                           LegacyQueryAllHWM};
+        use crate::handlers::legacy::baking::{LegacyAuthorize, LegacyDeAuthorize,
+                                              LegacyQueryAuthKey, LegacyQueryAuthKeyWithCurve};
         //baking-only new instructions
-        use crate::handlers::baking::Baking;
+        use crate::handlers::baking::{AuthorizeBaking, DeAuthorizeBaking, QueryAuthKey,
+                                      QueryAuthKeyWithCurve, BakerSign};
     } else if #[cfg(feature = "wallet")] {
         //wallet-only legacy instructions
         pub const INS_LEGACY_SIGN_UNSAFE: u8 = 0x5;
+
+        //wallet-only legacy imports
+        use crate::handlers::legacy::signing::LegacySignUnsafe;
 
         //wallet-only new instructions
     }
@@ -124,20 +135,22 @@ pub fn apdu_dispatch<'apdu>(
         if #[cfg(feature = "baking")] {
             //baking-only instructions
             match ins {
-                INS_LEGACY_RESET |
-                INS_LEGACY_QUERY_MAIN_HWM |
-                INS_LEGACY_QUERY_ALL_HWM => return LegacyHWM::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_RESET => return LegacyResetHWM::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_QUERY_MAIN_HWM => return LegacyQueryMainHWM::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_QUERY_ALL_HWM => return LegacyQueryAllHWM::handle(flags, tx, apdu_buffer),
 
-                INS_AUTHORIZE_BAKING |
-                INS_DEAUTHORIZE_BAKING |
-                INS_QUERY_AUTH_KEY_WITH_CURVE |
-                INS_BAKER_SIGN => return Baking::handle(flags, tx, apdu_buffer),
+                INS_AUTHORIZE_BAKING => return AuthorizeBaking::handle(flags, tx, apdu_buffer),
+                INS_DEAUTHORIZE_BAKING => return DeAuthorizeBaking::handle(flags, tx, apdu_buffer),
+                INS_QUERY_AUTH_KEY => return QueryAuthKey::handle(flags, tx, apdu_buffer),
+                INS_QUERY_AUTH_KEY_WITH_CURVE => return QueryAuthKeyWithCurve::handle(flags, tx, apdu_buffer),
+                INS_BAKER_SIGN => return BakerSign::handle(flags, tx, apdu_buffer),
 
-                INS_LEGACY_AUTHORIZE_BAKING |
-                INS_LEGACY_QUERY_AUTH_KEY |
+                INS_LEGACY_AUTHORIZE_BAKING => return LegacyAuthorize::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_DEAUTHORIZE => return LegacyDeAuthorize::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_QUERY_AUTH_KEY => return LegacyQueryAuthKey::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => return LegacyQueryAuthKeyWithCurve::handle(flags, tx, apdu_buffer),
+
                 INS_LEGACY_SETUP |
-                INS_LEGACY_DEAUTHORIZE |
-                INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE |
                 INS_LEGACY_HMAC => return Err(CommandNotAllowed),
                 _ => {}
             }
@@ -145,7 +158,7 @@ pub fn apdu_dispatch<'apdu>(
             //wallet-only instructions
             #[allow(clippy::single_match)]
             match ins {
-                INS_LEGACY_SIGN_UNSAFE => return Sign::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_SIGN_UNSAFE => return LegacySignUnsafe::handle(flags, tx, apdu_buffer),
                 _ => {}
             }
         }
@@ -156,15 +169,15 @@ pub fn apdu_dispatch<'apdu>(
     match ins {
         INS_LEGACY_GET_VERSION => LegacyGetVersion::handle(flags, tx, apdu_buffer),
 
-        INS_LEGACY_GET_PUBLIC_KEY | INS_LEGACY_PROMPT_PUBLIC_KEY | INS_GET_ADDRESS => {
-            GetAddress::handle(flags, tx, apdu_buffer)
-        }
+        INS_LEGACY_GET_PUBLIC_KEY => LegacyGetPublic::handle(flags, tx, apdu_buffer),
+        INS_LEGACY_PROMPT_PUBLIC_KEY => LegacyPromptAddress::handle(flags, tx, apdu_buffer),
+        INS_GET_ADDRESS => GetAddress::handle(flags, tx, apdu_buffer),
 
         INS_LEGACY_GIT => LegacyGit::handle(flags, tx, apdu_buffer),
 
-        INS_LEGACY_SIGN | INS_LEGACY_SIGN_WITH_HASH | INS_SIGN => {
-            Sign::handle(flags, tx, apdu_buffer)
-        }
+        INS_LEGACY_SIGN => LegacySign::handle(flags, tx, apdu_buffer),
+        INS_LEGACY_SIGN_WITH_HASH => LegacySignWithHash::handle(flags, tx, apdu_buffer),
+        INS_SIGN => Sign::handle(flags, tx, apdu_buffer),
 
         INS_GET_VERSION => GetVersion::handle(flags, tx, apdu_buffer),
         _ => Err(CommandNotAllowed),
