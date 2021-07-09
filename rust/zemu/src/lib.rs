@@ -54,3 +54,5 @@ pub fn check_canary() {
 #[cfg_attr(not(zemu_sdk), path = "ui_mock.rs")]
 mod ui;
 pub use ui::*;
+
+mod ui_toolkit;

@@ -28,7 +28,7 @@ pub(self) mod bindings {
     include!("ui/bindings.rs");
 }
 
-mod manual_vtable;
+pub(crate) mod manual_vtable;
 use manual_vtable::RefMutDynViewable;
 
 //This is _terribly_ unsafe, as we assume the pointer hasn't been invalidated!

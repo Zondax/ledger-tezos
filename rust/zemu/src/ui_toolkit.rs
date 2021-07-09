@@ -1,0 +1,190 @@
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
+use crate::{ui::manual_vtable::RefMutDynViewable, ViewError};
+
+mod backends;
+
+use arrayvec::ArrayString;
+
+use self::backends::UIBackend;
+
+pub struct ZUI<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> {
+    item_idx: usize,
+    item_count: usize,
+
+    page_idx: usize,
+    page_count: usize,
+
+    backend: B,
+
+    current_viewable: Option<RefMutDynViewable>,
+}
+
+impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
+    fn paging_init(&mut self) {
+        self.item_idx = 0;
+        self.page_idx = 0;
+        self.page_count = 0;
+    }
+
+    fn paging_increase(&mut self) {
+        //if we have a next page, increase page index
+        // so we display it next loop
+        if self.page_idx + 1 < self.page_count {
+            self.page_idx += 1;
+        } else if self.item_count > 0
+            && self.item_idx < self.item_count - 1 + B::INCLUDE_ACTIONS_COUNT
+        {
+            //if we don't, go to the next index
+            // and reset page idx
+            self.item_idx += 1;
+            self.page_idx = 0;
+        } else {
+            //do nothing if we don't have items, or if
+            // we are displaying an "action" (approve / reject)
+        }
+    }
+
+    //calls viewable's render_item and makes sure the invariants of the backend are held
+    fn render_item(&mut self, page_idx: impl Into<Option<usize>>) -> Result<(), ViewError> {
+        let viewable = self.current_viewable.as_mut().ok_or(ViewError::NoData)?;
+
+        let page_idx = page_idx.into().unwrap_or(self.page_idx) as u8;
+
+        let mut message = self.backend.message_buf();
+
+        //Safety: this is unsafe because reading non-UTF8 from str
+        // is undefined behaviour, but we will be asciifying the write before
+        // we end the borrow, thus making sure it's always valid UTF-8
+        let message_bytes = unsafe { message.as_bytes_mut() };
+
+        //Safety: same as per above `message_bytes`
+        let key_bytes = unsafe { self.backend.key_buf().as_bytes_mut() };
+
+        let render_item_result =
+            viewable.render_item(self.item_idx as u8, key_bytes, message_bytes, page_idx);
+
+        //asciify
+        // this section makes the unsafes above safe!
+        message_bytes
+            .iter_mut()
+            .filter(|&&mut c| c != 0 && (c < 32 || c > 0x7F))
+            .for_each(|c| {
+                *c = '.' as u8;
+            });
+        key_bytes
+            .iter_mut()
+            .filter(|&&mut c| c != 0 && (c < 32 || c > 0x7F))
+            .for_each(|c| {
+                *c = '.' as u8;
+            });
+
+        //update page count (or return error)
+        self.page_count = render_item_result? as usize;
+
+        //let backend split
+        self.backend.split_value_field(message);
+
+        Ok(())
+    }
+
+    fn review_update_data(&mut self) -> Result<(), ViewError> {
+        self.page_count = 1;
+
+        loop {
+            self.item_count = self
+                .current_viewable
+                .as_mut()
+                .ok_or(ViewError::NoData)?
+                .num_items()? as usize;
+
+            //be sure we are not out of bounds
+            self.render_item(0)?;
+
+            if self.page_count != 0 && self.page_idx > self.page_count {
+                //try again and get last page
+                self.page_idx = self.page_count - 1;
+            }
+
+            self.render_item(None)?;
+
+            self.item_count += 1;
+
+            //if we have more than one page, if possible we should display
+            // what page we are displaying currently and what's the total number of pages
+            if self.page_count > 1 {
+                let key = self.backend.key_buf();
+                let key_len = strlen(key.as_str().as_bytes());
+
+                if key_len < KS {
+                    use core::fmt::Write;
+                    //construct temporary new arraystring that will replace the current one
+                    let mut tmp = key.clone();
+                    tmp.clear();
+
+                    write!(
+                        tmp,
+                        "{} [{}/{}]",
+                        &key[..key_len],
+                        self.page_idx + 1,
+                        self.page_count
+                    );
+
+                    *key = tmp;
+                }
+            }
+
+            if self.page_count != 0 {
+                break;
+            } else {
+                self.paging_increase();
+            }
+        }
+
+        Ok(())
+    }
+
+    fn view_error_show(&mut self) {
+        use core::fmt::Write;
+
+        let key = self.backend.key_buf();
+        key.clear();
+        write!(key, "ERROR");
+
+        let mut message = self.backend.message_buf();
+        write!(message, "SHOWING DATA");
+        self.backend.split_value_field(message);
+
+        self.backend.view_error_show();
+    }
+
+    pub fn show(&mut self) {
+        B::view_review_show(self)
+    }
+}
+
+/// This function returns the index of the first null byte in the slice
+fn strlen(s: &[u8]) -> usize {
+    let mut count = 0;
+    while let Some(&c) = s.get(count) {
+        if c == 0 {
+            break;
+        }
+        count += 1;
+    }
+
+    count
+}
