@@ -15,6 +15,9 @@ $(info BOLOS_SDK = [$(BOLOS_SDK)])
 test:
 	cargo test $(RUST_FEATURES),"dev"
 
+.PHONY: zui
+zui:
+	cd zemu && cbindgen --config cbindgen.toml --crate zemu-sys --output include/zemu_ui.h --lang c
 
 .PHONY: prep_generate
 prep_generate:

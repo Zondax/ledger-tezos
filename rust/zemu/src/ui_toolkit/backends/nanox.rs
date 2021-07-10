@@ -14,7 +14,8 @@
 *  limitations under the License.
 ********************************************************************************/
 use super::UIBackend;
-use crate::ui_toolkit::strlen;
+use crate::ui_toolkit::{strlen, ZUI};
+
 use arrayvec::ArrayString;
 
 const KEY_SIZE: usize = 64;
@@ -23,17 +24,27 @@ const MESSAGE_SIZE: usize = 4096;
 
 const INCLUDE_ACTIONS_COUNT: usize = 0;
 
+#[bolos_derive::lazy_static]
+pub static mut RUST_ZUI: ZUI<NanoXBackend, KEY_SIZE, MESSAGE_SIZE> = ZUI::new();
+
 pub struct NanoXBackend {
     key: ArrayString<KEY_SIZE>,
-    message: ArrayString<MESSAGE_LINE_SIZE>,
+    message: ArrayString<MESSAGE_SIZE>,
 }
 
-impl NanoXBackend {}
+impl Default for NanoXBackend {
+    fn default() -> Self {
+        Self {
+            key: ArrayString::new_const(),
+            message: ArrayString::new_const(),
+        }
+    }
+}
 
 impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
     const INCLUDE_ACTIONS_COUNT: usize = 0;
 
-    fn key_buf(&mut self) -> ArrayString<KEY_SIZE> {
+    fn key_buf(&mut self) -> &mut ArrayString<KEY_SIZE> {
         &mut self.key
     }
 
@@ -43,23 +54,50 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
 
     fn split_value_field(&mut self, message_buf: ArrayString<MESSAGE_SIZE>) {
         self.message = message_buf;
-        if self.message == 0 {
+        if self.message.len() == 0 {
             self.message.push(' ');
         }
     }
 
     fn view_error_show(&mut self) {
         todo!(
-            "
+            r#"
         ux_layout_bnnn_paging_reset();
         if (G_ux.stack_count == 0) {
             ux_stack_push();
         }
-        ux_flow_init(0, ux_error_flow, NULL);"
+        ux_flow_init(0, ux_error_flow, NULL);"#
         );
     }
 
     fn view_review_show(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
-        todo!("nanox show")
+        //reset ui struct
+        ui.paging_init();
+        //not sure why this is here but ok
+        ui.paging_decrease();
+
+        todo!(
+            r#"
+            flow_inside_loop = 0;
+            if G_ux.stack_count == 0 {
+                ux_stack_push();
+            }
+            ux_flow_init(0, ux_review_flow, NULL);
+        "#
+        );
+    }
+}
+
+mod cabi {
+    use super::*;
+
+    #[no_mangle]
+    pub unsafe extern "C" fn viewdata_key() -> *mut u8 {
+        RUST_ZUI.backend.key.as_bytes_mut().as_mut_ptr()
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn viewdata_message() -> *mut u8 {
+        RUST_ZUI.backend.message.as_bytes_mut().as_mut_ptr()
     }
 }

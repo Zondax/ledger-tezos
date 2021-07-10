@@ -14,7 +14,7 @@
 *  limitations under the License.
 ********************************************************************************/
 use super::UIBackend;
-use crate::ui_toolkit::{ZUI, strlen};
+use crate::ui_toolkit::{strlen, ZUI};
 
 use arrayvec::ArrayString;
 
@@ -26,6 +26,9 @@ const MESSAGE_SIZE: usize = 2 * MESSAGE_LINE_SIZE + 1;
 const INCLUDE_ACTIONS_AS_ITEMS: usize = 2;
 const INCLUDE_ACTIONS_COUNT: usize = INCLUDE_ACTIONS_AS_ITEMS - 1;
 
+#[bolos_derive::lazy_static]
+pub static mut RUST_ZUI: ZUI<NanoSBackend, KEY_SIZE, MESSAGE_SIZE> = ZUI::new();
+
 pub struct NanoSBackend {
     key: ArrayString<KEY_SIZE>,
 
@@ -33,7 +36,15 @@ pub struct NanoSBackend {
     message_line2: ArrayString<MESSAGE_LINE_SIZE>,
 }
 
-impl NanoSBackend {}
+impl Default for NanoSBackend {
+    fn default() -> Self {
+        Self {
+            key: ArrayString::new_const(),
+            message_line1: ArrayString::new_const(),
+            message_line2: ArrayString::new_const(),
+        }
+    }
+}
 
 impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     const INCLUDE_ACTIONS_COUNT: usize = INCLUDE_ACTIONS_COUNT;
@@ -77,10 +88,27 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         match ui.review_update_data() {
             Ok(_) => {
                 //UX_DISPLAY(view_review, view_prepro)
-            },
-            Err(_) => {
-                ui.view_error_show()
             }
+            Err(_) => ui.view_error_show(),
         }
+    }
+}
+
+mod cabi {
+    use super::*;
+
+    #[no_mangle]
+    pub unsafe extern "C" fn viewdata_key() -> *mut u8 {
+        RUST_ZUI.backend.key.as_bytes_mut().as_mut_ptr()
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn viewdata_message_line1() -> *mut u8 {
+        RUST_ZUI.backend.message_line1.as_bytes_mut().as_mut_ptr()
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn viewdata_message_line2() -> *mut u8 {
+        RUST_ZUI.backend.message_line2.as_bytes_mut().as_mut_ptr()
     }
 }

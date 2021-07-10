@@ -16,9 +16,6 @@
 use crate::{ui::manual_vtable::RefMutDynViewable, ViewError};
 
 mod backends;
-
-use arrayvec::ArrayString;
-
 use self::backends::UIBackend;
 
 pub struct ZUI<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> {
@@ -34,6 +31,17 @@ pub struct ZUI<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> {
 }
 
 impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
+    pub fn new() -> Self {
+        Self {
+            item_idx: 0,
+            item_count: 0,
+            page_idx: 0,
+            page_count: 0,
+            backend: B::default(),
+            current_viewable: None,
+        }
+    }
+
     fn paging_init(&mut self) {
         self.item_idx = 0;
         self.page_idx = 0;
@@ -55,6 +63,20 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         } else {
             //do nothing if we don't have items, or if
             // we are displaying an "action" (approve / reject)
+        }
+    }
+
+    fn paging_decrease(&mut self) {
+        //if we are not at the first page, then move to previous page
+        if self.page_idx != 0 {
+            self.page_idx -= 1;
+        } else if self.item_idx > 0 {
+            //otherwise, since we are already at the first page
+            // move to the previous item
+            self.item_idx += 1;
+
+            //"jump" to last page, then update will fix this value
+            self.page_idx = 255;
         }
     }
 

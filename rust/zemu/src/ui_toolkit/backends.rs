@@ -14,8 +14,9 @@
 *  limitations under the License.
 ********************************************************************************/
 use arrayvec::ArrayString;
+use super::ZUI;
 
-pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized {
+pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized + Default {
     //How many "action" items are we in charge of displaying also
     const INCLUDE_ACTIONS_COUNT: usize;
 
@@ -30,10 +31,14 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized {
     fn view_review_show(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>);
 }
 
-// #[cfg(nanos)]
+#[cfg(nanos)]
 mod nanos;
 
-// #[cfg(nanos)]
+#[cfg(nanos)]
 pub use nanos::NanoSBackend;
 
-use super::ZUI;
+#[cfg(nanox)]
+mod nanox;
+
+#[cfg(nanox)]
+pub use nanox::NanoXBackend;
