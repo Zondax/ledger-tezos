@@ -13,7 +13,10 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use crate::{ui::manual_vtable::RefMutDynViewable, ViewError};
+use crate::{
+    ui::{manual_vtable::RefMutDynViewable, Viewable},
+    ShowTooBig, ViewError,
+};
 
 mod backends;
 use self::backends::UIBackend;
@@ -42,28 +45,74 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         }
     }
 
+    fn approve(&mut self) {
+        self.show_idle(0, None);
+        //UX_WAIT(); //FIXME: self.backend.wait_ui() ??
+        if let Some(viewable) = self.current_viewable.as_mut() {
+            let out = self.backend.accept_reject_out();
+
+            let (len, code) = viewable.accept(out);
+            out[len..len + 2].copy_from_slice(&code.to_be_bytes()[..]);
+
+            //remove current viewable
+            viewable = None;
+
+            self.backend.accept_reject_end(len + 2);
+        }
+    }
+
+    fn reject(&mut self) {
+        self.show_idle(0, None);
+        //UX_WAIT(); //FIXME: self.backend.wait_ui() ??
+        if let Some(viewable) = self.current_viewable.as_mut() {
+            let out = self.backend.accept_reject_out();
+
+            let (len, code) = viewable.reject(out);
+            out[len..len + 2].copy_from_slice(&code.to_be_bytes()[..]);
+
+            //remove current viewable
+            viewable = None;
+
+            self.backend.accept_reject_end(len + 2);
+        }
+    }
+
     fn paging_init(&mut self) {
         self.item_idx = 0;
         self.page_idx = 0;
         self.page_count = 0;
     }
 
-    fn paging_increase(&mut self) {
-        //if we have a next page, increase page index
-        // so we display it next loop
+    fn paging_can_increase(&self) -> bool {
         if self.page_idx + 1 < self.page_count {
+            //we have at least 1 page left to show
+            true
+        } else if self.item_count > 0
+            && self.item_idx < (self.item_count - 1 + B::INCLUDE_ACTIONS_COUNT)
+        {
+            //we have at least 1 item, and our current item is not an action
+            true
+        } else {
+            false
+        }
+    }
+
+    fn paging_increase(&mut self) {
+        if self.page_idx + 1 < self.page_count {
+            //show next page
             self.page_idx += 1;
         } else if self.item_count > 0
-            && self.item_idx < self.item_count - 1 + B::INCLUDE_ACTIONS_COUNT
+            && self.item_idx < (self.item_count - 1 + B::INCLUDE_ACTIONS_COUNT)
         {
-            //if we don't, go to the next index
-            // and reset page idx
+            //show next item
             self.item_idx += 1;
             self.page_idx = 0;
-        } else {
-            //do nothing if we don't have items, or if
-            // we are displaying an "action" (approve / reject)
         }
+    }
+
+    fn paging_can_decrease(&self) -> bool {
+        //not the first page or not the first item
+        self.page_idx != 0 || self.item_idx > 0
     }
 
     fn paging_decrease(&mut self) {
@@ -77,6 +126,35 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
 
             //"jump" to last page, then update will fix this value
             self.page_idx = 255;
+        }
+    }
+
+    fn is_accept_item(&self) -> bool {
+        self.item_idx == self.item_count - 1
+    }
+
+    fn set_accept_item(&mut self) {
+        self.item_idx = self.item_count - 1;
+        self.page_idx = 0;
+    }
+
+    fn is_reject_item(&self) -> bool {
+        self.item_idx == self.item_count
+    }
+
+    //h_review_action
+    fn review_action(&mut self) {
+        if self.is_accept_item() {
+            self.approve();
+        } else if self.is_reject_item() {
+            self.reject();
+        }
+
+        let expert = false; //FIXME: get app expert mode status
+        if expert {
+            self.set_accept_item();
+
+            B::update_review(self)
         }
     }
 
@@ -179,7 +257,8 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         Ok(())
     }
 
-    fn view_error_show(&mut self) {
+    //view_error_show
+    fn show_error(&mut self) {
         use core::fmt::Write;
 
         let key = self.backend.key_buf();
@@ -190,11 +269,19 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         write!(message, "SHOWING DATA");
         self.backend.split_value_field(message);
 
-        self.backend.view_error_show();
+        self.backend.show_error();
     }
 
-    pub fn show(&mut self) {
-        B::view_review_show(self)
+    //view_idle_show
+    fn show_idle(&mut self, item_idx: usize, status: Option<&str>) {
+        self.backend.show_idle(item_idx, status)
+    }
+
+    //view_review_show
+    pub fn show(&mut self, viewable: impl Viewable + Sized + 'static) -> Result<(), ShowTooBig> {
+        let viewable = self.backend.store_viewable(viewable).ok_or(ShowTooBig)?;
+        self.current_viewable.replace(viewable);
+        Ok(B::show_review(self))
     }
 }
 

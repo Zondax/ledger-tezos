@@ -14,8 +14,10 @@
 *  limitations under the License.
 ********************************************************************************/
 use super::UIBackend;
-use crate::ui_toolkit::{strlen, ZUI};
-
+use crate::{
+    ui::{manual_vtable::RefMutDynViewable, Viewable},
+    ui_toolkit::{strlen, ZUI},
+};
 use arrayvec::ArrayString;
 
 const KEY_SIZE: usize = 64;
@@ -30,6 +32,8 @@ pub static mut RUST_ZUI: ZUI<NanoXBackend, KEY_SIZE, MESSAGE_SIZE> = ZUI::new();
 pub struct NanoXBackend {
     key: ArrayString<KEY_SIZE>,
     message: ArrayString<MESSAGE_SIZE>,
+
+    viewable_size: usize,
 }
 
 impl Default for NanoXBackend {
@@ -37,6 +41,7 @@ impl Default for NanoXBackend {
         Self {
             key: ArrayString::new_const(),
             message: ArrayString::new_const(),
+            viewable_size: 0,
         }
     }
 }
@@ -59,7 +64,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         }
     }
 
-    fn view_error_show(&mut self) {
+    fn show_error(&mut self) {
         todo!(
             r#"
         ux_layout_bnnn_paging_reset();
@@ -70,7 +75,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         );
     }
 
-    fn view_review_show(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+    fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
         //reset ui struct
         ui.paging_init();
         //not sure why this is here but ok
@@ -85,6 +90,56 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
             ux_flow_init(0, ux_review_flow, NULL);
         "#
         );
+    }
+
+    fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+        match ui.review_update_data() {
+            Ok(_) | Err(ViewError::NoData) => {}
+            Err(_) => {
+                ui.show_error();
+            }
+        }
+    }
+
+    fn accept_reject_out(&mut self) -> &mut [u8] {
+        use bolos_sys::raw::G_io_apdu_buffer as APDU_BUFFER;
+
+        unsafe { &mut APDU_BUFFER[..APDU_BUFFER.len() - self.viewable_size] }
+    }
+
+    fn accept_reject_end(&mut self, len: usize) {
+        use bolos_sys::raw::{io_exchange, CHANNEL_APDU, IO_RETURN_AFTER_TX};
+
+        io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, len as u16);
+    }
+
+    fn store_viewable<V: Viewable + Sized + 'static>(
+        &mut self,
+        viewable: V,
+    ) -> Option<RefMutDynViewable> {
+        use bolos_sys::raw::G_io_apdu_buffer as APDU_BUFFER;
+
+        let size = core::mem::size_of::<V>();
+        unsafe {
+            let buf_len = APDU_BUFFER.len();
+            if size > buf_len {
+                return None;
+            }
+
+            let new_loc_slice = &mut APDU_BUFFER[buf_len - size..];
+            let new_loc_raw_ptr: *mut u8 = new_loc_slice.as_mut_ptr();
+            let new_loc: *mut V = new_loc_raw_ptr.cast();
+
+            //write but we don't want to drop `new_loc` since
+            // it's not actually valid T data
+            core::ptr::write(new_loc, item);
+
+            //write how many bytes we have occupied
+            self.viewable_size = size;
+
+            //we can unwrap as we know this ptr is valid
+            Some(new_loc.as_mut().unwrap().into())
+        }
     }
 }
 

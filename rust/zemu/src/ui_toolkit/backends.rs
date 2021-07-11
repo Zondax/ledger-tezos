@@ -13,7 +13,9 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use crate::ui::{manual_vtable::RefMutDynViewable, Viewable};
 use arrayvec::ArrayString;
+
 use super::ZUI;
 
 pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized + Default {
@@ -26,19 +28,36 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized + D
 
     fn split_value_field(&mut self, message_buf: ArrayString<{ MESSAGE_SIZE }>);
 
-    fn view_error_show(&mut self);
+    //view_idle_show_impl
+    fn show_idle(&mut self, item_idx: usize, status: Option<&str>);
 
-    fn view_review_show(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>);
+    //view_error_show_impl
+    fn show_error(&mut self);
+
+    //view_review_show_impl
+    fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>);
+
+    //h_review_update
+    fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>);
+
+    fn accept_reject_out(&mut self) -> &mut [u8];
+
+    fn accept_reject_end(&mut self, len: usize);
+
+    fn store_viewable<V: Viewable + Sized + 'static>(
+        &mut self,
+        viewable: V,
+    ) -> Option<RefMutDynViewable>;
 }
 
 #[cfg(nanos)]
 mod nanos;
 
 #[cfg(nanos)]
-pub use nanos::NanoSBackend;
+pub use nanos::{NanoSBackend, RUST_ZUI};
 
 #[cfg(nanox)]
 mod nanox;
 
 #[cfg(nanox)]
-pub use nanox::NanoXBackend;
+pub use nanox::{NanoXBackend, RUST_ZUI};
