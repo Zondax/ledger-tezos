@@ -19,12 +19,13 @@ use std::convert::TryFrom;
 use zemu_sys::{Show, ViewError, Viewable};
 
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS},
+    constants::ApduError as Error,
     crypto,
     dispatcher::{
         ApduHandler, INS_GET_ADDRESS, INS_LEGACY_GET_PUBLIC_KEY, INS_LEGACY_PROMPT_PUBLIC_KEY,
     },
     sys::{self, Error as SysError},
+    utils::ApduBufferRead,
 };
 
 pub struct GetAddress;
@@ -37,7 +38,7 @@ impl GetAddress {
         path: &sys::crypto::bip32::BIP32Path<B>,
     ) -> Result<crypto::PublicKey, SysError> {
         sys::zemu_log_stack("GetAddres::new_key\x00");
-        let mut pkey = curve.gen_keypair(path)?.into_public();
+        let mut pkey = curve.to_secret(path).into_public()?;
         pkey.compress().map(|_| pkey)
     }
 
@@ -115,11 +116,15 @@ enum Action {
 
 impl ApduHandler for GetAddress {
     #[inline(never)]
-    fn handle(flags: &mut u32, tx: &mut u32, _rx: u32, buffer: &mut [u8]) -> Result<(), Error> {
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
         sys::zemu_log_stack("GetAddress::handle\x00");
 
         *tx = 0;
-        let action = match buffer[APDU_INDEX_INS] {
+        let action = match buffer.ins() {
             INS_GET_ADDRESS => Action::GetPublicAndAddress,
             INS_LEGACY_GET_PUBLIC_KEY => Action::LegacyGetPublic,
             INS_LEGACY_PROMPT_PUBLIC_KEY => Action::LegacyPromptAddressButGetPublic,
@@ -131,20 +136,16 @@ impl ApduHandler for GetAddress {
             // see: https://github.com/Zondax/ledger-tezos/issues/35
         }
 
-        let req_confirmation = buffer[2] >= 1;
-        let curve = crypto::Curve::try_from(buffer[3]).map_err(|_| Error::InvalidP1P2)?;
+        let req_confirmation = buffer.p1() >= 1;
+        let curve = crypto::Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
 
-        let cdata_len = buffer[4] as usize;
-        if cdata_len > buffer[5..].len() {
-            return Err(Error::DataInvalid);
-        }
-        let cdata = &buffer[5..5 + cdata_len];
-
+        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
         let bip32_path =
             sys::crypto::bip32::BIP32Path::<6>::read(cdata).map_err(|_| Error::DataInvalid)?;
 
         let key = Self::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
 
+        let buffer = buffer.write();
         *tx = match action {
             Action::GetPublicAndAddress => {
                 Self::get_public_and_address(key, req_confirmation, buffer, flags)?

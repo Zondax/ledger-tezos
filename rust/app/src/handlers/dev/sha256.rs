@@ -15,87 +15,66 @@
 ********************************************************************************/
 use std::prelude::v1::*;
 
-use sha2::digest::Digest;
-
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS},
+    constants::ApduError as Error,
     dispatcher::{ApduHandler, INS_DEV_HASH},
-    handlers::{resources::BUFFER, PacketType, PacketTypes},
+    sys::hash::{Hasher, Sha256 as HashSha256},
+    utils::{ApduBufferRead, Uploader},
 };
 
 pub struct Sha256;
 
 impl ApduHandler for Sha256 {
     #[inline(never)]
-    fn handle(_: &mut u32, tx: &mut u32, _: u32, apdu_buffer: &mut [u8]) -> Result<(), Error> {
-        if apdu_buffer[APDU_INDEX_INS] != INS_DEV_HASH {
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        apdu_buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
+        if apdu_buffer.ins() != INS_DEV_HASH {
             return Err(Error::InsNotSupported);
         }
-        *tx = 0;
 
-        let packet = PacketTypes::new(apdu_buffer[2], false).map_err(|_| Error::InvalidP1P2)?;
-        let len = apdu_buffer[4] as usize;
-        if packet.is_init() {
-            unsafe {
-                BUFFER.lock(Self)?.reset();
-                BUFFER
-                    .acquire(Self)?
-                    .write(&apdu_buffer[5..5 + len])
-                    .map_err(|_| Error::DataInvalid)?;
-                *tx = 0;
+        //collect all data
+        if let Some(upload) = Uploader::new(Self).upload(&apdu_buffer)? {
+            let digest = {
+                let mut hasher = HashSha256::new().map_err(|_| Error::ExecutionError)?;
+                hasher
+                    .update(upload.first) //hash the first section
+                    .map_err(|_| Error::ExecutionError)?;
+                hasher
+                    .update(upload.data) //and the rest
+                    .map_err(|_| Error::ExecutionError)?;
+                hasher.finalize().map_err(|_| Error::ExecutionError)?
+            };
 
-                Ok(())
+            let apdu_buffer = apdu_buffer.write();
+
+            if apdu_buffer.len() < digest.len() {
+                return Err(Error::OutputBufferTooSmall);
             }
-        } else if packet.is_next() {
-            unsafe {
-                BUFFER
-                    .acquire(Self)?
-                    .write(&apdu_buffer[5..5 + len])
-                    .map_err(|_| Error::DataInvalid)?;
-                *tx = 0;
 
-                Ok(())
-            }
-        } else if packet.is_last() {
-            unsafe {
-                BUFFER
-                    .acquire(Self)?
-                    .write(&apdu_buffer[5..5 + len])
-                    .map_err(|_| Error::DataInvalid)?;
-
-                //only read_exact because we don't care about what's in the rest of the buffer
-                let digest = sha2::Sha256::digest(BUFFER.acquire(Self)?.read_exact());
-                let digest = digest.as_slice();
-
-                if apdu_buffer.len() < digest.len() {
-                    return Err(Error::OutputBufferTooSmall);
-                }
-
-                apdu_buffer[..digest.len()].copy_from_slice(digest);
-                *tx = digest.len() as u32;
-
-                //reset the buffer for next message
-                BUFFER.acquire(Self)?.reset();
-                let _ = BUFFER.release(Self);
-                Ok(())
-            }
-        } else {
-            Err(Error::InvalidP1P2)
+            apdu_buffer[..digest.len()].copy_from_slice(&digest[..]);
+            *tx = digest.len() as u32;
         }
+
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::{
         assert_error_code,
-        dispatcher::{handle_apdu, CLA},
+        constants::ApduError as Error,
+        dispatcher::{handle_apdu, CLA, INS_DEV_HASH},
         handlers::ZPacketType,
     };
     use std::convert::TryInto;
 
     use serial_test::serial;
+    use sha2::{Digest, Sha256};
 
     #[test]
     #[serial(dev_hash)]
@@ -148,7 +127,7 @@ mod tests {
         handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
-        let expected = sha2::Sha256::digest(&MSG);
+        let expected = Sha256::digest(&MSG);
         let digest = &buffer[..tx as usize - 2];
         assert_eq!(digest, expected.as_slice());
     }
@@ -183,7 +162,7 @@ mod tests {
         handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
-        let expected = sha2::Sha256::digest(&MSG);
+        let expected = Sha256::digest(&MSG);
         let digest = &buffer[..tx as usize - 2];
         assert_eq!(digest, expected.as_slice());
     }

@@ -12,7 +12,7 @@ crate-type = ["staticlib"]
 [features]
 baking = ["bolos/flash-slot"]
 wallet = []
-dev = ["sha2"]
+dev = []
 default = []
 
 [dependencies]
@@ -29,13 +29,11 @@ nom = { version = "6.1.2", default-features = false }
 bs58 = { version = "0.4.0", default-features = false }
 hex = { version = "0.4", default-features = false }
 
-#dev
-sha2 = { version = "0.9", default-features = false, optional = true }
-
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"
 
 [dev-dependencies]
+sha2 = { version = "0.9" }
 no-std-compat = { version = "0.4", features = ["std"] }
 serial_test = "0.5"
 hex = "0.4.3"

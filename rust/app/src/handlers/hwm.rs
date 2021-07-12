@@ -19,9 +19,10 @@
 //! * Legacy Handler
 
 use crate::{
-    constants::{ApduError as Error, APDU_INDEX_INS},
+    constants::ApduError as Error,
     dispatcher::ApduHandler,
     sys::{flash_slot::Wear, new_flash_slot},
+    utils::ApduBufferRead,
 };
 
 const N_PAGES: usize = 8;
@@ -106,12 +107,13 @@ impl LegacyHWM {
 
 impl ApduHandler for LegacyHWM {
     #[inline(never)]
-    fn handle(_: &mut u32, tx: &mut u32, _: u32, apdu: &mut [u8]) -> Result<(), Error> {
+    fn handle<'apdu>(_: &mut u32, tx: &mut u32, apdu: ApduBufferRead<'apdu>) -> Result<(), Error> {
         use crate::dispatcher::{
             INS_LEGACY_QUERY_ALL_HWM, INS_LEGACY_QUERY_MAIN_HWM, INS_LEGACY_RESET,
         };
 
-        let ins = apdu[APDU_INDEX_INS];
+        let ins = apdu.ins();
+        let apdu = apdu.write();
 
         if ins == INS_LEGACY_RESET {
             let level = {

@@ -30,3 +30,9 @@ git_testament::git_testament_macros!(git);
 pub const GIT_COMMIT_HASH: &str = git_commit_hash!();
 
 pub const BAKING: bool = cfg!(feature = "baking");
+
+mod apdu_wrapper;
+pub use apdu_wrapper::*;
+
+mod buffer_upload;
+pub use buffer_upload::*;

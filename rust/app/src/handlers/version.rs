@@ -13,9 +13,10 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use crate::constants::ApduError;
 use crate::constants::ApduError::InsNotSupported;
-use crate::constants::{ApduError, APDU_INDEX_INS};
 use crate::dispatcher::{ApduHandler, INS_GET_VERSION};
+use crate::utils::ApduBufferRead;
 
 pub const VERSION_MAJOR: u8 = 1;
 pub const VERSION_MINOR: u8 = 2;
@@ -30,18 +31,18 @@ pub fn get_target_id() -> Result<u32, ApduError> {
 
 impl ApduHandler for GetVersion {
     #[inline(never)]
-    fn handle(
-        _flags: &mut u32,
+    fn handle<'apdu>(
+        _: &mut u32,
         tx: &mut u32,
-        _rx: u32,
-        apdu_buffer: &mut [u8],
+        apdu_buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), ApduError> {
-        if apdu_buffer[APDU_INDEX_INS] != INS_GET_VERSION {
+        if apdu_buffer.ins() != INS_GET_VERSION {
             return Err(InsNotSupported);
         }
 
         *tx = 0;
 
+        let apdu_buffer = apdu_buffer.write();
         apdu_buffer[0] = 0; // FIXME: Debug mode enabled?
                             // Version
         apdu_buffer[1] = VERSION_MAJOR;

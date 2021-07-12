@@ -1,0 +1,184 @@
+name: "test/build"
+on:
+  - push
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    outputs:
+      uid_gid: ${{ steps.get-user.outputs.uid_gid }}
+    steps:
+      - id: get-user
+        run: echo "::set-output name=uid_gid::$(id -u):$(id -g)"
+
+  checks:
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/rust-ci:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: show versions
+        run: |
+          rustup show
+      - name: rustfmt
+        run: |
+          cd rust
+          cargo fmt --version
+          cargo fmt -- --check
+      - name: clippy
+        run: |
+          cd rust
+          cargo clippy --version
+          cargo clippy --features "wallet","dev" --all-targets
+      - name: clippy
+        run: |
+          cd rust
+          cargo clippy --version
+          cargo clippy --features "baking","dev" --all-targets
+      - name: audit
+        run: |
+          cd rust
+          cargo audit --version
+          cargo audit
+
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/rust-ci:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: run rust tests
+        run: |
+          make rust_test
+
+  build-baking:
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/rust-ci:latest
+    env:
+      BAKING: "yes"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: run rust tests
+        run: |
+          make rust_test
+
+
+  build_ledger:
+    needs: configure
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/builder-bolos:latest
+      options: --user ${{ needs.configure.outputs.uid_gid }}
+    env:
+      BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
+      BOLOS_ENV: /opt/bolos
+      HOME: /home/zondax_circle
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build baker app
+        shell: bash -l {0}
+        env:
+          BAKING: 'yes'
+        run: |
+          source $HOME/.cargo/env
+          make
+      - name: Build standard app
+        shell: bash -l {0}
+        run: |
+          source $HOME/.cargo/env
+          make
+
+  test_zemu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: git submodule update --init --recursive
+      - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
+      - name: Install rust
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
+      - name: Install node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.17.0'
+      - name: Install yarn
+        run: |
+          npm install -g yarn
+      - name: Build Ledger app (Baking)
+        env:
+          BAKING: 'yes'
+        run: |
+          make
+      - name: Build Ledger app
+        run: |
+          make
+      - name: Build legacy app
+        run: |
+          make legacy
+      - name: Build/Install build js deps
+        run: |
+          export PATH=~/.cargo/bin:$PATH
+          make zemu_install
+      - name: Run zemu tests
+        run: |
+          export PATH=~/.cargo/bin:$PATH
+          make zemu_test
+
+
+  build_package:
+    needs: [ configure, checks, build, build-baking, test_zemu ]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/builder-bolos:latest
+      options: --user ${{ needs.configure.outputs.uid_gid }}
+    env:
+      BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
+      BOLOS_ENV: /opt/bolos
+      HOME: /home/zondax_circle
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build Ledger app (Baking)
+        env:
+          BAKING: 'yes'
+        shell: bash -l {0}
+        run: |
+          source $HOME/.cargo/env
+          make
+      - name: Copy baking artifacts
+        run: |
+          mv rust/app/pkg/installer_s.sh rust/app/pkg/installer_baking_s.sh
+      - name: Set tag name var
+        id: vars
+        run: echo ::set-output name=tag_name::$(sh rust/app/pkg/installer_baking_s.sh version)
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ steps.vars.outputs.tag_name }}
+          release_name: ${{ steps.vars.outputs.tag_name }}
+          draft: false
+          prerelease: false
