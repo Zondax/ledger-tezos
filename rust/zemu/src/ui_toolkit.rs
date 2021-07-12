@@ -47,7 +47,8 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
 
     fn approve(&mut self) {
         self.show_idle(0, None);
-        //UX_WAIT(); //FIXME: self.backend.wait_ui() ??
+        self.backend.wait_ui();
+
         if let Some(viewable) = self.current_viewable.as_mut() {
             let out = self.backend.accept_reject_out();
 
@@ -55,7 +56,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
             out[len..len + 2].copy_from_slice(&code.to_be_bytes()[..]);
 
             //remove current viewable
-            viewable = None;
+            self.current_viewable.take();
 
             self.backend.accept_reject_end(len + 2);
         }
@@ -63,7 +64,8 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
 
     fn reject(&mut self) {
         self.show_idle(0, None);
-        //UX_WAIT(); //FIXME: self.backend.wait_ui() ??
+        self.backend.wait_ui();
+
         if let Some(viewable) = self.current_viewable.as_mut() {
             let out = self.backend.accept_reject_out();
 
@@ -71,7 +73,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
             out[len..len + 2].copy_from_slice(&code.to_be_bytes()[..]);
 
             //remove current viewable
-            viewable = None;
+            self.current_viewable.take();
 
             self.backend.accept_reject_end(len + 2);
         }
@@ -84,17 +86,13 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
     }
 
     fn paging_can_increase(&self) -> bool {
-        if self.page_idx + 1 < self.page_count {
-            //we have at least 1 page left to show
-            true
-        } else if self.item_count > 0
-            && self.item_idx < (self.item_count - 1 + B::INCLUDE_ACTIONS_COUNT)
-        {
-            //we have at least 1 item, and our current item is not an action
-            true
-        } else {
-            false
-        }
+        //we have at least 1 page left to show
+        let at_least_one_page_left = self.page_idx + 1 < self.page_count;
+        //we have at least 1 item, and our current item is not an action
+        let at_least_one_non_action_item =
+            self.item_count > 0 && self.item_idx < (self.item_count - 1 + B::INCLUDE_ACTIONS_COUNT);
+
+        at_least_one_page_left || at_least_one_non_action_item
     }
 
     fn paging_increase(&mut self) {
@@ -150,8 +148,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
             self.reject();
         }
 
-        let expert = false; //FIXME: get app expert mode status
-        if expert {
+        if self.backend.expert() {
             self.set_accept_item();
 
             B::update_review(self)
@@ -181,15 +178,15 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         // this section makes the unsafes above safe!
         message_bytes
             .iter_mut()
-            .filter(|&&mut c| c != 0 && (c < 32 || c > 0x7F))
+            .filter(|&&mut c| c != 0 && !(32..=0x7F).contains(&c))
             .for_each(|c| {
-                *c = '.' as u8;
+                *c = b'.';
             });
         key_bytes
             .iter_mut()
-            .filter(|&&mut c| c != 0 && (c < 32 || c > 0x7F))
+            .filter(|&&mut c| c != 0 && !(32..=0x7F).contains(&c))
             .for_each(|c| {
-                *c = '.' as u8;
+                *c = b'.';
             });
 
         //update page count (or return error)
@@ -232,18 +229,22 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
                 if key_len < KS {
                     use core::fmt::Write;
                     //construct temporary new arraystring that will replace the current one
-                    let mut tmp = key.clone();
+                    let mut tmp = *key;
                     tmp.clear();
 
-                    write!(
+                    if write!(
                         tmp,
                         "{} [{}/{}]",
                         &key[..key_len],
                         self.page_idx + 1,
                         self.page_count
-                    );
-
-                    *key = tmp;
+                    )
+                    .is_ok()
+                    {
+                        //we override only if ok so that we can keep the original
+                        // if an error occured while writing
+                        *key = tmp;
+                    }
                 }
             }
 
@@ -263,10 +264,10 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
 
         let key = self.backend.key_buf();
         key.clear();
-        write!(key, "ERROR");
+        write!(key, "ERROR").expect("unable to write to key");
 
         let mut message = self.backend.message_buf();
-        write!(message, "SHOWING DATA");
+        write!(message, "SHOWING DATA").expect("unable to write message");
         self.backend.split_value_field(message);
 
         self.backend.show_error();
@@ -281,7 +282,10 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
     pub fn show(&mut self, viewable: impl Viewable + Sized + 'static) -> Result<(), ShowTooBig> {
         let viewable = self.backend.store_viewable(viewable).ok_or(ShowTooBig)?;
         self.current_viewable.replace(viewable);
-        Ok(B::show_review(self))
+
+        B::show_review(self);
+
+        Ok(())
     }
 }
 

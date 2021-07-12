@@ -23,18 +23,18 @@ mod private {
     pub struct This(());
 }
 
+type NumItemsFn = unsafe fn(*mut This) -> Result<u8, ViewError>;
+type RenderItemFn = unsafe fn(*mut This, u8, &mut [u8], &mut [u8], u8) -> Result<u8, ViewError>;
+type AcceptFn = unsafe fn(*mut This, &mut [u8]) -> (usize, u16);
+type RejectFn = unsafe fn(*mut This, &mut [u8]) -> (usize, u16);
+type DropFn = unsafe fn(*mut This);
+
 struct ViewableVTable {
-    num_items: unsafe fn(*mut This) -> Result<u8, ViewError>,
-    render_item: unsafe fn(
-        *mut This,
-        item_n: u8,
-        title: &mut [u8],
-        message: &mut [u8],
-        page: u8,
-    ) -> Result<u8, ViewError>,
-    accept: unsafe fn(*mut This, out: &mut [u8]) -> (usize, u16),
-    reject: unsafe fn(*mut This, out: &mut [u8]) -> (usize, u16),
-    drop: unsafe fn(*mut This),
+    num_items: NumItemsFn,
+    render_item: RenderItemFn,
+    accept: AcceptFn,
+    reject: RejectFn,
+    drop: DropFn,
 }
 
 trait ViewableWithVTable: Viewable + Sized {
@@ -91,8 +91,7 @@ impl RefMutDynViewable {
     pub fn num_items(&mut self) -> Result<u8, ViewError> {
         let to_pic = self.vtable.num_items as usize;
         let picced = unsafe { PIC::manual(to_pic) };
-        let ptr: unsafe fn(*mut This) -> Result<u8, ViewError> =
-            unsafe { core::mem::transmute(picced) };
+        let ptr: NumItemsFn = unsafe { core::mem::transmute(picced) };
 
         unsafe { (ptr)(self.ptr.as_ptr()) }
     }
@@ -106,13 +105,7 @@ impl RefMutDynViewable {
     ) -> Result<u8, ViewError> {
         let to_pic = self.vtable.render_item as usize;
         let picced = unsafe { PIC::manual(to_pic) };
-        let ptr: unsafe fn(
-            *mut This,
-            item_n: u8,
-            title: &mut [u8],
-            message: &mut [u8],
-            page: u8,
-        ) -> Result<u8, ViewError> = unsafe { core::mem::transmute(picced) };
+        let ptr: RenderItemFn = unsafe { core::mem::transmute(picced) };
 
         unsafe { (ptr)(self.ptr.as_ptr(), item_n, title, message, page) }
     }
@@ -120,8 +113,7 @@ impl RefMutDynViewable {
     pub fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
         let to_pic = self.vtable.accept as usize;
         let picced = unsafe { PIC::manual(to_pic) };
-        let ptr: unsafe fn(*mut This, out: &mut [u8]) -> (usize, u16) =
-            unsafe { core::mem::transmute(picced) };
+        let ptr: AcceptFn = unsafe { core::mem::transmute(picced) };
 
         unsafe { (ptr)(self.ptr.as_ptr(), out) }
     }
@@ -129,8 +121,7 @@ impl RefMutDynViewable {
     pub fn reject(&mut self, out: &mut [u8]) -> (usize, u16) {
         let to_pic = self.vtable.reject as usize;
         let picced = unsafe { PIC::manual(to_pic) };
-        let ptr: unsafe fn(*mut This, out: &mut [u8]) -> (usize, u16) =
-            unsafe { core::mem::transmute(picced) };
+        let ptr: RejectFn = unsafe { core::mem::transmute(picced) };
 
         unsafe { (ptr)(self.ptr.as_ptr(), out) }
     }
@@ -138,7 +129,7 @@ impl RefMutDynViewable {
     pub fn drop_item(&mut self) {
         let to_pic = self.vtable.drop as usize;
         let picced = unsafe { PIC::manual(to_pic) };
-        let ptr: unsafe fn(*mut This) = unsafe { core::mem::transmute(picced) };
+        let ptr: DropFn = unsafe { core::mem::transmute(picced) };
 
         unsafe { (ptr)(self.ptr.as_ptr()) }
     }

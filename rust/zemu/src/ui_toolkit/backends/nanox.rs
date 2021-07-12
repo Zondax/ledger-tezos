@@ -34,6 +34,22 @@ pub struct NanoXBackend {
     message: ArrayString<MESSAGE_SIZE>,
 
     viewable_size: usize,
+    expert: bool,
+}
+
+impl NanoXBackend {
+    pub fn update_expert(&mut self) {
+        self.message.clear();
+        self.message.clear();
+
+        let msg = if self.expert { "enabled" } else { "disabled" };
+
+        write!(self.message, "{}", msg).expect("unable to write expert");
+    }
+
+    pub fn toggle_expert(&mut self) {
+        self.expert = !self.expert;
+    }
 }
 
 impl Default for NanoXBackend {
@@ -42,12 +58,17 @@ impl Default for NanoXBackend {
             key: ArrayString::new_const(),
             message: ArrayString::new_const(),
             viewable_size: 0,
+            expert: false,
         }
     }
 }
 
 impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
     const INCLUDE_ACTIONS_COUNT: usize = 0;
+
+    fn expert(&self) -> bool {
+        self.expert
+    }
 
     fn key_buf(&mut self) -> &mut ArrayString<KEY_SIZE> {
         &mut self.key
@@ -62,6 +83,22 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         if self.message.len() == 0 {
             self.message.push(' ');
         }
+    }
+
+    fn show_idle(&mut self, item_idx: u8, status: Option<&str>) {
+        let status = status.unwrap_or("DO NOT USE"); //FIXME: MENU_MAIN_APP_LINE2
+
+        self.key.clear();
+        write!(self.key, "{}", status);
+
+        todo!(
+            r#"
+            if(G_ux.stack_count == 0) {
+                ux_stack_push();
+            }
+            ux_flow_init(0, ux_idle_flow, NULL);
+            "#
+        );
     }
 
     fn show_error(&mut self) {
@@ -99,6 +136,10 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
                 ui.show_error();
             }
         }
+    }
+
+    fn wait_ui(&mut self) {
+        //FIXME: UX_WAIT
     }
 
     fn accept_reject_out(&mut self) -> &mut [u8] {

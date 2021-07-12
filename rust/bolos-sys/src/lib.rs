@@ -54,5 +54,4 @@ pub fn exit_app(status: u8) -> ! {
 #[cfg(bolos_sdk)]
 mod extra_traits;
 
-#[cfg(bolos_sdk)]
 pub mod pic;

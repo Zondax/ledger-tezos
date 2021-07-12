@@ -87,7 +87,11 @@ impl<T> PIC<T> {
 }
 
 impl PIC<()> {
-    //Apply pic manually, interpreting `ptr` as the actual pointer to an _unknwon_ type
+    /// Apply pic manually, interpreting `ptr` as the actual pointer to an _unknwon_ type
+    ///
+    /// # Safety
+    ///
+    /// This function is always safe to use, is the output that is dangerous to interpret!
     pub unsafe fn manual(ptr: usize) -> usize {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {

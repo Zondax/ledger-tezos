@@ -40,6 +40,11 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized + D
     //h_review_update
     fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>);
 
+    //UX_WAIT macro equivalent
+    fn wait_ui(&mut self);
+
+    fn expert(&self) -> bool;
+
     fn accept_reject_out(&mut self) -> &mut [u8];
 
     fn accept_reject_end(&mut self, len: usize);
@@ -50,14 +55,15 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized + D
     ) -> Option<RefMutDynViewable>;
 }
 
-#[cfg(nanos)]
-mod nanos;
-
-#[cfg(nanos)]
-pub use nanos::{NanoSBackend, RUST_ZUI};
-
-#[cfg(nanox)]
-mod nanox;
-
-#[cfg(nanox)]
-pub use nanox::{NanoXBackend, RUST_ZUI};
+cfg_if::cfg_if! {
+    if #[cfg(nanos)] {
+        mod nanos;
+        pub use nanos::{NanoSBackend, RUST_ZUI};
+    } else if #[cfg(nanox)] {
+        mod nanox;
+        pub use nanox::{NanoXBackend, RUST_ZUI};
+    } else {
+        mod console;
+        pub use console::{ConsoleBackend, RUST_ZUI};
+    }
+}

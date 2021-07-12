@@ -39,17 +39,21 @@ pub struct NanoSBackend {
     message_line2: ArrayString<MESSAGE_LINE_SIZE>,
 
     viewable_size: usize,
+    expert: bool,
 }
 
 impl NanoSBackend {
-    fn update_expert(&mut self) {
+    pub fn update_expert(&mut self) {
         self.message_line1.clear();
         self.message_line2.clear();
 
-        let expert = false; //FIXME: actually retrieve if app is in expert mode or not
-        let msg = if expert { "enabled" } else { "disabled" };
+        let msg = if self.expert { "enabled" } else { "disabled" };
 
-        write!(self.message_line1, "{}", msg);
+        write!(self.message_line1, "{}", msg).expect("unable to write expert");
+    }
+
+    pub fn toggle_expert(&mut self) {
+        self.expert = !self.expert;
     }
 }
 
@@ -60,12 +64,17 @@ impl Default for NanoSBackend {
             message_line1: ArrayString::new_const(),
             message_line2: ArrayString::new_const(),
             viewable_size: 0,
+            expert: false,
         }
     }
 }
 
 impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     const INCLUDE_ACTIONS_COUNT: usize = INCLUDE_ACTIONS_COUNT;
+
+    fn expert(&self) -> bool {
+        self.expert
+    }
 
     fn key_buf(&mut self) -> &mut ArrayString<KEY_SIZE> {
         &mut self.key
@@ -95,7 +104,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         write!(&mut self.message_line2, "{}", line2);
     }
 
-    fn show_idle(ui: &mut self, item_idx: u8, status: Option<&str>) {
+    fn show_idle(&mut self, item_idx: u8, status: Option<&str>) {
         let status = status.unwrap_or("DO NOT USE"); //FIXME: MENU_MAIN_APP_LINE2
 
         self.key.clear();
@@ -124,13 +133,17 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
         match ui.review_update_data() {
             Ok(_) => {
-               todo!("UX_DISPLAY(view_review, view_prepro)")
-            },
+                todo!("UX_DISPLAY(view_review, view_prepro)")
+            }
             Err(_) => {
                 ui.show_error();
                 todo!("UX_WAIT")
             }
         }
+    }
+
+    fn wait_ui(&mut self) {
+        //FIXME: UX_WAIT
     }
 
     fn accept_reject_out(&mut self) -> &mut [u8] {
