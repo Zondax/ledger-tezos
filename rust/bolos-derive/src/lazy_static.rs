@@ -22,9 +22,7 @@ use syn::{
 };
 
 pub fn lazy_static(metadata: TokenStream, input: TokenStream) -> TokenStream {
-    eprintln!("metadata: {:?}", metadata);
     let args = parse_macro_input!(metadata as AttributeArgs);
-    eprintln!("args: {:?}", args);
     let input = parse_macro_input!(input as ItemStatic);
 
     let ItemStatic {
@@ -208,9 +206,7 @@ fn produce_custom_ty(
 //#[attr(cbindgen)]
 fn is_cbindgen_mode(args: &AttributeArgs) -> bool {
     for arg in args {
-        eprintln!("arg: {:?}", arg);
         if let NestedMeta::Meta(Meta::Path(path)) = arg {
-            eprintln!("path: {:?}", path);
             if path
                 .segments
                 .iter()
