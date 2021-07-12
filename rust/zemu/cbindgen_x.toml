@@ -1,0 +1,9 @@
+language = "C"
+
+pragma_once = true
+
+[parse.expand]
+features = ["cbindgen_x"]
+
+[defines]
+nanox = "TARGET_NANOX"

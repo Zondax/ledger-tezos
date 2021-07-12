@@ -52,9 +52,7 @@ impl NanoSBackend {
         write!(self.message_line1, "{}", msg).expect("unable to write expert");
     }
 
-    pub fn toggle_expert(&mut self) {
-        self.expert = !self.expert;
-    }
+
 }
 
 impl Default for NanoSBackend {
@@ -71,10 +69,6 @@ impl Default for NanoSBackend {
 
 impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     const INCLUDE_ACTIONS_COUNT: usize = INCLUDE_ACTIONS_COUNT;
-
-    fn expert(&self) -> bool {
-        self.expert
-    }
 
     fn key_buf(&mut self) -> &mut ArrayString<KEY_SIZE> {
         &mut self.key
@@ -137,13 +131,21 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
             }
             Err(_) => {
                 ui.show_error();
-                todo!("UX_WAIT")
+                ui.backend.wait_ui();
             }
         }
     }
 
     fn wait_ui(&mut self) {
         //FIXME: UX_WAIT
+    }
+
+    fn expert(&self) -> bool {
+        self.expert
+    }
+
+    fn toggle_expert(&mut self) {
+        self.expert = !self.expert;
     }
 
     fn accept_reject_out(&mut self) -> &mut [u8] {
@@ -204,5 +206,15 @@ mod cabi {
     #[no_mangle]
     pub unsafe extern "C" fn viewdata_message_line2() -> *mut u8 {
         RUST_ZUI.backend.message_line2.as_bytes_mut().as_mut_ptr()
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_expert_toggle() {
+        RUST_ZUI.backend.toggle_expert()
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_paging_can_decrease() -> bool {
+        RUST_ZUI.paging_can_decrease()
     }
 }

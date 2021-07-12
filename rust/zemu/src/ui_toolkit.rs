@@ -85,7 +85,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         self.page_count = 0;
     }
 
-    fn paging_can_increase(&self) -> bool {
+    pub fn paging_can_increase(&self) -> bool {
         //we have at least 1 page left to show
         let at_least_one_page_left = self.page_idx + 1 < self.page_count;
         //we have at least 1 item, and our current item is not an action
@@ -108,7 +108,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         }
     }
 
-    fn paging_can_decrease(&self) -> bool {
+    pub fn paging_can_decrease(&self) -> bool {
         //not the first page or not the first item
         self.page_idx != 0 || self.item_idx > 0
     }
@@ -141,7 +141,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
     }
 
     //h_review_action
-    fn review_action(&mut self) {
+    pub fn review_action(&mut self) {
         if self.is_accept_item() {
             self.approve();
         } else if self.is_reject_item() {

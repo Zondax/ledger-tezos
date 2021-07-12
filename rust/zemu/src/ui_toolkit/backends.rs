@@ -45,6 +45,8 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized + D
 
     fn expert(&self) -> bool;
 
+    fn toggle_expert(&mut self);
+
     fn accept_reject_out(&mut self) -> &mut [u8];
 
     fn accept_reject_end(&mut self, len: usize);
@@ -56,10 +58,10 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized + D
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(nanos)] {
+    if #[cfg(any(nanos, feature = "cbindgen_s"))] {
         mod nanos;
         pub use nanos::{NanoSBackend, RUST_ZUI};
-    } else if #[cfg(nanox)] {
+    } else if #[cfg(any(nanox, feature = "cbindgen_x"))] {
         mod nanox;
         pub use nanox::{NanoXBackend, RUST_ZUI};
     } else {

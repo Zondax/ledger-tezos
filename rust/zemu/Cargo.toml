@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["becominginsane <francesco@zondax.ch>"]
 edition = "2018"
 
+[features]
+cbindgen_s = []
+cbindgen_x = []
+
 [dependencies]
 bolos-sys = { version = "0.1", path = "../bolos-sys" }
 bolos-derive = { version = "0.1", path = "../bolos-derive" }

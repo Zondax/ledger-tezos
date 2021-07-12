@@ -45,6 +45,11 @@ generate:
 			-Ibolos-sys/bindgen/include \
 			-target thumbv6-none-eabi \
 			-mcpu=cortex-m0 -mthumb
+	- rm zemu/include/zemu_ui_x.h
+	cbindgen \
+		--config zemu/cbindgen_x.toml \
+		--crate zemu-sys \
+		--output zemu/include/zemu_ui_x.h
 else ifeq ($(TARGET_NAME),TARGET_NANOS)
 generate:
 	- rm bolos-sys/src/bindings/bindingsS.rs
@@ -60,6 +65,11 @@ generate:
 		-Ibolos-sys/bindgen/include \
 		-target thumbv6-none-eabi \
 		-mcpu=cortex-m0 -mthumb
+	- rm zemu/include/zemu_ui_s.h
+	cbindgen \
+		--config zemu/cbindgen_s.toml \
+		--crate zemu-sys \
+		--output zemu/include/zemu_ui_s.h
 else
 generate:
 	$(error invalid TARGET_NAME (not TARGET_NANOS or TARGET_NANOX))

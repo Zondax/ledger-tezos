@@ -69,6 +69,16 @@ typedef struct {
     uint8_t pageCount;
 } view_t;
 
+typedef struct {
+    char* key;
+    char* value;
+#if defined(TARGET_NANOS)
+    char* value2;
+#endif
+} my_view_t;
+
+extern my_view_t my_viewdata;
+
 typedef enum {
     view_action_unknown,
     view_action_accept,

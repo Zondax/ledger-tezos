@@ -47,9 +47,6 @@ impl NanoXBackend {
         write!(self.message, "{}", msg).expect("unable to write expert");
     }
 
-    pub fn toggle_expert(&mut self) {
-        self.expert = !self.expert;
-    }
 }
 
 impl Default for NanoXBackend {
@@ -65,10 +62,6 @@ impl Default for NanoXBackend {
 
 impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
     const INCLUDE_ACTIONS_COUNT: usize = 0;
-
-    fn expert(&self) -> bool {
-        self.expert
-    }
 
     fn key_buf(&mut self) -> &mut ArrayString<KEY_SIZE> {
         &mut self.key
@@ -140,6 +133,14 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
 
     fn wait_ui(&mut self) {
         //FIXME: UX_WAIT
+    }
+
+    fn expert(&self) -> bool {
+        self.expert
+    }
+
+    fn toggle_expert(&mut self) {
+        self.expert = !self.expert;
     }
 
     fn accept_reject_out(&mut self) -> &mut [u8] {

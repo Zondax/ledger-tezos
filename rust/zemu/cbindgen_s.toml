@@ -1,0 +1,9 @@
+language = "C"
+
+pragma_once = true
+
+[parse.expand]
+features = ["cbindgen_s"]
+
+[defines]
+nanos = "TARGET_NANOS"
