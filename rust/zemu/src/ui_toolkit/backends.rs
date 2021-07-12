@@ -18,9 +18,11 @@ use arrayvec::ArrayString;
 
 use super::ZUI;
 
-pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized + Default {
+pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized {
     //How many "action" items are we in charge of displaying also
     const INCLUDE_ACTIONS_COUNT: usize;
+
+    fn static_mut() -> &'static mut Self;
 
     fn key_buf(&mut self) -> &mut ArrayString<{ KEY_SIZE }>;
 
@@ -69,3 +71,13 @@ cfg_if::cfg_if! {
         pub use console::{ConsoleBackend, RUST_ZUI};
     }
 }
+
+// #[cfg(nanos)]
+// mod nanos;
+// #[cfg(nanos)]
+// pub use nanos::{NanoSBackend, RUST_ZUI};
+
+// #[cfg(nanox)]
+// mod nanox;
+// #[cfg(nanox)]
+// pub use nanox::{NanoXBackend, RUST_ZUI};

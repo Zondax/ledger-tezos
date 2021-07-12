@@ -46,7 +46,7 @@ generate:
 			-target thumbv6-none-eabi \
 			-mcpu=cortex-m0 -mthumb
 	- rm zemu/include/zemu_ui_x.h
-	cbindgen \
+	RUSTUP_TOOLCHAIN=nightly cbindgen \
 		--config zemu/cbindgen_x.toml \
 		--crate zemu-sys \
 		--output zemu/include/zemu_ui_x.h
@@ -66,7 +66,7 @@ generate:
 		-target thumbv6-none-eabi \
 		-mcpu=cortex-m0 -mthumb
 	- rm zemu/include/zemu_ui_s.h
-	cbindgen \
+	RUSTUP_TOOLCHAIN=nightly cbindgen \
 		--config zemu/cbindgen_s.toml \
 		--crate zemu-sys \
 		--output zemu/include/zemu_ui_s.h

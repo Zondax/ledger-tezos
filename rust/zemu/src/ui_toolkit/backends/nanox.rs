@@ -29,6 +29,10 @@ const INCLUDE_ACTIONS_COUNT: usize = 0;
 #[bolos_derive::lazy_static]
 pub static mut RUST_ZUI: ZUI<NanoXBackend, KEY_SIZE, MESSAGE_SIZE> = ZUI::new();
 
+#[bolos_derive::lazy_static(cbindgen)]
+static mut BACKEND: NanoXBackend = NanoXBackend::default();
+
+#[repr(C)]
 pub struct NanoXBackend {
     key: ArrayString<KEY_SIZE>,
     message: ArrayString<MESSAGE_SIZE>,
@@ -46,7 +50,6 @@ impl NanoXBackend {
 
         write!(self.message, "{}", msg).expect("unable to write expert");
     }
-
 }
 
 impl Default for NanoXBackend {
@@ -62,6 +65,10 @@ impl Default for NanoXBackend {
 
 impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
     const INCLUDE_ACTIONS_COUNT: usize = 0;
+
+    fn static_mut() -> &'static mut Self {
+        unsafe { &mut BACKEND }
+    }
 
     fn key_buf(&mut self) -> &mut ArrayString<KEY_SIZE> {
         &mut self.key

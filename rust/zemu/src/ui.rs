@@ -20,6 +20,7 @@ use bolos_sys::raw::{
 mod comm;
 pub use comm::*;
 
+/// cbindgen:ignore
 pub(self) mod bindings {
     #![allow(non_snake_case)]
     #![allow(non_upper_case_globals)]

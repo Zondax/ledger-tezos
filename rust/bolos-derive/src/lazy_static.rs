@@ -16,9 +16,15 @@
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{parse_macro_input, spanned::Spanned, Error, Expr, Ident, ItemStatic, Token, Type};
+use syn::{
+    parse_macro_input, spanned::Spanned, AttributeArgs, Error, Expr, Ident, ItemStatic, Meta,
+    NestedMeta, Token, Type,
+};
 
-pub fn lazy_static(_: TokenStream, input: TokenStream) -> TokenStream {
+pub fn lazy_static(metadata: TokenStream, input: TokenStream) -> TokenStream {
+    eprintln!("metadata: {:?}", metadata);
+    let args = parse_macro_input!(metadata as AttributeArgs);
+    eprintln!("args: {:?}", args);
     let input = parse_macro_input!(input as ItemStatic);
 
     let ItemStatic {
@@ -31,8 +37,14 @@ pub fn lazy_static(_: TokenStream, input: TokenStream) -> TokenStream {
         ..
     } = input;
 
-    let output = match produce_custom_ty(&name, *ty, *expr, mutability)
-        .map_err(|e| e.into_compile_error())
+    let output = match produce_custom_ty(
+        &name,
+        *ty,
+        *expr,
+        mutability.is_some(),
+        is_cbindgen_mode(&args),
+    )
+    .map_err(|e| e.into_compile_error())
     {
         Err(e) => e,
         Ok(CustomTyOut {
@@ -63,13 +75,19 @@ fn produce_custom_ty(
     name: &Ident,
     ty: Type,
     init: Expr,
-    is_mut: Option<Token![mut]>,
+    is_mut: bool,
+    cbindgen: bool,
 ) -> Result<CustomTyOut, Error> {
     let span = name.span();
     let mod_name = Ident::new(&format!("__IMPL_LAZY_{}", name), span);
     let struct_name = Ident::new(&format!("__LAZY_{}", name), span);
+    let static_name = if cbindgen {
+        Ident::new(&format!("{}_LAZY", name), span)
+    } else {
+        Ident::new("LAZY", span)
+    };
 
-    let mut_impl = if is_mut.is_some() {
+    let mut_impl = if is_mut {
         quote! {
             impl #struct_name {
                fn get_mut(&mut self) -> &'static mut #ty {
@@ -79,7 +97,7 @@ fn produce_custom_ty(
                    // same considerations as `get`:
                    // aligned, non-null, initialized by above call
                    // guaranteed single-threaded access
-                   unsafe { LAZY.as_mut_ptr().as_mut().unwrap() }
+                   unsafe { #static_name.as_mut_ptr().as_mut().unwrap() }
                }
             }
 
@@ -96,6 +114,18 @@ fn produce_custom_ty(
         ));
     };
 
+    let (cbindgen_attrs, cbindgen_vis): (_, Option<Token![pub]>) = if cbindgen {
+        (
+            quote!(
+                #[no_mangle]
+                #[repr(C)]
+            ),
+            Some(Default::default()),
+        )
+    } else {
+        (TokenStream2::new(), None)
+    };
+
     let output = quote! {
         #[allow(non_snake_case)]
         #[doc(hidden)]
@@ -105,7 +135,8 @@ fn produce_custom_ty(
 
             static mut UNINITIALIZED: MaybeUninit<u8> = MaybeUninit::uninit();
 
-            static mut LAZY: MaybeUninit<#ty> = MaybeUninit::uninit();
+            #cbindgen_attrs
+            #cbindgen_vis static mut #static_name: MaybeUninit<#ty> = MaybeUninit::uninit();
 
             #[allow(non_camel_case_types)]
             pub struct #struct_name {
@@ -136,7 +167,7 @@ fn produce_custom_ty(
                     if initialized_val != 1u8 {
                         //SAFETY:
                         // single threaded access, non-null, aligned
-                        unsafe { LAZY.as_mut_ptr().write(__initialize()); };
+                        unsafe { #static_name.as_mut_ptr().write(__initialize()); };
 
                         //SAFETY: see above when reading `initialized_val`
                         unsafe { initialized_ptr.write(1u8); }
@@ -151,7 +182,7 @@ fn produce_custom_ty(
                     // code is single-threaed so no data races,
                     // furthermore the pointer is guaranteed to be non-null, aligned
                     // and initialized by the `init` call above
-                    unsafe { LAZY.as_ptr().as_ref().unwrap() }
+                    unsafe { #static_name.as_ptr().as_ref().unwrap() }
                 }
             }
 
@@ -172,4 +203,23 @@ fn produce_custom_ty(
         struct_name,
         body: output,
     })
+}
+
+//#[attr(cbindgen)]
+fn is_cbindgen_mode(args: &AttributeArgs) -> bool {
+    for arg in args {
+        eprintln!("arg: {:?}", arg);
+        if let NestedMeta::Meta(Meta::Path(path)) = arg {
+            eprintln!("path: {:?}", path);
+            if path
+                .segments
+                .iter()
+                .any(|path_segment| path_segment.ident == "cbindgen")
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }

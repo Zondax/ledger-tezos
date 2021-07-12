@@ -32,6 +32,10 @@ const INCLUDE_ACTIONS_COUNT: usize = INCLUDE_ACTIONS_AS_ITEMS - 1;
 #[bolos_derive::lazy_static]
 pub static mut RUST_ZUI: ZUI<NanoSBackend, KEY_SIZE, MESSAGE_SIZE> = ZUI::new();
 
+#[bolos_derive::lazy_static(cbindgen)]
+static mut BACKEND: NanoSBackend = NanoSBackend::default();
+
+#[repr(C)]
 pub struct NanoSBackend {
     key: ArrayString<KEY_SIZE>,
 
@@ -70,6 +74,10 @@ impl Default for NanoSBackend {
 impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     const INCLUDE_ACTIONS_COUNT: usize = INCLUDE_ACTIONS_COUNT;
 
+    fn static_mut() -> &'static mut Self {
+        unsafe { &mut BACKEND }
+    }
+    
     fn key_buf(&mut self) -> &mut ArrayString<KEY_SIZE> {
         &mut self.key
     }

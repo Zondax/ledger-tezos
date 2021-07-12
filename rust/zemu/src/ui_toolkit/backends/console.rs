@@ -38,6 +38,10 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for ConsoleBackend {
     //How many "action" items are we in charge of displaying also
     const INCLUDE_ACTIONS_COUNT: usize = 0;
 
+    fn static_mut() -> &'static mut Self {
+        todo!("static_mut")
+    }
+
     fn key_buf(&mut self) -> &mut ArrayString<{ KEY_SIZE }> {
         &mut self.key
     }

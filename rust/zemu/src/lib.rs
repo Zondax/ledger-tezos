@@ -17,6 +17,7 @@
 #![no_builtins]
 #![allow(dead_code)]
 
+/// cbindgen:ignore
 pub(self) mod bindings {
     extern "C" {
         cfg_if::cfg_if! {

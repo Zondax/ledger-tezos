@@ -21,14 +21,15 @@ use crate::{
 mod backends;
 use self::backends::UIBackend;
 
-pub struct ZUI<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> {
+#[repr(C)]
+pub struct ZUI<B: UIBackend<KS, MS> + 'static, const KS: usize, const MS: usize> {
     item_idx: usize,
     item_count: usize,
 
     page_idx: usize,
     page_count: usize,
 
-    backend: B,
+    backend: &'static mut B,
 
     current_viewable: Option<RefMutDynViewable>,
 }
@@ -40,7 +41,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
             item_count: 0,
             page_idx: 0,
             page_count: 0,
-            backend: B::default(),
+            backend: B::static_mut(),
             current_viewable: None,
         }
     }
