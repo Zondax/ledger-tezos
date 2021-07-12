@@ -2,7 +2,7 @@
 ![stability-wip](https://img.shields.io/badge/stability-work_in_progress-lightgrey.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![npm version](https://badge.fury.io/js/%40zondax%2Fledger-tezos.svg)](https://badge.fury.io/js/%40zondax%2Fledger-tezos)
-[![CircleCI](https://circleci.com/gh/Zondax/ledger-tezos.svg?style=shield&circle-token=78fc17389c26edbfd7267cdc1aaf79a43fde94cd)](https://circleci.com/gh/Zondax/ledger-tezos)
+[![GithubActions](https://github.com/zondax/ledger-tezos/actions/workflows/main.yaml/badge.svg)]()
 
 > # This app is still work in progress!
 > # DO NOT USE YET!
