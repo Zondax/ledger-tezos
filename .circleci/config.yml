@@ -1,130 +1,5 @@
 version: 2.1
 jobs:
-  checks:
-    docker:
-      - image: zondax/rust-ci:latest
-    steps:
-      - checkout
-      - run:
-          name: show versions
-          command: |
-            rustup show
-      - run:
-          name: rustfmt
-          command: |
-            cd ~/project/rust
-            cargo fmt --version
-            cargo fmt -- --check
-      - run:
-          name: clippy
-          command: |
-            cd ~/project/rust
-            cargo clippy --version
-            cargo clippy --features "wallet","dev" --all-targets
-      - run:
-          name: clippy
-          command: |
-            cd ~/project/rust
-            cargo clippy --version
-            cargo clippy --features "baking","dev" --all-targets
-      - run:
-          name: audit
-          command: |
-            cd ~/project/rust
-            cargo audit --version
-            cargo audit
-
-  build:
-    parameters:
-      baking:
-        type: string
-    docker:
-      - image: zondax/rust-ci:latest
-    environment:
-      BAKING: << parameters.baking >>
-    steps:
-      - checkout
-      - run:
-          name: run rust tests
-          command: |
-            cd ~/project
-            make rust_test
-
-  build_ledger:
-    docker:
-      - image: zondax/builder-bolos:latest
-    working_directory: ~/project
-    environment:
-      BOLOS_SDK: /home/zondax/project/deps/nanos-secure-sdk
-      BOLOS_ENV: /opt/bolos
-    steps:
-      - checkout
-      # Docker entrypoint is not considered
-      - run: git submodule update --init --recursive
-      - run:
-          name: Build baker app
-          environment:
-            BAKING: 'yes'
-          command: |
-            source /home/zondax/.cargo/env
-            make
-      - run:
-          name: Build standard app
-          command: |
-            source /home/zondax/.cargo/env
-            make
-
-  test_zemu:
-    machine:
-      image: ubuntu-2004:202101-01
-    resource_class: large
-    working_directory: ~/repo
-    environment:
-      BASH_ENV: "/opt/circleci/.nvm/nvm.sh"
-    steps:
-      - checkout
-      - run: git submodule update --init --recursive
-      - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
-      - run:
-          name: Install rust
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
-          no_output_timeout: 1800s
-      - run:
-          name: Install node + yarn
-          command: |
-            nvm install 14.17.0
-            nvm use 14.17.0
-            npm install -g yarn
-      - run:
-          name: Build Ledger app (Baking)
-          environment:
-            BAKING: 'yes'
-          command: |
-            make
-      - run:
-          name: Build Ledger app
-          command: |
-            make
-      - run:
-          name: Build legacy app
-          command: |
-            make legacy
-      - run:
-          name: Build/Install build js deps
-          command: |
-            nvm use 14.17.0
-            export PATH=~/.cargo/bin:$PATH
-            make zemu_install
-      - run:
-          name: Run zemu tests
-          command: |
-            nvm use 14.17.0
-            export PATH=~/.cargo/bin:$PATH
-            make zemu_test
-
   build_package:
     docker:
       - image: zondax/builder-bolos:latest
@@ -168,41 +43,9 @@ jobs:
                                     $(/home/zondax/project/rust/app/pkg/installer_s.sh version) \
                                     /home/zondax/project/rust/app/pkg/installer_s.sh
 
-  publish_npm_package:
-    docker:
-      - image: circleci/node:lts
-    steps:
-      - checkout
-      - run:
-          name: Build package
-          command: |
-            cd js
-            yarn install
-            yarn build
-      - run:
-          name: Prepare authentication config
-          command: echo "//registry.npmjs.org/:_authToken=$npm_TOKEN" > /home/circleci/.npmrc
-      - run:
-          name: Set package version
-          command: |
-            cd js
-            export NPM_VERSION=$(echo $CIRCLE_TAG | cut -c5-)
-            echo Publishing as "$NPM_VERSION"
-            npm --no-git-tag-version version "$NPM_VERSION"
-      - run:
-          name: Publish package
-          command: cd js && npm publish
-
 no-tags: &no-tags
   filters:
     tags:
-      ignore: /.*/
-
-only-npm-tags: &only-npm-tags
-  filters:
-    tags:
-      only: /^npm_v[0-9]+(\.[0-9]+)*/
-    branches:
       ignore: /.*/
 
 workflows:
@@ -210,29 +53,9 @@ workflows:
 
   default:
     jobs:
-      - checks:
-          <<: *no-tags
-      - build:
-          <<: *no-tags
-          matrix:
-            parameters:
-              baking: ["", "baking"]
-      - build_ledger:
-          <<: *no-tags
-      - test_zemu:
-          <<: *no-tags
       - build_package:
           <<: *no-tags
-          requires:
-            - build
-            - build_ledger
-            - test_zemu
           filters:
             branches:
               only:
                 - main
-
-  release_npm:
-    jobs:
-      - publish_npm_package:
-          <<: *only-npm-tags
