@@ -144,7 +144,7 @@ jobs:
 
 
   build_package:
-    needs: [ configure, checks, build, build-baking, test_zemu ]
+    needs: [ configure, checks, build, build-baking, test_zemu, build_ledger ]
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     container:
@@ -159,11 +159,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Install python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
       - name: Build Ledger app (Baking)
         env:
           BAKING: 'yes'
@@ -174,6 +169,11 @@ jobs:
       - name: Copy baking artifacts
         run: |
           mv rust/app/pkg/installer_s.sh rust/app/pkg/installer_baking_s.sh
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
       - name: Set tag name var
         id: vars
         run: echo ::set-output name=tag_name::$(sh rust/app/pkg/installer_baking_s.sh version)
