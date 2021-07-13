@@ -168,15 +168,11 @@ jobs:
           make
       - name: Copy baking artifacts
         run: |
+          pip install ledgerblue
           mv rust/app/pkg/installer_s.sh rust/app/pkg/installer_baking_s.sh
-      - name: Install python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
       - name: Set tag name var
         id: vars
-        run: echo ::set-output name=tag_name::$(sh rust/app/pkg/installer_baking_s.sh version)
+        run: echo ::set-output name=tag_name::$(./rust/app/pkg/installer_baking_s.sh version)
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
