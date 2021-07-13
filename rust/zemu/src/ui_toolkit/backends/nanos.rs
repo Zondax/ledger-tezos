@@ -21,9 +21,9 @@ use crate::{
 
 use arrayvec::ArrayString;
 
-const KEY_SIZE: usize = 17 + 1;
+pub const KEY_SIZE: usize = 17 + 1;
 //with null terminator
-const MESSAGE_LINE_SIZE: usize = 17 + 1;
+pub const MESSAGE_LINE_SIZE: usize = 17 + 1;
 const MESSAGE_SIZE: usize = 2 * MESSAGE_LINE_SIZE + 1;
 
 const INCLUDE_ACTIONS_AS_ITEMS: usize = 2;
@@ -37,10 +37,9 @@ static mut BACKEND: NanoSBackend = NanoSBackend::default();
 
 #[repr(C)]
 pub struct NanoSBackend {
-    key: ArrayString<KEY_SIZE>,
-
-    message_line1: ArrayString<MESSAGE_LINE_SIZE>,
-    message_line2: ArrayString<MESSAGE_LINE_SIZE>,
+    key: [u8; KEY_SIZE],
+    value: [u8; MESSAGE_LINE_SIZE],
+    value2: [u8; MESSAGE_LINE_SIZE],
 
     viewable_size: usize,
     expert: bool,
@@ -48,12 +47,9 @@ pub struct NanoSBackend {
 
 impl NanoSBackend {
     pub fn update_expert(&mut self) {
-        self.message_line1.clear();
-        self.message_line2.clear();
-
         let msg = if self.expert { "enabled" } else { "disabled" };
 
-        write!(self.message_line1, "{}", msg).expect("unable to write expert");
+        self.value[..msg.len()].copy_from_slice(msg.as_bytes());
     }
 
 
@@ -62,9 +58,9 @@ impl NanoSBackend {
 impl Default for NanoSBackend {
     fn default() -> Self {
         Self {
-            key: ArrayString::new_const(),
-            message_line1: ArrayString::new_const(),
-            message_line2: ArrayString::new_const(),
+            key: [0; KEY_SIZE],
+            value: [0; MESSAGE_LINE_SIZE],
+            value2: [0; MESSAGE_LINE_SIZE],
             viewable_size: 0,
             expert: false,
         }
@@ -78,7 +74,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         unsafe { &mut BACKEND }
     }
     
-    fn key_buf(&mut self) -> &mut ArrayString<KEY_SIZE> {
+    fn key_buf(&mut self) -> &mut [u8; KEY_SIZE] {
         &mut self.key
     }
 
@@ -87,12 +83,6 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     }
 
     fn split_value_field(&mut self, message_buf: ArrayString<MESSAGE_SIZE>) {
-        use core::fmt::Write;
-
-        //clear inner message buffers
-        self.message_line1.clear();
-        self.message_line2.clear();
-
         //compute len and split `message_buf` at the max line size or at the total len
         // if the total len is less than the size of 1 line
         let len = strlen(message_buf.as_bytes());
@@ -102,15 +92,14 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         //write the 2 lines, so if the message was small enough to fit
         // on the first line
         // then the second line will stay empty
-        write!(&mut self.message_line1, "{}", line1);
-        write!(&mut self.message_line2, "{}", line2);
+        self.value[..line1.len()].copy_from_slice(line1.as_bytes());
+        self.value2[..line2.len()].copy_from_slice(line2.as_bytes());
     }
 
-    fn show_idle(&mut self, item_idx: u8, status: Option<&str>) {
-        let status = status.unwrap_or("DO NOT USE"); //FIXME: MENU_MAIN_APP_LINE2
+    fn show_idle(&mut self, _item_idx: usize, status: Option<&str>) {
+        let status = status.unwrap_or("DO NOT USE").as_bytes(); //FIXME: MENU_MAIN_APP_LINE2
 
-        self.key.clear();
-        write!(self.key, "{}", status);
+        self.key[..status.len()].copy_from_slice(status);
 
         self.update_expert();
         todo!("UX_MENU_DISPLAY(item_idx, menu_main, NULL)")
@@ -165,7 +154,8 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     fn accept_reject_end(&mut self, len: usize) {
         use bolos_sys::raw::{io_exchange, CHANNEL_APDU, IO_RETURN_AFTER_TX};
 
-        io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, len as u16);
+        // Safety: simple C call
+        unsafe { io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, len as u16); }
     }
 
     fn store_viewable<V: Viewable + Sized + 'static>(
@@ -187,7 +177,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
 
             //write but we don't want to drop `new_loc` since
             // it's not actually valid T data
-            core::ptr::write(new_loc, item);
+            core::ptr::write(new_loc, viewable);
 
             //write how many bytes we have occupied
             self.viewable_size = size;
@@ -200,21 +190,6 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
 
 mod cabi {
     use super::*;
-
-    #[no_mangle]
-    pub unsafe extern "C" fn viewdata_key() -> *mut u8 {
-        RUST_ZUI.backend.key.as_bytes_mut().as_mut_ptr()
-    }
-
-    #[no_mangle]
-    pub unsafe extern "C" fn viewdata_message_line1() -> *mut u8 {
-        RUST_ZUI.backend.message_line1.as_bytes_mut().as_mut_ptr()
-    }
-
-    #[no_mangle]
-    pub unsafe extern "C" fn viewdata_message_line2() -> *mut u8 {
-        RUST_ZUI.backend.message_line2.as_bytes_mut().as_mut_ptr()
-    }
 
     #[no_mangle]
     pub unsafe extern "C" fn rs_h_expert_toggle() {

@@ -1,3 +1,5 @@
+use arrayvec::ArrayString;
+
 /*******************************************************************************
 *   (c) 2021 Zondax GmbH
 *
@@ -19,7 +21,8 @@ use crate::{
 };
 
 mod backends;
-use self::backends::UIBackend;
+use backends::UIBackend;
+pub use backends::RUST_ZUI;
 
 #[repr(C)]
 pub struct ZUI<B: UIBackend<KS, MS> + 'static, const KS: usize, const MS: usize> {
@@ -169,14 +172,13 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         // we end the borrow, thus making sure it's always valid UTF-8
         let message_bytes = unsafe { message.as_bytes_mut() };
 
-        //Safety: same as per above `message_bytes`
-        let key_bytes = unsafe { self.backend.key_buf().as_bytes_mut() };
+        let key_bytes = self.backend.key_buf();
 
         let render_item_result =
-            viewable.render_item(self.item_idx as u8, key_bytes, message_bytes, page_idx);
+            viewable.render_item(self.item_idx as u8, &mut key_bytes[..], message_bytes, page_idx);
 
         //asciify
-        // this section makes the unsafes above safe!
+        // this section makes the unsafe above safe!
         message_bytes
             .iter_mut()
             .filter(|&&mut c| c != 0 && !(32..=0x7F).contains(&c))
@@ -225,18 +227,19 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
             // what page we are displaying currently and what's the total number of pages
             if self.page_count > 1 {
                 let key = self.backend.key_buf();
-                let key_len = strlen(key.as_str().as_bytes());
+                let key_len = strlen(&key[..]);
 
                 if key_len < KS {
                     use core::fmt::Write;
                     //construct temporary new arraystring that will replace the current one
-                    let mut tmp = *key;
+                    let mut tmp = ArrayString::from_byte_string(&key).expect("key was not utf8");
                     tmp.clear();
 
+                    let s_key = core::str::from_utf8(key).expect("key was not utf8");
                     if write!(
                         tmp,
                         "{} [{}/{}]",
-                        &key[..key_len],
+                        &s_key[..key_len],
                         self.page_idx + 1,
                         self.page_count
                     )
@@ -244,7 +247,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
                     {
                         //we override only if ok so that we can keep the original
                         // if an error occured while writing
-                        *key = tmp;
+                        key[..tmp.len()].copy_from_slice(tmp.as_bytes());
                     }
                 }
             }
@@ -263,9 +266,10 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
     fn show_error(&mut self) {
         use core::fmt::Write;
 
+        const ERROR_KEY: &[u8; 5] = b"ERROR";
+
         let key = self.backend.key_buf();
-        key.clear();
-        write!(key, "ERROR").expect("unable to write to key");
+        key[..ERROR_KEY.len()].copy_from_slice(ERROR_KEY);
 
         let mut message = self.backend.message_buf();
         write!(message, "SHOWING DATA").expect("unable to write message");

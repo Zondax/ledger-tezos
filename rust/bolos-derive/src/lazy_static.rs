@@ -116,7 +116,6 @@ fn produce_custom_ty(
         (
             quote!(
                 #[no_mangle]
-                #[repr(C)]
             ),
             Some(Default::default()),
         )

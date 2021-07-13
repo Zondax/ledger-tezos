@@ -15,14 +15,14 @@
 ********************************************************************************/
 use super::UIBackend;
 use crate::{
-    ui::{manual_vtable::RefMutDynViewable, Viewable},
+    ui::{manual_vtable::RefMutDynViewable, Viewable, ViewError},
     ui_toolkit::{strlen, ZUI},
 };
 use arrayvec::ArrayString;
 
-const KEY_SIZE: usize = 64;
+pub const KEY_SIZE: usize = 64;
 //with null terminator
-const MESSAGE_SIZE: usize = 4096;
+pub const MESSAGE_SIZE: usize = 4096;
 
 const INCLUDE_ACTIONS_COUNT: usize = 0;
 
@@ -34,8 +34,8 @@ static mut BACKEND: NanoXBackend = NanoXBackend::default();
 
 #[repr(C)]
 pub struct NanoXBackend {
-    key: ArrayString<KEY_SIZE>,
-    message: ArrayString<MESSAGE_SIZE>,
+    key: [u8; KEY_SIZE],
+    message: [u8; MESSAGE_SIZE],
 
     viewable_size: usize,
     expert: bool,
@@ -43,20 +43,17 @@ pub struct NanoXBackend {
 
 impl NanoXBackend {
     pub fn update_expert(&mut self) {
-        self.message.clear();
-        self.message.clear();
-
         let msg = if self.expert { "enabled" } else { "disabled" };
 
-        write!(self.message, "{}", msg).expect("unable to write expert");
+        self.message[..msg.len()].copy_from_slice(msg.as_bytes());
     }
 }
 
 impl Default for NanoXBackend {
     fn default() -> Self {
         Self {
-            key: ArrayString::new_const(),
-            message: ArrayString::new_const(),
+            key: [0; KEY_SIZE],
+            message: [0; MESSAGE_SIZE],
             viewable_size: 0,
             expert: false,
         }
@@ -70,7 +67,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         unsafe { &mut BACKEND }
     }
 
-    fn key_buf(&mut self) -> &mut ArrayString<KEY_SIZE> {
+    fn key_buf(&mut self) -> &mut [u8; KEY_SIZE] {
         &mut self.key
     }
 
@@ -79,37 +76,33 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
     }
 
     fn split_value_field(&mut self, message_buf: ArrayString<MESSAGE_SIZE>) {
-        self.message = message_buf;
-        if self.message.len() == 0 {
-            self.message.push(' ');
+        let mlen = message_buf.len();
+        if mlen == 0 {
+            self.message[0] = b' ';
+        } else {
+            self.message[..mlen].copy_from_slice(message_buf.as_bytes())
         }
     }
 
-    fn show_idle(&mut self, item_idx: u8, status: Option<&str>) {
-        let status = status.unwrap_or("DO NOT USE"); //FIXME: MENU_MAIN_APP_LINE2
+    fn show_idle(&mut self, item_idx: usize, status: Option<&str>) {
+        let status = status.unwrap_or("DO NOT USE").as_bytes(); //FIXME: MENU_MAIN_APP_LINE2
 
-        self.key.clear();
-        write!(self.key, "{}", status);
+        self.key[..status.len()].copy_from_slice(status);
 
-        todo!(
-            r#"
-            if(G_ux.stack_count == 0) {
-                ux_stack_push();
-            }
-            ux_flow_init(0, ux_idle_flow, NULL);
-            "#
-        );
+        //FIXME:
+        // if(G_ux.stack_count == 0) {
+        //     ux_stack_push();
+        // }
+        // ux_flow_init(0, ux_idle_flow, NULL);
     }
 
     fn show_error(&mut self) {
-        todo!(
-            r#"
-        ux_layout_bnnn_paging_reset();
-        if (G_ux.stack_count == 0) {
-            ux_stack_push();
-        }
-        ux_flow_init(0, ux_error_flow, NULL);"#
-        );
+        //FIXME:
+        // ux_layout_bnnn_paging_reset);
+        // if (G_ux.stack_count == 0) {
+        //     ux_stack_push();
+        // }
+        // ux_flow_init(0, ux_error_flow, NULL);
     }
 
     fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
@@ -118,15 +111,12 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         //not sure why this is here but ok
         ui.paging_decrease();
 
-        todo!(
-            r#"
-            flow_inside_loop = 0;
-            if G_ux.stack_count == 0 {
-                ux_stack_push();
-            }
-            ux_flow_init(0, ux_review_flow, NULL);
-        "#
-        );
+        //FIXME:
+        // flow_inside_loop = 0;
+        // if G_ux.stack_count == 0 {
+        //     ux_stack_push();
+        // }
+        // ux_flow_init(0, ux_review_flow, NULL);
     }
 
     fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
@@ -159,7 +149,8 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
     fn accept_reject_end(&mut self, len: usize) {
         use bolos_sys::raw::{io_exchange, CHANNEL_APDU, IO_RETURN_AFTER_TX};
 
-        io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, len as u16);
+        // Safety: simple C call
+        unsafe { io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, len as u16); }
     }
 
     fn store_viewable<V: Viewable + Sized + 'static>(
@@ -181,7 +172,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
 
             //write but we don't want to drop `new_loc` since
             // it's not actually valid T data
-            core::ptr::write(new_loc, item);
+            core::ptr::write(new_loc, viewable);
 
             //write how many bytes we have occupied
             self.viewable_size = size;
@@ -194,14 +185,4 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
 
 mod cabi {
     use super::*;
-
-    #[no_mangle]
-    pub unsafe extern "C" fn viewdata_key() -> *mut u8 {
-        RUST_ZUI.backend.key.as_bytes_mut().as_mut_ptr()
-    }
-
-    #[no_mangle]
-    pub unsafe extern "C" fn viewdata_message() -> *mut u8 {
-        RUST_ZUI.backend.message.as_bytes_mut().as_mut_ptr()
-    }
 }

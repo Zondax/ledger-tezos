@@ -32,7 +32,6 @@
 #include <stdbool.h>
 
 view_t viewdata;
-my_view_t my_viewdata;
 
 void h_approve(unsigned int _) {
     zemu_log_stack("h_approve");

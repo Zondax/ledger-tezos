@@ -5,21 +5,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define KEY_SIZE (17 + 1)
+
+#define MESSAGE_LINE_SIZE (17 + 1)
+
 typedef struct NanoSBackend {
-  ArrayString<KEY_SIZE> key;
-  ArrayString<MESSAGE_LINE_SIZE> message_line1;
-  ArrayString<MESSAGE_LINE_SIZE> message_line2;
+  uint8_t key[KEY_SIZE];
+  uint8_t value[MESSAGE_LINE_SIZE];
+  uint8_t value2[MESSAGE_LINE_SIZE];
   uintptr_t viewable_size;
   bool expert;
 } NanoSBackend;
 
 extern struct NanoSBackend BACKEND_LAZY;
-
-uint8_t *viewdata_key(void);
-
-uint8_t *viewdata_message_line1(void);
-
-uint8_t *viewdata_message_line2(void);
 
 void rs_h_expert_toggle(void);
 

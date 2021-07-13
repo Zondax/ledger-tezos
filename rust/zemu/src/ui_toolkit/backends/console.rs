@@ -27,9 +27,8 @@ const MESSAGE_SIZE: usize = 1024;
 #[bolos_derive::lazy_static]
 pub static mut RUST_ZUI: ZUI<ConsoleBackend, KEY_SIZE, MESSAGE_SIZE> = ZUI::new();
 
-#[derive(Default)]
 pub struct ConsoleBackend {
-    key: ArrayString<KEY_SIZE>,
+    key: [u8; KEY_SIZE],
     message: ArrayString<MESSAGE_SIZE>,
     expert: bool,
 }
@@ -42,7 +41,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for ConsoleBackend {
         todo!("static_mut")
     }
 
-    fn key_buf(&mut self) -> &mut ArrayString<{ KEY_SIZE }> {
+    fn key_buf(&mut self) -> &mut [u8; KEY_SIZE] {
         &mut self.key
     }
 

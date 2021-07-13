@@ -24,7 +24,7 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized {
 
     fn static_mut() -> &'static mut Self;
 
-    fn key_buf(&mut self) -> &mut ArrayString<{ KEY_SIZE }>;
+    fn key_buf(&mut self) -> &mut [u8; KEY_SIZE];
 
     fn message_buf(&self) -> ArrayString<{ MESSAGE_SIZE }>;
 

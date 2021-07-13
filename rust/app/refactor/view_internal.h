@@ -69,15 +69,18 @@ typedef struct {
     uint8_t pageCount;
 } view_t;
 
-typedef struct {
-    char* key;
-    char* value;
 #if defined(TARGET_NANOS)
-    char* value2;
-#endif
-} my_view_t;
+typedef struct NanoSBackend {
+  uint8_t key[18];
+  uint8_t value[18];
+  uint8_t value2[18];
+  uintptr_t viewable_size;
+  bool expert;
+} NanoSBackend;
 
-extern my_view_t my_viewdata;
+extern struct NanoSBackend BACKEND_LAZY;
+void rs_h_expert_toggle(void);
+#endif
 
 typedef enum {
     view_action_unknown,
