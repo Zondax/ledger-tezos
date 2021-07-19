@@ -29,11 +29,18 @@ jobs:
       - name: Get latest release version number
         id: get_version
         uses: battila7/get-version-action@v2
+      - name: Clean latest release version number
+        id: get_version_cleaned
+        uses: bhowell2/github-substring-action
+        with:
+          output_name: version
+          value: ${{ steps.get_version.outputs.version }}
+          index_of_str: "npm_"
       - name: Update tag
         run: |
           cd js
-          echo Publishing as ${{ steps.get_version.outputs.version }}
-          npm --allow-same-version --no-git-tag-version version ${{ steps.get_version.outputs.version }}
+          echo Publishing as ${{ steps.get_version_cleaned.outputs.version }}
+          npm --allow-same-version --no-git-tag-version version ${{ steps.get_version_cleaned.outputs.version }}
       - name: Publish package
         run: |
           cd js
