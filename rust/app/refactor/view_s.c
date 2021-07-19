@@ -55,12 +55,6 @@ const ux_menu_entry_t menu_main[] = {
     UX_MENU_END
 };
 
-static const bagl_element_t view_message[] = {
-    UI_BACKGROUND,
-    UI_LabelLine(UIID_LABEL + 0, 0, 8, UI_SCREEN_WIDTH, UI_11PX, UI_WHITE, UI_BLACK, BACKEND_LAZY.key),
-    UI_LabelLine(UIID_LABEL + 1, 0, 19, UI_SCREEN_WIDTH, UI_11PX, UI_WHITE, UI_BLACK, BACKEND_LAZY.value),
-};
-
 static const bagl_element_t view_review[] = {
     UI_BACKGROUND_LEFT_RIGHT_ICONS,
     UI_LabelLine(UIID_LABEL + 0, 0, 8, UI_SCREEN_WIDTH, UI_11PX, UI_WHITE, UI_BLACK, BACKEND_LAZY.key),
@@ -84,17 +78,6 @@ static unsigned int view_error_button(unsigned int button_mask, unsigned int but
             break;
         case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
             h_error_accept(0);
-            break;
-    }
-    return 0;
-}
-
-static unsigned int view_message_button(unsigned int button_mask, unsigned int button_mask_counter) {
-    UNUSED(button_mask_counter);
-    switch (button_mask) {
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
-        case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
             break;
     }
     return 0;
@@ -151,96 +134,29 @@ const bagl_element_t *view_prepro_idle(const bagl_element_t *element) {
     return element;
 }
 
-void h_review_update() {
-    zxerr_t err = h_review_update_data();
-    switch(err) {
-        case zxerr_ok:
-            UX_DISPLAY(view_review, view_prepro);
-            break;
-        default:
-            view_error_show();
-            UX_WAIT();
-            break;
-    }
-}
-
-void h_review_button_left() {
-    zemu_log_stack("h_review_button_left");
-    h_paging_decrease();
-    h_review_update();
-}
-
-void h_review_button_right() {
-    zemu_log_stack("h_review_button_right");
-    h_paging_increase();
-    h_review_update();
-}
-
-void h_review_button_both() {
-    zemu_log_stack("h_review_button_left");
-    h_review_action();
-}
-
-void splitValueField() {
-    print_value2("");
-    uint16_t vlen = strlen(viewdata.value);
-    if (vlen > MAX_CHARS_PER_VALUE2_LINE - 1) {
-        strcpy(viewdata.value2, viewdata.value + MAX_CHARS_PER_VALUE_LINE);
-        viewdata.value[MAX_CHARS_PER_VALUE_LINE] = 0;
-    }
-}
-
 //////////////////////////
 //////////////////////////
 //////////////////////////
 //////////////////////////
 //////////////////////////
 
-void view_idle_show_impl(uint8_t item_idx, char *statusString) {
-    if (statusString == NULL ) {
-        snprintf(viewdata.key, MAX_CHARS_PER_VALUE_LINE, "%s", MENU_MAIN_APP_LINE2);
-    } else {
-        snprintf(viewdata.key, MAX_CHARS_PER_VALUE_LINE, "%s", statusString);
-    }
-    h_expert_update();
-    UX_MENU_DISPLAY(item_idx, menu_main, NULL);
-}
+//// VIEW MESSAGE
 
-void view_message_impl(char *title, char *message) {
-    snprintf(viewdata.key, MAX_CHARS_PER_VALUE_LINE, "%s", title);
-    snprintf(viewdata.value, MAX_CHARS_PER_VALUE_LINE, "%s", message);
-    UX_DISPLAY(view_message, view_prepro_idle);
-}
+static const bagl_element_t view_message[] = {
+    UI_BACKGROUND,
+    UI_LabelLine(UIID_LABEL + 0, 0, 8, UI_SCREEN_WIDTH, UI_11PX, UI_WHITE, UI_BLACK, BACKEND_LAZY.key),
+    UI_LabelLine(UIID_LABEL + 1, 0, 19, UI_SCREEN_WIDTH, UI_11PX, UI_WHITE, UI_BLACK, BACKEND_LAZY.value),
+};
 
-void view_error_show_impl() {
-    UX_DISPLAY(view_error, view_prepro);
-}
-
-void h_expert_toggle() {
-    app_mode_set_expert(!app_mode_expert());
-    view_idle_show(1, NULL);
-}
-
-void h_expert_update() {
-    snprintf(viewdata.value, MAX_CHARS_PER_VALUE_LINE, "disabled");
-    if (app_mode_expert()) {
-        snprintf(viewdata.value, MAX_CHARS_PER_VALUE_LINE, "enabled");
-    }
-}
-
-void view_review_show_impl() {
-    zemu_log_stack("view_review_show_impl");
-
-    h_paging_init();
-
-    zxerr_t err = h_review_update_data();
-    switch(err) {
-        case zxerr_ok:
-            UX_DISPLAY(view_review, view_prepro);
-            break;
-        default:
-            view_error_show();
+static unsigned int view_message_button(unsigned int button_mask, unsigned int button_mask_counter) {
+    UNUSED(button_mask_counter);
+    switch (button_mask) {
+        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:
+        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
+        case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
             break;
     }
+    return 0;
 }
+
 #endif

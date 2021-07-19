@@ -51,8 +51,6 @@ impl NanoSBackend {
 
         self.value[..msg.len()].copy_from_slice(msg.as_bytes());
     }
-
-
 }
 
 impl Default for NanoSBackend {
@@ -73,7 +71,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     fn static_mut() -> &'static mut Self {
         unsafe { &mut BACKEND }
     }
-    
+
     fn key_buf(&mut self) -> &mut [u8; KEY_SIZE] {
         &mut self.key
     }
@@ -96,17 +94,42 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         self.value2[..line2.len()].copy_from_slice(line2.as_bytes());
     }
 
-    fn show_idle(&mut self, _item_idx: usize, status: Option<&str>) {
-        let status = status.unwrap_or("DO NOT USE").as_bytes(); //FIXME: MENU_MAIN_APP_LINE2
+    fn show_idle(&mut self, _item_idx: usize, status: Option<&[u8]>) {
+        //FIXME: MENU_MAIN_APP_LINE2
+        let status = status.unwrap_or(b"DO NOT USE").as_bytes();
 
-        self.key[..status.len()].copy_from_slice(status);
+        let len = core::cmp::min(self.key.len(), status.len());
+        self.key[..len].copy_from_slice(&status[..len]);
 
         self.update_expert();
+
+        //FIXME: call C function that handles
+        // UX_MENU_DISPLAY(item_idx, menu_main, NULL)
+        // !!! UNKNOWN IF NAMES ARE USED FOR CONCATENATION (most likely)
         todo!("UX_MENU_DISPLAY(item_idx, menu_main, NULL)")
     }
 
     fn show_error(&mut self) {
+        //FIXME: call C function that
+        // handles UX_DISPLAY(view_error, view_prepro)
+        // !!! THE NAMES ARE USED FOR CONCATENATION
         todo!("UX_DISPLAY(view_error, view_prepro)");
+    }
+
+    fn show_message(&mut self, title: &str, message: &str) {
+        if let Some(message) = ArrayString::from(message) {
+            self.split_value_fields(message);
+
+            let title = title.as_bytes();
+
+            let len = core::cmp::min(self.key.len(), title.len());
+            self.key[..len].copy_from_slice(&title[..len]);
+        }
+
+        //FIXME: call C function that
+        // handles UX_DISPLAY(view_message, view_prepro_idle)
+        // !!! THE NAMES ARE USED FOR CONCATENATION
+        todo!("UX_DISPLAY(view_message, view_prepro_idle)");
     }
 
     fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
@@ -115,6 +138,9 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
 
         match ui.review_update_data() {
             Ok(_) => {
+                //FIXME: call C function that
+                // handles UX_DISPLAY(view_review, view_prepro)
+                // !!! THE NAMES ARE USED FOR CONCATENATION
                 todo!("UX_DISPLAY(view_review, view_prepro)")
             }
             Err(_) => ui.show_error(),
@@ -124,6 +150,9 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
         match ui.review_update_data() {
             Ok(_) => {
+                //FIXME: call C function that
+                // handles UX_DISPLAY(view_review, view_prepro)
+                // !!! THE NAMES ARE USED FOR CONCATENATION
                 todo!("UX_DISPLAY(view_review, view_prepro)")
             }
             Err(_) => {
@@ -155,7 +184,9 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         use bolos_sys::raw::{io_exchange, CHANNEL_APDU, IO_RETURN_AFTER_TX};
 
         // Safety: simple C call
-        unsafe { io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, len as u16); }
+        unsafe {
+            io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, len as u16);
+        }
     }
 
     fn store_viewable<V: Viewable + Sized + 'static>(

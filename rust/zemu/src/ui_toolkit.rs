@@ -131,6 +131,16 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         }
     }
 
+    pub fn left_button(&mut self) {
+        self.paging_decrease();
+        B::update_review(self)
+    }
+
+    pub fn right_button(&mut self) {
+        self.paging_increase();
+        B::update_review(self)
+    }
+
     fn is_accept_item(&self) -> bool {
         self.item_idx == self.item_count - 1
     }
