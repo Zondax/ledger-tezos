@@ -31,10 +31,13 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized {
     fn split_value_field(&mut self, message_buf: ArrayString<{ MESSAGE_SIZE }>);
 
     //view_idle_show_impl
-    fn show_idle(&mut self, item_idx: usize, status: Option<&str>);
+    fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>);
 
     //view_error_show_impl
     fn show_error(&mut self);
+
+    //view_message_show_impl
+    fn show_message(&mut self, title: &str, message: &str);
 
     //view_review_show_impl
     fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>);
@@ -48,6 +51,8 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized {
     fn expert(&self) -> bool;
 
     fn toggle_expert(&mut self);
+
+    fn update_expert(&mut self);
 
     fn accept_reject_out(&mut self) -> &mut [u8];
 

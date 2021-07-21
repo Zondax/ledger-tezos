@@ -24,7 +24,7 @@ use arrayvec::ArrayString;
 pub const KEY_SIZE: usize = 17 + 1;
 //with null terminator
 pub const MESSAGE_LINE_SIZE: usize = 17 + 1;
-const MESSAGE_SIZE: usize = 2 * MESSAGE_LINE_SIZE + 1;
+const MESSAGE_SIZE: usize = 2 * MESSAGE_LINE_SIZE - 1;
 
 const INCLUDE_ACTIONS_AS_ITEMS: usize = 2;
 const INCLUDE_ACTIONS_COUNT: usize = INCLUDE_ACTIONS_AS_ITEMS - 1;
@@ -43,14 +43,6 @@ pub struct NanoSBackend {
 
     viewable_size: usize,
     expert: bool,
-}
-
-impl NanoSBackend {
-    pub fn update_expert(&mut self) {
-        let msg = if self.expert { "enabled" } else { "disabled" };
-
-        self.value[..msg.len()].copy_from_slice(msg.as_bytes());
-    }
 }
 
 impl Default for NanoSBackend {
@@ -77,13 +69,13 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     }
 
     fn message_buf(&self) -> ArrayString<MESSAGE_SIZE> {
-        ArrayString::new_const()
+        ArrayString::from_byte_string(&[0; MESSAGE_SIZE]).expect("0x00 is not valid utf8?")
     }
 
     fn split_value_field(&mut self, message_buf: ArrayString<MESSAGE_SIZE>) {
         //compute len and split `message_buf` at the max line size or at the total len
         // if the total len is less than the size of 1 line
-        let len = strlen(message_buf.as_bytes());
+        let len = strlen(message_buf.as_bytes()) + 1; //include the null terminator already
         let split = core::cmp::min(MESSAGE_LINE_SIZE, len);
         let (line1, line2) = message_buf.split_at(split);
 
@@ -94,31 +86,29 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         self.value2[..line2.len()].copy_from_slice(line2.as_bytes());
     }
 
-    fn show_idle(&mut self, _item_idx: usize, status: Option<&[u8]>) {
+    fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
         //FIXME: MENU_MAIN_APP_LINE2
-        let status = status.unwrap_or(b"DO NOT USE").as_bytes();
+        let status = status.unwrap_or(b"DO NOT USE");
 
         let len = core::cmp::min(self.key.len(), status.len());
         self.key[..len].copy_from_slice(&status[..len]);
 
         self.update_expert();
 
-        //FIXME: call C function that handles
-        // UX_MENU_DISPLAY(item_idx, menu_main, NULL)
-        // !!! UNKNOWN IF NAMES ARE USED FOR CONCATENATION (most likely)
-        todo!("UX_MENU_DISPLAY(item_idx, menu_main, NULL)")
+        unsafe {
+            bindings::crapoline_ux_menu_display(item_idx as u8);
+        }
     }
 
     fn show_error(&mut self) {
-        //FIXME: call C function that
-        // handles UX_DISPLAY(view_error, view_prepro)
-        // !!! THE NAMES ARE USED FOR CONCATENATION
-        todo!("UX_DISPLAY(view_error, view_prepro)");
+        unsafe {
+            bindings::crapoline_ux_display_view_error();
+        }
     }
 
     fn show_message(&mut self, title: &str, message: &str) {
-        if let Some(message) = ArrayString::from(message) {
-            self.split_value_fields(message);
+        if let Ok(message) = ArrayString::from(message) {
+            self.split_value_field(message);
 
             let title = title.as_bytes();
 
@@ -126,10 +116,9 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
             self.key[..len].copy_from_slice(&title[..len]);
         }
 
-        //FIXME: call C function that
-        // handles UX_DISPLAY(view_message, view_prepro_idle)
-        // !!! THE NAMES ARE USED FOR CONCATENATION
-        todo!("UX_DISPLAY(view_message, view_prepro_idle)");
+        unsafe {
+            bindings::crapoline_ux_display_view_message();
+        }
     }
 
     fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
@@ -137,24 +126,18 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         ui.paging_init();
 
         match ui.review_update_data() {
-            Ok(_) => {
-                //FIXME: call C function that
-                // handles UX_DISPLAY(view_review, view_prepro)
-                // !!! THE NAMES ARE USED FOR CONCATENATION
-                todo!("UX_DISPLAY(view_review, view_prepro)")
-            }
+            Ok(_) => unsafe {
+                bindings::crapoline_ux_display_view_review();
+            },
             Err(_) => ui.show_error(),
         }
     }
 
     fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
         match ui.review_update_data() {
-            Ok(_) => {
-                //FIXME: call C function that
-                // handles UX_DISPLAY(view_review, view_prepro)
-                // !!! THE NAMES ARE USED FOR CONCATENATION
-                todo!("UX_DISPLAY(view_review, view_prepro)")
-            }
+            Ok(_) => unsafe {
+                bindings::crapoline_ux_display_view_review();
+            },
             Err(_) => {
                 ui.show_error();
                 ui.backend.wait_ui();
@@ -163,7 +146,9 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     }
 
     fn wait_ui(&mut self) {
-        //FIXME: UX_WAIT
+        unsafe {
+            bindings::crapoline_ux_wait();
+        }
     }
 
     fn expert(&self) -> bool {
@@ -172,6 +157,12 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
 
     fn toggle_expert(&mut self) {
         self.expert = !self.expert;
+    }
+
+    fn update_expert(&mut self) {
+        let msg = if self.expert { "enabled" } else { "disabled" };
+
+        self.value[..msg.len()].copy_from_slice(msg.as_bytes());
     }
 
     fn accept_reject_out(&mut self) -> &mut [u8] {
@@ -224,11 +215,62 @@ mod cabi {
 
     #[no_mangle]
     pub unsafe extern "C" fn rs_h_expert_toggle() {
-        RUST_ZUI.backend.toggle_expert()
+        RUST_ZUI.backend.toggle_expert();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_expert_update() {
+        RUST_ZUI.backend.update_expert();
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rs_h_paging_can_decrease() -> bool {
         RUST_ZUI.paging_can_decrease()
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_paging_can_increase() -> bool {
+        RUST_ZUI.paging_can_increase()
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn view_idle_show_impl(item_idx: u8, status: *mut i8) {
+        let status = if status.is_null() {
+            None
+        } else {
+            let len = crate::ui_toolkit::c_strlen(status as *const u8);
+
+            Some(unsafe { core::slice::from_raw_parts(status as *const u8, len) })
+        };
+
+        RUST_ZUI.show_idle(item_idx as usize, status)
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_review_button_both() {
+        RUST_ZUI.review_action();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_review_button_left() {
+        RUST_ZUI.left_button();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_review_button_right() {
+        RUST_ZUI.right_button();
+    }
+}
+
+mod bindings {
+    use super::*;
+
+    extern "C" {
+        pub fn crapoline_ux_wait();
+        pub fn crapoline_ux_menu_display(item_idx: u8);
+
+        pub fn crapoline_ux_display_view_error();
+        pub fn crapoline_ux_display_view_review();
+        pub fn crapoline_ux_display_view_message();
     }
 }

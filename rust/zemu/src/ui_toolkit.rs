@@ -184,20 +184,26 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
 
         let key_bytes = self.backend.key_buf();
 
-        let render_item_result =
-            viewable.render_item(self.item_idx as u8, &mut key_bytes[..], message_bytes, page_idx);
+        let render_item_result = viewable.render_item(
+            self.item_idx as u8,
+            &mut key_bytes[..],
+            message_bytes,
+            page_idx,
+        );
 
         //asciify
         // this section makes the unsafe above safe!
         message_bytes
             .iter_mut()
-            .filter(|&&mut c| c != 0 && !(32..=0x7F).contains(&c))
+            .take_while(|&&mut c| c != 0)
+            .filter(|&&mut c| !(32..=0x7F).contains(&c))
             .for_each(|c| {
                 *c = b'.';
             });
         key_bytes
             .iter_mut()
-            .filter(|&&mut c| c != 0 && !(32..=0x7F).contains(&c))
+            .take_while(|&&mut c| c != 0)
+            .filter(|&&mut c| !(32..=0x7F).contains(&c))
             .for_each(|c| {
                 *c = b'.';
             });
@@ -289,7 +295,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
     }
 
     //view_idle_show
-    fn show_idle(&mut self, item_idx: usize, status: Option<&str>) {
+    fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
         self.backend.show_idle(item_idx, status)
     }
 
@@ -311,6 +317,16 @@ fn strlen(s: &[u8]) -> usize {
         if c == 0 {
             break;
         }
+        count += 1;
+    }
+
+    count
+}
+
+/// This function returns the index of the first null byte in found
+pub(self) fn c_strlen(s: *const u8) -> usize {
+    let mut count = 0;
+    while unsafe { s.add(count).read() } != 0 {
         count += 1;
     }
 

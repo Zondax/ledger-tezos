@@ -28,11 +28,14 @@
 
 #if defined(TARGET_NANOS)
 
-void h_expert_toggle();
-void h_expert_update();
-void h_review_button_left();
-void h_review_button_right();
-void h_review_button_both();
+void rs_h_expert_toggle();
+void rs_h_expert_update();
+void rs_h_review_button_left();
+void rs_h_review_button_right();
+void rs_h_review_button_both();
+
+bool rs_h_paging_can_decrease(void);
+bool rs_h_paging_can_increase(void);
 
 ux_state_t ux;
 
@@ -41,6 +44,7 @@ void os_exit(uint32_t id) {
     os_sched_exit(0);
 }
 
+//Referenced in crapoline_ux_menu_display
 const ux_menu_entry_t menu_main[] = {
     {NULL, NULL, 0, &C_icon_app, MENU_MAIN_APP_LINE1, BACKEND_LAZY.key, 33, 12},
     {NULL, rs_h_expert_toggle, 0, &C_icon_app, "Expert mode:", BACKEND_LAZY.value, 33, 12},
@@ -55,6 +59,7 @@ const ux_menu_entry_t menu_main[] = {
     UX_MENU_END
 };
 
+//Referenced in crapoline_ux_display_view_review
 static const bagl_element_t view_review[] = {
     UI_BACKGROUND_LEFT_RIGHT_ICONS,
     UI_LabelLine(UIID_LABEL + 0, 0, 8, UI_SCREEN_WIDTH, UI_11PX, UI_WHITE, UI_BLACK, BACKEND_LAZY.key),
@@ -62,6 +67,7 @@ static const bagl_element_t view_review[] = {
     UI_LabelLine(UIID_LABEL + 2, 0, 30, UI_SCREEN_WIDTH, UI_11PX, UI_WHITE, UI_BLACK, BACKEND_LAZY.value2),
 };
 
+//Referenced in crapoline_ux_display_view_error
 static const bagl_element_t view_error[] = {
     UI_FillRectangle(0, 0, 0, UI_SCREEN_WIDTH, UI_SCREEN_HEIGHT, 0x000000, 0xFFFFFF),
     UI_Icon(0, 128 - 7, 0, 7, 7, BAGL_GLYPH_ICON_CHECK),
@@ -70,6 +76,7 @@ static const bagl_element_t view_error[] = {
     UI_LabelLineScrolling(UIID_LABELSCROLL, 0, 30, 128, UI_11PX, UI_WHITE, UI_BLACK, BACKEND_LAZY.value2),
 };
 
+//Referenced by crapoline_ux_display_view_error macro call
 static unsigned int view_error_button(unsigned int button_mask, unsigned int button_mask_counter) {
     UNUSED(button_mask_counter);
     switch (button_mask) {
@@ -83,20 +90,21 @@ static unsigned int view_error_button(unsigned int button_mask, unsigned int but
     return 0;
 }
 
+//Referenced by crapoline_ux_display_view_review macro call
 static unsigned int view_review_button(unsigned int button_mask, unsigned int button_mask_counter) {
     UNUSED(button_mask_counter);
     switch (button_mask) {
         case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:
-            h_review_button_both();
+            rs_h_review_button_both();
             break;
         case BUTTON_EVT_RELEASED | BUTTON_LEFT:
             // Press left to progress to the previous element
-            h_review_button_left();
+            rs_h_review_button_left();
             break;
 
         case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
             // Press right to progress to the next element
-            h_review_button_right();
+            rs_h_review_button_right();
             break;
     }
     return 0;
@@ -105,13 +113,13 @@ static unsigned int view_review_button(unsigned int button_mask, unsigned int bu
 const bagl_element_t *view_prepro(const bagl_element_t *element) {
     switch (element->component.userid) {
         case UIID_ICONLEFT:
-            if (!h_paging_can_decrease()){
+            if (!rs_h_paging_can_decrease()){
                 return NULL;
             }
             UX_CALLBACK_SET_INTERVAL(2000);
             break;
         case UIID_ICONRIGHT:
-            if (!h_paging_can_increase()){
+            if (!rs_h_paging_can_increase()){
                 return NULL;
             }
             UX_CALLBACK_SET_INTERVAL(2000);
@@ -159,4 +167,26 @@ static unsigned int view_message_button(unsigned int button_mask, unsigned int b
     return 0;
 }
 
+/********* CRAPOLINES *************/
+
+void crapoline_ux_wait() {
+    UX_WAIT();
+}
+
+void crapoline_ux_menu_display(uint8_t item_idx) {
+    //menu_main is ux_menu_t above
+    UX_MENU_DISPLAY(item_idx, menu_main, NULL);
+}
+
+void crapoline_ux_display_view_error() {
+    UX_DISPLAY(view_error, view_prepro);
+}
+
+void crapoline_ux_display_view_review() {
+    UX_DISPLAY(view_review, view_prepro);
+}
+
+void crapoline_ux_display_view_message() {
+    UX_DISPLAY(view_message, view_prepro_idle);
+}
 #endif

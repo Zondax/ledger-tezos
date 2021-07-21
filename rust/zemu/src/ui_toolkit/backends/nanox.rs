@@ -41,14 +41,6 @@ pub struct NanoXBackend {
     expert: bool,
 }
 
-impl NanoXBackend {
-    pub fn update_expert(&mut self) {
-        let msg = if self.expert { "enabled" } else { "disabled" };
-
-        self.message[..msg.len()].copy_from_slice(msg.as_bytes());
-    }
-}
-
 impl Default for NanoXBackend {
     fn default() -> Self {
         Self {
@@ -67,12 +59,18 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         unsafe { &mut BACKEND }
     }
 
+    fn update_expert(&mut self) {
+        let msg = if self.expert { "enabled" } else { "disabled" };
+
+        self.message[..msg.len()].copy_from_slice(msg.as_bytes());
+    }
+
     fn key_buf(&mut self) -> &mut [u8; KEY_SIZE] {
         &mut self.key
     }
 
     fn message_buf(&self) -> ArrayString<MESSAGE_SIZE> {
-        ArrayString::new_const()
+        ArrayString::from_byte_string(&[0; MESSAGE_SIZE]).expect("0x00 is not valid utf8?")
     }
 
     fn split_value_field(&mut self, message_buf: ArrayString<MESSAGE_SIZE>) {
@@ -84,8 +82,8 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         }
     }
 
-    fn show_idle(&mut self, item_idx: usize, status: Option<&str>) {
-        let status = status.unwrap_or("DO NOT USE").as_bytes(); //FIXME: MENU_MAIN_APP_LINE2
+    fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
+        let status = status.unwrap_or(b"DO NOT USE"); //FIXME: MENU_MAIN_APP_LINE2
 
         self.key[..status.len()].copy_from_slice(status);
 
@@ -103,6 +101,11 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         //     ux_stack_push();
         // }
         // ux_flow_init(0, ux_error_flow, NULL);
+    }
+
+
+    fn show_message(&mut self, _title: &str, _message: &str) {
+        //TODO
     }
 
     fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
