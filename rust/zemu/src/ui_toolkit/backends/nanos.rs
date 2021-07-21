@@ -75,7 +75,9 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
     fn split_value_field(&mut self, message_buf: ArrayString<MESSAGE_SIZE>) {
         //compute len and split `message_buf` at the max line size or at the total len
         // if the total len is less than the size of 1 line
-        let len = strlen(message_buf.as_bytes()) + 1; //include the null terminator already
+
+        //include the null terminator (so we don't split_at 0 also)
+        let len = strlen(message_buf.as_bytes()) + 1;
         let split = core::cmp::min(MESSAGE_LINE_SIZE, len);
         let (line1, line2) = message_buf.split_at(split);
 
@@ -83,12 +85,14 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         // on the first line
         // then the second line will stay empty
         self.value[..line1.len()].copy_from_slice(line1.as_bytes());
+
         self.value2[..line2.len()].copy_from_slice(line2.as_bytes());
+        self.value2[line2.len()] = 0; //make sure it's 0 terminated (line1 already is)
     }
 
     fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
         //FIXME: MENU_MAIN_APP_LINE2
-        let status = status.unwrap_or(b"DO NOT USE");
+        let status = status.unwrap_or(&bolos_sys::pic::PIC::new(b"DO NOT USE\x00").get_ref()[..]);
 
         let len = core::cmp::min(self.key.len(), status.len());
         self.key[..len].copy_from_slice(&status[..len]);

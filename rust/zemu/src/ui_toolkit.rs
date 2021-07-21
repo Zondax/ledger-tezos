@@ -124,7 +124,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         } else if self.item_idx > 0 {
             //otherwise, since we are already at the first page
             // move to the previous item
-            self.item_idx += 1;
+            self.item_idx -= 1;
 
             //"jump" to last page, then update will fix this value
             self.page_idx = 255;
@@ -218,15 +218,48 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
     }
 
     fn review_update_data(&mut self) -> Result<(), ViewError> {
+        use bolos_sys::pic::PIC;
+
+        self.item_count = self
+            .current_viewable
+            .as_mut()
+            .ok_or(ViewError::NoData)?
+            .num_items()? as usize + 1;
         self.page_count = 1;
 
-        loop {
-            self.item_count = self
-                .current_viewable
-                .as_mut()
-                .ok_or(ViewError::NoData)?
-                .num_items()? as usize;
+        if self.is_accept_item() {
+            //put approve label as message
+            // and clear key
 
+            const APPROVE: &str = "APPROVE\x00";
+            self.backend.key_buf()[0] = 0;
+
+            let mut tmp = self.backend.message_buf();
+            tmp.clear();
+
+            tmp.push_str(PIC::new(APPROVE).into_inner());
+            self.backend.split_value_field(tmp);
+
+            self.page_idx = 0;
+            return Ok(());
+        } else if self.is_reject_item() {
+            //put reject label as message
+            // and clear key
+
+            const REJECT: &str = "REJECT\x00";
+            self.backend.key_buf()[0] = 0;
+
+            let mut tmp = self.backend.message_buf();
+            tmp.clear();
+
+            tmp.push_str(PIC::new(REJECT).into_inner());
+            self.backend.split_value_field(tmp);
+
+            self.page_idx = 0;
+            return Ok(());
+        }
+
+        loop {
             //be sure we are not out of bounds
             self.render_item(0)?;
 
@@ -236,37 +269,9 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
             }
 
             self.render_item(None)?;
-
-            self.item_count += 1;
-
             //if we have more than one page, if possible we should display
             // what page we are displaying currently and what's the total number of pages
-            if self.page_count > 1 {
-                let key = self.backend.key_buf();
-                let key_len = strlen(&key[..]);
-
-                if key_len < KS {
-                    use core::fmt::Write;
-                    //construct temporary new arraystring that will replace the current one
-                    let mut tmp = ArrayString::from_byte_string(&key).expect("key was not utf8");
-                    tmp.clear();
-
-                    let s_key = core::str::from_utf8(key).expect("key was not utf8");
-                    if write!(
-                        tmp,
-                        "{} [{}/{}]",
-                        &s_key[..key_len],
-                        self.page_idx + 1,
-                        self.page_count
-                    )
-                    .is_ok()
-                    {
-                        //we override only if ok so that we can keep the original
-                        // if an error occured while writing
-                        key[..tmp.len()].copy_from_slice(tmp.as_bytes());
-                    }
-                }
-            }
+            self.format_key_with_page();
 
             if self.page_count != 0 {
                 break;
@@ -278,17 +283,63 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         Ok(())
     }
 
+    fn format_key_with_page(&mut self) {
+        if self.page_count > 1 {
+            let key = self.backend.key_buf();
+            let key_len = strlen(&key[..]);
+
+            if key_len < KS {
+                let mut tmp = ArrayString::from_byte_string(&key).expect("key was not utf8");
+                tmp.truncate(key_len); //ignore the remaining null bytes (or garbage)
+
+                //this is unrolled equivalent of
+                // write!(&mut tmp, " [{}/{}]")
+                //if there's any error we return without having changed anything
+                use bolos_sys::pic::PIC;
+
+                if tmp.try_push_str(PIC::new(" [").into_inner()).is_err() {
+                    return;
+                }
+
+                if itoa::fmt(&mut tmp, self.page_idx + 1).is_err() {
+                    return;
+                }
+
+                if tmp.try_push_str(PIC::new("/").into_inner()).is_err() {
+                    return;
+                }
+
+                if itoa::fmt(&mut tmp, self.page_count).is_err() {
+                    return;
+                }
+
+                if tmp.try_push_str(PIC::new("]").into_inner()).is_err() {
+                    return;
+                }
+
+                //here we have `tmp` with the paging
+                //if it fits, then we override key with tmp
+                if tmp.len() < KS {
+                    key[..tmp.len()].copy_from_slice(tmp.as_bytes());
+                }
+            }
+        }
+    }
+
     //view_error_show
     fn show_error(&mut self) {
-        use core::fmt::Write;
+        use bolos_sys::pic::PIC;
 
-        const ERROR_KEY: &[u8; 5] = b"ERROR";
+        const ERROR_KEY: &[u8; 6] = b"ERROR\x00";
+        const ERROR_MESSAGE: &str = "SHOWING DATA\x00";
 
         let key = self.backend.key_buf();
-        key[..ERROR_KEY.len()].copy_from_slice(ERROR_KEY);
+        key[..ERROR_KEY.len()].copy_from_slice(PIC::new(ERROR_KEY).into_inner());
 
         let mut message = self.backend.message_buf();
-        write!(message, "SHOWING DATA").expect("unable to write message");
+        message.clear(); //we want to reset it since it's initialized with zeroes otherwise
+        message.push_str(PIC::new(ERROR_MESSAGE).into_inner());
+
         self.backend.split_value_field(message);
 
         self.backend.show_error();

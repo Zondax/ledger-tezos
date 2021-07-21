@@ -68,23 +68,110 @@ impl<T> PIC<T> {
         }
     }
 
-    pub fn into_inner(self) -> T {
+    // pub fn into_inner(self) -> T {
+    //     cfg_if::cfg_if! {
+    //         if #[cfg(bolos_sdk)] {
+    //             //no difference afaik from &mut and & in this case, since we consume self
+    //             let ptr = unsafe { super::raw::pic(&self.data as *const T as _) as *const T };
+
+    //             //we don't want to drop the old location
+    //             //if the location is unchanged then it will be dropped later anyways
+    //             core::mem::forget(self);
+
+    //             unsafe { ptr.read() }
+    //         } else {
+    //             self.data
+    //         }
+    //     }
+    // }
+}
+
+impl<'a> PIC<&'a str> {
+    pub fn into_inner(self) -> &'a str {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {
-                //no difference afaik from &mut and & in this case, since we consume self
-                let ptr = unsafe { super::raw::pic(&self.data as *const T as _) as *const T };
+                let data = self.data.as_bytes();
+                let data_len = data.len();
+
+                let ptr = unsafe { super::raw::pic(data.as_ptr() as _) as *const u8 };
+
+                let data = unsafe {
+                    core::slice::from_raw_parts(ptr, data_len)
+                };
+
+                //if this is not utf8 then it's invalid memory
+                let s = core::str::from_utf8(data).expect("picced string was garbage");
 
                 //we don't want to drop the old location
                 //if the location is unchanged then it will be dropped later anyways
                 core::mem::forget(self);
 
-                unsafe { ptr.read() }
+                s
             } else {
                 self.data
             }
         }
     }
 }
+
+impl<'a, T> PIC<&'a T> {
+    pub fn into_inner(self) -> &'a T {
+        cfg_if::cfg_if! {
+            if #[cfg(bolos_sdk)] {
+                let ptr = unsafe { super::raw::pic(self.data as *const T as _) as *const T };
+
+                //we don't want to drop the old location
+                //if the location is unchanged then it will be dropped later anyways
+                core::mem::forget(self);
+
+                unsafe { ptr.as_ref().unwrap() } //we know it can't be null
+            } else {
+                self.data
+            }
+        }
+    }
+}
+
+// ********************************************
+//this can't work (?Sized) because currently there's no stable way to do it generically
+// only via Pointee (unstable)
+
+// impl<'a, T: ?Sized> PIC<&'a T> {
+//     pub fn into_inner(self) -> &'a T {
+//         cfg_if::cfg_if! {
+//             if #[cfg(bolos_sdk)] {
+//                 let ptr = unsafe { super::raw::pic(self.data as *const T as _) as *const T };
+
+//                 //we don't want to drop the old location
+//                 //if the location is unchanged then it will be dropped later anyways
+//                 core::mem::forget(self);
+
+//                 unsafe { ptr.as_ref().unwrap() } //we know it can't be null
+//             } else {
+//                 self.data
+//             }
+//         }
+//     }
+// }
+
+// impl<'a, T: ?Sized> PIC<&'a mut T> {
+//     pub fn into_inner(self) -> &'a mut T {
+//         cfg_if::cfg_if! {
+//             if #[cfg(bolos_sdk)] {
+//                 let ptr = unsafe { super::raw::pic(self.data as *mut T as *const T as _) as *mut T };
+
+//                 //we don't want to drop the old location
+//                 //if the location is unchanged then it will be dropped later anyways
+//                 core::mem::forget(self);
+
+//                 unsafe { ptr.as_mut().unwrap() } //we know it can't be null
+//             } else {
+//                 self.data
+//             }
+//         }
+//     }
+// }
+// *****************************************
 
 impl PIC<()> {
     /// Apply pic manually, interpreting `ptr` as the actual pointer to an _unknwon_ type
