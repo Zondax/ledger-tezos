@@ -18,6 +18,7 @@ use crate::{
     ui::{manual_vtable::RefMutDynViewable, Viewable},
     ui_toolkit::{strlen, ZUI},
 };
+use bolos_sys::pic::PIC;
 
 use arrayvec::ArrayString;
 
@@ -76,23 +77,34 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         //compute len and split `message_buf` at the max line size or at the total len
         // if the total len is less than the size of 1 line
 
-        //include the null terminator (so we don't split_at 0 also)
-        let len = strlen(message_buf.as_bytes()) + 1;
-        let split = core::cmp::min(MESSAGE_LINE_SIZE, len);
-        let (line1, line2) = message_buf.split_at(split);
+        let len = strlen(message_buf.as_bytes());
+
+        let (line1, line2) = if len >= MESSAGE_LINE_SIZE {
+            //we need to split the buffer to fit in 2 lines
+            // at LINE_SIZE - 1 since we need to allow line1 to have it's null terminator
+            let (line1, line2) = message_buf.split_at(MESSAGE_LINE_SIZE - 1);
+
+            //drop the last byte of line2 as we will replace it with null terminator
+            // only problematic with line2 is empty, but in that case we wouldn't be splitting anyways
+            (line1, &line2[..line2.len() - 1])
+        } else {
+            //no need to split the buffer, so line 2 will be empty
+            (message_buf.as_str(), PIC::new("").into_inner())
+        };
 
         //write the 2 lines, so if the message was small enough to fit
         // on the first line
         // then the second line will stay empty
         self.value[..line1.len()].copy_from_slice(line1.as_bytes());
+        self.value[line1.len()] = 0;
 
-        self.value2[..line2.len()].copy_from_slice(line2.as_bytes());
+        self.value2[..line2.len()].copy_from_slice(&line2.as_bytes());
         self.value2[line2.len()] = 0; //make sure it's 0 terminated (line1 already is)
     }
 
     fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
         //FIXME: MENU_MAIN_APP_LINE2
-        let status = status.unwrap_or(&bolos_sys::pic::PIC::new(b"DO NOT USE\x00").get_ref()[..]);
+        let status = status.unwrap_or(&PIC::new(b"DO NOT USE\x00").get_ref()[..]);
 
         let len = core::cmp::min(self.key.len(), status.len());
         self.key[..len].copy_from_slice(&status[..len]);
