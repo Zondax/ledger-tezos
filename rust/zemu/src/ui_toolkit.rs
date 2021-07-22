@@ -49,7 +49,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         }
     }
 
-    fn approve(&mut self) {
+    pub(crate) fn approve(&mut self) {
         self.show_idle(0, None);
         self.backend.wait_ui();
 
@@ -66,7 +66,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         }
     }
 
-    fn reject(&mut self) {
+    pub(crate) fn reject(&mut self) {
         self.show_idle(0, None);
         self.backend.wait_ui();
 
@@ -83,7 +83,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         }
     }
 
-    fn paging_init(&mut self) {
+    pub(crate) fn paging_init(&mut self) {
         self.item_idx = 0;
         self.page_idx = 0;
         self.page_count = 0;
@@ -99,7 +99,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         at_least_one_page_left || at_least_one_non_action_item
     }
 
-    fn paging_increase(&mut self) {
+    pub(crate) fn paging_increase(&mut self) {
         if self.page_idx + 1 < self.page_count {
             //show next page
             self.page_idx += 1;
@@ -117,7 +117,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
         self.page_idx != 0 || self.item_idx > 0
     }
 
-    fn paging_decrease(&mut self) {
+    pub(crate) fn paging_decrease(&mut self) {
         //if we are not at the first page, then move to previous page
         if self.page_idx != 0 {
             self.page_idx -= 1;

@@ -15,9 +15,11 @@
 ********************************************************************************/
 use super::UIBackend;
 use crate::{
-    ui::{manual_vtable::RefMutDynViewable, Viewable, ViewError},
+    ui::{manual_vtable::RefMutDynViewable, ViewError, Viewable},
     ui_toolkit::{strlen, ZUI},
 };
+use bolos_sys::pic::PIC;
+
 use arrayvec::ArrayString;
 
 pub const KEY_SIZE: usize = 64;
@@ -39,6 +41,8 @@ pub struct NanoXBackend {
 
     viewable_size: usize,
     expert: bool,
+
+    flow_inside_loop: bool,
 }
 
 impl Default for NanoXBackend {
@@ -48,6 +52,62 @@ impl Default for NanoXBackend {
             message: [0; MESSAGE_SIZE],
             viewable_size: 0,
             expert: false,
+            flow_inside_loop: false,
+        }
+    }
+}
+
+impl NanoXBackend {
+    pub fn review_loop_start(&mut self, ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+        if self.flow_inside_loop {
+            //coming from right
+
+            if !ui.paging_can_decrease() {
+                //exit to the left
+                self.flow_inside_loop = false;
+                unsafe {
+                    bindings::crapoline_ux_flow_prev();
+                }
+
+                return;
+            }
+
+            ui.paging_decrease();
+        } else {
+            ui.paging_init();
+        }
+
+        Self::update_review(ui);
+
+        unsafe {
+            bindings::crapoline_ux_flow_next();
+        }
+    }
+
+    pub fn review_loop_end(&mut self, ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+        if self.flow_inside_loop {
+            //coming from left
+            ui.paging_increase();
+
+            match ui.review_update_data() {
+                Ok(_) => unsafe {
+                    bindings::crapoline_ux_layout_bnnn_paging_reset();
+                },
+                Err(ViewError::NoData) => {
+                    self.flow_inside_loop = false;
+                    unsafe {
+                        bindings::crapoline_ux_flow_next();
+                    }
+                }
+                Err(_) => ui.show_error(),
+            }
+        } else {
+            ui.paging_decrease();
+            Self::update_review(ui);
+        }
+
+        unsafe {
+            bindings::crapoline_ux_flow_relayout();
         }
     }
 }
@@ -83,29 +143,24 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
     }
 
     fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
-        let status = status.unwrap_or(b"DO NOT USE"); //FIXME: MENU_MAIN_APP_LINE2
+        //FIXME: MENU_MAIN_APP_LINE2
+        let status = status.unwrap_or(&PIC::new(b"DO NOT USE\x00").get_ref()[..]);
 
         self.key[..status.len()].copy_from_slice(status);
 
-        //FIXME:
-        // if(G_ux.stack_count == 0) {
-        //     ux_stack_push();
-        // }
-        // ux_flow_init(0, ux_idle_flow, NULL);
+        unsafe {
+            bindings::crapoline_ux_show_idle();
+        }
     }
 
     fn show_error(&mut self) {
-        //FIXME:
-        // ux_layout_bnnn_paging_reset);
-        // if (G_ux.stack_count == 0) {
-        //     ux_stack_push();
-        // }
-        // ux_flow_init(0, ux_error_flow, NULL);
+        unsafe {
+            bindings::crapoline_ux_show_error();
+        }
     }
 
-
     fn show_message(&mut self, _title: &str, _message: &str) {
-        //TODO
+        panic!("capability not supported on nanox yet?")
     }
 
     fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
@@ -114,12 +169,14 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         //not sure why this is here but ok
         ui.paging_decrease();
 
-        //FIXME:
-        // flow_inside_loop = 0;
-        // if G_ux.stack_count == 0 {
-        //     ux_stack_push();
-        // }
-        // ux_flow_init(0, ux_review_flow, NULL);
+        unsafe {
+            //we access the backend directly here instead
+            // of going thru RUST_ZUI since otherwise we don't have access
+            // to this functionality
+            BACKEND.flow_inside_loop = false;
+
+            bindings::crapoline_ux_show_review();
+        }
     }
 
     fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
@@ -132,7 +189,9 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
     }
 
     fn wait_ui(&mut self) {
-        //FIXME: UX_WAIT
+        unsafe {
+            bindings::crapoline_ux_wait();
+        }
     }
 
     fn expert(&self) -> bool {
@@ -141,6 +200,10 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
 
     fn toggle_expert(&mut self) {
         self.expert = !self.expert;
+
+        unsafe {
+            bindings::crapoline_ux_flow_init_idle_flow_toggle_expert();
+        }
     }
 
     fn accept_reject_out(&mut self) -> &mut [u8] {
@@ -153,7 +216,9 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         use bolos_sys::raw::{io_exchange, CHANNEL_APDU, IO_RETURN_AFTER_TX};
 
         // Safety: simple C call
-        unsafe { io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, len as u16); }
+        unsafe {
+            io_exchange((CHANNEL_APDU | IO_RETURN_AFTER_TX) as u8, len as u16);
+        }
     }
 
     fn store_viewable<V: Viewable + Sized + 'static>(
@@ -188,4 +253,68 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
 
 mod cabi {
     use super::*;
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_expert_toggle() {
+        RUST_ZUI.backend.toggle_expert();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_expert_update() {
+        RUST_ZUI.backend.update_expert();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn view_idle_show_impl(item_idx: u8, status: *mut i8) {
+        let status = if status.is_null() {
+            None
+        } else {
+            let len = crate::ui_toolkit::c_strlen(status as *const u8);
+
+            Some(unsafe { core::slice::from_raw_parts(status as *const u8, len) })
+        };
+
+        RUST_ZUI.show_idle(item_idx as usize, status)
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_approve(_: cty::c_uint) {
+        RUST_ZUI.approve();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_reject(_: cty::c_uint) {
+        RUST_ZUI.reject();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_review_loop_start() {
+        BACKEND.review_loop_start(&mut RUST_ZUI)
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_review_loop_inside() {
+        BACKEND.flow_inside_loop = true;
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_review_loop_end() {
+        BACKEND.review_loop_end(&mut RUST_ZUI)
+    }
+}
+
+mod bindings {
+    use super::*;
+
+    extern "C" {
+        pub fn crapoline_ux_wait();
+        pub fn crapoline_ux_flow_init_idle_flow_toggle_expert();
+        pub fn crapoline_ux_show_review();
+        pub fn crapoline_ux_show_error();
+        pub fn crapoline_ux_show_idle();
+        pub fn crapoline_ux_flow_prev();
+        pub fn crapoline_ux_flow_next();
+        pub fn crapoline_ux_layout_bnnn_paging_reset();
+        pub fn crapoline_ux_flow_relayout();
+    }
 }
