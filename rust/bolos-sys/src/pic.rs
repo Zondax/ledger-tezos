@@ -24,7 +24,7 @@ use core::ops::{Deref, DerefMut};
 ///
 /// # Example
 /// ```
-/// # use bolos_sys::pic::PIC;
+/// # use bolos::pic::PIC;
 /// //BUFFER is a `static` so we need to wrap it with PIC so it would
 /// //be accessible when running under BOLOS
 /// #[bolos::pic]
