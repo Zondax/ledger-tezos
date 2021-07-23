@@ -21,9 +21,7 @@ use zemu_sys::{Show, ViewError, Viewable};
 use crate::{
     constants::ApduError as Error,
     crypto,
-    dispatcher::{
-        ApduHandler, INS_GET_ADDRESS, INS_LEGACY_GET_PUBLIC_KEY, INS_LEGACY_PROMPT_PUBLIC_KEY,
-    },
+    dispatcher::ApduHandler,
     sys::{self, Error as SysError},
     utils::ApduBufferRead,
 };
@@ -41,77 +39,6 @@ impl GetAddress {
         let mut pkey = curve.to_secret(path).into_public()?;
         pkey.compress().map(|_| pkey)
     }
-
-    #[inline(never)]
-    fn get_public_and_address(
-        key: crypto::PublicKey,
-        req_confirmation: bool,
-        buffer: &mut [u8],
-        flags: &mut u32,
-    ) -> Result<u32, Error> {
-        sys::zemu_log_stack("GetAddres::get_public_and_address\x00");
-
-        let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?;
-        let mut ui = AddrUI {
-            addr,
-            pkey: key,
-            with_addr: true,
-        };
-        if req_confirmation {
-            unsafe { ui.show(flags) }
-                .map_err(|_| Error::ExecutionError)
-                .map(|_| 0)
-        } else {
-            //we don't need to show so we execute the "accept" already
-            // this way the "formatting" to `buffer` is all in the ui code
-            let (sz, code) = ui.accept(buffer);
-
-            if code != Error::Success as _ {
-                Err(Error::try_from(code).map_err(|_| Error::ExecutionError)?)
-            } else {
-                Ok(sz as u32)
-            }
-        }
-    }
-
-    #[inline(never)]
-    fn legacy_get_public(key: crypto::PublicKey, buffer: &mut [u8]) -> Result<u32, Error> {
-        let key = key.as_ref();
-        let len = key.len();
-        buffer[..len].copy_from_slice(&key);
-        Ok(len as u32)
-    }
-
-    #[inline(never)]
-    fn legacy_prompt_address_get_public(
-        key: crypto::PublicKey,
-        _buffer: &mut [u8],
-        flags: &mut u32,
-    ) -> Result<u32, Error> {
-        let addr = Addr::new(&key).map_err(|_| Error::DataInvalid)?;
-
-        let ui = AddrUI {
-            addr,
-            pkey: key,
-            with_addr: false,
-        };
-
-        unsafe { ui.show(flags) }
-            .map_err(|_| Error::ExecutionError)
-            .map(|_| 0)
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-enum Action {
-    //NEW API: return concat(public_key,address)
-    GetPublicAndAddress,
-
-    //LEGACY API: return only public_key
-    LegacyGetPublic,
-
-    //LEGACY API: prompt user with address and if okay return public_key
-    LegacyPromptAddressButGetPublic,
 }
 
 impl ApduHandler for GetAddress {
@@ -124,17 +51,6 @@ impl ApduHandler for GetAddress {
         sys::zemu_log_stack("GetAddress::handle\x00");
 
         *tx = 0;
-        let action = match buffer.ins() {
-            INS_GET_ADDRESS => Action::GetPublicAndAddress,
-            INS_LEGACY_GET_PUBLIC_KEY => Action::LegacyGetPublic,
-            INS_LEGACY_PROMPT_PUBLIC_KEY => Action::LegacyPromptAddressButGetPublic,
-            _ => return Err(Error::InsNotSupported),
-        };
-
-        if let Action::LegacyGetPublic = action {
-            //TODO: require_hid ?
-            // see: https://github.com/Zondax/ledger-tezos/issues/35
-        }
 
         let req_confirmation = buffer.p1() >= 1;
         let curve = crypto::Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
@@ -145,18 +61,24 @@ impl ApduHandler for GetAddress {
 
         let key = Self::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
 
-        let buffer = buffer.write();
-        *tx = match action {
-            Action::GetPublicAndAddress => {
-                Self::get_public_and_address(key, req_confirmation, buffer, flags)?
-            }
-            Action::LegacyGetPublic => Self::legacy_get_public(key, buffer)?,
-            Action::LegacyPromptAddressButGetPublic => {
-                Self::legacy_prompt_address_get_public(key, buffer, flags)?
-            }
-        };
+        let mut ui = Addr::new(&key)
+            .map_err(|_| Error::DataInvalid)?
+            .into_ui(key, true);
 
-        Ok(())
+        if req_confirmation {
+            unsafe { ui.show(flags) }.map_err(|_| Error::ExecutionError)
+        } else {
+            //we don't need to show so we execute the "accept" already
+            // this way the "formatting" to `buffer` is all in the ui code
+            let (sz, code) = ui.accept(buffer.write());
+
+            if code != Error::Success as _ {
+                Err(Error::try_from(code).map_err(|_| Error::ExecutionError)?)
+            } else {
+                *tx = sz as u32;
+                Ok(())
+            }
+        }
     }
 }
 
@@ -232,9 +154,17 @@ impl Addr {
 
         out
     }
+
+    pub fn into_ui(self, pkey: crypto::PublicKey, with_addr: bool) -> AddrUI {
+        AddrUI {
+            addr: self,
+            pkey,
+            with_addr,
+        }
+    }
 }
 
-struct AddrUI {
+pub struct AddrUI {
     addr: Addr,
     pkey: crypto::PublicKey,
 

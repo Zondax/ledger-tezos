@@ -16,12 +16,8 @@ use crate::handlers::parser_common::ParserError;
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::{self, Curve},
-    dispatcher::{
-        ApduHandler, INS_AUTHORIZE_BAKING, INS_BAKER_SIGN, INS_DEAUTHORIZE_BAKING,
-        INS_LEGACY_AUTHORIZE_BAKING, INS_LEGACY_DEAUTHORIZE, INS_LEGACY_QUERY_AUTH_KEY,
-        INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE, INS_QUERY_AUTH_KEY, INS_QUERY_AUTH_KEY_WITH_CURVE,
-    },
-    handlers::hwm::{LegacyHWM, WaterMark},
+    dispatcher::ApduHandler,
+    handlers::hwm::{WaterMark, HWM},
     handlers::public_key::GetAddress,
     sys::{self, flash_slot::Wear, new_flash_slot},
     utils::{ApduBufferRead, Uploader},
@@ -31,19 +27,6 @@ use bolos::flash_slot::WearError;
 const N_PAGES_BAKINGPATH: usize = 1;
 
 type WearLeveller = Wear<'static, N_PAGES_BAKINGPATH>;
-
-#[derive(Debug, Clone, Copy)]
-enum Action {
-    AuthorizeBaking,
-    LegacyAuthorize,
-    DeAuthorizeBaking,
-    LegacyDeAuthorize,
-    QueryAuthKey,
-    LegacyQueryAuthKey,
-    QueryAuthKeyWithCurve,
-    LegacyQueryAuthKeyWithCurve,
-    BakerSign,
-}
 
 //TODO: move this to other file??
 #[repr(u8)]
@@ -282,81 +265,6 @@ impl Baking {
         }
     }
 
-    #[inline(never)]
-    fn deauthorize_baking(req_confirmation: bool) -> Result<u32, Error> {
-        if !req_confirmation {
-            return Err(Error::ApduCodeConditionsNotSatisfied);
-        }
-        //TODO: show confirmation of deletion on screen
-        //FIXME: check if we need to format the HWM??
-        LegacyHWM::format()?;
-        Self::check_and_delete_path()?;
-        Ok(0)
-    }
-
-    #[inline(never)]
-    fn authorize_baking(req_confirmation: bool, buffer: ApduBufferRead<'_>) -> Result<u32, Error> {
-        if !req_confirmation {
-            return Err(Error::ApduCodeConditionsNotSatisfied);
-        }
-
-        let curve = crypto::Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
-
-        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
-        let bip32_path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(cdata)
-            .map_err(|_| Error::DataInvalid)?;
-
-        let key = GetAddress::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
-        let path_and_data = Bip32PathAndCurve::new(curve, bip32_path);
-        Self::check_and_store_path(path_and_data)?;
-
-        let buffer = buffer.write();
-        let pk_len = Self::get_public(key, &mut buffer[1..])?;
-        buffer[0] = pk_len as u8;
-
-        LegacyHWM::reset(0).map_err(|_| Error::Busy)?;
-
-        Ok(pk_len + 1)
-    }
-
-    #[inline(never)]
-    fn query_authkey(req_confirmation: bool, buffer: &mut [u8]) -> Result<u32, Error> {
-        if req_confirmation {
-            //TODO show confirmation on screen??
-        }
-        //Check if the current baking path in NVM is initialized
-        let current_path =
-            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
-        //path seems to be initialized so we can return it
-        //check if it is a good path
-        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        Bip32PathAndCurve::try_from_bytes(&current_path)?;
-
-        let bip32_pathsize = current_path[1] as usize;
-
-        buffer[0..1 + 4 * bip32_pathsize].copy_from_slice(&current_path[1..2 + 4 * bip32_pathsize]);
-        Ok(1 + 4 * bip32_pathsize as u32)
-    }
-
-    #[inline(never)]
-    fn query_authkey_withcurve(req_confirmation: bool, buffer: &mut [u8]) -> Result<u32, Error> {
-        if req_confirmation {
-            //TODO show confirmation on screen??
-        }
-        //Check if the current baking path in NVM is initialized
-        let current_path =
-            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
-        //path seems to be initialized so we can return it
-        //check if it is a good path
-        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        Bip32PathAndCurve::try_from_bytes(&current_path)?;
-
-        let bip32_pathsize = current_path[1] as usize;
-
-        buffer[0..2 + 4 * bip32_pathsize].copy_from_slice(&current_path[0..2 + 4 * bip32_pathsize]);
-        Ok(2 + 4 * bip32_pathsize as u32)
-    }
-
     //FIXME: grab this from signing.rs
     #[inline(never)]
     fn blake2b_digest(buffer: &[u8]) -> Result<[u8; 32], Error> {
@@ -393,7 +301,7 @@ impl Baking {
             Self::check_with_nvm_pathandcurve(&curve, &path)?;
 
             unsafe { PATH.replace((path, curve)) };
-            let hw = LegacyHWM::read()?;
+            let hw = HWM::read()?;
             //do watermarks checks
 
             let cdata = upload.data;
@@ -643,7 +551,7 @@ impl Viewable for BakingSignUI {
             level: blocklevel,
             endorsement: is_endorsement,
         };
-        match LegacyHWM::write(new_hw) {
+        match HWM::write(new_hw) {
             Err(_) => return (0, Error::ExecutionError as _),
             Ok(()) => (),
         }
@@ -700,45 +608,147 @@ fn cleanup_globals() -> Result<(), Error> {
     Ok(())
 }
 
-impl ApduHandler for Baking {
+pub struct AuthorizeBaking;
+pub struct DeAuthorizeBaking;
+pub struct QueryAuthKey;
+pub struct QueryAuthKeyWithCurve;
+pub struct BakerSign;
+
+impl ApduHandler for AuthorizeBaking {
+    #[inline(never)]
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
+
+        let req_confirmation = buffer.p1() >= 1;
+
+        if !req_confirmation {
+            return Err(Error::ApduCodeConditionsNotSatisfied);
+        }
+
+        let curve = crypto::Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
+
+        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
+        let bip32_path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(cdata)
+            .map_err(|_| Error::DataInvalid)?;
+
+        let key = GetAddress::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
+        let path_and_data = Bip32PathAndCurve::new(curve, bip32_path);
+        Baking::check_and_store_path(path_and_data)?;
+
+        let buffer = buffer.write();
+        let pk_len = Baking::get_public(key, &mut buffer[1..])?;
+        buffer[0] = pk_len as u8;
+
+        HWM::reset(0).map_err(|_| Error::Busy)?;
+
+        *tx = pk_len + 1;
+
+        Ok(())
+    }
+}
+
+impl ApduHandler for DeAuthorizeBaking {
+    #[inline(never)]
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
+
+        let req_confirmation = buffer.p1() >= 1;
+
+        if !req_confirmation {
+            return Err(Error::ApduCodeConditionsNotSatisfied);
+        }
+
+        //TODO: show confirmation of deletion on screen
+        //FIXME: check if we need to format the HWM??
+        HWM::format()?;
+        Baking::check_and_delete_path()?;
+
+        Ok(())
+    }
+}
+
+impl ApduHandler for QueryAuthKey {
+    #[inline(never)]
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
+
+        let req_confirmation = buffer.p1() >= 1;
+
+        if req_confirmation {
+            //TODO show confirmation on screen??
+        }
+        //Check if the current baking path in NVM is initialized
+        let current_path =
+            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
+        //path seems to be initialized so we can return it
+        //check if it is a good path
+        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
+        Bip32PathAndCurve::try_from_bytes(&current_path)?;
+
+        let bip32_pathsize = current_path[1] as usize;
+
+        let buffer = buffer.write();
+        buffer[0..1 + 4 * bip32_pathsize].copy_from_slice(&current_path[1..2 + 4 * bip32_pathsize]);
+
+        *tx = 1 + 4 * bip32_pathsize as u32;
+        Ok(())
+    }
+}
+
+impl ApduHandler for QueryAuthKeyWithCurve {
+    #[inline(never)]
+    fn handle<'apdu>(
+        _: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        *tx = 0;
+
+        let req_confirmation = buffer.p1() >= 1;
+
+        if req_confirmation {
+            //TODO show confirmation on screen??
+        }
+        //Check if the current baking path in NVM is initialized
+        let current_path =
+            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
+        //path seems to be initialized so we can return it
+        //check if it is a good path
+        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
+        Bip32PathAndCurve::try_from_bytes(&current_path)?;
+
+        let bip32_pathsize = current_path[1] as usize;
+
+        let buffer = buffer.write();
+        buffer[0..2 + 4 * bip32_pathsize].copy_from_slice(&current_path[0..2 + 4 * bip32_pathsize]);
+        *tx = 2 + 4 * bip32_pathsize as u32;
+
+        Ok(())
+    }
+}
+
+impl ApduHandler for BakerSign {
     #[inline(never)]
     fn handle<'apdu>(
         flags: &mut u32,
         tx: &mut u32,
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), Error> {
-        sys::zemu_log_stack("Baking::handle\x00");
-
         *tx = 0;
-        let action = match buffer.ins() {
-            INS_AUTHORIZE_BAKING => Action::AuthorizeBaking,
-            INS_LEGACY_AUTHORIZE_BAKING => Action::LegacyAuthorize,
-            INS_LEGACY_DEAUTHORIZE => Action::LegacyDeAuthorize,
-            INS_DEAUTHORIZE_BAKING => Action::DeAuthorizeBaking,
-            INS_QUERY_AUTH_KEY => Action::QueryAuthKey,
-            INS_LEGACY_QUERY_AUTH_KEY => Action::LegacyQueryAuthKey,
-            INS_QUERY_AUTH_KEY_WITH_CURVE => Action::QueryAuthKeyWithCurve,
-            INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => Action::LegacyQueryAuthKeyWithCurve,
-            INS_BAKER_SIGN => Action::BakerSign,
-            _ => return Err(Error::InsNotSupported),
-        };
 
-        let req_confirmation = buffer.p1() >= 1;
-
-        *tx = match action {
-            Action::AuthorizeBaking => Self::authorize_baking(req_confirmation, buffer)?,
-            Action::DeAuthorizeBaking => Self::deauthorize_baking(req_confirmation)?,
-            Action::QueryAuthKey => Self::query_authkey(req_confirmation, buffer.write())?,
-            Action::QueryAuthKeyWithCurve => {
-                Self::query_authkey_withcurve(req_confirmation, buffer.write())?
-            }
-            Action::BakerSign => Self::baker_sign(buffer, flags)?,
-
-            Action::LegacyAuthorize
-            | Action::LegacyDeAuthorize
-            | Action::LegacyQueryAuthKey
-            | Action::LegacyQueryAuthKeyWithCurve => return Err(Error::CommandNotAllowed),
-        };
+        *tx = Baking::baker_sign(buffer, flags)?;
 
         Ok(())
     }
