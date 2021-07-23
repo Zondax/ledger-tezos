@@ -229,7 +229,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
             + 1;
         self.page_count = 1;
 
-        if B::INCLUDE_ACTIONS_COUNT == 2 {
+        if B::INCLUDE_ACTIONS_COUNT == 1 {
             if self.is_accept_item() {
                 //put approve label as message
                 // and clear key

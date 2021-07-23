@@ -84,14 +84,10 @@ impl UIBackend<KEY_SIZE> for NanoSBackend {
         let (line1, line2) = if len >= MESSAGE_LINE_SIZE {
             //we need to split the buffer to fit in 2 lines
             // at LINE_SIZE - 1 since we need to allow line1 to have it's null terminator
-            let (line1, line2) = message_buf.split_at(MESSAGE_LINE_SIZE - 1);
-
-            //drop the last byte of line2 as we will replace it with null terminator
-            // only problematic with line2 is empty, but in that case we wouldn't be splitting anyways
-            (line1, &line2[..line2.len() - 1])
+            message_buf[..len].split_at(MESSAGE_LINE_SIZE - 1)
         } else {
             //no need to split the buffer, so line 2 will be empty
-            (message_buf.as_str(), PIC::new("").into_inner())
+            (&message_buf[..len], PIC::new("\x00").into_inner())
         };
 
         //write the 2 lines, so if the message was small enough to fit
