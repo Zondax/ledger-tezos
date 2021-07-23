@@ -172,7 +172,6 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
     //calls viewable's render_item and makes sure the invariants of the backend are held
     fn render_item(&mut self, page_idx: impl Into<Option<usize>>) -> Result<(), ViewError> {
         let viewable = self.current_viewable.as_mut().ok_or(ViewError::NoData)?;
-        zemu_log_stack("got current viewable render item\x00");
 
         let page_idx = page_idx.into().unwrap_or(self.page_idx) as u8;
 
@@ -283,10 +282,10 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
             // what page we are displaying currently and what's the total number of pages
             self.format_key_with_page();
 
-            if self.page_count != 0 {
-                break;
-            } else {
+            if self.page_count == 0 {
                 self.paging_increase();
+            } else {
+                break;
             }
         }
 
@@ -340,12 +339,13 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
     fn show_error(&mut self) {
         use bolos_sys::pic::PIC;
 
-        const ERROR_KEY: &[u8; 6] = b"ERROR\x00";
+        const ERROR_KEY: &str = "ERROR\x00";
         const ERROR_MESSAGE: &str = "SHOWING DATA\x00";
+        let error_key = PIC::new(ERROR_KEY).into_inner().as_bytes();
         let error_message = PIC::new(ERROR_MESSAGE).into_inner().as_bytes();
 
         let key = self.backend.key_buf();
-        key[..ERROR_KEY.len()].copy_from_slice(PIC::new(ERROR_KEY).into_inner());
+        key[..error_key.len()].copy_from_slice(error_key);
 
         let mut message = self.backend.message_buf();
 

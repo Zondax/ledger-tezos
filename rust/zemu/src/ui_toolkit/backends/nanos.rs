@@ -171,10 +171,13 @@ impl UIBackend<KEY_SIZE> for NanoSBackend {
 
     fn toggle_expert(&mut self) {
         self.expert = !self.expert;
+
+        self.show_idle(1, None);
     }
 
     fn update_expert(&mut self) {
-        let msg = if self.expert { "enabled" } else { "disabled" };
+        let msg = if self.expert { "enabled\x00" } else { "disabled\x00" };
+        let msg = PIC::new(msg).into_inner();
 
         self.value[..msg.len()].copy_from_slice(msg.as_bytes());
     }

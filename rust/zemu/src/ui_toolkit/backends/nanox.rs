@@ -123,7 +123,8 @@ impl UIBackend<KEY_SIZE> for NanoXBackend {
     }
 
     fn update_expert(&mut self) {
-        let msg = if self.expert { "enabled" } else { "disabled" };
+        let msg = if self.expert { "enabled\x00" } else { "disabled\x00" };
+        let msg = PIC::new(msg).into_inner();
 
         self.message[..msg.len()].copy_from_slice(msg.as_bytes());
     }
