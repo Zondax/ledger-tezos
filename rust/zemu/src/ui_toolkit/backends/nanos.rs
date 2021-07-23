@@ -31,7 +31,7 @@ const INCLUDE_ACTIONS_AS_ITEMS: usize = 2;
 const INCLUDE_ACTIONS_COUNT: usize = INCLUDE_ACTIONS_AS_ITEMS - 1;
 
 #[bolos_derive::lazy_static]
-pub static mut RUST_ZUI: ZUI<NanoSBackend, KEY_SIZE, MESSAGE_SIZE> = ZUI::new();
+pub static mut RUST_ZUI: ZUI<NanoSBackend, KEY_SIZE> = ZUI::new();
 
 #[bolos_derive::lazy_static(cbindgen)]
 static mut BACKEND: NanoSBackend = NanoSBackend::default();
@@ -58,7 +58,9 @@ impl Default for NanoSBackend {
     }
 }
 
-impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
+impl UIBackend<KEY_SIZE> for NanoSBackend {
+    type MessageBuf = ArrayString<MESSAGE_SIZE>;
+
     const INCLUDE_ACTIONS_COUNT: usize = INCLUDE_ACTIONS_COUNT;
 
     fn static_mut() -> &'static mut Self {
@@ -69,11 +71,11 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         &mut self.key
     }
 
-    fn message_buf(&self) -> ArrayString<MESSAGE_SIZE> {
+    fn message_buf(&self) -> Self::MessageBuf {
         ArrayString::from_byte_string(&[0; MESSAGE_SIZE]).expect("0x00 is not valid utf8?")
     }
 
-    fn split_value_field(&mut self, message_buf: ArrayString<MESSAGE_SIZE>) {
+    fn split_value_field(&mut self, message_buf: Self::MessageBuf) {
         //compute len and split `message_buf` at the max line size or at the total len
         // if the total len is less than the size of 1 line
 
@@ -137,7 +139,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         }
     }
 
-    fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+    fn show_review(ui: &mut ZUI<Self, KEY_SIZE>) {
         //reset ui struct
         ui.paging_init();
 
@@ -149,7 +151,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoSBackend {
         }
     }
 
-    fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+    fn update_review(ui: &mut ZUI<Self, KEY_SIZE>) {
         match ui.review_update_data() {
             Ok(_) => unsafe {
                 bindings::crapoline_ux_display_view_review();

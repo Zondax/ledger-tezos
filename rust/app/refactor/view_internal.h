@@ -70,6 +70,7 @@ typedef struct {
 } view_t;
 
 #if defined(TARGET_NANOS)
+
 typedef struct NanoSBackend {
   uint8_t key[18];
   uint8_t value[18];
@@ -79,7 +80,19 @@ typedef struct NanoSBackend {
 } NanoSBackend;
 
 extern struct NanoSBackend BACKEND_LAZY;
-void rs_h_expert_toggle(void);
+
+#elif defined (TARGET_NANOX)
+
+typedef struct NanoXBackend {
+  uint8_t key[64];
+  uint8_t message[4096];
+  uintptr_t viewable_size;
+  bool expert;
+  bool flow_inside_loop;
+} NanoXBackend;
+
+extern struct NanoXBackend BACKEND_LAZY;
+
 #endif
 
 typedef enum {

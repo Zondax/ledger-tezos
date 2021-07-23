@@ -29,7 +29,7 @@ pub const MESSAGE_SIZE: usize = 4096;
 const INCLUDE_ACTIONS_COUNT: usize = 0;
 
 #[bolos_derive::lazy_static]
-pub static mut RUST_ZUI: ZUI<NanoXBackend, KEY_SIZE, MESSAGE_SIZE> = ZUI::new();
+pub static mut RUST_ZUI: ZUI<NanoXBackend, KEY_SIZE> = ZUI::new();
 
 #[bolos_derive::lazy_static(cbindgen)]
 static mut BACKEND: NanoXBackend = NanoXBackend::default();
@@ -58,7 +58,7 @@ impl Default for NanoXBackend {
 }
 
 impl NanoXBackend {
-    pub fn review_loop_start(&mut self, ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+    pub fn review_loop_start(&mut self, ui: &mut ZUI<Self, KEY_SIZE>) {
         if self.flow_inside_loop {
             //coming from right
 
@@ -84,7 +84,7 @@ impl NanoXBackend {
         }
     }
 
-    pub fn review_loop_end(&mut self, ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+    pub fn review_loop_end(&mut self, ui: &mut ZUI<Self, KEY_SIZE>) {
         if self.flow_inside_loop {
             //coming from left
             ui.paging_increase();
@@ -98,6 +98,7 @@ impl NanoXBackend {
                     unsafe {
                         bindings::crapoline_ux_flow_next();
                     }
+                    return;
                 }
                 Err(_) => ui.show_error(),
             }
@@ -112,7 +113,9 @@ impl NanoXBackend {
     }
 }
 
-impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
+impl UIBackend<KEY_SIZE> for NanoXBackend {
+    type MessageBuf = &'static mut str;
+
     const INCLUDE_ACTIONS_COUNT: usize = 0;
 
     fn static_mut() -> &'static mut Self {
@@ -129,18 +132,13 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         &mut self.key
     }
 
-    fn message_buf(&self) -> ArrayString<MESSAGE_SIZE> {
-        ArrayString::from_byte_string(&[0; MESSAGE_SIZE]).expect("0x00 is not valid utf8?")
+    fn message_buf(&self) -> &'static mut str {
+        core::str::from_utf8_mut(&mut Self::static_mut().message)
+        //this should never happen as we always asciify
+            .expect("message wasn't valid utf8")
     }
 
-    fn split_value_field(&mut self, message_buf: ArrayString<MESSAGE_SIZE>) {
-        let mlen = message_buf.len();
-        if mlen == 0 {
-            self.message[0] = b' ';
-        } else {
-            self.message[..mlen].copy_from_slice(message_buf.as_bytes())
-        }
-    }
+    fn split_value_field(&mut self, _: &'static mut str) {}
 
     fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
         //FIXME: MENU_MAIN_APP_LINE2
@@ -163,7 +161,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         panic!("capability not supported on nanox yet?")
     }
 
-    fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+    fn show_review(ui: &mut ZUI<Self, KEY_SIZE>) {
         //reset ui struct
         ui.paging_init();
         //not sure why this is here but ok
@@ -179,7 +177,7 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for NanoXBackend {
         }
     }
 
-    fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+    fn update_review(ui: &mut ZUI<Self, KEY_SIZE>) {
         match ui.review_update_data() {
             Ok(_) | Err(ViewError::NoData) => {}
             Err(_) => {

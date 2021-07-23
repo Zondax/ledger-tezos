@@ -17,7 +17,7 @@ use arrayvec::ArrayString;
 ********************************************************************************/
 use crate::{
     ui::{manual_vtable::RefMutDynViewable, Viewable},
-    ShowTooBig, ViewError,
+    zemu_log_stack, ShowTooBig, ViewError,
 };
 
 mod backends;
@@ -25,7 +25,7 @@ use backends::UIBackend;
 pub use backends::RUST_ZUI;
 
 #[repr(C)]
-pub struct ZUI<B: UIBackend<KS, MS> + 'static, const KS: usize, const MS: usize> {
+pub struct ZUI<B: UIBackend<KS> + 'static, const KS: usize> {
     item_idx: usize,
     item_count: usize,
 
@@ -37,7 +37,7 @@ pub struct ZUI<B: UIBackend<KS, MS> + 'static, const KS: usize, const MS: usize>
     current_viewable: Option<RefMutDynViewable>,
 }
 
-impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
+impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
     pub fn new() -> Self {
         Self {
             item_idx: 0,
@@ -172,6 +172,7 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
     //calls viewable's render_item and makes sure the invariants of the backend are held
     fn render_item(&mut self, page_idx: impl Into<Option<usize>>) -> Result<(), ViewError> {
         let viewable = self.current_viewable.as_mut().ok_or(ViewError::NoData)?;
+        zemu_log_stack("got current viewable render item\x00");
 
         let page_idx = page_idx.into().unwrap_or(self.page_idx) as u8;
 
@@ -224,39 +225,48 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
             .current_viewable
             .as_mut()
             .ok_or(ViewError::NoData)?
-            .num_items()? as usize + 1;
+            .num_items()? as usize
+            + 1;
         self.page_count = 1;
 
-        if self.is_accept_item() {
-            //put approve label as message
-            // and clear key
+        if B::INCLUDE_ACTIONS_COUNT == 2 {
+            if self.is_accept_item() {
+                //put approve label as message
+                // and clear key
 
-            const APPROVE: &str = "APPROVE\x00";
-            self.backend.key_buf()[0] = 0;
+                const APPROVE: &str = "APPROVE\x00";
+                let approve = PIC::new(APPROVE).into_inner().as_bytes();
+                self.backend.key_buf()[0] = 0;
 
-            let mut tmp = self.backend.message_buf();
-            tmp.clear();
+                let mut tmp = self.backend.message_buf();
 
-            tmp.push_str(PIC::new(APPROVE).into_inner());
-            self.backend.split_value_field(tmp);
+                //Safety: this is safe because we write known valid UTF-8 values here
+                let tmp_s = unsafe { tmp.as_bytes_mut() };
+                tmp_s[..approve.len()].copy_from_slice(approve);
 
-            self.page_idx = 0;
-            return Ok(());
-        } else if self.is_reject_item() {
-            //put reject label as message
-            // and clear key
+                self.backend.split_value_field(tmp);
 
-            const REJECT: &str = "REJECT\x00";
-            self.backend.key_buf()[0] = 0;
+                self.page_idx = 0;
+                return Ok(());
+            } else if self.is_reject_item() {
+                //put reject label as message
+                // and clear key
 
-            let mut tmp = self.backend.message_buf();
-            tmp.clear();
+                const REJECT: &str = "REJECT\x00";
+                let reject = PIC::new(REJECT).into_inner().as_bytes();
+                self.backend.key_buf()[0] = 0;
 
-            tmp.push_str(PIC::new(REJECT).into_inner());
-            self.backend.split_value_field(tmp);
+                let mut tmp = self.backend.message_buf();
 
-            self.page_idx = 0;
-            return Ok(());
+                //Safety: this is safe because we write known valid UTF-8 values here
+                let tmp_s = unsafe { tmp.as_bytes_mut() };
+                tmp_s[..reject.len()].copy_from_slice(reject);
+
+                self.backend.split_value_field(tmp);
+
+                self.page_idx = 0;
+                return Ok(());
+            }
         }
 
         loop {
@@ -332,13 +342,16 @@ impl<B: UIBackend<KS, MS>, const KS: usize, const MS: usize> ZUI<B, KS, MS> {
 
         const ERROR_KEY: &[u8; 6] = b"ERROR\x00";
         const ERROR_MESSAGE: &str = "SHOWING DATA\x00";
+        let error_message = PIC::new(ERROR_MESSAGE).into_inner().as_bytes();
 
         let key = self.backend.key_buf();
         key[..ERROR_KEY.len()].copy_from_slice(PIC::new(ERROR_KEY).into_inner());
 
         let mut message = self.backend.message_buf();
-        message.clear(); //we want to reset it since it's initialized with zeroes otherwise
-        message.push_str(PIC::new(ERROR_MESSAGE).into_inner());
+
+        //Safety: this is safe because we write known valid UTF-8 values here
+        let tmp_s = unsafe { message.as_bytes_mut() };
+        tmp_s[..error_message.len()].copy_from_slice(error_message);
 
         self.backend.split_value_field(message);
 

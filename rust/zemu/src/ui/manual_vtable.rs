@@ -139,7 +139,7 @@ impl<T: Viewable> From<&'_ mut T> for RefMutDynViewable {
     fn from(it: &mut T) -> Self {
         Self {
             ptr: ptr::NonNull::from(it).cast(),
-            vtable: &<T as ViewableWithVTable>::VTABLE,
+            vtable: PIC::new(&<T as ViewableWithVTable>::VTABLE).into_inner(),
         }
     }
 }

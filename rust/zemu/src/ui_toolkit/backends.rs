@@ -13,12 +13,16 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use core::ops::DerefMut;
+
 use crate::ui::{manual_vtable::RefMutDynViewable, Viewable};
 use arrayvec::ArrayString;
 
 use super::ZUI;
 
-pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized {
+pub trait UIBackend<const KEY_SIZE: usize>: Sized {
+    type MessageBuf: DerefMut<Target = str>;
+
     //How many "action" items are we in charge of displaying also
     const INCLUDE_ACTIONS_COUNT: usize;
 
@@ -26,9 +30,9 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized {
 
     fn key_buf(&mut self) -> &mut [u8; KEY_SIZE];
 
-    fn message_buf(&self) -> ArrayString<{ MESSAGE_SIZE }>;
+    fn message_buf(&self) -> Self::MessageBuf;
 
-    fn split_value_field(&mut self, message_buf: ArrayString<{ MESSAGE_SIZE }>);
+    fn split_value_field(&mut self, message_buf: Self::MessageBuf);
 
     //view_idle_show_impl
     fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>);
@@ -40,10 +44,10 @@ pub trait UIBackend<const KEY_SIZE: usize, const MESSAGE_SIZE: usize>: Sized {
     fn show_message(&mut self, title: &str, message: &str);
 
     //view_review_show_impl
-    fn show_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>);
+    fn show_review(ui: &mut ZUI<Self, KEY_SIZE>);
 
     //h_review_update
-    fn update_review(ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>);
+    fn update_review(ui: &mut ZUI<Self, KEY_SIZE>);
 
     //UX_WAIT macro equivalent
     fn wait_ui(&mut self);
