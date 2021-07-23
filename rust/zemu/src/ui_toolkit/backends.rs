@@ -16,7 +16,6 @@
 use core::ops::DerefMut;
 
 use crate::ui::{manual_vtable::RefMutDynViewable, Viewable};
-use arrayvec::ArrayString;
 
 use super::ZUI;
 

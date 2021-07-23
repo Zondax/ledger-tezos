@@ -203,6 +203,7 @@ fn produce_custom_ty(
 }
 
 //#[attr(cbindgen)]
+#[allow(clippy::ptr_arg)]
 fn is_cbindgen_mode(args: &AttributeArgs) -> bool {
     for arg in args {
         if let NestedMeta::Meta(Meta::Path(path)) = arg {
@@ -216,5 +217,5 @@ fn is_cbindgen_mode(args: &AttributeArgs) -> bool {
         }
     }
 
-    return false;
+    false
 }

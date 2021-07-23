@@ -25,7 +25,7 @@ const KEY_SIZE: usize = 64;
 const MESSAGE_SIZE: usize = 1024;
 
 #[bolos_derive::lazy_static]
-pub static mut RUST_ZUI: ZUI<ConsoleBackend, KEY_SIZE, MESSAGE_SIZE> = ZUI::new();
+pub static mut RUST_ZUI: ZUI<ConsoleBackend, KEY_SIZE> = ZUI::new();
 
 pub struct ConsoleBackend {
     key: [u8; KEY_SIZE],
@@ -33,7 +33,9 @@ pub struct ConsoleBackend {
     expert: bool,
 }
 
-impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for ConsoleBackend {
+impl UIBackend<KEY_SIZE> for ConsoleBackend {
+    type MessageBuf = ArrayString<MESSAGE_SIZE>;
+
     //How many "action" items are we in charge of displaying also
     const INCLUDE_ACTIONS_COUNT: usize = 0;
 
@@ -45,16 +47,16 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for ConsoleBackend {
         &mut self.key
     }
 
-    fn message_buf(&self) -> ArrayString<{ MESSAGE_SIZE }> {
+    fn message_buf(&self) -> Self::MessageBuf {
         ArrayString::new_const()
     }
 
-    fn split_value_field(&mut self, message_buf: ArrayString<{ MESSAGE_SIZE }>) {
+    fn split_value_field(&mut self, message_buf: Self::MessageBuf) {
         self.message = message_buf;
     }
 
     //view_idle_show_impl
-    fn show_idle(&mut self, _item_idx: usize, _status: Option<&str>) {
+    fn show_idle(&mut self, _item_idx: usize, _status: Option<&[u8]>) {
         todo!("show_idle")
     }
 
@@ -63,13 +65,17 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for ConsoleBackend {
         todo!("show_error")
     }
 
+    fn show_message(&mut self, _title: &str, _message: &str) {
+        todo!("show_message")
+    }
+
     //view_review_show_impl
-    fn show_review(_ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+    fn show_review(_ui: &mut ZUI<Self, KEY_SIZE>) {
         todo!("show_review")
     }
 
     //h_review_update
-    fn update_review(_ui: &mut ZUI<Self, KEY_SIZE, MESSAGE_SIZE>) {
+    fn update_review(_ui: &mut ZUI<Self, KEY_SIZE>) {
         todo!("update_review")
     }
 
@@ -84,6 +90,10 @@ impl UIBackend<KEY_SIZE, MESSAGE_SIZE> for ConsoleBackend {
 
     fn toggle_expert(&mut self) {
         self.expert = !self.expert;
+    }
+
+    fn update_expert(&mut self) {
+        todo!("update_expert")
     }
 
     fn accept_reject_out(&mut self) -> &mut [u8] {

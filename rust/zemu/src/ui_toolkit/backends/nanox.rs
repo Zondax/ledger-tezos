@@ -123,7 +123,11 @@ impl UIBackend<KEY_SIZE> for NanoXBackend {
     }
 
     fn update_expert(&mut self) {
-        let msg = if self.expert { "enabled\x00" } else { "disabled\x00" };
+        let msg = if self.expert {
+            "enabled\x00"
+        } else {
+            "disabled\x00"
+        };
         let msg = PIC::new(msg).into_inner();
 
         self.message[..msg.len()].copy_from_slice(msg.as_bytes());
@@ -135,7 +139,7 @@ impl UIBackend<KEY_SIZE> for NanoXBackend {
 
     fn message_buf(&self) -> &'static mut str {
         core::str::from_utf8_mut(&mut Self::static_mut().message)
-        //this should never happen as we always asciify
+            //this should never happen as we always asciify
             .expect("message wasn't valid utf8")
     }
 

@@ -17,7 +17,7 @@ use arrayvec::ArrayString;
 ********************************************************************************/
 use crate::{
     ui::{manual_vtable::RefMutDynViewable, Viewable},
-    zemu_log_stack, ShowTooBig, ViewError,
+    ShowTooBig, ViewError,
 };
 
 mod backends;
