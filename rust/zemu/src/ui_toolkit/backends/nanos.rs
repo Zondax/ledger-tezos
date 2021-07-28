@@ -178,9 +178,9 @@ impl UIBackend<KEY_SIZE> for NanoSBackend {
 
     fn update_expert(&mut self) {
         let msg = if self.expert {
-            pic_str!(b"enabled")
+            &pic_str!(b"enabled")[..]
         } else {
-            pic_str!(b"disabled")
+            &pic_str!(b"disabled")[..]
         };
 
         self.value[..msg.len()].copy_from_slice(msg);
