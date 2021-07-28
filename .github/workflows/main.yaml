@@ -58,7 +58,7 @@ jobs:
         with:
           path: |
             ./rust/app/.cargo
-          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+          key: ${{ hashFiles('./rust/Cargo.lock') }}
       - name: run rust tests
         run: |
           make rust_test
@@ -79,13 +79,59 @@ jobs:
         with:
           path: |
             ./rust/app/.cargo
-          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+          key: ${{ hashFiles('./rust/Cargo.lock') }}
       - name: run rust tests
         run: |
           make rust_test
 
+
+  build_ledger:
+    needs: configure
+    runs-on: ubuntu-latest
+    container:
+      image: zondax/builder-bolos:latest
+      options: --user ${{ needs.configure.outputs.uid_gid }}
+    env:
+      BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
+      BOLOS_ENV: /opt/bolos
+      HOME: /home/zondax_circle
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Cache/restore Cargo dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./rust/app/.cargo
+          key: ${{ hashFiles('./rust/Cargo.lock') }}
+      - name: Build baker app
+        shell: bash -l {0}
+        env:
+          BAKING: 'yes'
+        run: |
+          source $HOME/.cargo/env
+          make
+      - name: Build standard app
+        shell: bash -l {0}
+        run: |
+          source $HOME/.cargo/env
+          make
+      - name: Build legacy app
+        shell: bash -l {0}
+        run: |
+          source $HOME/.cargo/env
+          make legacy
+      - name: Cache multiple paths
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./rust/app/output
+          key: ${{ github.run_id }}
+
   test_zemu:
-    needs: [ configure, checks, build, build-baking ]
+    needs: [ build_ledger ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -97,17 +143,13 @@ jobs:
         with:
           path: |
             ./rust/app/.cargo
-          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+          key: ${{ hashFiles('./rust/Cargo.lock') }}
       - name: Restore build from cache
         uses: actions/cache@v2
         with:
           path: |
             ./rust/app/output
-          key: ${{ runner.os }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-${{ github.run_id }}
+          key: ${{ github.run_id }}
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
       - name: Install rust
         run: |
@@ -131,7 +173,7 @@ jobs:
 
 
   build_package:
-    needs: [ configure, checks, build, build-baking, test_zemu ]
+    needs: [ configure, checks, build, build-baking, test_zemu, build_ledger ]
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     container:
@@ -151,7 +193,7 @@ jobs:
         with:
           path: |
             ./rust/app/.cargo
-          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+          key: ${{ hashFiles('./rust/Cargo.lock') }}
       - name: Build Ledger app (Baking)
         env:
           BAKING: 'yes'
