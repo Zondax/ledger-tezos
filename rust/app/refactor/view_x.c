@@ -65,7 +65,7 @@ const ux_flow_step_t *const ux_idle_flow [] = {
 ///////////
 
 UX_STEP_NOCB(ux_error_flow_1_step, bnnn_paging, { .title = BACKEND_LAZY.key, .text = BACKEND_LAZY.message, });
-UX_STEP_VALID(ux_error_flow_2_step, pb, h_error_accept(0), { &C_icon_validate_14, "Ok"});
+UX_STEP_VALID(ux_error_flow_2_step, pb, rs_h_error_accept(0), { &C_icon_validate_14, "Ok"});
 
 UX_FLOW(
     ux_error_flow,

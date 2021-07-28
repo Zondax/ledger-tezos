@@ -202,6 +202,9 @@ fn produce_custom_ty(
     })
 }
 
+// This function looks for the attribute `cbindgen` in the list of attribute
+// args given.
+// For example, it will return true for
 //#[attr(cbindgen)]
 #[allow(clippy::ptr_arg)]
 fn is_cbindgen_mode(args: &AttributeArgs) -> bool {

@@ -268,6 +268,11 @@ mod cabi {
     }
 
     #[no_mangle]
+    pub unsafe extern "C" fn rs_h_error_accept(_: cty::c_uint) {
+        RUST_ZUI.accept_error();
+    }
+
+    #[no_mangle]
     pub unsafe extern "C" fn rs_h_review_button_both() {
         RUST_ZUI.review_action();
     }

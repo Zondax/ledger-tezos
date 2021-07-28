@@ -1,5 +1,3 @@
-use arrayvec::ArrayString;
-
 /*******************************************************************************
 *   (c) 2021 Zondax GmbH
 *
@@ -15,6 +13,7 @@ use arrayvec::ArrayString;
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use arrayvec::ArrayString;
 use crate::{
     ui::{manual_vtable::RefMutDynViewable, Viewable},
     ShowTooBig, ViewError,
@@ -81,6 +80,24 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
 
             self.backend.accept_reject_end(len + 2);
         }
+    }
+
+    pub(crate) fn accept_error(&mut self) {
+        self.show_idle(0, None);
+        self.backend.wait_ui();
+
+        if let Some(_) = self.current_viewable.as_mut() {
+            let out = self.backend.accept_reject_out();
+
+            const APDU_CODE_DATA_INVALID: u16 = 0x6984;
+            out[..2].copy_from_slice(&APDU_CODE_DATA_INVALID.to_be_bytes()[..]);
+
+            //remove current viewable
+            self.current_viewable.take();
+
+            self.backend.accept_reject_end(2);
+        }
+
     }
 
     pub(crate) fn paging_init(&mut self) {

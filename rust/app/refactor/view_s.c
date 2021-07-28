@@ -84,7 +84,7 @@ static unsigned int view_error_button(unsigned int button_mask, unsigned int but
         case BUTTON_EVT_RELEASED | BUTTON_LEFT:
             break;
         case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
-            h_error_accept(0);
+            rs_h_error_accept(0);
             break;
     }
     return 0;

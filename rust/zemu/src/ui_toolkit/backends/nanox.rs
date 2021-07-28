@@ -22,9 +22,9 @@ use bolos_sys::pic::PIC;
 
 use arrayvec::ArrayString;
 
-pub const KEY_SIZE: usize = 64;
+pub const KEY_SIZE: usize = 63 + 1;
 //with null terminator
-pub const MESSAGE_SIZE: usize = 4096;
+pub const MESSAGE_SIZE: usize = 4095 + 1;
 
 const INCLUDE_ACTIONS_COUNT: usize = 0;
 
@@ -288,6 +288,11 @@ mod cabi {
     #[no_mangle]
     pub unsafe extern "C" fn rs_h_reject(_: cty::c_uint) {
         RUST_ZUI.reject();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rs_h_error_accept(_: cty::c_uint) {
+        RUST_ZUI.accept_error();
     }
 
     #[no_mangle]

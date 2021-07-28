@@ -31,36 +31,16 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-void h_error_accept(unsigned int _) {
-    UNUSED(_);
-    view_idle_show(0, NULL);
-    UX_WAIT();
-    app_reply_error();
-}
-
 ///////////////////////////////////
 // General
 
 void io_seproxyhal_display(const bagl_element_t *element) {
     io_seproxyhal_display_default((bagl_element_t *) element);
 }
-
 void view_init(void) {
     UX_INIT();
-#ifdef APP_SECRET_MODE_ENABLED
-    /* viewdata.secret_click_count = 0; */
-#endif
 }
 
 void view_idle_show(uint8_t item_idx, char *statusString) {
     view_idle_show_impl(item_idx, statusString);
-}
-
-
-void view_review_init(viewfunc_getItem_t viewfuncGetItem,
-                      viewfunc_getNumItems_t viewfuncGetNumItems,
-                      viewfunc_accept_t viewfuncAccept) {
-    /* viewdata.viewfuncGetItem = viewfuncGetItem; */
-    /* viewdata.viewfuncGetNumItems = viewfuncGetNumItems; */
-    /* viewdata.viewfuncAccept = viewfuncAccept; */
 }

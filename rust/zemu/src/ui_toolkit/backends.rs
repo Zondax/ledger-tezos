@@ -79,13 +79,3 @@ cfg_if::cfg_if! {
         pub use console::{ConsoleBackend, RUST_ZUI};
     }
 }
-
-// #[cfg(nanos)]
-// mod nanos;
-// #[cfg(nanos)]
-// pub use nanos::{NanoSBackend, RUST_ZUI};
-
-// #[cfg(nanox)]
-// mod nanox;
-// #[cfg(nanox)]
-// pub use nanox::{NanoXBackend, RUST_ZUI};

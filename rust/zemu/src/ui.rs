@@ -75,24 +75,6 @@ fn move_to_global_storage<T: Sized>(item: T) -> Option<&'static mut T> {
     }
 }
 
-// impl<T: Viewable + Sized + 'static> Show for T {
-//     unsafe fn show(self, flags: &mut u32) -> Result<(), ShowTooBig> {
-//         //set `CURRENT_VIEWABLE`
-//         let moved = move_to_global_storage(self).ok_or(ShowTooBig)?;
-//         CURRENT_VIEWABLE.replace(moved.into());
-
-//         //set view_review
-//         view_review_init();
-
-//         //start the show
-//         bindings::view_review_show();
-
-//         *flags |= IO_ASYNCH_REPLY;
-//         //Some(drive())
-//         Ok(())
-//     }
-// }
-
 impl<T: Viewable + Sized + 'static> Show for T {
     unsafe fn show(self, flags: &mut u32) -> Result<(), ShowTooBig> {
         use crate::ui_toolkit::RUST_ZUI;
