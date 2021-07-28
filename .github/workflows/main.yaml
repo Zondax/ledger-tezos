@@ -131,7 +131,7 @@ jobs:
 
 
   build_package:
-    needs: [ configure, checks, build, build-baking, test_zemu, build_ledger ]
+    needs: [ configure, checks, build, build-baking, test_zemu ]
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     container:
