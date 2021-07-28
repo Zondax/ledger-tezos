@@ -144,12 +144,16 @@ jobs:
           path: |
             ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
       - name: Restore build from cache
         uses: actions/cache@v2
         with:
           path: |
             ./rust/app/output
           key: ${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.run_id }}
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
       - name: Install rust
         run: |
