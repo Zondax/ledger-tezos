@@ -78,10 +78,6 @@ impl<'a, T> PIC<&'a T> {
             if #[cfg(bolos_sdk)] {
                 let ptr = unsafe { super::raw::pic(self.data as *const T as _) as *const T };
 
-                //we don't want to drop the old location
-                //if the location is unchanged then it will be dropped later anyways
-                core::mem::forget(self);
-
                 unsafe { ptr.as_ref().unwrap() } //we know it can't be null
             } else {
                 self.data
@@ -95,10 +91,6 @@ impl<'a, T> PIC<&'a mut T> {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {
                 let ptr = unsafe { super::raw::pic(self.data as *const T as _) as *mut T };
-
-                //we don't want to drop the old location
-                //if the location is unchanged then it will be dropped later anyways
-                core::mem::forget(self);
 
                 unsafe { ptr.as_mut().unwrap() } //we know it can't be null
             } else {
@@ -121,7 +113,25 @@ impl<'a> PIC<&'a str> {
     pub fn into_inner(self) -> &'a str {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {
-                let data = self.data.as_bytes();
+                //make use of impl for PIC<&'a [u8]>
+                let data = PIC::new(self.data.as_bytes()).into_inner();
+
+                //if this is not utf8 then it's invalid memory
+                let s = core::str::from_utf8(data).expect("picced string was garbage");
+
+                s
+            } else {
+                self.data
+            }
+        }
+    }
+}
+
+impl<'a> PIC<&'a [u8]> {
+    pub fn into_inner(self) -> &'a [u8] {
+        cfg_if::cfg_if! {
+            if #[cfg(bolos_sdk)] {
+                let data = self.data;
                 let data_len = data.len();
 
                 let ptr = unsafe { super::raw::pic(data.as_ptr() as _) as *const u8 };
@@ -130,14 +140,7 @@ impl<'a> PIC<&'a str> {
                     core::slice::from_raw_parts(ptr, data_len)
                 };
 
-                //if this is not utf8 then it's invalid memory
-                let s = core::str::from_utf8(data).expect("picced string was garbage");
-
-                //we don't want to drop the old location
-                //if the location is unchanged then it will be dropped later anyways
-                core::mem::forget(self);
-
-                s
+                data
             } else {
                 self.data
             }

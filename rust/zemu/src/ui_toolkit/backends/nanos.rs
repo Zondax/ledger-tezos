@@ -18,6 +18,7 @@ use crate::{
     ui::{manual_vtable::RefMutDynViewable, Viewable},
     ui_toolkit::{strlen, ZUI},
 };
+use bolos_derive::pic_str;
 use bolos_sys::pic::PIC;
 
 use arrayvec::ArrayString;
@@ -87,7 +88,7 @@ impl UIBackend<KEY_SIZE> for NanoSBackend {
             message_buf[..len].split_at(MESSAGE_LINE_SIZE - 1)
         } else {
             //no need to split the buffer, so line 2 will be empty
-            (&message_buf[..len], PIC::new("\x00").into_inner())
+            (&message_buf[..len], pic_str!(""))
         };
 
         //write the 2 lines, so if the message was small enough to fit
@@ -102,7 +103,7 @@ impl UIBackend<KEY_SIZE> for NanoSBackend {
 
     fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
         //FIXME: MENU_MAIN_APP_LINE2
-        let status = status.unwrap_or(&PIC::new(b"DO NOT USE\x00").get_ref()[..]);
+        let status = status.unwrap_or(&pic_str!(b"DO NOT USE")[..]);
 
         let len = core::cmp::min(self.key.len(), status.len());
         self.key[..len].copy_from_slice(&status[..len]);
@@ -177,13 +178,12 @@ impl UIBackend<KEY_SIZE> for NanoSBackend {
 
     fn update_expert(&mut self) {
         let msg = if self.expert {
-            "enabled\x00"
+            pic_str!(b"enabled")
         } else {
-            "disabled\x00"
+            pic_str!(b"disabled")
         };
-        let msg = PIC::new(msg).into_inner();
 
-        self.value[..msg.len()].copy_from_slice(msg.as_bytes());
+        self.value[..msg.len()].copy_from_slice(msg);
     }
 
     fn accept_reject_out(&mut self) -> &mut [u8] {

@@ -18,6 +18,7 @@ use crate::{
     ui::{manual_vtable::RefMutDynViewable, ViewError, Viewable},
     ui_toolkit::{strlen, ZUI},
 };
+use bolos_derive::pic_str;
 use bolos_sys::pic::PIC;
 
 use arrayvec::ArrayString;
@@ -124,13 +125,12 @@ impl UIBackend<KEY_SIZE> for NanoXBackend {
 
     fn update_expert(&mut self) {
         let msg = if self.expert {
-            "enabled\x00"
+            pic_str!(b"enabled")
         } else {
-            "disabled\x00"
+            pic_str!(b"disabled")
         };
-        let msg = PIC::new(msg).into_inner();
 
-        self.message[..msg.len()].copy_from_slice(msg.as_bytes());
+        self.message[..msg.len()].copy_from_slice(msg);
     }
 
     fn key_buf(&mut self) -> &mut [u8; KEY_SIZE] {
@@ -147,7 +147,7 @@ impl UIBackend<KEY_SIZE> for NanoXBackend {
 
     fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
         //FIXME: MENU_MAIN_APP_LINE2
-        let status = status.unwrap_or(&PIC::new(b"DO NOT USE\x00").get_ref()[..]);
+        let status = status.unwrap_or(&pic_str!(b"DO NOT USE")[..]);
 
         self.key[..status.len()].copy_from_slice(status);
 

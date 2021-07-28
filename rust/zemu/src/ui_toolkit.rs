@@ -13,11 +13,14 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use arrayvec::ArrayString;
 use crate::{
     ui::{manual_vtable::RefMutDynViewable, Viewable},
     ShowTooBig, ViewError,
 };
+use arrayvec::ArrayString;
+
+use bolos_derive::pic_str;
+use bolos_sys::pic::PIC;
 
 mod backends;
 use backends::UIBackend;
@@ -86,7 +89,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
         self.show_idle(0, None);
         self.backend.wait_ui();
 
-        if let Some(_) = self.current_viewable.as_mut() {
+        if self.current_viewable.as_mut().is_some() {
             let out = self.backend.accept_reject_out();
 
             const APDU_CODE_DATA_INVALID: u16 = 0x6984;
@@ -97,7 +100,6 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
 
             self.backend.accept_reject_end(2);
         }
-
     }
 
     pub(crate) fn paging_init(&mut self) {
@@ -235,8 +237,6 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
     }
 
     fn review_update_data(&mut self) -> Result<(), ViewError> {
-        use bolos_sys::pic::PIC;
-
         self.item_count = self
             .current_viewable
             .as_mut()
@@ -250,8 +250,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
                 //put approve label as message
                 // and clear key
 
-                const APPROVE: &str = "APPROVE\x00";
-                let approve = PIC::new(APPROVE).into_inner().as_bytes();
+                let approve = pic_str!(b"APPROVE");
                 self.backend.key_buf()[0] = 0;
 
                 let mut tmp = self.backend.message_buf();
@@ -268,8 +267,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
                 //put reject label as message
                 // and clear key
 
-                const REJECT: &str = "REJECT\x00";
-                let reject = PIC::new(REJECT).into_inner().as_bytes();
+                let reject = pic_str!(b"REJECT");
                 self.backend.key_buf()[0] = 0;
 
                 let mut tmp = self.backend.message_buf();
@@ -321,9 +319,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
                 //this is unrolled equivalent of
                 // write!(&mut tmp, " [{}/{}]")
                 //if there's any error we return without having changed anything
-                use bolos_sys::pic::PIC;
-
-                if tmp.try_push_str(PIC::new(" [").into_inner()).is_err() {
+                if tmp.try_push_str(pic_str!(" ["!)).is_err() {
                     return;
                 }
 
@@ -331,7 +327,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
                     return;
                 }
 
-                if tmp.try_push_str(PIC::new("/").into_inner()).is_err() {
+                if tmp.try_push_str(pic_str!("/"!)).is_err() {
                     return;
                 }
 
@@ -339,7 +335,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
                     return;
                 }
 
-                if tmp.try_push_str(PIC::new("]").into_inner()).is_err() {
+                if tmp.try_push_str(pic_str!("]"!)).is_err() {
                     return;
                 }
 
@@ -354,12 +350,8 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
 
     //view_error_show
     fn show_error(&mut self) {
-        use bolos_sys::pic::PIC;
-
-        const ERROR_KEY: &str = "ERROR\x00";
-        const ERROR_MESSAGE: &str = "SHOWING DATA\x00";
-        let error_key = PIC::new(ERROR_KEY).into_inner().as_bytes();
-        let error_message = PIC::new(ERROR_MESSAGE).into_inner().as_bytes();
+        let error_key = pic_str!(b"ERROR");
+        let error_message = pic_str!(b"SHOWING DATA");
 
         let key = self.backend.key_buf();
         key[..error_key.len()].copy_from_slice(error_key);
