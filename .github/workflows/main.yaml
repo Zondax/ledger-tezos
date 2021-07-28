@@ -85,7 +85,7 @@ jobs:
           make rust_test
 
   test_zemu:
-    needs: [ configure ]
+    needs: [ configure, checks, build, build-baking ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
