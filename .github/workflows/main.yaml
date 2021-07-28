@@ -100,8 +100,20 @@ jobs:
         run: |
           source $HOME/.cargo/env
           make
+      - name: Build legacy app
+        shell: bash -l {0}
+        run: |
+          source $HOME/.cargo/env
+          make legacy
+      - name: Cache multiple paths
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./rust/app/output/*.elf
+          key: ${{ runner.os }}-${{ github.run_id }}
 
   test_zemu:
+    needs: [ build_ledger ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -120,19 +132,13 @@ jobs:
         with:
           node-version: '14.17.0'
       - name: Install yarn
-        run: |
-          npm install -g yarn
-      - name: Build Ledger app (Baking)
-        env:
-          BAKING: 'yes'
-        run: |
-          make
-      - name: Build Ledger app
-        run: |
-          make
-      - name: Build legacy app
-        run: |
-          make legacy
+        run: npm install -g yarn
+      - name: Restore build from cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./rust/app/output/*.elf
+          key: ${{ runner.os }}-${{ github.run_id }}
       - name: Build/Install build js deps
         run: |
           export PATH=~/.cargo/bin:$PATH
