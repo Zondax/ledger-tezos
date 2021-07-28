@@ -127,7 +127,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ./rust/app/output/*.elf
+            ./rust/app/output
           key: ${{ runner.os }}-${{ github.run_id }}
 
   test_zemu:
@@ -161,7 +161,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ./rust/app/output/*.elf
+            ./rust/app/output
           key: ${{ runner.os }}-${{ github.run_id }}
       - name: Build/Install build js deps
         run: |
