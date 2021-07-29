@@ -17,6 +17,9 @@
 mod comm;
 pub use comm::*;
 
+#[path = "ui/manual_vtable.rs"]
+pub(crate) mod manual_vtable;
+
 static mut OUT: Option<&mut [u8]> = None;
 
 pub fn set_out(buf: &mut [u8]) {

@@ -24,68 +24,40 @@
 
 #define CUR_FLOW G_ux.flow_stack[G_ux.stack_count-1]
 
-#if defined(TARGET_NANOX)
-#define MAX_CHARS_PER_KEY_LINE      64
-#define MAX_CHARS_PER_VALUE1_LINE   4096
-#define MAX_CHARS_HEXMESSAGE        160
-#else
-#define MAX_CHARS_PER_KEY_LINE      (17+1)
-#define MAX_CHARS_PER_VALUE_LINE    (17)
-#define MAX_CHARS_PER_VALUE1_LINE   (2*MAX_CHARS_PER_VALUE_LINE+1)
-#define MAX_CHARS_PER_VALUE2_LINE   (MAX_CHARS_PER_VALUE_LINE+1)
-#define MAX_CHARS_HEXMESSAGE        40
-#endif
-
-// This takes data from G_io_apdu_buffer that is prefilled with the address
-
 #define APPROVE_LABEL "APPROVE"
 #define REJECT_LABEL "REJECT"
 
 #if defined(TARGET_NANOS)
-#define INCLUDE_ACTIONS_AS_ITEMS 2
-#define INCLUDE_ACTIONS_COUNT (INCLUDE_ACTIONS_AS_ITEMS-1)
-#else
-#define INCLUDE_ACTIONS_COUNT 0
+
+#define KEY_SIZE 17
+#define MESSAGE_SIZE 17
+
+typedef struct NanoSBackend {
+  uint8_t key[KEY_SIZE + 1];
+  uint8_t value[MESSAGE_SIZE + 1];
+  uint8_t value2[MESSAGE_SIZE + 1];
+  uintptr_t viewable_size;
+  bool expert;
+} NanoSBackend;
+
+extern struct NanoSBackend BACKEND_LAZY;
+
+#elif defined (TARGET_NANOX)
+
+#define KEY_SIZE 63
+#define MESSAGE_SIZE 4095
+
+typedef struct NanoXBackend {
+  uint8_t key[KEY_SIZE + 1];
+  uint8_t message[MESSAGE_SIZE + 1];
+  uintptr_t viewable_size;
+  bool expert;
+  bool flow_inside_loop;
+} NanoXBackend;
+
+extern struct NanoXBackend BACKEND_LAZY;
+
 #endif
-
-typedef struct {
-    struct {
-        char key[MAX_CHARS_PER_KEY_LINE];
-        char value[MAX_CHARS_PER_VALUE1_LINE];
-#if defined(TARGET_NANOS)
-        char value2[MAX_CHARS_PER_VALUE2_LINE];
-#endif
-    };
-    viewfunc_getItem_t viewfuncGetItem;
-    viewfunc_getNumItems_t viewfuncGetNumItems;
-    viewfunc_accept_t viewfuncAccept;
-
-#ifdef APP_SECRET_MODE_ENABLED
-    uint8_t secret_click_count;
-#endif
-    uint8_t itemIdx;
-    uint8_t itemCount;
-    uint8_t pageIdx;
-    uint8_t pageCount;
-} view_t;
-
-typedef enum {
-    view_action_unknown,
-    view_action_accept,
-    view_action_reject,
-} view_action_t;
-
-extern view_t viewdata;
-
-#define print_title(...) snprintf(viewdata.title, sizeof(viewdata.title), __VA_ARGS__)
-#define print_key(...) snprintf(viewdata.key, sizeof(viewdata.key), __VA_ARGS__);
-#define print_value(...) snprintf(viewdata.value, sizeof(viewdata.value), __VA_ARGS__);
-
-#if defined(TARGET_NANOS)
-#define print_value2(...) snprintf(viewdata.value2, sizeof(viewdata.value2), __VA_ARGS__);
-#endif
-
-void splitValueField();
 
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
@@ -97,31 +69,3 @@ void splitValueField();
 ///////////////////////////////////////////////
 
 void view_idle_show_impl(uint8_t item_idx, char *statusString);
-
-void view_message_impl(char *title, char *message);
-
-void view_error_show_impl();
-
-void h_paging_init();
-
-bool h_paging_can_increase();
-
-void h_paging_increase();
-
-bool h_paging_can_decrease();
-
-void h_paging_decrease();
-
-void view_review_show_impl();
-
-void h_approve(unsigned int _);
-
-void h_reject(unsigned int _);
-
-void h_review_action();
-
-void h_review_update();
-
-void h_error_accept(unsigned int _);
-
-zxerr_t h_review_update_data();

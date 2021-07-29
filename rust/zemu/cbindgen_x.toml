@@ -1,0 +1,13 @@
+language = "C"
+
+pragma_once = true
+
+[parse.expand]
+crates = ["zemu-sys"]
+features = ["cbindgen_x"]
+
+[defines]
+nanox = "TARGET_NANOX"
+
+[export]
+include = ["NanoXBackend", "BACKEND_LAZY"]

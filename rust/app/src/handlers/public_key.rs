@@ -107,7 +107,7 @@ impl Addr {
                 Curve::Secp256K1 => [6, 161, 161],
                 Curve::Secp256R1 => [6, 161, 164],
             })
-            .into_inner()[..],
+            .get_ref()[..],
         );
 
         #[inline(never)]
