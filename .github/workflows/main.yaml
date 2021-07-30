@@ -56,12 +56,10 @@ jobs:
       - name: Cache/restore Cargo dependencies
         uses: actions/cache@v1
         with:
-          path: |
-            ./rust/app/.cargo
+          path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
       - name: run rust tests
-        run: |
-          make rust_test
+        run: make rust_test
 
   build-baking:
     runs-on: ubuntu-latest
@@ -77,12 +75,10 @@ jobs:
       - name: Cache/restore Cargo dependencies
         uses: actions/cache@v1
         with:
-          path: |
-            ./rust/app/.cargo
+          path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
       - name: run rust tests
-        run: |
-          make rust_test
+        run: make rust_test
 
 
   build_ledger:
@@ -103,8 +99,7 @@ jobs:
       - name: Cache/restore Cargo dependencies
         uses: actions/cache@v1
         with:
-          path: |
-            ./rust/app/.cargo
+          path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
       - name: Build baker app
         shell: bash -l {0}
@@ -123,13 +118,16 @@ jobs:
         run: |
           source $HOME/.cargo/env
           make legacy
-      - name: Cache elf files
+      - name: Cache rust elf files
         uses: actions/cache@v1
         with:
-          path: |
-            ./rust/app/output
-            ./legacy/output
-          key: ${{ runner.os }}-${{ github.run_id }}
+          path: ./rust/app/output
+          key: ${{ runner.os }}-${{ github.run_id }}-rust
+      - name: Cache legacy elf files
+        uses: actions/cache@v1
+        with:
+          path: ./legacy/output
+          key: ${{ runner.os }}-${{ github.run_id }}-legacy
 
   test_zemu:
     needs: [ build_ledger ]
@@ -142,16 +140,18 @@ jobs:
       - name: Cache/restore Cargo dependencies
         uses: actions/cache@v1
         with:
-          path: |
-            ./rust/app/.cargo
+          path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-      - name: Restore build from cache
+      - name: Restore rust build from cache
         uses: actions/cache@v1
         with:
-          path: |
-            ./rust/app/output
-            ./legacy/output
-          key: ${{ runner.os }}-${{ github.run_id }}
+          path:  ./rust/app/output
+          key: ${{ runner.os }}-${{ github.run_id }}-rust
+      - name: Restore legacy build from cache
+        uses: actions/cache@v1
+        with:
+          path: ./legacy/output
+          key: ${{ runner.os }}-${{ github.run_id }}-legacy
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
       - name: Install rust
         run: |
@@ -193,15 +193,13 @@ jobs:
       - name: Cache/restore Cargo dependencies
         uses: actions/cache@v1
         with:
-          path: |
-            ./rust/app/.cargo
+          path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-      - name: Restore build from cache
+      - name: Restore rust build from cache
         uses: actions/cache@v1
         with:
-          path: |
-            ./rust/app/output
-          key: ${{ runner.os }}-${{ github.run_id }}
+          path: ./rust/app/output
+          key: ${{ runner.os }}-${{ github.run_id }}-rust
       - name: Copy baking artifacts
         run: |
           pip install ledgerblue
