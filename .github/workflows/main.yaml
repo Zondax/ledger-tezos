@@ -54,7 +54,7 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v1.2
+        uses: actions/cache@v1
         with:
           path: |
             ./rust/app/.cargo
@@ -75,7 +75,7 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v1.2
+        uses: actions/cache@v1
         with:
           path: |
             ./rust/app/.cargo
@@ -101,7 +101,7 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v1.2
+        uses: actions/cache@v1
         with:
           path: |
             ./rust/app/.cargo
@@ -124,7 +124,7 @@ jobs:
           source $HOME/.cargo/env
           make legacy
       - name: Cache multiple paths
-        uses: actions/cache@v1.2
+        uses: actions/cache@v1
         with:
           path: |
             ./rust/app/output
@@ -139,13 +139,13 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v1.2
+        uses: actions/cache@v1
         with:
           path: |
             ./rust/app/.cargo
           key: ${{ hashFiles('./rust/Cargo.lock') }}
       - name: Restore build from cache
-        uses: actions/cache@v1.2
+        uses: actions/cache@v1
         with:
           path: |
             ./rust/app/output
@@ -189,7 +189,7 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v1.2
+        uses: actions/cache@v1
         with:
           path: |
             ./rust/app/.cargo
