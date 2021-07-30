@@ -13,8 +13,6 @@ jobs:
 
   checks:
     runs-on: ubuntu-latest
-    container:
-      image: zondax/rust-ci:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -54,7 +52,7 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v1.2
         with:
           path: |
             ./rust/app/.cargo
@@ -75,7 +73,7 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v1.2
         with:
           path: |
             ./rust/app/.cargo
@@ -101,7 +99,7 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v1.2
         with:
           path: |
             ./rust/app/.cargo
@@ -124,7 +122,7 @@ jobs:
           source $HOME/.cargo/env
           make legacy
       - name: Cache multiple paths
-        uses: actions/cache@v2
+        uses: actions/cache@v1.2
         with:
           path: |
             ./rust/app/output
@@ -141,13 +139,13 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v1.2
         with:
           path: |
             ./rust/app/.cargo
           key: ${{ hashFiles('./rust/Cargo.lock') }}
       - name: Restore build from cache
-        uses: actions/cache@v2
+        uses: actions/cache@v1.2
         with:
           path: |
             ./rust/app/output
@@ -191,7 +189,7 @@ jobs:
         with:
           submodules: true
       - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v1.2
         with:
           path: |
             ./rust/app/.cargo
