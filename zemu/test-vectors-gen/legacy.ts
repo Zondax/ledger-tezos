@@ -55,13 +55,15 @@ export async function run() {
     //branch is the block block hash we want to submit this transaction to
     const { hash } = await Tezos.rpc.getBlockHeader();
 
+    const amount = 0.01;
+
     //prepare operation
     const op: ForgeOperationsParams = {
       branch: hash,
       contents: [{
         kind: OpKind.TRANSACTION,
         destination: addresses.k1,
-        amount: (0.01 * MUTEZ_MULT).toString(), //has to be in mutez
+        amount: (amount * MUTEZ_MULT).toString(), //has to be in mutez
         fee: estimate.suggestedFeeMutez.toString(),
         gas_limit: estimate.gasLimit.toString(),
         storage_limit: estimate.storageLimit.toString(),
@@ -74,18 +76,40 @@ export async function run() {
     //forge the prepared operation
     //this will retrieve the operation blob sent to the ledger device
     const forgedOp = await Tezos.rpc.forgeOperations(op)
-
     console.log(`Operation blob (?): ${forgedOp}`);
 
+    //generate test vector with operation and blob
+    const test_vector = {
+      name: "Simple tx",
+      blob: forgedOp,
+      output: [
+        { idx: 0, key: "Kind", val: ledger_fmt("Transaction") }, //page 0
+        { idx: 1, key: "Amount", val: ledger_fmt(amount.toString())},
+        { idx: 2, key: "Fee", val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },
+        { idx: 3, key: "Source", val: ledger_fmt(source) },
+        { idx: 4, key: "Destination", val: ledger_fmt(addresses.k1) },
+        { idx: 5, key: "Storasge limit", val: ledger_fmt(estimate.storageLimit.toString()) },
+      ]
+    };
+
+    //TODO: save test vector to file and exec test
+    //TODO: generate multiple test vectors
+
     //get the signature
-    const sig = await Tezos.signer.sign(forgedOp, new Uint8Array([3]))
-    console.log(`Signed operation object: ${JSON.stringify(sig)}`);
+    // const sig = await Tezos.signer.sign(forgedOp, new Uint8Array([3]))
+    // console.log(`Signed operation object: ${JSON.stringify(sig)}`);
 
   } catch (e) {
     console.log(`Exception occurred: ${JSON.stringify(e)}`)
   } finally {
     await sim.close()
   }
+}
+
+//TODO: format strign like we want to format it in the ledger
+// do paging and also number formatting
+function ledger_fmt(input: string): string[] {
+  return [input]
 }
 
 
