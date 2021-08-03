@@ -66,6 +66,10 @@ default:
 generate:
 	$(MAKE) -C rust generate
 
+both:
+	$(MAKE)
+	BAKING=tezos_baking $(MAKE)
+
 .PHONY: legacy
 legacy:
 	$(MAKE) -C legacy clean
