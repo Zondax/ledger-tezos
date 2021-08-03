@@ -46,13 +46,13 @@ legacy_impl:
 	$(call run_docker,$(DOCKER_BOLOS_SDKS),make -j $(NPROC) -C $(DOCKER_LEGACY_APP_SRC))
 
 legacy_wallet:
-	BAKING=tezos_wallet $(MAKE) legacy_impl
 	- mkdir -p legacy/output || true
+	BAKING=tezos_wallet $(MAKE) legacy_impl
 	mv legacy/bin/app.elf legacy/output/app.elf
 
 legacy_baking:
-	BAKING=tezos_baking $(MAKE) legacy_impl
 	- mkdir -p legacy/output || true
+	BAKING=tezos_baking $(MAKE) legacy_impl
 	mv legacy/bin/app.elf legacy/output/app_baking.elf
 
 .PHONY: clean_legacy
@@ -66,6 +66,12 @@ default:
 generate:
 	$(MAKE) -C rust generate
 
+.PHONY: legacy
+legacy:
+	$(MAKE) -C legacy clean
+	- mkdir -p legacy/output || true
+	BAKING=tezos_wallet $(MAKE) -C legacy
+	BAKING=tezos_baking $(MAKE) -C legacy
 %:
 	$(info "Calling app Makefile for target $@")
 	COIN=$(COIN) $(MAKE) -C rust/app $@
