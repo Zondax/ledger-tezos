@@ -19,7 +19,7 @@ import TezosApp from '@zondax/ledger-tezos'
 import { APP_DERIVATION, curves, defaultOptions } from './common'
 
 const Resolve = require('path').resolve
-const APP_PATH_LEGACY_S = Resolve('../legacy/output/app_baking.elf')
+const APP_PATH_LEGACY_S = Resolve('../legacy/output/app_s_baking.elf')
 
 const models: DeviceModel[] = [{ name: 'nanos', prefix: 'LBS', path: APP_PATH_LEGACY_S }]
 
