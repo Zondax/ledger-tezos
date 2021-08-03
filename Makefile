@@ -74,8 +74,8 @@ both:
 legacy:
 	$(MAKE) -C legacy clean
 	- mkdir -p legacy/output || true
-	BAKING=tezos_wallet $(MAKE) -C legacy
-	BAKING=tezos_baking $(MAKE) -C legacy
+	APP=tezos_wallet $(MAKE) -C legacy
+	APP=tezos_baking $(MAKE) -C legacy
 %:
 	$(info "Calling app Makefile for target $@")
 	COIN=$(COIN) $(MAKE) -C rust/app $@
