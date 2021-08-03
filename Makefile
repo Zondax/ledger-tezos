@@ -72,9 +72,10 @@ both:
 
 .PHONY: legacy
 legacy:
-	$(MAKE) -C legacy clean
 	- mkdir -p legacy/output || true
+	$(MAKE) -C legacy clean
 	APP=tezos_wallet $(MAKE) -C legacy
+	$(MAKE) -C legacy clean
 	APP=tezos_baking $(MAKE) -C legacy
 %:
 	$(info "Calling app Makefile for target $@")
