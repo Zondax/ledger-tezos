@@ -10,8 +10,8 @@
     "Ledger"
   ],
   "scripts": {
-    "test": "jest --testPathIgnorePatterns='dev.*'",
-    "test_dev": "jest",
+    "test": "jest --detectOpenHandles --testPathIgnorePatterns='dev.*'",
+    "test_dev": "jest --detectOpenHandles",
     "debug": "node debug/debug.mjs debug"
   },
   "dependencies": {
