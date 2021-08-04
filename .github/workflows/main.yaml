@@ -100,20 +100,18 @@ jobs:
         with:
           path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-      - name: Build Nano S apps
+      - name: Build Nano S app
         shell: bash -l {0}
         run: |
           source $HOME/.cargo/env
           make
-          make legacy
         env:
           BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
-      - name: Build Nano X apps
+      - name: Build Nano X app
         shell: bash -l {0}
         run: |
           source $HOME/.cargo/env
           make
-          make legacy
         env:
           BOLOS_SDK: ${{ github.workspace }}/deps/nanox-secure-sdk
       - name: Cache rust elf files
@@ -125,9 +123,6 @@ jobs:
   build_ledger_legacy:
     needs: configure
     runs-on: ubuntu-latest
-    env:
-      BOLOS_ENV: /opt/bolos
-      HOME: /home/zondax_circle
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -144,22 +139,9 @@ jobs:
         with:
           path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-      - name: Build Nano S apps
-        shell: bash -l {0}
+      - name: Build Nano S/X apps
         run: |
-          source $HOME/.cargo/env
-          make
           make legacy
-        env:
-          BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
-      - name: Build Nano X apps
-        shell: bash -l {0}
-        run: |
-          source $HOME/.cargo/env
-          make
-          make legacy
-        env:
-          BOLOS_SDK: ${{ github.workspace }}/deps/nanox-secure-sdk
       - name: Cache legacy elf files
         uses: actions/cache@v1
         with:
