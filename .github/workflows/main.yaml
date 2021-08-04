@@ -121,6 +121,45 @@ jobs:
         with:
           path: ./rust/app/output
           key: ${{ runner.os }}-${{ github.run_id }}-rust
+
+  build_ledger_legacy:
+    needs: configure
+    runs-on: ubuntu-latest
+    env:
+      BOLOS_ENV: /opt/bolos
+      HOME: /home/zondax_circle
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
+      - name: Install rust
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
+      - name: Cache/restore Cargo dependencies
+        uses: actions/cache@v1
+        with:
+          path: ./rust/app/.cargo
+          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+      - name: Build Nano S apps
+        shell: bash -l {0}
+        run: |
+          source $HOME/.cargo/env
+          make
+          make legacy
+        env:
+          BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
+      - name: Build Nano X apps
+        shell: bash -l {0}
+        run: |
+          source $HOME/.cargo/env
+          make
+          make legacy
+        env:
+          BOLOS_SDK: ${{ github.workspace }}/deps/nanox-secure-sdk
       - name: Cache legacy elf files
         uses: actions/cache@v1
         with:
@@ -128,7 +167,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.run_id }}-legacy
 
   test_zemu:
-    needs: [ build_ledger ]
+    needs: [ build_ledger, build_ledger_legacy ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
