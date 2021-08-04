@@ -80,7 +80,6 @@ jobs:
       - name: run rust tests
         run: make rust_test
 
-
   build_ledger:
     needs: configure
     runs-on: ubuntu-latest
@@ -100,14 +99,14 @@ jobs:
         with:
           path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-      - name: Build S apps
+      - name: Build Nano S apps
         shell: bash -l {0}
         env:
           BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
         run: |
           source $HOME/.cargo/env
           make both
-      - name: Build X apps
+      - name: Build Nano X apps
         shell: bash -l {0}
         env:
           BOLOS_SDK: ${{ github.workspace }}/deps/nanox-secure-sdk
@@ -129,16 +128,6 @@ jobs:
         with:
           submodules: true
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
-      - name: Install rust
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
-      - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v1
-        with:
-          path: ./rust/app/.cargo
-          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
       - name: Build Nano S apps
         run: |
           make legacy
