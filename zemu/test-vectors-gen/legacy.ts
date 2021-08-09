@@ -8,7 +8,9 @@ const Resolve = require('path').resolve;
 
 import { APP_DERIVATION, defaultOptions } from '../tests/common'
 
-const MUTEZ_MULT = 0.000_001;
+import { ledger_fmt } from './common';
+
+const MUTEZ_MULT = 1_000_000;
 
 async function getAddress(app: TezosApp, curve: Curve): Promise<string> {
   const response = await app.legacyGetPubKey(APP_DERIVATION, curve)
@@ -20,16 +22,35 @@ const models: DeviceModel[] = [
   { name: 'nanos', prefix: 'S', path: Resolve('../legacy/output/app.elf') },
 ];
 
-export async function run() {
+export async function run(n: number): Promise<TestVector[]> {
+  const vectors = [];
+
+  for(let i = 0; i < n; i ++) {
+    vectors.push(await generate_vector(i))
+  }
+
+  return vectors;
+}
+
+export type ExpectedPage = { idx: number, key: string, val: string[] };
+
+export type TestVector = {
+  name: string,
+  blob: string,
+  output: Array<ExpectedPage>
+}
+
+async function generate_vector(n: number): Promise<TestVector> {
   //start emulator
   const m = models[0]
   const sim = new Zemu(m.path)
   try {
-    await sim.start({ ...defaultOptions, model: m.name, X11: true })
+    await sim.start({ ...defaultOptions, model: m.name })
 
     const app = new TezosApp(sim.getTransport())
     const addresses = {
-      ed: await getAddress(app, Curve.Ed25519_Slip10),
+      ed10: await getAddress(app, Curve.Ed25519_Slip10),
+      ed: await getAddress(app, Curve.Ed25519),
       k1: await getAddress(app, Curve.Secp256K1),
       //p256: await getAddress(app, Curve.Secp256R1),
     }
@@ -38,7 +59,7 @@ export async function run() {
     //check that we have enough balance
 
     //get taquito toolkit and set ledger signer
-    const Tezos = new TezosToolkit('https://testnet-tezos.giganode.io')
+    const Tezos = new TezosToolkit('https://granadanet.tezos.dev.zondax.net')
 
     //slice to skip "m/" which is not wanted by taquito
     //false so prompt is optional
@@ -76,11 +97,11 @@ export async function run() {
     //forge the prepared operation
     //this will retrieve the operation blob sent to the ledger device
     const forgedOp = await Tezos.rpc.forgeOperations(op)
-    console.log(`Operation blob (?): ${forgedOp}`);
+    console.log(`Operation blob: ${forgedOp}`);
 
     //generate test vector with operation and blob
-    const test_vector = {
-      name: "Simple tx",
+    const test_vector: TestVector = {
+      name: `Simple TX #${n}`,
       blob: forgedOp,
       output: [
         { idx: 0, key: "Kind", val: ledger_fmt("Transaction") }, //page 0
@@ -88,30 +109,15 @@ export async function run() {
         { idx: 2, key: "Fee", val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },
         { idx: 3, key: "Source", val: ledger_fmt(source) },
         { idx: 4, key: "Destination", val: ledger_fmt(addresses.k1) },
-        { idx: 5, key: "Storasge limit", val: ledger_fmt(estimate.storageLimit.toString()) },
+        { idx: 5, key: "Storage limit", val: ledger_fmt(estimate.storageLimit.toString()) },
       ]
     };
 
-    //TODO: save test vector to file and exec test
-    //TODO: generate multiple test vectors
-
-    //get the signature
-    // const sig = await Tezos.signer.sign(forgedOp, new Uint8Array([3]))
-    // console.log(`Signed operation object: ${JSON.stringify(sig)}`);
-
-  } catch (e) {
-    console.log(`Exception occurred: ${JSON.stringify(e)}`)
+    return test_vector;
   } finally {
     await sim.close()
   }
 }
-
-//TODO: format strign like we want to format it in the ledger
-// do paging and also number formatting
-function ledger_fmt(input: string): string[] {
-  return [input]
-}
-
 
 /**
  Example operation (legacy)
