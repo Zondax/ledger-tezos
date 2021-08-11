@@ -309,8 +309,7 @@ impl Viewable for SignUI {
         }
 
         //wrte signature to buffer
-        out[tx..tx + sig_size]
-            .copy_from_slice(&sig[..sig_size]);
+        out[tx..tx + sig_size].copy_from_slice(&sig[..sig_size]);
         tx += sig_size;
 
         (tx, Error::Success as _)
