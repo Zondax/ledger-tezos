@@ -33,10 +33,6 @@ jobs:
           cd rust
           cargo clippy --version
           cargo clippy --features "wallet","dev" --all-targets
-      - name: clippy
-        run: |
-          cd rust
-          cargo clippy --version
           cargo clippy --features "baking","dev" --all-targets
       - name: audit
         run: |
@@ -53,9 +49,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Cache/restore Cargo dependencies
+        uses: actions/cache@v1
+        with:
+          path: ./rust/app/.cargo
+          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
       - name: run rust tests
-        run: |
-          make rust_test
+        run: make rust_test
 
   build-baking:
     runs-on: ubuntu-latest
@@ -68,10 +68,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Cache/restore Cargo dependencies
+        uses: actions/cache@v1
+        with:
+          path: ./rust/app/.cargo
+          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
       - name: run rust tests
-        run: |
-          make rust_test
-
+        run: make rust_test
 
   build_ledger:
     needs: configure
@@ -80,7 +83,6 @@ jobs:
       image: zondax/builder-bolos:latest
       options: --user ${{ needs.configure.outputs.uid_gid }}
     env:
-      BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
       BOLOS_ENV: /opt/bolos
       HOME: /home/zondax_circle
     steps:
@@ -88,27 +90,75 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Build baker app
+      - name: Cache/restore Cargo dependencies
+        uses: actions/cache@v1
+        with:
+          path: ./rust/app/.cargo
+          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+
+      - name: Build Nano S apps
         shell: bash -l {0}
         env:
-          BAKING: 'yes'
+          BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
         run: |
           source $HOME/.cargo/env
-          make
-      - name: Build standard app
+          make both
+      - name: Build Nano X apps
         shell: bash -l {0}
+        env:
+          BOLOS_SDK: ${{ github.workspace }}/deps/nanox-secure-sdk
         run: |
           source $HOME/.cargo/env
-          make
+          make clean
+          make both
 
-  test_zemu:
+      - name: Cache rust elf files
+        uses: actions/cache@v1
+        with:
+          path: ./rust/app/output
+          key: ${{ runner.os }}-${{ github.run_id }}-rust
+
+  build_ledger_legacy:
+    needs: configure
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: true
-      - run: git submodule update --init --recursive
+      - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
+      - name: Build Nano S apps
+        run: |
+          make legacy
+      - name: Cache legacy elf files
+        uses: actions/cache@v1
+        with:
+          path: ./legacy/output
+          key: ${{ runner.os }}-${{ github.run_id }}-legacy
+
+  test_zemu:
+    needs: [ build_ledger, build_ledger_legacy ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Cache/restore Cargo dependencies
+        uses: actions/cache@v1
+        with:
+          path: ./rust/app/.cargo
+          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+      - name: Restore rust build from cache
+        uses: actions/cache@v1
+        with:
+          path:  ./rust/app/output
+          key: ${{ runner.os }}-${{ github.run_id }}-rust
+      - name: Restore legacy build from cache
+        uses: actions/cache@v1
+        with:
+          path: ./legacy/output
+          key: ${{ runner.os }}-${{ github.run_id }}-legacy
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
       - name: Install rust
         run: |
@@ -120,19 +170,7 @@ jobs:
         with:
           node-version: '14.17.0'
       - name: Install yarn
-        run: |
-          npm install -g yarn
-      - name: Build Ledger app (Baking)
-        env:
-          BAKING: 'yes'
-        run: |
-          make
-      - name: Build Ledger app
-        run: |
-          make
-      - name: Build legacy app
-        run: |
-          make legacy
+        run: npm install -g yarn
       - name: Build/Install build js deps
         run: |
           export PATH=~/.cargo/bin:$PATH
@@ -159,13 +197,16 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Build Ledger app (Baking)
-        env:
-          BAKING: 'yes'
-        shell: bash -l {0}
-        run: |
-          source $HOME/.cargo/env
-          make
+      - name: Cache/restore Cargo dependencies
+        uses: actions/cache@v1
+        with:
+          path: ./rust/app/.cargo
+          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+      - name: Restore rust build from cache
+        uses: actions/cache@v1
+        with:
+          path: ./rust/app/output
+          key: ${{ runner.os }}-${{ github.run_id }}-rust
       - name: Copy baking artifacts
         run: |
           pip install ledgerblue

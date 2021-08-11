@@ -46,30 +46,18 @@ legacy_impl:
 	$(call run_docker,$(DOCKER_BOLOS_SDKS),make -j $(NPROC) -C $(DOCKER_LEGACY_APP_SRC))
 
 legacy_wallet:
-	BAKING=tezos_wallet $(MAKE) legacy_impl
 	- mkdir -p legacy/output || true
+	BAKING=tezos_wallet $(MAKE) legacy_impl
 	mv legacy/bin/app.elf legacy/output/app.elf
 
 legacy_baking:
-	BAKING=tezos_baking $(MAKE) legacy_impl
 	- mkdir -p legacy/output || true
+	BAKING=tezos_baking $(MAKE) legacy_impl
 	mv legacy/bin/app.elf legacy/output/app_baking.elf
 
 .PHONY: clean_legacy
 clean_legacy:
 	$(call run_docker,$(DOCKER_BOLOS_SDKS), make -C $(DOCKER_LEGACY_APP_SRC) clean)
-
-else
-default:
-	$(MAKE) -C rust/app
-
-generate:
-	$(MAKE) -C rust generate
-
-%:
-	$(info "Calling app Makefile for target $@")
-	COIN=$(COIN) $(MAKE) -C rust/app $@
-endif
 
 test_all:
 	make rust_test
@@ -79,3 +67,26 @@ test_all:
 	make
 	make legacy
 	make zemu_test
+
+else
+default:
+	$(MAKE) -C rust/app
+
+generate:
+	$(MAKE) -C rust generate
+
+both:
+	$(MAKE)
+	BAKING=tezos_baking $(MAKE)
+
+.PHONY: legacy
+legacy:
+	- mkdir -p legacy/output || true
+	$(MAKE) -C legacy clean
+	APP=tezos_wallet $(MAKE) -C legacy
+	$(MAKE) -C legacy clean
+	APP=tezos_baking $(MAKE) -C legacy
+%:
+	$(info "Calling app Makefile for target $@")
+	COIN=$(COIN) $(MAKE) -C rust/app $@
+endif
