@@ -33,10 +33,6 @@ jobs:
           cd rust
           cargo clippy --version
           cargo clippy --features "wallet","dev" --all-targets
-      - name: clippy
-        run: |
-          cd rust
-          cargo clippy --version
           cargo clippy --features "baking","dev" --all-targets
       - name: audit
         run: |
@@ -99,6 +95,7 @@ jobs:
         with:
           path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
+
       - name: Build Nano S apps
         shell: bash -l {0}
         env:
@@ -112,7 +109,9 @@ jobs:
           BOLOS_SDK: ${{ github.workspace }}/deps/nanox-secure-sdk
         run: |
           source $HOME/.cargo/env
+          make clean
           make both
+
       - name: Cache rust elf files
         uses: actions/cache@v1
         with:

@@ -59,6 +59,15 @@ legacy_baking:
 clean_legacy:
 	$(call run_docker,$(DOCKER_BOLOS_SDKS), make -C $(DOCKER_LEGACY_APP_SRC) clean)
 
+test_all:
+	make rust_test
+	make zemu_install
+	make clean_build
+	BAKING=yes make
+	make
+	make legacy
+	make zemu_test
+
 else
 default:
 	$(MAKE) -C rust/app
@@ -81,12 +90,3 @@ legacy:
 	$(info "Calling app Makefile for target $@")
 	COIN=$(COIN) $(MAKE) -C rust/app $@
 endif
-
-test_all:
-	make rust_test
-	make zemu_install
-	make clean_build
-	BAKING=yes make
-	make
-	make legacy
-	make zemu_test
