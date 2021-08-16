@@ -122,13 +122,13 @@ Numbers are encoded usint the Zarith encoding method. This method encodes numbes
 sequence of bytes, where the MSB of each byte determines whether the read byte is the last one (0)
 or if there are more bytes to read (1).
 
-Afert ignoring these MSBs, the data is then the binary representation of the absolute value 
+After ignoring these MSBs, the data is then the binary representation of the absolute value 
 of the number in little endian order.
 
 ###### Signed
 `tezos-codec describe ground.Z binary schema`
 
-For signed numbers, the second MSB is used to encode if the number is positive (0) or negative (1).
+For signed numbers, the second MSB of the first byte is used to encode if the number is positive (0) or negative (1).
 
 ##### Bytes
 `tezos-codec describe ground.bytes binary schema`
