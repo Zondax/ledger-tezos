@@ -2,25 +2,24 @@
 
 This document is a collection of notes on the tezos protocol and related concepts useful for this project
 
-## Encoding scheme
+# Encoding scheme
 
 This section describes the encoding schemes used in tezos
 
 On most information provided there will be the command(s) to the `tezos-codec` utility
 where the information was retrieved from
 
-### Operations
+## Operations
 
 An encoded tezos operation is represented as follows:
 
 `tezos-codec describe alpha.operation binary schema`
 
 | Name      | Size | Contents                 |
-|-----------|------|--------------------------|
+| --------- | ---- | ------------------------ |
 | branch    | 32   | [Bytes]                  |
 | contents  |      | Sequence of [Operations] |
 | signature | 64   | [Bytes] (optional)       |
-
 
 Example (omitting contents):
 
@@ -42,12 +41,12 @@ To retrieve the value of the signature from the hex:
 
 [source](https://tezos.stackexchange.com/questions/2907/how-are-tezos-operations-encoded) of the above instructions
 
-#### Operation types
+### Operation types
 
 There are many operation content types, each prefixed with a tag and then the contents follow it
 
 | Tag  | Name                          |
-|:-----|:------------------------------|
+| :--- | :---------------------------- |
 | 0x00 | [Endorsement]                 |
 | 0x01 | [Seed Nonce Revelation]       |
 | 0x02 | [Double endorsement evidence] |
@@ -62,27 +61,28 @@ There are many operation content types, each prefixed with a tag and then the co
 | 0x6D | [Origination]                 |
 | 0x6E | [Delegation]                  |
 
-##### Endorsement
+#### Endorsement
 
-##### Seed nonce revelation
+#### Seed nonce revelation
 
-##### Double endorsement evidence
+#### Double endorsement evidence
 
-##### Double baking evidence
+#### Double baking evidence
 
-##### Activate account
+#### Activate account
 
-##### Proposals
+#### Proposals
 
-##### Ballot
+#### Ballot
 
-##### Endorsement with slot
+#### Endorsement with slot
 
-##### Failing Noop
+#### Failing Noop
 
-##### Reveal
+#### Reveal
 
-##### Transaction
+#### Transaction
+
 `tezos-codec describe alpha.operation.contents binary schema` (search `Transaction` section)
 
 A transaction is encoded as follows:
@@ -100,60 +100,104 @@ A transaction is encoded as follows:
 | parameters?    | 1    | [bool]                   |
 | parameters     |      | [Transaction parameters] |
 
-###### Parameters
+##### Parameters
 
-##### Origination
+`tezos-codec describe alpha.operation.contents binary schema` (search `X_0`)
 
-##### Delegation
+Transaction parameters are used for originated contracts to execute
+the specified [entrypoint] with the passed parameters.
 
-### Primitive types
+Parameters are encoded as follows:
+| Name       | Size | Contents          |
+|------------|------|-------------------|
+| entrypoint |      | [Entrypoint]      |
+| length     | 4    | next field length |
+| parameters |      | Michelson [Bytes] |
+
+###### Entrypoint
+
+`tezos-codec describe alpha.operation.contents binary schema` (search `alpha.entrypoint`)
+
+Entrypoints are all prefixed with a tag that encodes a common named entrypoint or
+a custom named entrypoint
+
+| Tag  | Entrypoint        |
+| ---- | ----------------- |
+| 0x00 | "default"         |
+| 0x01 | "root"            |
+| 0x02 | "do"              |
+| 0x03 | "set_delegate"    |
+| 0x04 | "remove_delegate" |
+| 0xFF | custom            |
+
+Custom named entrypoints are encoded as follows:
+
+| Name   | Size | Contents          |
+| ------ | ---- | ----------------- |
+| length | 1    | next field length |
+| bytes  |      | UTF-8 [Bytes]     |
+
+#### Origination
+
+#### Delegation
+
+## Primitive types
 
 There are a couple of "primitive" types that make up the rest of the types
 
-##### Boolean
+### Boolean
+
 `tezos-codec describe ground.bool binary schema`
 
 A boolean is encoded in a single byte with 0xFF if true or 0x00 if false
 
-##### Zarith
+### Zarith
+
 `tezos-codec describe ground.N binary schema`
 
-Numbers are encoded usint the Zarith encoding method. This method encodes numbes as a variable 
+Numbers are encoded usint the Zarith encoding method. This method encodes numbes as a variable
 sequence of bytes, where the MSB of each byte determines whether the read byte is the last one (0)
 or if there are more bytes to read (1).
 
-After ignoring these MSBs, the data is then the binary representation of the absolute value 
+After ignoring these MSBs, the data is then the binary representation of the absolute value
 of the number in little endian order.
 
-###### Signed
+##### Signed
+
 `tezos-codec describe ground.Z binary schema`
 
 For signed numbers, the second MSB of the first byte is used to encode if the number is positive (0) or negative (1).
 
-##### Bytes
+### Bytes
+
 `tezos-codec describe ground.bytes binary schema`
 
 A sequence of bytes is prefixed with the sequence length in 4 bytes
 
-##### Float
-TBD, tezos-codec is unclear
+### Float
 
-##### Public Key
+`tezos-codec describe ground.float binary schema`
+
+A float is just the IEEE 754 standard double-precision floating point representation and is 8 bytes long
+
+### Public Key
+
 `tezos-codec describe alpha.operation.contents` (search `public_key`)
 
 There are 3 types of public keys, since Tezos support using ED25519, SECP256K1 and SECP256R1 (aka P256).
 
-There are also 3 different type of hashes, one for each public key type. 
+There are also 3 different type of hashes, one for each public key type.
 
 When serialized, hashes and public keys are all prefixed with a tag.
 
 | Tag  | Type      | Hash Len | Public Key Len |
-|------|-----------|----------|----------------|
+| ---- | --------- | -------- | -------------- |
 | 0x00 | Ed25519   | 20       | 32             |
 | 0x01 | Secp256k1 | 20       | 33             |
 | 0x02 | P256      | 20       | 33             |
 
-##### Contract ID
+### Contract ID
+
 `tezos-codec describe alpha.operation.contents` (search `alpha.contract_id`)
 
 Contract id is an encoding that represents either an implicit contract (wallet)
@@ -161,15 +205,14 @@ or an originated contract (smart contract).
 
 These 2 are differentiated in encoding by a prefixed tag.
 
-##### Implicit
+#### Implicit
 
 | Name    | Size | Content           |
-|:--------|:-----|:------------------|
+| :------ | :--- | :---------------- |
 | Tag     | 1    | 0x00              |
 | Address | 21   | [Public Key Hash] |
 
-
-##### Originated
+#### Originated
 
 A transaction to an originated contract is a smart contract call,
 see [Transaction parameters] for more info
@@ -177,27 +220,29 @@ see [Transaction parameters] for more info
 Note: unspecified value for padding
 
 | Name          | Size | Content |
-|:--------------|:-----|:--------|
+| :------------ | :--- | :------ |
 | Tag           | 1    | 0x01    |
 | Contract Hash | 20   | [Bytes] |
 | Padding       | 1    | 0x00    |
- 
-[Endorsement]: (#endorsement)
-[Seed Nonce Revelation]: (#seed-nonce-revelation)
-[Double endorsement evidence]: (#double-endorsement-evidence)
-[Double baking evidence]: (#double-baking-evidence)
-[Activate account]: (#activate-account)
-[Proposals]: (#proposals)
-[Ballot]: (#ballot)
-[Endorsement with slot]: (#endorsement-with-slot)
-[Failing Noop]: (#failing-noop)
-[Reveal]: (#reveal)
-[Transaction]: (#transaction)
-[Origination]: (#origination)
-[Delegation]: (#delegation)
-[Zarith]: (#zarith)
-[Transaction parameters]: (#parameters)
-[Public Key Hash]: (#public-key-hash)
+
+[endorsement]: (#endorsement)
+[seed nonce revelation]: (#seed-nonce-revelation)
+[double endorsement evidence]: (#double-endorsement-evidence)
+[double baking evidence]: (#double-baking-evidence)
+[activate account]: (#activate-account)
+[proposals]: (#proposals)
+[ballot]: (#ballot)
+[endorsement with slot]: (#endorsement-with-slot)
+[failing noop]: (#failing-noop)
+[reveal]: (#reveal)
+[transaction]: (#transaction)
+[origination]: (#origination)
+[delegation]: (#delegation)
+[zarith]: (#zarith)
+[transaction parameters]: (#parameters)
+[public key hash]: (#public-key-hash)
 [bool]: (#boolean)
-[Bytes]: (#bytes)
-[Operations]: (#operation-types)
+[bytes]: (#bytes)
+[operations]: (#operation-types)
+[entrypoint]: (#entrypoint)
+[Entrypoint]: (#entrypoint)
