@@ -17,6 +17,7 @@ use arrayref::array_ref;
 use nom::{
     bytes::complete::{take, take_while},
     number::complete::le_u8,
+    sequence::tuple,
     IResult,
 };
 
@@ -57,7 +58,7 @@ impl<'b> Zarith<'b> {
 }
 
 pub fn public_key_hash(input: &[u8]) -> IResult<&[u8], (Curve, &[u8; 20]), ParserError> {
-    let (rem, crv) = le_u8(input)?;
+    let (rem, (crv, hash)) = tuple((le_u8, take(20usize)))(input)?;
 
     let crv = match crv {
         0x00 => Curve::Bip32Ed25519,
@@ -66,7 +67,6 @@ pub fn public_key_hash(input: &[u8]) -> IResult<&[u8], (Curve, &[u8; 20]), Parse
         _ => Err(ParserError::parser_invalid_pubkey_encoding)?,
     };
 
-    let (rem, hash) = take(20usize)(rem)?;
     let out = array_ref!(hash, 0, 20);
 
     Ok((rem, (crv, out)))
@@ -75,12 +75,14 @@ pub fn public_key_hash(input: &[u8]) -> IResult<&[u8], (Curve, &[u8; 20]), Parse
 pub fn public_key(input: &[u8]) -> IResult<&[u8], (Curve, &[u8]), ParserError> {
     let (rem, crv) = le_u8(input)?;
 
-    let (crv, (rem, pk)) = match crv {
-        0x00 => (Curve::Bip32Ed25519, take(32usize)(rem)?),
-        0x01 => (Curve::Secp256K1, take(33usize)(rem)?),
-        0x02 => (Curve::Secp256R1, take(33usize)(rem)?),
+    let (crv, take_pk) = match crv {
+        0x00 => (Curve::Bip32Ed25519, take(32usize)),
+        0x01 => (Curve::Secp256K1, take(33usize)),
+        0x02 => (Curve::Secp256R1, take(33usize)),
         _ => Err(ParserError::parser_invalid_pubkey_encoding)?,
     };
+
+    let (rem, pk) = take_pk(rem)?;
 
     Ok((rem, (crv, pk)))
 }
@@ -100,19 +102,18 @@ impl<'b> ContractID<'b> {
                 Ok((rem, Self::Implicit(crv, hash)))
             }
             0x01 => {
-                let (rem, hash) = take(20usize)(rem)?;
+                //discard last byte (padding)
+                let (rem, (hash, _)) = tuple((take(20usize), le_u8))(rem)?;
+                let hash = array_ref!(hash, 0, 20);
 
-                let (rem, _) = le_u8(rem)?; //skip padding
-                let out = array_ref!(hash, 0, 20);
-
-                Ok((rem, Self::Originated(out)))
+                Ok((rem, Self::Originated(hash)))
             }
             _ => Err(ParserError::parser_invalid_address)?,
         }
     }
 }
 
-fn bool(input: &[u8]) -> IResult<&[u8], bool, ParserError> {
+fn boolean(input: &[u8]) -> IResult<&[u8], bool, ParserError> {
     let (rem, b) = le_u8(input)?;
 
     Ok((rem, b == 255))

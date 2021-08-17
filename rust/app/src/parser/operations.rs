@@ -15,13 +15,14 @@
 ********************************************************************************/
 use nom::{
     bytes::complete::take,
+    call, cond, do_parse,
     number::complete::{le_u32, le_u8},
-    Finish, IResult,
+    take, Finish, IResult,
 };
 
 use crate::{crypto::Curve, handlers::parser_common::ParserError};
 
-use super::{bool, public_key_hash, ContractID, Zarith};
+use super::{boolean, public_key_hash, ContractID, Zarith};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Operation<'b> {
@@ -88,7 +89,7 @@ impl<'b> EncodedOperations<'b> {
     }
 
     pub fn parse_next(&mut self) -> Result<Option<OperationType<'b>>, nom::Err<ParserError>> {
-        match self.parse(){
+        match self.parse() {
             Ok(None) => Ok(None),
             Err(err) => Err(err),
             Ok(Some((data, read))) => {
@@ -184,10 +185,14 @@ pub struct Parameters<'b> {
 
 impl<'b> Parameters<'b> {
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
-        let (rem, entrypoint) = Entrypoint::from_bytes(input)?;
-
-        let (rem, length) = le_u32(rem)?;
-        let (rem, michelson) = take(length as usize)(rem)?;
+        #[rustfmt::skip]
+        let (rem, (entrypoint, michelson)) =
+            do_parse!(input,
+                entrypoint: call!(Entrypoint::from_bytes) >>
+                length: le_u32 >>
+                out: take!(length) >>
+                (entrypoint, out)
+            )?;
 
         Ok((
             rem,
@@ -213,21 +218,20 @@ pub struct Transfer<'b> {
 
 impl<'b> Transfer<'b> {
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
-        let (rem, source) = public_key_hash(input)?;
-        let (rem, fee) = Zarith::from_bytes(rem, false)?;
-        let (rem, counter) = Zarith::from_bytes(rem, false)?;
-        let (rem, gas_limit) = Zarith::from_bytes(rem, false)?;
-        let (rem, storage_limit) = Zarith::from_bytes(rem, false)?;
-        let (rem, amount) = Zarith::from_bytes(rem, false)?;
-        let (rem, destination) = ContractID::from_bytes(rem)?;
-
-        let (rem, has_params) = bool(rem)?;
-        let (rem, params) = if has_params {
-            let (rem, params) = Parameters::from_bytes(rem)?;
-            (rem, Some(params))
-        } else {
-            (rem, None)
-        };
+        #[rustfmt::skip]
+        let (rem, (source, fee, counter, gas_limit, storage_limit, amount, destination, parameters)) =
+            do_parse! {input,
+                source: public_key_hash >>
+                fee: call!(Zarith::from_bytes, false) >>
+                counter: call!(Zarith::from_bytes, false) >>
+                gas_limit: call!(Zarith::from_bytes, false) >>
+                storage_limit: call!(Zarith::from_bytes, false) >>
+                amount: call!(Zarith::from_bytes, false) >>
+                destination: call!(ContractID::from_bytes) >>
+                has_params: boolean >>
+                params: cond!(has_params, Parameters::from_bytes) >>
+                (source, fee, counter, gas_limit, storage_limit, amount, destination, params)
+            }?;
 
         Ok((
             rem,
@@ -239,7 +243,7 @@ impl<'b> Transfer<'b> {
                 storage_limit,
                 amount,
                 destination,
-                parameters: params,
+                parameters,
             },
         ))
     }
