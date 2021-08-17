@@ -170,6 +170,21 @@ impl Addr {
     }
 }
 
+#[cfg(test)]
+impl Addr {
+    pub fn from_hash(hash: &[u8; 20], crv: crypto::Curve) -> Self {
+        let mut this: Self = Default::default();
+
+        this.hash.copy_from_slice(&hash[..]);
+        this.prefix.copy_from_slice(Self::prefix(crv));
+
+        Self::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)
+            .expect("sha256 failed");
+
+        this
+    }
+}
+
 pub struct AddrUI {
     addr: Addr,
     pkey: crypto::PublicKey,

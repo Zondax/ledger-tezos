@@ -15,7 +15,7 @@
 ********************************************************************************/
 use arrayref::array_ref;
 use nom::{
-    bytes::complete::{take, take_while},
+    bytes::complete::{take, take_while1},
     number::complete::le_u8,
     sequence::tuple,
     IResult,
@@ -40,11 +40,10 @@ impl<'b> Zarith<'b> {
 
     pub fn from_bytes(input: &'b [u8], want_sign: bool) -> IResult<&[u8], Self, ParserError> {
         //keep taking bytes while the MSB is 1
-        let (rem, bytes) = take_while(|byte| byte & 0x80 != 0)(input)?;
+        let (_, bytes) = take_while1(|byte| byte & 0x80 == 0)(input)?;
 
-        if bytes.len() < 1 {
-            Err(ParserError::parser_unexpected_buffer_end)?;
-        }
+        //take bytes + 1 since we miss the last byte with `take_till`
+        let (rem, bytes) = take(bytes.len() + 1)(input)?;
 
         let is_negative = if want_sign {
             //if the second bit of the first byte is set, then it's negative
@@ -54,6 +53,10 @@ impl<'b> Zarith<'b> {
         };
 
         Ok((rem, Self { bytes, is_negative }))
+    }
+
+    pub fn is_negative(&self) -> Option<bool> {
+        self.is_negative
     }
 }
 
@@ -117,4 +120,98 @@ fn boolean(input: &[u8]) -> IResult<&[u8], bool, ParserError> {
     let (rem, b) = le_u8(input)?;
 
     Ok((rem, b == 255))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{crypto::Curve, handlers::public_key::Addr, parser::{boolean, public_key, public_key_hash}};
+
+    use super::Zarith;
+
+    #[test]
+    fn pkh_ed() {
+        const PKH_BASE58: &str = "tz1QZ6KY7d3BuZDT1d19dUxoQrtFPN2QJ3hn";
+        const INPUT_HEX: &str = "0035e993d8c7aaa42b5e3ccd86a33390ececc73abd";
+
+        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
+
+        let (rem, (crv, hash)) = public_key_hash(&input).expect("failed to parse input");
+
+        assert_eq!(rem.len(), 0);
+        assert_eq!(crv, Curve::Bip32Ed25519);
+
+        let addr = Addr::from_hash(hash, crv);
+        assert_eq!(&addr.to_base58()[..], PKH_BASE58.as_bytes());
+    }
+
+    #[test]
+    #[should_panic(expected = "failed to parse pkh input")]
+    fn pkh_ed_eof() {
+        const INPUT_HEX: &str = "0035e993d8c7aaa42b5e3ccd86a333";
+
+        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
+
+        public_key_hash(&input).expect("failed to parse pkh input");
+    }
+
+    #[test]
+    fn pk_ed() {
+        const INPUT_HEX: &str = "00ebcf82872f4942052704e95dc4bfa0538503dbece27414a39b6650bcecbff896";
+        const PK_BASE58: &str = "edpkvS5QFv7KRGfa3b87gg9DBpxSm3NpSwnjhUjNBQrRUUR66F7C9g";
+
+        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
+
+        let (rem, (crv, pk)) = public_key(&input).expect("failed to parse input");
+
+        assert_eq!(rem.len(), 0);
+        assert_eq!(crv, Curve::Bip32Ed25519);
+
+        let mut vpk = crate::constants::tzprefix::EDPK.to_vec();
+        vpk.extend_from_slice(pk);
+
+        let pk = bs58::encode(vpk).with_check().into_string();
+        assert_eq!(pk.as_str(), PK_BASE58);
+    }
+
+    #[test]
+    #[should_panic(expected = "failed to parse pk input")]
+    fn pk_ed_eof() {
+        const INPUT_HEX: &str = "00ebcf82872f4942052704e95dc4bfa0538503dbece27414a39b";
+
+        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
+
+        public_key(&input).expect("failed to parse pk input");
+    }
+
+    #[test]
+    fn parse_boolean() {
+        assert_eq!(true, boolean(&[255]).expect("invalid input").1);
+        assert_eq!(false, boolean(&[0]).expect("invalid input").1);
+        assert_eq!(false, boolean(&[123]).expect("invalid input").1);
+    }
+
+    #[test]
+    fn zarith() {
+        //should ignore last byte
+        let end_early = &[0b1000_0001, 0x11, 0x33][..];
+
+        let (_, num) = Zarith::from_bytes(end_early, false).expect("invalid input");
+        assert_eq!(num.len(), 2);
+        assert_eq!(num.is_negative(), None);
+
+        //should be considered negative
+        let negative = &[0b1100_0011, 0x23][..];
+
+        let (_, num) = Zarith::from_bytes(negative, true).expect("invalid input");
+        assert_eq!(num.len(), 2);
+        assert_eq!(num.is_negative(), Some(true));
+
+        //should be considered positive
+        let positive = &[0b1000_0011, 0x23][..];
+
+        let (_, num) = Zarith::from_bytes(positive, true).expect("invalid input");
+        assert_eq!(num.len(), 2);
+        assert_eq!(num.is_negative(), Some(false))
+    }
+
 }
