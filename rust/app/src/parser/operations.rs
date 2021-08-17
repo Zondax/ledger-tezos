@@ -13,16 +13,11 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use nom::{
-    bytes::complete::take,
-    call, cond, do_parse,
-    number::complete::{le_u32, le_u8},
-    take, Finish, IResult,
-};
+use nom::{Finish, IResult, bytes::complete::take, call, cond, do_parse, number::complete::{le_u32, le_u8}, sequence::tuple, take};
 
 use crate::{crypto::Curve, handlers::parser_common::ParserError};
 
-use super::{boolean, public_key_hash, ContractID, Zarith};
+use super::{boolean, public_key_hash, Zarith};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Operation<'b> {
@@ -201,6 +196,32 @@ impl<'b> Parameters<'b> {
                 michelson,
             },
         ))
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ContractID<'b> {
+    Implicit(Curve, &'b [u8; 20]),
+    Originated(&'b [u8; 20]),
+}
+
+impl<'b> ContractID<'b> {
+    fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
+        let (rem, tag) = le_u8(input)?;
+        match tag {
+            0x00 => {
+                let (rem, (crv, hash)) = public_key_hash(rem)?;
+                Ok((rem, Self::Implicit(crv, hash)))
+            }
+            0x01 => {
+                //discard last byte (padding)
+                let (rem, (hash, _)) = tuple((take(20usize), le_u8))(rem)?;
+                let hash = arrayref::array_ref!(hash, 0, 20);
+
+                Ok((rem, Self::Originated(hash)))
+            }
+            _ => Err(ParserError::parser_invalid_address)?,
+        }
     }
 }
 

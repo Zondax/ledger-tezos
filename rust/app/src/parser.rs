@@ -90,31 +90,6 @@ pub fn public_key(input: &[u8]) -> IResult<&[u8], (Curve, &[u8]), ParserError> {
     Ok((rem, (crv, pk)))
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum ContractID<'b> {
-    Implicit(Curve, &'b [u8; 20]),
-    Originated(&'b [u8; 20]),
-}
-
-impl<'b> ContractID<'b> {
-    fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
-        let (rem, tag) = le_u8(input)?;
-        match tag {
-            0x00 => {
-                let (rem, (crv, hash)) = public_key_hash(rem)?;
-                Ok((rem, Self::Implicit(crv, hash)))
-            }
-            0x01 => {
-                //discard last byte (padding)
-                let (rem, (hash, _)) = tuple((take(20usize), le_u8))(rem)?;
-                let hash = array_ref!(hash, 0, 20);
-
-                Ok((rem, Self::Originated(hash)))
-            }
-            _ => Err(ParserError::parser_invalid_address)?,
-        }
-    }
-}
 
 fn boolean(input: &[u8]) -> IResult<&[u8], bool, ParserError> {
     let (rem, b) = le_u8(input)?;
