@@ -14,12 +14,7 @@
 *  limitations under the License.
 ********************************************************************************/
 use arrayref::array_ref;
-use nom::{
-    bytes::complete::{take, take_till},
-    number::complete::le_u8,
-    sequence::tuple,
-    IResult,
-};
+use nom::{bytes::complete::take, number::complete::le_u8, sequence::tuple, IResult};
 
 use crate::{crypto::Curve, handlers::parser_common::ParserError};
 
@@ -34,6 +29,7 @@ pub struct Zarith<'b> {
 }
 
 impl<'b> Zarith<'b> {
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.bytes.len()
     }
@@ -41,7 +37,7 @@ impl<'b> Zarith<'b> {
     #[cfg(not(test))]
     pub fn from_bytes(input: &'b [u8], want_sign: bool) -> IResult<&[u8], Self, ParserError> {
         //keep taking bytes while the MSB is 1
-        let (_, bytes) = take_till(|byte| byte & 0x80 == 0)(input)?;
+        let (_, bytes) = nom::bytes::complete::take_till(|byte| byte & 0x80 == 0)(input)?;
 
         //take bytes + 1 since we miss the last byte with `take_till`
         let (rem, bytes) = take(bytes.len() + 1)(input)?;
@@ -58,11 +54,11 @@ impl<'b> Zarith<'b> {
 
     #[cfg(test)]
     pub fn from_bytes(input: &'b [u8], want_sign: bool) -> IResult<&[u8], Self, ParserError> {
+        use nom::{dbg_basic, take, take_till};
         use std::println;
-        use nom::{take, dbg_basic, take_till};
 
         //keep taking bytes while the MSB is 1
-        let (_, bytes) = dbg_basic!(input, take_till!(|byte| byte & 0x80 == 0) )?;
+        let (_, bytes) = dbg_basic!(input, take_till!(|byte| byte & 0x80 == 0))?;
 
         //take bytes + 1 since we miss the last byte with `take_till`
         let (rem, bytes) = dbg_basic!(input, take!(bytes.len() + 1))?;
@@ -89,7 +85,7 @@ pub fn public_key_hash(input: &[u8]) -> IResult<&[u8], (Curve, &[u8; 20]), Parse
         0x00 => Curve::Bip32Ed25519,
         0x01 => Curve::Secp256K1,
         0x02 => Curve::Secp256R1,
-        _ => Err(ParserError::parser_invalid_pubkey_encoding)?,
+        _ => return Err(ParserError::parser_invalid_pubkey_encoding.into()),
     };
 
     let out = array_ref!(hash, 0, 20);
@@ -104,14 +100,13 @@ pub fn public_key(input: &[u8]) -> IResult<&[u8], (Curve, &[u8]), ParserError> {
         0x00 => (Curve::Bip32Ed25519, take(32usize)),
         0x01 => (Curve::Secp256K1, take(33usize)),
         0x02 => (Curve::Secp256R1, take(33usize)),
-        _ => Err(ParserError::parser_invalid_pubkey_encoding)?,
+        _ => return Err(ParserError::parser_invalid_pubkey_encoding.into()),
     };
 
     let (rem, pk) = take_pk(rem)?;
 
     Ok((rem, (crv, pk)))
 }
-
 
 fn boolean(input: &[u8]) -> IResult<&[u8], bool, ParserError> {
     let (rem, b) = le_u8(input)?;
@@ -121,7 +116,11 @@ fn boolean(input: &[u8]) -> IResult<&[u8], bool, ParserError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{crypto::Curve, handlers::public_key::Addr, parser::{boolean, public_key, public_key_hash}};
+    use crate::{
+        crypto::Curve,
+        handlers::public_key::Addr,
+        parser::{boolean, public_key, public_key_hash},
+    };
 
     use super::Zarith;
 
@@ -153,7 +152,8 @@ mod tests {
 
     #[test]
     fn pk_ed() {
-        const INPUT_HEX: &str = "00ebcf82872f4942052704e95dc4bfa0538503dbece27414a39b6650bcecbff896";
+        const INPUT_HEX: &str =
+            "00ebcf82872f4942052704e95dc4bfa0538503dbece27414a39b6650bcecbff896";
         const PK_BASE58: &str = "edpkvS5QFv7KRGfa3b87gg9DBpxSm3NpSwnjhUjNBQrRUUR66F7C9g";
 
         let input = hex::decode(INPUT_HEX).expect("invalid input hex");
@@ -182,9 +182,9 @@ mod tests {
 
     #[test]
     fn parse_boolean() {
-        assert_eq!(true, boolean(&[255]).expect("invalid input").1);
-        assert_eq!(false, boolean(&[0]).expect("invalid input").1);
-        assert_eq!(false, boolean(&[123]).expect("invalid input").1);
+        assert!(boolean(&[255]).expect("invalid input").1);
+        assert!(!boolean(&[0]).expect("invalid input").1);
+        assert!(!boolean(&[123]).expect("invalid input").1);
     }
 
     #[test]
@@ -224,5 +224,4 @@ mod tests {
         assert_eq!(num.len(), 2);
         assert_eq!(num.is_negative(), Some(false))
     }
-
 }

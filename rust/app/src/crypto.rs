@@ -191,7 +191,7 @@ impl Curve {
         SecretKey::new(self, *path)
     }
 
-    pub fn to_prefix(&self) -> &'static [u8] {
+    pub fn to_prefix(self) -> &'static [u8] {
         use crate::constants::tzprefix;
 
         sys::PIC::new(match self {

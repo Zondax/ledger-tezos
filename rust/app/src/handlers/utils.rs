@@ -14,8 +14,6 @@
 *  limitations under the License.
 ********************************************************************************/
 use core::convert::TryFrom;
-
-use bolos::errors::SyscallError;
 use zemu_sys::ViewError;
 
 #[repr(u8)]
@@ -192,13 +190,13 @@ pub fn handle_ui_message(item: &[u8], out: &mut [u8], page: u8) -> Result<u8, Vi
             .nth(page as usize) //get the nth chunk
             .ok_or(ViewError::Unknown)?;
 
-        out[..chunk.len()].copy_from_slice(&chunk[..]);
+        out[..chunk.len()].copy_from_slice(chunk);
         out[chunk.len() * 2] = 0; //null terminate
 
         let n_pages = item.len() / m_len;
         Ok(1 + n_pages as u8)
     } else {
-        out[..item.len()].copy_from_slice(&item[..]);
+        out[..item.len()].copy_from_slice(item);
         out[item.len()] = 0; //null terminate
         Ok(1)
     }

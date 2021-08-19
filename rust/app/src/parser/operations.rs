@@ -17,7 +17,6 @@ use nom::{
     bytes::complete::take,
     call, cond, do_parse,
     number::complete::{be_u32, le_u8},
-    sequence::tuple,
     take, Finish, IResult,
 };
 
@@ -132,7 +131,10 @@ impl<'b> EncodedOperations<'b> {
     }
 
     /// Sets the inner index to the specified one.
-    /// This is unsafe because it could make further reading impossible
+    ///
+    /// # Safety
+    /// If the specified "read" argument is a byte in the middle of an operation
+    /// it will make further reading impossible
     pub unsafe fn set_source_index(&mut self, read: usize) {
         self.read = read;
     }
@@ -164,7 +166,7 @@ impl<'b> OperationType<'b> {
             }
             0x6D => todo!("origination"),
             0x6E => todo!("delegation"),
-            _ => Err(ParserError::UnknownOperation)?,
+            _ => return Err(ParserError::UnknownOperation.into()),
         };
 
         Ok((rem, data))
@@ -204,7 +206,7 @@ impl<'b> Entrypoint<'b> {
 
                 Self::Custom(name)
             }
-            _ => Err(ParserError::parser_invalid_contract_name)?,
+            _ => return Err(ParserError::parser_invalid_contract_name.into()),
         };
 
         Ok((rem, data))
@@ -269,7 +271,7 @@ impl<'b> ContractID<'b> {
                     input.len() - rem.len(),
                     input
                 );
-                Err(ParserError::parser_invalid_address)?
+                Err(ParserError::parser_invalid_address.into())
             }
         }
     }
@@ -284,11 +286,11 @@ impl<'b> ContractID<'b> {
             }
             0x01 => {
                 //discard last byte (padding)
-                let (rem, (hash, _)) = tuple((take(20usize), le_u8))(rem)?;
+                let (rem, (hash, _)) = nom::sequence::tuple((take(20usize), le_u8))(rem)?;
                 let hash = arrayref::array_ref!(hash, 0, 20);
                 Ok((rem, Self::Originated(hash)))
             }
-            _ => Err(ParserError::parser_invalid_address)?,
+            _ => Err(ParserError::parser_invalid_address.into()),
         }
     }
 
@@ -299,11 +301,11 @@ impl<'b> ContractID<'b> {
     }
 
     pub fn base58(&self, out: &mut [u8; 36]) -> Result<(), bolos::Error> {
-        let (prefix, hash) = match self {
-            &Self::Originated(h) => (KT1, h),
-            &Self::Implicit(Curve::Bip32Ed25519 | Curve::Ed25519, h) => (TZ1, h),
-            &Self::Implicit(Curve::Secp256K1, h) => (TZ2, h),
-            &Self::Implicit(Curve::Secp256R1, h) => (TZ3, h),
+        let (prefix, hash) = match *self {
+            Self::Originated(h) => (KT1, h),
+            Self::Implicit(Curve::Bip32Ed25519 | Curve::Ed25519, h) => (TZ1, h),
+            Self::Implicit(Curve::Secp256K1, h) => (TZ2, h),
+            Self::Implicit(Curve::Secp256R1, h) => (TZ3, h),
         };
 
         let mut checksum = [0; 4];
@@ -526,9 +528,9 @@ mod tests {
         fn simple() {
             const INPUT_HEX: &str = "02000000070a000000020202";
 
-            let mut input = hex::decode(INPUT_HEX).expect("invalid hex input");
+            let input = hex::decode(INPUT_HEX).expect("invalid hex input");
 
-            let (rem, parameters) =
+            let (_, parameters) =
                 Parameters::from_bytes(&input).expect("faled to parse parameters");
 
             assert_eq!(
@@ -610,7 +612,7 @@ mod tests {
         let mut input = hex::decode(INPUT_HEX).expect("invalid input hex");
         input.extend_from_slice(&[0xDE, 0xEA, 0xBE, 0xEF]);
 
-        let (rem, parsed) = Transfer::from_bytes(&input).expect("couldn't parse transfer");
+        let (rem, _parsed) = Transfer::from_bytes(&input).expect("couldn't parse transfer");
         assert_eq!(rem.len(), 4);
     }
 
@@ -626,7 +628,7 @@ mod tests {
                                  ff\
                                  02000000070a000000020202";
 
-        let mut input = hex::decode(INPUT_HEX).expect("invalid input hex");
+        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
 
         let (rem, parsed) = Transfer::from_bytes(&input).expect("couldn't parse transfer");
         assert_eq!(rem.len(), 0);
@@ -680,7 +682,7 @@ mod tests {
         let branch = bs58::encode(vbr).with_check().into_string();
         assert_eq!(&branch, BRANCH_BASE58);
 
-        let mut ops = parsed.mut_ops();
+        let ops = parsed.mut_ops();
         let op = ops
             .parse_next()
             .expect("failed to parse operation")
@@ -690,6 +692,7 @@ mod tests {
             OperationType::Transfer(_) => {
                 //we don't check transfer here to avoid redundancy
             }
+            #[allow(unreachable_patterns)]
             opt => panic!("not the expected operation type, found: {:x?}", opt),
         }
 
@@ -716,7 +719,7 @@ mod tests {
         let branch = bs58::encode(vbr).with_check().into_string();
         assert_eq!(&branch, BRANCH_BASE58);
 
-        let mut ops = parsed.mut_ops();
+        let ops = parsed.mut_ops();
         let op1 = ops
             .parse_next()
             .expect("failed to parse operation")
@@ -738,6 +741,7 @@ mod tests {
             ) => {
                 //we don't check transfer here to avoid redundancy
             }
+            #[allow(unreachable_patterns)]
             opt => panic!("not the expected operation type, found: {:x?}", opt),
         }
     }
