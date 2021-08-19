@@ -13,7 +13,13 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use nom::{Finish, IResult, bytes::complete::take, call, cond, do_parse, number::complete::{le_u32, le_u8}, sequence::tuple, take};
+use nom::{
+    bytes::complete::take,
+    call, cond, do_parse,
+    number::complete::{be_u32, le_u8},
+    sequence::tuple,
+    take, Finish, IResult,
+};
 
 use crate::{crypto::Curve, handlers::parser_common::ParserError};
 
@@ -138,7 +144,7 @@ impl<'b> OperationType<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Entrypoint<'b> {
     Default,
     Root,
@@ -160,7 +166,7 @@ impl<'b> Entrypoint<'b> {
             0x04 => Self::RemoveDelegate,
             0xFF => {
                 let (rem2, length) = le_u8(rem)?;
-                let (rem2, name) = take(length)(rem2)?;
+                let (rem2, name) = take!(rem2, length)?;
                 rem = rem2;
 
                 Self::Custom(name)
@@ -172,7 +178,7 @@ impl<'b> Entrypoint<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Parameters<'b> {
     entrypoint: Entrypoint<'b>,
     michelson: &'b [u8],
@@ -184,7 +190,7 @@ impl<'b> Parameters<'b> {
         let (rem, (entrypoint, michelson)) =
             do_parse!(input,
                 entrypoint: call!(Entrypoint::from_bytes) >>
-                length: le_u32 >>
+                length: be_u32 >>
                 out: take!(length) >>
                 (entrypoint, out)
             )?;
@@ -199,13 +205,43 @@ impl<'b> Parameters<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContractID<'b> {
     Implicit(Curve, &'b [u8; 20]),
     Originated(&'b [u8; 20]),
 }
 
 impl<'b> ContractID<'b> {
+    #[cfg(test)]
+    fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
+        use nom::{dbg_basic, tuple as tuplem};
+        use std::{eprintln, println};
+
+        let (rem, tag) = dbg_basic!(input, le_u8)?;
+        match tag {
+            0x00 => {
+                let (rem, (crv, hash)) = public_key_hash(rem)?;
+                Ok((rem, Self::Implicit(crv, hash)))
+            }
+            0x01 => {
+                //discard last byte (padding)
+                let (rem, (hash, _)) = dbg_basic!(rem, tuplem!(take!(20usize), le_u8))?;
+                let hash = arrayref::array_ref!(hash, 0, 20);
+                Ok((rem, Self::Originated(hash)))
+            }
+            err => {
+                eprintln!(
+                    "found {:x} at {}; {:x?}",
+                    err,
+                    input.len() - rem.len(),
+                    input
+                );
+                Err(ParserError::parser_invalid_address)?
+            }
+        }
+    }
+
+    #[cfg(not(test))]
     fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, tag) = le_u8(input)?;
         match tag {
@@ -217,15 +253,21 @@ impl<'b> ContractID<'b> {
                 //discard last byte (padding)
                 let (rem, (hash, _)) = tuple((take(20usize), le_u8))(rem)?;
                 let hash = arrayref::array_ref!(hash, 0, 20);
-
                 Ok((rem, Self::Originated(hash)))
             }
             _ => Err(ParserError::parser_invalid_address)?,
         }
     }
+
+    pub fn hash(&self) -> &[u8; 20] {
+        match self {
+            ContractID::Implicit(_, h) | ContractID::Originated(h) => h,
+        }
+    }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, property::Property)]
+#[property(mut(disable), get(public), set(disable))]
 pub struct Transfer<'b> {
     source: (Curve, &'b [u8; 20]),
     fee: Zarith<'b>,
@@ -238,6 +280,7 @@ pub struct Transfer<'b> {
 }
 
 impl<'b> Transfer<'b> {
+    #[cfg(not(test))]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         #[rustfmt::skip]
         let (rem, (source, fee, counter, gas_limit, storage_limit, amount, destination, parameters)) =
@@ -267,5 +310,300 @@ impl<'b> Transfer<'b> {
                 parameters,
             },
         ))
+    }
+
+    #[cfg(test)]
+    pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
+        use nom::dbg_basic;
+        use std::println;
+
+        #[rustfmt::skip]
+        let (rem, (source, fee, counter, gas_limit, storage_limit, amount, destination, parameters)) =
+            dbg_basic! {input,
+                do_parse!(
+                source: public_key_hash >>
+                fee: call!(Zarith::from_bytes, false) >>
+                counter: call!(Zarith::from_bytes, false) >>
+                gas_limit: call!(Zarith::from_bytes, false) >>
+                storage_limit: call!(Zarith::from_bytes, false) >>
+                amount: call!(Zarith::from_bytes, false) >>
+                destination: call!(ContractID::from_bytes) >>
+                has_params: boolean >>
+                params: cond!(has_params, Parameters::from_bytes) >>
+                (source, fee, counter, gas_limit, storage_limit, amount, destination, params)
+            )}?;
+
+        Ok((
+            rem,
+            Self {
+                source,
+                fee,
+                counter,
+                gas_limit,
+                storage_limit,
+                amount,
+                destination,
+                parameters,
+            },
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        crypto::Curve,
+        handlers::public_key::Addr,
+        parser::{
+            operations::{ContractID, Parameters, Transfer},
+            Zarith,
+        },
+    };
+
+    use super::Entrypoint;
+
+    #[test]
+    fn contract_id_pkh() {
+        const INPUT_HEX: &str = "000035e993d8c7aaa42b5e3ccd86a33390ececc73abd";
+        const PKH_BASE58: &str = "tz1QZ6KY7d3BuZDT1d19dUxoQrtFPN2QJ3hn";
+
+        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
+
+        let (rem, parsed) =
+            ContractID::from_bytes(&input).expect("failed to parse contract id input");
+
+        assert_eq!(rem.len(), 0);
+        assert_eq!(
+            parsed,
+            ContractID::Implicit(Curve::Bip32Ed25519, arrayref::array_ref!(input, 2, 20))
+        );
+
+        let addr = Addr::from_hash(parsed.hash(), Curve::Bip32Ed25519);
+        assert_eq!(&addr.to_base58()[..], PKH_BASE58.as_bytes());
+    }
+
+    #[test]
+    fn contract_id_contract() {
+        const INPUT_HEX: &str = "016a7d4a43f51be0934a441fba4f13f9beaa47575100";
+        const CONTRACT_BASE58: &str = "KT1JHqHQdHSgWBKo6H4UfG8dw3JnZSyjGkHA";
+
+        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
+
+        let (rem, parsed) =
+            ContractID::from_bytes(&input).expect("failed to parse contract id input");
+
+        assert_eq!(rem.len(), 0);
+        assert_eq!(
+            parsed,
+            ContractID::Originated(arrayref::array_ref!(input, 1, 20))
+        );
+
+        let mut cid = crate::constants::tzprefix::KT1.to_vec();
+        cid.extend_from_slice(&parsed.hash()[..]);
+
+        let cid = bs58::encode(cid).with_check().into_string();
+        assert_eq!(cid.as_str(), CONTRACT_BASE58);
+    }
+
+    #[test]
+    fn entrypoint() {
+        let (_, default) =
+            Entrypoint::from_bytes(&[0]).expect("failed to parse default entrypoint");
+        assert_eq!(default, Entrypoint::Default);
+
+        let (_, root) = Entrypoint::from_bytes(&[1]).expect("failed to parse root entrypoint");
+        assert_eq!(root, Entrypoint::Root);
+
+        let (_, do_entrypoint) =
+            Entrypoint::from_bytes(&[2]).expect("failed to parse do entrypoint");
+        assert_eq!(do_entrypoint, Entrypoint::Do);
+
+        let (_, set_delegate) =
+            Entrypoint::from_bytes(&[3]).expect("failed to parse set_delegate entrypoint");
+        assert_eq!(set_delegate, Entrypoint::SetDelegate);
+
+        let (_, remove_delegate) =
+            Entrypoint::from_bytes(&[4]).expect("failed to parse remove_delegate entrypoint");
+        assert_eq!(remove_delegate, Entrypoint::RemoveDelegate);
+
+        let (rem, custom) = Entrypoint::from_bytes(&[0xFF, 0x03, 0x61, 0x62, 0x63, 0xaa])
+            .expect("failed to parse custom entrypoint");
+        assert_eq!(rem.len(), 1);
+        assert_eq!(custom, Entrypoint::Custom(b"abc"));
+    }
+
+    #[test]
+    #[should_panic(expected = "Incomplete(Size(8))")]
+    fn entrypoint_eof() {
+        Entrypoint::from_bytes(&[0xFF, 10, 0x61, 0x62]).expect("failed to parse custom entrypoint");
+    }
+
+    mod parameters {
+        use crate::parser::operations::{Entrypoint, Parameters};
+
+        #[test]
+        fn manual() {
+            const MICHELSON_CODE: &[u8] = &[0xab, 0xcd];
+
+            let mut input = std::vec![0];
+            input.extend_from_slice(&(MICHELSON_CODE.len() as u32).to_be_bytes()[..]);
+            input.extend_from_slice(MICHELSON_CODE);
+            input.push(0xAA); //dummy byte to verify length
+
+            let (rem, parameters) =
+                Parameters::from_bytes(&input).expect("faled to parse parameters");
+
+            assert_eq!(rem.len(), 1);
+            assert_eq!(
+                parameters,
+                Parameters {
+                    entrypoint: Entrypoint::Default,
+                    michelson: &[0xab, 0xcd]
+                }
+            )
+        }
+
+        #[test]
+        fn simple() {
+            const INPUT_HEX: &str = "02000000070a000000020202";
+
+            let mut input = hex::decode(INPUT_HEX).expect("invalid hex input");
+
+            let (rem, parameters) =
+                Parameters::from_bytes(&input).expect("faled to parse parameters");
+
+            assert_eq!(
+                parameters,
+                Parameters {
+                    entrypoint: Entrypoint::Do,
+                    michelson: &input[5..]
+                }
+            )
+        }
+
+        #[test]
+        #[should_panic(expected = "Incomplete(Size(8))")]
+        fn manual_eof() {
+            const MICHELSON_CODE: &[u8] = &[0xab, 0xcd];
+
+            let mut input = std::vec![0];
+            input.extend_from_slice(&(10u32).to_be_bytes()[..]);
+            input.extend_from_slice(MICHELSON_CODE);
+
+            Parameters::from_bytes(&input).expect("failed to parse parameters");
+        }
+    }
+
+    #[test]
+    fn transfer() {
+        const INPUT_HEX: &str = "0035e993d8c7aaa42b5e3ccd86a33390ececc73abd\
+                                 904e\
+                                 01\
+                                 0a\
+                                 0a\
+                                 e807\
+                                 000035e993d8c7aaa42b5e3ccd86a33390ececc73abd\
+                                 00";
+
+        let mut input = hex::decode(INPUT_HEX).expect("invalid input hex");
+        input.extend_from_slice(&[0xDE, 0xEA, 0xBE, 0xEF]);
+
+        let (rem, parsed) = Transfer::from_bytes(&input).expect("couldn't parse transfer");
+        assert_eq!(rem.len(), 4);
+
+        let expected = Transfer {
+            source: (Curve::Bip32Ed25519, arrayref::array_ref!(input, 1, 20)),
+            fee: Zarith {
+                is_negative: None,
+                bytes: &input[21..23],
+            },
+            counter: Zarith {
+                is_negative: None,
+                bytes: &input[23..24],
+            },
+            gas_limit: Zarith {
+                is_negative: None,
+                bytes: &input[24..25],
+            },
+            storage_limit: Zarith {
+                is_negative: None,
+                bytes: &input[25..26],
+            },
+            amount: Zarith {
+                is_negative: None,
+                bytes: &input[26..28],
+            },
+            destination: ContractID::Implicit(
+                Curve::Bip32Ed25519,
+                arrayref::array_ref!(input, 28 + 2, 20),
+            ),
+            parameters: None,
+        };
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "Incomplete")]
+    fn transfer_eof() {
+        const INPUT_HEX: &str = "0035e993d8c7aaa42b5e3ccd86a33390ececc73abd904e01";
+
+        let mut input = hex::decode(INPUT_HEX).expect("invalid input hex");
+        input.extend_from_slice(&[0xDE, 0xEA, 0xBE, 0xEF]);
+
+        let (rem, parsed) = Transfer::from_bytes(&input).expect("couldn't parse transfer");
+        assert_eq!(rem.len(), 4);
+    }
+
+    #[test]
+    fn contract_call() {
+        const INPUT_HEX: &str = "0035e993d8c7aaa42b5e3ccd86a33390ececc73abd\
+                                 904e\
+                                 01\
+                                 0a\
+                                 0a\
+                                 e807\
+                                 000035e993d8c7aaa42b5e3ccd86a33390ececc73abd\
+                                 ff\
+                                 02000000070a000000020202";
+
+        let mut input = hex::decode(INPUT_HEX).expect("invalid input hex");
+
+        let (rem, parsed) = Transfer::from_bytes(&input).expect("couldn't parse transfer");
+        assert_eq!(rem.len(), 0);
+
+        let expected = Transfer {
+            source: (Curve::Bip32Ed25519, arrayref::array_ref!(input, 1, 20)),
+            fee: Zarith {
+                is_negative: None,
+                bytes: &input[21..23],
+            },
+            counter: Zarith {
+                is_negative: None,
+                bytes: &input[23..24],
+            },
+            gas_limit: Zarith {
+                is_negative: None,
+                bytes: &input[24..25],
+            },
+            storage_limit: Zarith {
+                is_negative: None,
+                bytes: &input[25..26],
+            },
+            amount: Zarith {
+                is_negative: None,
+                bytes: &input[26..28],
+            },
+            destination: ContractID::Implicit(
+                Curve::Bip32Ed25519,
+                arrayref::array_ref!(input, 28 + 2, 20),
+            ),
+            parameters: Some(Parameters {
+                entrypoint: Entrypoint::Do,
+                michelson: &input[56..],
+            }),
+        };
+
+        assert_eq!(parsed, expected);
     }
 }

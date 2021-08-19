@@ -15,7 +15,7 @@
 ********************************************************************************/
 use arrayref::array_ref;
 use nom::{
-    bytes::complete::{take, take_while1},
+    bytes::complete::{take, take_till},
     number::complete::le_u8,
     sequence::tuple,
     IResult,
@@ -27,7 +27,7 @@ pub mod operations;
 
 //TODO: determine actual size so we can use other libs and pass this type around more armoniously
 // alternative: implement all the necessary traits and handle everything manually...
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Zarith<'b> {
     bytes: &'b [u8],
     is_negative: Option<bool>,
@@ -38,12 +38,34 @@ impl<'b> Zarith<'b> {
         self.bytes.len()
     }
 
+    #[cfg(not(test))]
     pub fn from_bytes(input: &'b [u8], want_sign: bool) -> IResult<&[u8], Self, ParserError> {
         //keep taking bytes while the MSB is 1
-        let (_, bytes) = take_while1(|byte| byte & 0x80 == 0)(input)?;
+        let (_, bytes) = take_till(|byte| byte & 0x80 == 0)(input)?;
 
         //take bytes + 1 since we miss the last byte with `take_till`
         let (rem, bytes) = take(bytes.len() + 1)(input)?;
+
+        let is_negative = if want_sign {
+            //if the second bit of the first byte is set, then it's negative
+            Some(bytes[0] & 0x40 != 0)
+        } else {
+            None
+        };
+
+        Ok((rem, Self { bytes, is_negative }))
+    }
+
+    #[cfg(test)]
+    pub fn from_bytes(input: &'b [u8], want_sign: bool) -> IResult<&[u8], Self, ParserError> {
+        use std::println;
+        use nom::{take, dbg_basic, take_till};
+
+        //keep taking bytes while the MSB is 1
+        let (_, bytes) = dbg_basic!(input, take_till!(|byte| byte & 0x80 == 0) )?;
+
+        //take bytes + 1 since we miss the last byte with `take_till`
+        let (rem, bytes) = dbg_basic!(input, take!(bytes.len() + 1))?;
 
         let is_negative = if want_sign {
             //if the second bit of the first byte is set, then it's negative
@@ -172,6 +194,20 @@ mod tests {
 
         let (_, num) = Zarith::from_bytes(end_early, false).expect("invalid input");
         assert_eq!(num.len(), 2);
+        assert_eq!(num.is_negative(), None);
+
+        //should get a single byte
+        let single_byte = &[0x0a][..];
+
+        let (_, num) = Zarith::from_bytes(single_byte, false).expect("invalid input");
+        assert_eq!(num.len(), 1);
+        assert_eq!(num.is_negative(), None);
+
+        //should get a bunch of bytes
+        let multi_byte = &[0x8a, 0x90, 0xf2, 0xe4, 0x88, 0x00][..];
+
+        let (_, num) = Zarith::from_bytes(multi_byte, false).expect("invalid input");
+        assert_eq!(num.len(), 6);
         assert_eq!(num.is_negative(), None);
 
         //should be considered negative

@@ -108,11 +108,11 @@ Transaction parameters are used for originated contracts to execute
 the specified [entrypoint] with the passed parameters.
 
 Parameters are encoded as follows:
-| Name       | Size | Contents          |
-|------------|------|-------------------|
-| entrypoint |      | [Entrypoint]      |
-| length     | 4    | next field length |
-| parameters |      | Michelson [Bytes] |
+| Name       | Size | Contents               |
+|------------|------|------------------------|
+| entrypoint |      | [Entrypoint]           |
+| length     | 4    | next field length (BE) |
+| parameters |      | Michelson [Bytes]      |
 
 ###### Entrypoint
 

@@ -105,6 +105,8 @@ pub mod tzprefix {
     pub const TZ2: &[u8] = &[6, 161, 161];
     pub const TZ3: &[u8] = &[6, 161, 164];
 
+    pub const KT1: &[u8] = &[2, 90, 121];
+
     pub const EDPK: &[u8] = &[13, 15, 37, 217];
     pub const SPPK: &[u8] = &[3, 254, 226, 86];
     pub const P2PK: &[u8] = &[3, 178, 139, 127];
