@@ -15,6 +15,9 @@
 ********************************************************************************/
 use core::convert::TryFrom;
 
+use bolos::errors::SyscallError;
+use zemu_sys::ViewError;
+
 #[repr(u8)]
 pub enum ZPacketType {
     Init = 0,
@@ -153,5 +156,50 @@ impl PacketType for PacketTypes {
             Self::Z(z) => z.is_next(),
             Self::Legacy(l) => l.is_next(),
         }
+    }
+}
+
+#[inline(never)]
+pub fn sha256x2(pieces: &[&[u8]], out: &mut [u8; 4]) -> Result<(), bolos::Error> {
+    use crate::sys::{
+        self,
+        hash::{Hasher, Sha256},
+    };
+
+    sys::zemu_log_stack("sha256x2\x00");
+
+    let mut digest = Sha256::new()?;
+    for p in pieces {
+        digest.update(p)?;
+    }
+
+    let x1 = digest.finalize_dirty()?;
+    digest.reset()?;
+    digest.update(&x1[..])?;
+
+    let complete_digest = digest.finalize()?;
+
+    out.copy_from_slice(&complete_digest[..4]);
+
+    Ok(())
+}
+
+pub fn handle_ui_message(item: &[u8], out: &mut [u8], page: u8) -> Result<u8, ViewError> {
+    let m_len = out.len() - 1; //null byte terminator
+    if m_len <= item.len() {
+        let chunk = item
+            .chunks(m_len / 2) //divide in non-overlapping chunks
+            .nth(page as usize) //get the nth chunk
+            .ok_or(ViewError::Unknown)?;
+
+        out[..chunk.len()].copy_from_slice(&chunk[..]);
+        out[chunk.len() * 2] = 0; //null terminate
+
+        let n_pages = item.len() / m_len;
+        Ok(1 + n_pages as u8)
+    } else {
+        out[..item.len()].copy_from_slice(&item[..]);
+        out[item.len()] = 0; //null terminate
+        Ok(1)
     }
 }

@@ -90,40 +90,6 @@ pub struct Addr {
 }
 
 impl Addr {
-    fn prefix(curve: crypto::Curve) -> &'static [u8] {
-        use crate::constants::tzprefix;
-        use crypto::Curve;
-
-        sys::PIC::new(match curve {
-            Curve::Ed25519 | Curve::Bip32Ed25519 => tzprefix::TZ1,
-            Curve::Secp256K1 => tzprefix::TZ2,
-            Curve::Secp256R1 => tzprefix::TZ3,
-        })
-        .into_inner()
-    }
-
-    #[inline(never)]
-    fn sha256x2(pieces: &[&[u8]], out: &mut [u8; 4]) -> Result<(), SysError> {
-        use sys::hash::{Hasher, Sha256};
-
-        sys::zemu_log_stack("Addr::new::sha256x2\x00");
-
-        let mut digest = Sha256::new()?;
-        for p in pieces {
-            digest.update(p)?;
-        }
-
-        let x1 = digest.finalize_dirty()?;
-        digest.reset()?;
-        digest.update(&x1[..])?;
-
-        let complete_digest = digest.finalize()?;
-
-        out.copy_from_slice(&complete_digest[..4]);
-
-        Ok(())
-    }
-
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         sys::zemu_log_stack("Addr::new\x00");
 
@@ -133,9 +99,9 @@ impl Addr {
         sys::zemu_log_stack("Addr::new after hash\x00");
 
         //legacy/src/to_string.c:135
-        this.prefix.copy_from_slice(Self::prefix(pubkey.curve()));
+        this.prefix.copy_from_slice(pubkey.curve().to_prefix());
 
-        Self::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
+        super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
 
         Ok(this)
     }
@@ -168,20 +134,16 @@ impl Addr {
             with_addr,
         }
     }
-}
 
-#[cfg(test)]
-impl Addr {
-    pub fn from_hash(hash: &[u8; 20], crv: crypto::Curve) -> Self {
+    pub fn from_hash(hash: &[u8; 20], crv: crypto::Curve) -> Result<Self, SysError> {
         let mut this: Self = Default::default();
 
         this.hash.copy_from_slice(&hash[..]);
-        this.prefix.copy_from_slice(Self::prefix(crv));
+        this.prefix.copy_from_slice(crv.to_prefix());
 
-        Self::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)
-            .expect("sha256 failed");
+        super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
 
-        this
+        Ok(this)
     }
 }
 

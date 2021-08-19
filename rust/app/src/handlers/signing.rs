@@ -22,9 +22,11 @@ use bolos::{
 use zemu_sys::{Show, ViewError, Viewable};
 
 use crate::{
-    constants::{ApduError as Error, BIP32_MAX_LENGTH},
+    constants::{tzprefix::KT1, ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
     dispatcher::ApduHandler,
+    handlers::handle_ui_message,
+    parser::operations::{ContractID, Operation, OperationType},
     sys,
     utils::{ApduBufferRead, Uploader},
 };
@@ -71,7 +73,7 @@ impl Sign {
         send_hash: bool,
         p2: u8,
         init_data: &[u8],
-        data: &[u8],
+        data: &'static [u8],
         flags: &mut u32,
     ) -> Result<u32, Error> {
         let curve = Curve::try_from(p2).map_err(|_| Error::InvalidP1P2)?;
@@ -87,6 +89,7 @@ impl Sign {
         let ui = BlindSignUi {
             hash: unsigned_hash,
             send_hash,
+            parsed: Operation::new(data).map_err(|_| Error::DataInvalid)?,
         };
 
         unsafe { ui.show(flags) }
@@ -117,11 +120,50 @@ impl ApduHandler for Sign {
 struct BlindSignUi {
     hash: [u8; Sign::SIGN_HASH_SIZE],
     send_hash: bool,
+    parsed: Operation<'static>,
+}
+
+impl BlindSignUi {
+    // Will find the operation that contains said item, as well as
+    // return the index of the item in the operation
+    fn find_op_with_item(
+        &self,
+        mut item_idx: u8,
+    ) -> Result<Option<(u8, OperationType<'static>)>, ViewError> {
+        item_idx -= 1; //remove branch idx
+
+        let mut parsed = self.parsed.clone();
+        let mut ops = parsed.mut_ops();
+
+        //we don't call this if we haven't verified all info first
+        while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
+            let n = op.ui_items() as u8;
+
+            if n > item_idx {
+                //we return the remaining item_idx so we can navigate to it
+                return Ok(Some((item_idx, op)));
+            } else {
+                //decrease item_idx by n items and check next operation
+                item_idx -= n;
+            }
+        }
+
+        Ok(None)
+    }
 }
 
 impl Viewable for BlindSignUi {
     fn num_items(&mut self) -> Result<u8, ViewError> {
-        Ok(1)
+        let mut parsed = self.parsed.clone();
+        let mut ops = parsed.mut_ops();
+
+        let mut items_counter = 1; //start with branch
+
+        while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
+            items_counter += op.ui_items();
+        }
+
+        Ok(items_counter as u8)
     }
 
     fn render_item(
@@ -132,32 +174,137 @@ impl Viewable for BlindSignUi {
         page: u8,
     ) -> Result<u8, ViewError> {
         if let 0 = item_n {
-            let title_content = bolos::PIC::new(b"Blind Sign\x00").into_inner();
-
+            let title_content = bolos::PIC::new(b"Operation\x00").into_inner();
             title[..title_content.len()].copy_from_slice(title_content);
 
+            let mut mex = [0; 51];
+            self.parsed
+                .base58_branch(&mut mex)
+                .map_err(|_| ViewError::Unknown);
+
             let m_len = message.len() - 1; //null byte terminator
-            if m_len <= Sign::SIGN_HASH_SIZE * 2 {
-                let chunk = self
-                    .hash
+            if m_len <= mex.len() {
+                let chunk = mex
                     .chunks(m_len / 2) //divide in non-overlapping chunks
                     .nth(page as usize) //get the nth chunk
                     .ok_or(ViewError::Unknown)?;
 
-                hex::encode_to_slice(chunk, &mut message[..chunk.len() * 2])
-                    .map_err(|_| ViewError::Unknown)?;
+                message[..chunk.len()].copy_from_slice(&chunk[..]);
                 message[chunk.len() * 2] = 0; //null terminate
 
-                let n_pages = (Sign::SIGN_HASH_SIZE * 2) / m_len;
+                let n_pages = mex.len() / m_len;
                 Ok(1 + n_pages as u8)
             } else {
-                hex::encode_to_slice(&self.hash[..], &mut message[..Sign::SIGN_HASH_SIZE * 2])
-                    .map_err(|_| ViewError::Unknown)?;
-                message[Sign::SIGN_HASH_SIZE * 2] = 0; //null terminate
+                message[..mex.len()].copy_from_slice(&mex[..]);
+                message[mex.len()] = 0; //null terminate
                 Ok(1)
             }
         } else {
-            Err(ViewError::NoData)
+            if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
+                match op {
+                    OperationType::Transfer(tx) => {
+                        let zarith_str = bolos::PIC::new(b"zarith").into_inner();
+
+                        let n_pages = match item_n {
+                            //source
+                            0 => {
+                                let title_content = bolos::PIC::new(b"Source\x00").into_inner();
+                                title[..title_content.len()].copy_from_slice(title_content);
+
+                                let (crv, hash) = tx.source();
+
+                                let addr = crate::handlers::public_key::Addr::from_hash(hash, *crv)
+                                    .map_err(|_| ViewError::Unknown)?;
+
+                                let mex = addr.to_base58();
+                                handle_ui_message(&mex[..], message, page)
+                            }
+                            //destination
+                            1 => {
+                                let title_content =
+                                    bolos::PIC::new(b"Destination\x00").into_inner();
+                                title[..title_content.len()].copy_from_slice(title_content);
+
+                                let mut cid = [0; 36];
+                                tx.destination()
+                                    .base58(&mut cid)
+                                    .map_err(|_| ViewError::Unknown)?;
+
+                                handle_ui_message(&cid[..], message, page)
+                            }
+                            //amount
+                            2 => {
+                                let title_content = bolos::PIC::new(b"Amount\x00").into_inner();
+                                title[..title_content.len()].copy_from_slice(title_content);
+
+                                let _amount = tx.amount();
+
+                                handle_ui_message(zarith_str, message, page)
+                            }
+                            //fee
+                            3 => {
+                                let title_content = bolos::PIC::new(b"Fee\x00").into_inner();
+                                title[..title_content.len()].copy_from_slice(title_content);
+
+                                let _fee = tx.fee();
+
+                                handle_ui_message(zarith_str, message, page)
+                            }
+                            //has_parameters
+                            4 => {
+                                let title_content = bolos::PIC::new(b"Parameters\x00").into_inner();
+                                title[..title_content.len()].copy_from_slice(title_content);
+
+                                let parameters = tx.parameters();
+
+                                let msg = match parameters {
+                                    Some(_) => "has parameters...",
+                                    None => "no parameters",
+                                };
+
+                                handle_ui_message(
+                                    bolos::PIC::new(msg).into_inner().as_bytes(),
+                                    message,
+                                    page,
+                                )
+                            }
+                            //gas_limit
+                            5 => {
+                                let title_content = bolos::PIC::new(b"Gas Limit\x00").into_inner();
+                                title[..title_content.len()].copy_from_slice(title_content);
+
+                                let _gas_limit = tx.gas_limit();
+
+                                handle_ui_message(zarith_str, message, page)
+                            }
+                            //storage_limit
+                            6 => {
+                                let title_content =
+                                    bolos::PIC::new(b"Storage Limit\x00").into_inner();
+                                title[..title_content.len()].copy_from_slice(title_content);
+
+                                let _storage_limit = tx.storage_limit();
+
+                                handle_ui_message(zarith_str, message, page)
+                            }
+                            //counter
+                            7 => {
+                                let title_content = bolos::PIC::new(b"Counter\x00").into_inner();
+                                title[..title_content.len()].copy_from_slice(title_content);
+
+                                let _counter = tx.counter();
+
+                                handle_ui_message(zarith_str, message, page)
+                            }
+                            _ => panic!("should be next operation"),
+                        }?;
+
+                        Ok(1 + n_pages)
+                    }
+                }
+            } else {
+                Err(ViewError::NoData)
+            }
         }
     }
 

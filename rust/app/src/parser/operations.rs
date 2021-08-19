@@ -21,7 +21,11 @@ use nom::{
     take, Finish, IResult,
 };
 
-use crate::{crypto::Curve, handlers::parser_common::ParserError};
+use crate::{
+    constants::tzprefix::{B, KT1, TZ1, TZ2, TZ3},
+    crypto::Curve,
+    handlers::{parser_common::ParserError, sha256x2},
+};
 
 use super::{boolean, public_key_hash, Zarith};
 
@@ -43,6 +47,26 @@ impl<'b> Operation<'b> {
             branch,
             ops: EncodedOperations::new(rem),
         })
+    }
+
+    pub fn base58_branch(&self, out: &mut [u8; 51]) -> Result<(), bolos::Error> {
+        let mut checksum = [0; 4];
+
+        sha256x2(&[B, &self.branch[..]], &mut checksum)?;
+
+        let input = {
+            let mut array = [0; 2 + 32 + 4];
+            array[..2].copy_from_slice(B);
+            array[2..2 + 32].copy_from_slice(&self.branch[..]);
+            array[2 + 32..].copy_from_slice(&checksum[..]);
+            array
+        };
+
+        bs58::encode(input)
+            .into(&mut out[..])
+            .expect("encoded in base58 is not of the right length");
+
+        Ok(())
     }
 }
 
@@ -115,7 +139,6 @@ impl<'b> EncodedOperations<'b> {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[non_exhaustive]
 pub enum OperationType<'b> {
     Transfer(Transfer<'b>),
 }
@@ -145,6 +168,12 @@ impl<'b> OperationType<'b> {
         };
 
         Ok((rem, data))
+    }
+
+    pub fn ui_items(&self) -> usize {
+        match self {
+            OperationType::Transfer(_tx) => 8,
+        }
     }
 }
 
@@ -268,6 +297,32 @@ impl<'b> ContractID<'b> {
             ContractID::Implicit(_, h) | ContractID::Originated(h) => h,
         }
     }
+
+    pub fn base58(&self, out: &mut [u8; 36]) -> Result<(), bolos::Error> {
+        let (prefix, hash) = match self {
+            &Self::Originated(h) => (KT1, h),
+            &Self::Implicit(Curve::Bip32Ed25519 | Curve::Ed25519, h) => (TZ1, h),
+            &Self::Implicit(Curve::Secp256K1, h) => (TZ2, h),
+            &Self::Implicit(Curve::Secp256R1, h) => (TZ3, h),
+        };
+
+        let mut checksum = [0; 4];
+        sha256x2(&[prefix, &hash[..]], &mut checksum)?;
+
+        let input = {
+            let mut array = [0; 3 + 20 + 4];
+            array[..3].copy_from_slice(prefix);
+            array[3..3 + 20].copy_from_slice(&hash[..]);
+            array[3 + 20..].copy_from_slice(&checksum[..]);
+            array
+        };
+
+        bs58::encode(input)
+            .into(&mut out[..])
+            .expect("encoded in base58 is not the right length");
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, property::Property)]
@@ -382,7 +437,7 @@ mod tests {
             ContractID::Implicit(Curve::Bip32Ed25519, arrayref::array_ref!(input, 2, 20))
         );
 
-        let addr = Addr::from_hash(parsed.hash(), Curve::Bip32Ed25519);
+        let addr = Addr::from_hash(parsed.hash(), Curve::Bip32Ed25519).unwrap();
         assert_eq!(&addr.to_base58()[..], PKH_BASE58.as_bytes());
     }
 
