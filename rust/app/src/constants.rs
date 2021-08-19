@@ -110,4 +110,6 @@ pub mod tzprefix {
     pub const EDPK: &[u8] = &[13, 15, 37, 217];
     pub const SPPK: &[u8] = &[3, 254, 226, 86];
     pub const P2PK: &[u8] = &[3, 178, 139, 127];
+
+    pub const B: &[u8] = &[1, 52];
 }

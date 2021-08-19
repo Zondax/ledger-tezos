@@ -25,10 +25,13 @@ use crate::{crypto::Curve, handlers::parser_common::ParserError};
 
 use super::{boolean, public_key_hash, Zarith};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, property::Property)]
+#[property(get(public), mut(public), set(disable))]
 pub struct Operation<'b> {
+    #[property(mut(disable))]
     branch: &'b [u8; 32],
-    contents: EncodedOperations<'b>,
+
+    ops: EncodedOperations<'b>,
 }
 
 impl<'b> Operation<'b> {
@@ -38,7 +41,7 @@ impl<'b> Operation<'b> {
 
         Ok(Self {
             branch,
-            contents: EncodedOperations::new(rem),
+            ops: EncodedOperations::new(rem),
         })
     }
 }
@@ -112,6 +115,7 @@ impl<'b> EncodedOperations<'b> {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub enum OperationType<'b> {
     Transfer(Transfer<'b>),
 }
@@ -355,7 +359,7 @@ mod tests {
         crypto::Curve,
         handlers::public_key::Addr,
         parser::{
-            operations::{ContractID, Parameters, Transfer},
+            operations::{ContractID, Operation, OperationType, Parameters, Transfer},
             Zarith,
         },
     };
@@ -605,5 +609,81 @@ mod tests {
         };
 
         assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn operation() {
+        const INPUT_HEX: &str = "a99b946c97ada0f42c1bdeae0383db7893351232a832d00d0cd716eb6f66e5616c0035e993d8c7aaa42b5e3ccd86a33390ececc73abd904e010a0ae807000035e993d8c7aaa42b5e3ccd86a33390ececc73abdff02000000070a000000020202";
+        const BRANCH_BASE58: &str = "BLzyjjHKEKMULtvkpSHxuZxx6ei6fpntH2BTkYZiLgs8zLVstvX";
+
+        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
+        let mut parsed = Operation::new(&input).expect("couldn't parse branch");
+
+        let mut vbr = crate::constants::tzprefix::B.to_vec();
+        vbr.extend_from_slice(&parsed.branch()[..]);
+
+        let branch = bs58::encode(vbr).with_check().into_string();
+        assert_eq!(&branch, BRANCH_BASE58);
+
+        let mut ops = parsed.mut_ops();
+        let op = ops
+            .parse_next()
+            .expect("failed to parse operation")
+            .expect("no next operation found");
+
+        match op {
+            OperationType::Transfer(_) => {
+                //we don't check transfer here to avoid redundancy
+            }
+            opt => panic!("not the expected operation type, found: {:x?}", opt),
+        }
+
+        match ops.parse_next().expect("failed to parse operation") {
+            None => {}
+            Some(s) => panic!("expected no operations, found {:x?}", s),
+        }
+    }
+
+    #[test]
+    fn operations() {
+        const INPUT_HEX: &str = "a99b946c97ada0f42c1bdeae0383db7893351232a832d00d0cd716eb6f66e561\
+                                 6c0035e993d8c7aaa42b5e3ccd86a33390ececc73abd904e010a0ae807000035e993d8c7aaa42b5e3ccd86a33390ececc73abdff02000000070a000000020202\
+                                 6c0035e993d8c7aaa42b5e3ccd86a33390ececc73abd904e010a0ae807016a7d4a43f51be0934a441fba4f13f9beaa4757510000\
+                                 6c0035e993d8c7aaa42b5e3ccd86a33390ececc73abd904e010a0ae807016a7d4a43f51be0934a441fba4f13f9beaa47575100ff03000000290100000024747a31515a364b5937643342755a4454316431396455786f51727446504e32514a33686e";
+        const BRANCH_BASE58: &str = "BLzyjjHKEKMULtvkpSHxuZxx6ei6fpntH2BTkYZiLgs8zLVstvX";
+
+        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
+        let mut parsed = Operation::new(&input).expect("couldn't parse branch");
+
+        let mut vbr = crate::constants::tzprefix::B.to_vec();
+        vbr.extend_from_slice(&parsed.branch()[..]);
+
+        let branch = bs58::encode(vbr).with_check().into_string();
+        assert_eq!(&branch, BRANCH_BASE58);
+
+        let mut ops = parsed.mut_ops();
+        let op1 = ops
+            .parse_next()
+            .expect("failed to parse operation")
+            .expect("no next operation found");
+        let op2 = ops
+            .parse_next()
+            .expect("failed to parse operation")
+            .expect("no next operation found");
+        let op3 = ops
+            .parse_next()
+            .expect("failed to parse operation")
+            .expect("no next operation found");
+
+        match (op1, op2, op3) {
+            (
+                OperationType::Transfer(_),
+                OperationType::Transfer(_),
+                OperationType::Transfer(_),
+            ) => {
+                //we don't check transfer here to avoid redundancy
+            }
+            opt => panic!("not the expected operation type, found: {:x?}", opt),
+        }
     }
 }
