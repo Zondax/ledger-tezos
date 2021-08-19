@@ -179,6 +179,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
+          files: |
+            ./rust/app/pkg/installer_baking_s.sh
+            ./rust/app/pkg/installer_s.sh
           tag_name: ${{ steps.vars.outputs.tag_name }}
           draft: false
           prerelease: false
