@@ -19,6 +19,8 @@ import { APP_DERIVATION, cartesianProduct, curves, defaultOptions, models } from
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import * as secp256k1 from 'noble-secp256k1'
 
+import { SIMPLE_TRANSACTION } from './tezos';
+
 const ed25519 = require('ed25519-supercop')
 
 jest.setTimeout(60000)
@@ -152,7 +154,7 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
 })
 
 describe.each(models)('Standard [%s]; sign', function (m) {
-  test.each(cartesianProduct(curves, [Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)]))(
+  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.blob]))(
     'sign message',
     async function (curve, msg) {
       const sim = new Zemu(m.path)
@@ -210,7 +212,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
 })
 
 describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
-  test.each(cartesianProduct(curves, [Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)]))(
+  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.blob]))(
     'sign message',
     async function (curve, msg) {
       const sim = new Zemu(m.path)

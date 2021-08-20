@@ -69,7 +69,7 @@ impl Sign {
     }
 
     #[inline(never)]
-    pub fn blind_sign(
+    pub fn start_sign(
         send_hash: bool,
         p2: u8,
         init_data: &[u8],
@@ -86,7 +86,7 @@ impl Sign {
 
         let unsigned_hash = Self::blake2b_digest(data)?;
 
-        let ui = BlindSignUi {
+        let ui = SignUI {
             hash: unsigned_hash,
             send_hash,
             parsed: Operation::new(data).map_err(|_| Error::DataInvalid)?,
@@ -110,20 +110,20 @@ impl ApduHandler for Sign {
         *tx = 0;
 
         if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
-            *tx = Self::blind_sign(true, upload.p2, upload.first, upload.data, flags)?;
+            *tx = Self::start_sign(true, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())
     }
 }
 
-struct BlindSignUi {
+struct SignUI {
     hash: [u8; Sign::SIGN_HASH_SIZE],
     send_hash: bool,
     parsed: Operation<'static>,
 }
 
-impl BlindSignUi {
+impl SignUI {
     // Will find the operation that contains said item, as well as
     // return the index of the item in the operation
     fn find_op_with_item(
@@ -152,7 +152,7 @@ impl BlindSignUi {
     }
 }
 
-impl Viewable for BlindSignUi {
+impl Viewable for SignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
         let mut parsed = self.parsed;
         let ops = parsed.mut_ops();

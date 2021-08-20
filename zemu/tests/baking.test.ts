@@ -19,6 +19,8 @@ import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import { APP_DERIVATION, cartesianProduct, curves, defaultOptions } from './common'
 import * as secp256k1 from 'noble-secp256k1'
 
+import { SIMPLE_TRANSACTION } from './tezos'
+
 const ed25519 = require('ed25519-supercop')
 
 const Resolve = require('path').resolve
@@ -419,7 +421,7 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
 })
 
 describe.each(models)('Standard baking [%s] - sign', function (m) {
-  test.each(cartesianProduct(curves, [Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)]))(
+  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.blob]))(
     'sign message',
     async function (curve, msg) {
       const sim = new Zemu(m.path)
@@ -429,7 +431,7 @@ describe.each(models)('Standard baking [%s] - sign', function (m) {
 
         const respReq = app.sign(APP_DERIVATION, curve, msg)
 
-        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 200000)
         if (m.name == 'nanox') {
           sim.clickRight()
         }
@@ -474,7 +476,7 @@ describe.each(models)('Standard baking [%s] - sign', function (m) {
 })
 
 describe.each(models)('Standard baking [%s]; legacy - sign with hash', function (m) {
-  test.each(cartesianProduct(curves, [Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)]))(
+  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.blob]))(
     'sign message',
     async function (curve, msg) {
       const sim = new Zemu(m.path)
