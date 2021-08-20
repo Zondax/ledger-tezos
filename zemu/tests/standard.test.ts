@@ -234,7 +234,7 @@ describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
         } else {
           navigation = [12, 0]
         }
-        await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${msg.length}-${curve}`, navigation)
+        await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${msg.length}-${curve}`, navigation)
 
         const resp = await respReq
 
