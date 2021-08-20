@@ -182,16 +182,17 @@ pub fn sha256x2(pieces: &[&[u8]], out: &mut [u8; 4]) -> Result<(), bolos::Error>
     Ok(())
 }
 
+#[inline(never)]
 pub fn handle_ui_message(item: &[u8], out: &mut [u8], page: u8) -> Result<u8, ViewError> {
     let m_len = out.len() - 1; //null byte terminator
     if m_len <= item.len() {
         let chunk = item
-            .chunks(m_len / 2) //divide in non-overlapping chunks
+            .chunks(m_len) //divide in non-overlapping chunks
             .nth(page as usize) //get the nth chunk
             .ok_or(ViewError::Unknown)?;
 
         out[..chunk.len()].copy_from_slice(chunk);
-        out[chunk.len() * 2] = 0; //null terminate
+        out[chunk.len()] = 0; //null terminate
 
         let n_pages = item.len() / m_len;
         Ok(1 + n_pages as u8)

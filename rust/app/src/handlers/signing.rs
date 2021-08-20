@@ -18,8 +18,9 @@ use std::convert::TryFrom;
 use bolos::{
     crypto::bip32::BIP32Path,
     hash::{Blake2b, Hasher},
+    pic_str, PIC,
 };
-use zemu_sys::{Show, ViewError, Viewable};
+use zemu_sys::{zemu_log, Show, ViewError, Viewable};
 
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
@@ -166,6 +167,7 @@ impl Viewable for SignUI {
         Ok(items_counter as u8)
     }
 
+    #[inline(never)]
     fn render_item(
         &mut self,
         item_n: u8,
@@ -174,7 +176,7 @@ impl Viewable for SignUI {
         page: u8,
     ) -> Result<u8, ViewError> {
         if let 0 = item_n {
-            let title_content = bolos::PIC::new(b"Operation\x00").into_inner();
+            let title_content = pic_str!(b"Operation");
             title[..title_content.len()].copy_from_slice(title_content);
 
             let mut mex = [0; 51];
@@ -182,32 +184,16 @@ impl Viewable for SignUI {
                 .base58_branch(&mut mex)
                 .map_err(|_| ViewError::Unknown)?;
 
-            let m_len = message.len() - 1; //null byte terminator
-            if m_len <= mex.len() {
-                let chunk = mex
-                    .chunks(m_len / 2) //divide in non-overlapping chunks
-                    .nth(page as usize) //get the nth chunk
-                    .ok_or(ViewError::Unknown)?;
-
-                message[..chunk.len()].copy_from_slice(chunk);
-                message[chunk.len() * 2] = 0; //null terminate
-
-                let n_pages = mex.len() / m_len;
-                Ok(1 + n_pages as u8)
-            } else {
-                message[..mex.len()].copy_from_slice(&mex[..]);
-                message[mex.len()] = 0; //null terminate
-                Ok(1)
-            }
+            handle_ui_message(&mex[..], message, page)
         } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
             match op {
                 OperationType::Transfer(tx) => {
-                    let zarith_str = bolos::PIC::new(b"zarith").into_inner();
+                    let zarith_str = pic_str!(b"zarith");
 
-                    let n_pages = match item_n {
+                    match item_n {
                         //source
                         0 => {
-                            let title_content = bolos::PIC::new(b"Source\x00").into_inner();
+                            let title_content = pic_str!(b"Source");
                             title[..title_content.len()].copy_from_slice(title_content);
 
                             let (crv, hash) = tx.source();
@@ -220,7 +206,7 @@ impl Viewable for SignUI {
                         }
                         //destination
                         1 => {
-                            let title_content = bolos::PIC::new(b"Destination\x00").into_inner();
+                            let title_content = pic_str!(b"Destination");
                             title[..title_content.len()].copy_from_slice(title_content);
 
                             let mut cid = [0; 36];
@@ -232,7 +218,7 @@ impl Viewable for SignUI {
                         }
                         //amount
                         2 => {
-                            let title_content = bolos::PIC::new(b"Amount\x00").into_inner();
+                            let title_content = pic_str!(b"Amount");
                             title[..title_content.len()].copy_from_slice(title_content);
 
                             let _amount = tx.amount();
@@ -241,7 +227,7 @@ impl Viewable for SignUI {
                         }
                         //fee
                         3 => {
-                            let title_content = bolos::PIC::new(b"Fee\x00").into_inner();
+                            let title_content = pic_str!(b"Fee");
                             title[..title_content.len()].copy_from_slice(title_content);
 
                             let _fee = tx.fee();
@@ -250,25 +236,21 @@ impl Viewable for SignUI {
                         }
                         //has_parameters
                         4 => {
-                            let title_content = bolos::PIC::new(b"Parameters\x00").into_inner();
+                            let title_content = pic_str!(b"Parameters");
                             title[..title_content.len()].copy_from_slice(title_content);
 
                             let parameters = tx.parameters();
 
                             let msg = match parameters {
-                                Some(_) => "has parameters...",
-                                None => "no parameters",
+                                Some(_) => pic_str!("has parameters..."),
+                                None => pic_str!("no parameters"),
                             };
 
-                            handle_ui_message(
-                                bolos::PIC::new(msg).into_inner().as_bytes(),
-                                message,
-                                page,
-                            )
+                            handle_ui_message(msg.as_bytes(), message, page)
                         }
                         //gas_limit
                         5 => {
-                            let title_content = bolos::PIC::new(b"Gas Limit\x00").into_inner();
+                            let title_content = pic_str!(b"Gas Limit");
                             title[..title_content.len()].copy_from_slice(title_content);
 
                             let _gas_limit = tx.gas_limit();
@@ -277,7 +259,7 @@ impl Viewable for SignUI {
                         }
                         //storage_limit
                         6 => {
-                            let title_content = bolos::PIC::new(b"Storage Limit\x00").into_inner();
+                            let title_content = pic_str!(b"Storage Limit");
                             title[..title_content.len()].copy_from_slice(title_content);
 
                             let _storage_limit = tx.storage_limit();
@@ -286,7 +268,7 @@ impl Viewable for SignUI {
                         }
                         //counter
                         7 => {
-                            let title_content = bolos::PIC::new(b"Counter\x00").into_inner();
+                            let title_content = pic_str!(b"Counter");
                             title[..title_content.len()].copy_from_slice(title_content);
 
                             let _counter = tx.counter();
@@ -294,9 +276,7 @@ impl Viewable for SignUI {
                             handle_ui_message(zarith_str, message, page)
                         }
                         _ => panic!("should be next operation"),
-                    }?;
-
-                    Ok(1 + n_pages)
+                    }
                 }
             }
         } else {
