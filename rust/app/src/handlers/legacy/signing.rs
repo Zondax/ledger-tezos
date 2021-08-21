@@ -35,7 +35,7 @@ impl ApduHandler for LegacySign {
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), Error> {
         if let Some(upload) = Uploader::new(Sign).upload(&buffer)? {
-            *tx = Sign::blind_sign(false, upload.p2, upload.first, upload.data, flags)?;
+            *tx = Sign::start_sign(false, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())
@@ -52,7 +52,7 @@ impl ApduHandler for LegacySignWithHash {
         *tx = 0;
 
         if let Some(upload) = Uploader::new(Sign).upload(&buffer)? {
-            *tx = Sign::blind_sign(true, upload.p2, upload.first, upload.data, flags)?;
+            *tx = Sign::start_sign(true, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())
@@ -70,7 +70,7 @@ impl ApduHandler for LegacySignUnsafe {
         *tx = 0;
 
         if let Some(upload) = Uploader::new(Sign).upload(&buffer)? {
-            *tx = Sign::blind_sign(false, upload.p2, upload.first, upload.data, flags)?;
+            *tx = Sign::start_sign(false, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())

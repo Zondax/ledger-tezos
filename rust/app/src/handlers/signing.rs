@@ -18,13 +18,16 @@ use std::convert::TryFrom;
 use bolos::{
     crypto::bip32::BIP32Path,
     hash::{Blake2b, Hasher},
+    pic_str, PIC,
 };
-use zemu_sys::{Show, ViewError, Viewable};
+use zemu_sys::{zemu_log, Show, ViewError, Viewable};
 
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
     dispatcher::ApduHandler,
+    handlers::handle_ui_message,
+    parser::operations::{Operation, OperationType},
     sys,
     utils::{ApduBufferRead, Uploader},
 };
@@ -67,11 +70,11 @@ impl Sign {
     }
 
     #[inline(never)]
-    pub fn blind_sign(
+    pub fn start_sign(
         send_hash: bool,
         p2: u8,
         init_data: &[u8],
-        data: &[u8],
+        data: &'static [u8],
         flags: &mut u32,
     ) -> Result<u32, Error> {
         let curve = Curve::try_from(p2).map_err(|_| Error::InvalidP1P2)?;
@@ -84,9 +87,10 @@ impl Sign {
 
         let unsigned_hash = Self::blake2b_digest(data)?;
 
-        let ui = BlindSignUi {
+        let ui = SignUI {
             hash: unsigned_hash,
             send_hash,
+            parsed: Operation::new(data).map_err(|_| Error::DataInvalid)?,
         };
 
         unsafe { ui.show(flags) }
@@ -107,23 +111,63 @@ impl ApduHandler for Sign {
         *tx = 0;
 
         if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
-            *tx = Self::blind_sign(true, upload.p2, upload.first, upload.data, flags)?;
+            *tx = Self::start_sign(true, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())
     }
 }
 
-struct BlindSignUi {
+struct SignUI {
     hash: [u8; Sign::SIGN_HASH_SIZE],
     send_hash: bool,
+    parsed: Operation<'static>,
 }
 
-impl Viewable for BlindSignUi {
+impl SignUI {
+    // Will find the operation that contains said item, as well as
+    // return the index of the item in the operation
+    fn find_op_with_item(
+        &self,
+        mut item_idx: u8,
+    ) -> Result<Option<(u8, OperationType<'static>)>, ViewError> {
+        item_idx -= 1; //remove branch idx
+
+        let mut parsed = self.parsed;
+        let ops = parsed.mut_ops();
+
+        //we don't call this if we haven't verified all info first
+        while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
+            let n = op.ui_items() as u8;
+
+            if n > item_idx {
+                //we return the remaining item_idx so we can navigate to it
+                return Ok(Some((item_idx, op)));
+            } else {
+                //decrease item_idx by n items and check next operation
+                item_idx -= n;
+            }
+        }
+
+        Ok(None)
+    }
+}
+
+impl Viewable for SignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
-        Ok(1)
+        let mut parsed = self.parsed;
+        let ops = parsed.mut_ops();
+
+        let mut items_counter = 1; //start with branch
+
+        while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
+            items_counter += op.ui_items();
+        }
+
+        Ok(items_counter as u8)
     }
 
+    #[inline(never)]
     fn render_item(
         &mut self,
         item_n: u8,
@@ -132,29 +176,108 @@ impl Viewable for BlindSignUi {
         page: u8,
     ) -> Result<u8, ViewError> {
         if let 0 = item_n {
-            let title_content = bolos::PIC::new(b"Blind Sign\x00").into_inner();
-
+            let title_content = pic_str!(b"Operation");
             title[..title_content.len()].copy_from_slice(title_content);
 
-            let m_len = message.len() - 1; //null byte terminator
-            if m_len <= Sign::SIGN_HASH_SIZE * 2 {
-                let chunk = self
-                    .hash
-                    .chunks(m_len / 2) //divide in non-overlapping chunks
-                    .nth(page as usize) //get the nth chunk
-                    .ok_or(ViewError::Unknown)?;
+            let mut mex = [0; 51];
+            self.parsed
+                .base58_branch(&mut mex)
+                .map_err(|_| ViewError::Unknown)?;
 
-                hex::encode_to_slice(chunk, &mut message[..chunk.len() * 2])
-                    .map_err(|_| ViewError::Unknown)?;
-                message[chunk.len() * 2] = 0; //null terminate
+            handle_ui_message(&mex[..], message, page)
+        } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
+            match op {
+                OperationType::Transfer(tx) => {
+                    let zarith_str = pic_str!(b"zarith");
 
-                let n_pages = (Sign::SIGN_HASH_SIZE * 2) / m_len;
-                Ok(1 + n_pages as u8)
-            } else {
-                hex::encode_to_slice(&self.hash[..], &mut message[..Sign::SIGN_HASH_SIZE * 2])
-                    .map_err(|_| ViewError::Unknown)?;
-                message[Sign::SIGN_HASH_SIZE * 2] = 0; //null terminate
-                Ok(1)
+                    match item_n {
+                        //source
+                        0 => {
+                            let title_content = pic_str!(b"Source");
+                            title[..title_content.len()].copy_from_slice(title_content);
+
+                            let (crv, hash) = tx.source();
+
+                            let addr = crate::handlers::public_key::Addr::from_hash(hash, *crv)
+                                .map_err(|_| ViewError::Unknown)?;
+
+                            let mex = addr.to_base58();
+                            handle_ui_message(&mex[..], message, page)
+                        }
+                        //destination
+                        1 => {
+                            let title_content = pic_str!(b"Destination");
+                            title[..title_content.len()].copy_from_slice(title_content);
+
+                            let mut cid = [0; 36];
+                            tx.destination()
+                                .base58(&mut cid)
+                                .map_err(|_| ViewError::Unknown)?;
+
+                            handle_ui_message(&cid[..], message, page)
+                        }
+                        //amount
+                        2 => {
+                            let title_content = pic_str!(b"Amount");
+                            title[..title_content.len()].copy_from_slice(title_content);
+
+                            let _amount = tx.amount();
+
+                            handle_ui_message(zarith_str, message, page)
+                        }
+                        //fee
+                        3 => {
+                            let title_content = pic_str!(b"Fee");
+                            title[..title_content.len()].copy_from_slice(title_content);
+
+                            let _fee = tx.fee();
+
+                            handle_ui_message(zarith_str, message, page)
+                        }
+                        //has_parameters
+                        4 => {
+                            let title_content = pic_str!(b"Parameters");
+                            title[..title_content.len()].copy_from_slice(title_content);
+
+                            let parameters = tx.parameters();
+
+                            let msg = match parameters {
+                                Some(_) => pic_str!("has parameters..."),
+                                None => pic_str!("no parameters"),
+                            };
+
+                            handle_ui_message(msg.as_bytes(), message, page)
+                        }
+                        //gas_limit
+                        5 => {
+                            let title_content = pic_str!(b"Gas Limit");
+                            title[..title_content.len()].copy_from_slice(title_content);
+
+                            let _gas_limit = tx.gas_limit();
+
+                            handle_ui_message(zarith_str, message, page)
+                        }
+                        //storage_limit
+                        6 => {
+                            let title_content = pic_str!(b"Storage Limit");
+                            title[..title_content.len()].copy_from_slice(title_content);
+
+                            let _storage_limit = tx.storage_limit();
+
+                            handle_ui_message(zarith_str, message, page)
+                        }
+                        //counter
+                        7 => {
+                            let title_content = pic_str!(b"Counter");
+                            title[..title_content.len()].copy_from_slice(title_content);
+
+                            let _counter = tx.counter();
+
+                            handle_ui_message(zarith_str, message, page)
+                        }
+                        _ => panic!("should be next operation"),
+                    }
+                }
             }
         } else {
             Err(ViewError::NoData)

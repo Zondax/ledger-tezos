@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "arrayref"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4c527152e37cf757a3f78aae5a06fbeefdb07ccc535c980a3208ee3060dd544"
+
+[[package]]
 name = "arrayvec"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -108,6 +114,9 @@ name = "bs58"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
+dependencies = [
+ "sha2",
+]
 
 [[package]]
 name = "build_const"
@@ -349,6 +358,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "property"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "889bff6ebe76dbef2685598944997eb7f15c9854a2e34db853a51c6ac158b9d5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -370,6 +390,7 @@ dependencies = [
 name = "rslib"
 version = "0.1.0"
 dependencies = [
+ "arrayref",
  "arrayvec",
  "bolos",
  "bs58",
@@ -379,6 +400,7 @@ dependencies = [
  "no-std-compat",
  "nom",
  "panic-halt",
+ "property",
  "serial_test",
  "sha2",
  "zemu-sys",

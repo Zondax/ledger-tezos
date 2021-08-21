@@ -335,7 +335,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
                     return;
                 }
 
-                if tmp.try_push_str(pic_str!("]"!)).is_err() {
+                if tmp.try_push_str(pic_str!("]\x00"!)).is_err() {
                     return;
                 }
 

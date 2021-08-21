@@ -19,6 +19,8 @@ import { APP_DERIVATION, cartesianProduct, curves, defaultOptions, models } from
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import * as secp256k1 from 'noble-secp256k1'
 
+import { SIMPLE_TRANSACTION } from './tezos';
+
 const ed25519 = require('ed25519-supercop')
 
 jest.setTimeout(60000)
@@ -152,7 +154,7 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
 })
 
 describe.each(models)('Standard [%s]; sign', function (m) {
-  test.each(cartesianProduct(curves, [Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)]))(
+  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.blob]))(
     'sign message',
     async function (curve, msg) {
       const sim = new Zemu(m.path)
@@ -163,10 +165,14 @@ describe.each(models)('Standard [%s]; sign', function (m) {
         const respReq = app.sign(APP_DERIVATION, curve, msg)
 
         await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+
+        let navigation;
         if (m.name == 'nanox') {
-          sim.clickRight()
+          navigation = [10, 0]
+        } else {
+          navigation = [12, 0]
         }
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-sign-${msg.length}-${curve}`, 2)
+        await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${msg.length}-${curve}`, navigation)
 
         const resp = await respReq
 
@@ -210,7 +216,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
 })
 
 describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
-  test.each(cartesianProduct(curves, [Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)]))(
+  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.blob]))(
     'sign message',
     async function (curve, msg) {
       const sim = new Zemu(m.path)
@@ -221,10 +227,14 @@ describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
         const respReq = app.legacySignWithHash(APP_DERIVATION, curve, msg)
 
         await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+
+        let navigation;
         if (m.name == 'nanox') {
-          sim.clickRight()
+          navigation = [10, 0]
+        } else {
+          navigation = [12, 0]
         }
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${msg.length}-${curve}`, 2)
+        await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${msg.length}-${curve}`, navigation)
 
         const resp = await respReq
 

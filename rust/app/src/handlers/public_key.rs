@@ -91,8 +91,6 @@ pub struct Addr {
 
 impl Addr {
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
-        use crypto::Curve;
-        use sys::hash::{Hasher, Sha256};
         sys::zemu_log_stack("Addr::new\x00");
 
         let mut this: Self = Default::default();
@@ -101,35 +99,9 @@ impl Addr {
         sys::zemu_log_stack("Addr::new after hash\x00");
 
         //legacy/src/to_string.c:135
-        this.prefix.copy_from_slice(
-            &sys::PIC::new(match pubkey.curve() {
-                Curve::Ed25519 | Curve::Bip32Ed25519 => [6, 161, 159],
-                Curve::Secp256K1 => [6, 161, 161],
-                Curve::Secp256R1 => [6, 161, 164],
-            })
-            .get_ref()[..],
-        );
+        this.prefix.copy_from_slice(pubkey.curve().to_prefix());
 
-        #[inline(never)]
-        fn sha256x2(pieces: &[&[u8]], out: &mut [u8; 4]) -> Result<(), SysError> {
-            sys::zemu_log_stack("Addr::new::sha256x2\x00");
-            let mut digest = Sha256::new()?;
-            for p in pieces {
-                digest.update(p)?;
-            }
-
-            let x1 = digest.finalize_dirty()?;
-            digest.reset()?;
-            digest.update(&x1[..])?;
-
-            let complete_digest = digest.finalize()?;
-
-            out.copy_from_slice(&complete_digest[..4]);
-
-            Ok(())
-        }
-
-        sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
+        super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
 
         Ok(this)
     }
@@ -161,6 +133,17 @@ impl Addr {
             pkey,
             with_addr,
         }
+    }
+
+    pub fn from_hash(hash: &[u8; 20], crv: crypto::Curve) -> Result<Self, SysError> {
+        let mut this: Self = Default::default();
+
+        this.hash.copy_from_slice(&hash[..]);
+        this.prefix.copy_from_slice(crv.to_prefix());
+
+        super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
+
+        Ok(this)
     }
 }
 

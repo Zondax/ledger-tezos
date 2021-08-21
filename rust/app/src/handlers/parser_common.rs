@@ -50,6 +50,7 @@ pub enum ParserError {
     parser_value_out_of_range,
     parser_invalid_address,
     parser_invalid_token_transfer_type,
+    UnknownOperation,
 }
 
 impl From<ErrorKind> for ParserError {

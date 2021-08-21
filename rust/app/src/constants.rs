@@ -98,3 +98,18 @@ pub const BIP32_MAX_LENGTH: usize = 10;
 
 pub const EDWARDS_SIGN_BUFFER_MIN_LENGTH: usize = 64;
 pub const SECP256_SIGN_BUFFER_MIN_LENGTH: usize = 100;
+
+///[source](https://github.com/ecadlabs/taquito/blob/dfb78acc673d48f8498998653a569f0374fb75e3/packages/taquito-utils/src/constants.ts#L40-L78)
+pub mod tzprefix {
+    pub const TZ1: &[u8] = &[6, 161, 159];
+    pub const TZ2: &[u8] = &[6, 161, 161];
+    pub const TZ3: &[u8] = &[6, 161, 164];
+
+    pub const KT1: &[u8] = &[2, 90, 121];
+
+    pub const EDPK: &[u8] = &[13, 15, 37, 217];
+    pub const SPPK: &[u8] = &[3, 254, 226, 86];
+    pub const P2PK: &[u8] = &[3, 178, 139, 127];
+
+    pub const B: &[u8] = &[1, 52];
+}

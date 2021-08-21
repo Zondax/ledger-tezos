@@ -75,7 +75,7 @@ impl AsRef<[u8]> for PublicKey {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Curve {
     Ed25519,
     Secp256K1,
@@ -189,5 +189,16 @@ impl<const B: usize> SecretKey<B> {
 impl Curve {
     pub fn to_secret<const B: usize>(self, path: &BIP32Path<B>) -> SecretKey<B> {
         SecretKey::new(self, *path)
+    }
+
+    pub fn to_prefix(self) -> &'static [u8] {
+        use crate::constants::tzprefix;
+
+        sys::PIC::new(match self {
+            Curve::Ed25519 | Curve::Bip32Ed25519 => tzprefix::TZ1,
+            Curve::Secp256K1 => tzprefix::TZ2,
+            Curve::Secp256R1 => tzprefix::TZ3,
+        })
+        .into_inner()
     }
 }
