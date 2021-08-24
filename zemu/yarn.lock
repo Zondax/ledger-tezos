@@ -807,6 +807,14 @@
     buffer "^6.0.3"
     libsodium-wrappers "0.7.8"
 
+"@taquito/local-forging@^10.0.0":
+  version "10.1.0"
+  resolved "https://registry.yarnpkg.com/@taquito/local-forging/-/local-forging-10.1.0.tgz#a2d002640728a2d4df1e5214a1b779de3ec8105b"
+  integrity sha512-kSIXpuOx8+Vpnfnzv5hmTlngHWtQV85B53ayVRHawJl5xWTQqESRSM5ii2Zc9LBaI2HR5zHvFTjhEUHxRikIiw==
+  dependencies:
+    "@taquito/utils" "^10.1.0"
+    bignumber.js "^9.0.1"
+
 "@taquito/michel-codec@^10.0.0":
   version "10.0.0"
   resolved "https://registry.yarnpkg.com/@taquito/michel-codec/-/michel-codec-10.0.0.tgz#e07f9a20598263c88c42359a1209e90dd2b6d873"
@@ -849,6 +857,15 @@
   version "10.0.0"
   resolved "https://registry.yarnpkg.com/@taquito/utils/-/utils-10.0.0.tgz#55ae6d0b192012697835afbba4ff06049792b3ba"
   integrity sha512-02BCexVFVE7jxZMZKvNtPNptvao/fKrWAXSoZoGPtdCQlyxXJDwKinu6vyyuZhvhj/jB0GUbZ4WKJevcNV1qIA==
+  dependencies:
+    blakejs "^1.1.0"
+    bs58check "^2.1.2"
+    buffer "^6.0.3"
+
+"@taquito/utils@^10.1.0":
+  version "10.1.0"
+  resolved "https://registry.yarnpkg.com/@taquito/utils/-/utils-10.1.0.tgz#032843be047ee2a86ff07755530089d9922c10d0"
+  integrity sha512-jG4pBfbcZistUFCifJveHNm8cvOs/ZO8bG6fP9adLef1c8JDChLA5/y4yp3xqirCZyZIJ3EoBpT723uuF7EM+Q==
   dependencies:
     blakejs "^1.1.0"
     bs58check "^2.1.2"

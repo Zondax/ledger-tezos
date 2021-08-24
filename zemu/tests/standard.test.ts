@@ -154,14 +154,14 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
 })
 
 describe.each(models)('Standard [%s]; sign', function (m) {
-  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.blob]))(
+  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.then((tn) => tn.blob)]))(
     'sign message',
-    async function (curve, msg) {
+    async function (curve, tx) {
       const sim = new Zemu(m.path)
       try {
         await sim.start({ ...defaultOptions, model: m.name })
         const app = new TezosApp(sim.getTransport())
-
+        const msg = await tx;
         const respReq = app.sign(APP_DERIVATION, curve, msg)
 
         await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
@@ -216,14 +216,14 @@ describe.each(models)('Standard [%s]; sign', function (m) {
 })
 
 describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
-  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.blob]))(
+  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION.then((tn) => tn.blob)]))(
     'sign message',
-    async function (curve, msg) {
+    async function (curve, tx) {
       const sim = new Zemu(m.path)
       try {
         await sim.start({ ...defaultOptions, model: m.name })
         const app = new TezosApp(sim.getTransport())
-
+        const msg = await tx;
         const respReq = app.legacySignWithHash(APP_DERIVATION, curve, msg)
 
         await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
