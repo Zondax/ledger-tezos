@@ -277,8 +277,8 @@ export default class TezosApp {
             return {
               hash: response.slice(0, 32),
               signature: response.slice(32, -2),
-              returncode: returnCode,
-              errormessage: errorMessage
+              returnCode: returnCode,
+              errorMessage: errorMessage
             };
           } else {
             return {
@@ -364,7 +364,7 @@ export default class TezosApp {
     return blake2.createHash('blake2b', {digestLength: 32}).update(msg).digest();
   }
 
-  //--------------------- lEGACY INSTRUCTIONS
+  //--------------------- LEGACY INSTRUCTIONS
   async legacyGetVersion(): Promise<ResponseLegacyVersion> {
     return this.transport.send(CLA, LEGACY_INS.VERSION, 0, 0).then(response => {
       const errorCodeData = response.slice(-2)
