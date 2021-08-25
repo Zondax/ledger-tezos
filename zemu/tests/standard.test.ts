@@ -23,12 +23,6 @@ import { SIMPLE_TRANSACTION } from './tezos';
 
 const ed25519 = require('ed25519-supercop')
 
-jest.setTimeout(60000)
-
-beforeAll(async () => {
-  await Zemu.checkAndPullImage()
-})
-
 describe.each(models)('Standard', function (m) {
   test('can start and stop container', async function () {
     const sim = new Zemu(m.path)

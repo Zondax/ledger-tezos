@@ -32,12 +32,6 @@ const models: DeviceModel[] = [
   { name: 'nanox', prefix: 'BX', path: APP_PATH_X },
 ]
 
-jest.setTimeout(60000)
-
-beforeAll(async () => {
-  await Zemu.checkAndPullImage()
-})
-
 describe.each(models)('Standard baking [%s]', function (m) {
   test('can start and stop container', async function () {
     const sim = new Zemu(m.path)

@@ -21,22 +21,26 @@ import * as secp256k1 from 'noble-secp256k1'
 
 const ed25519 = require('ed25519-supercop')
 
-jest.setTimeout(60000)
+import { TestVector } from '../test-vectors-gen/legacy'
 
-import { SAMPLE_OPERATIONS, TEST_VECTORS } from "./globalsetup"
+import { readFileSync } from 'fs';
+
+const SAMPLE_OPERATIONS: { blob: Buffer }[] = JSON.parse(readFileSync('/tmp/jest.forged_sample_operations.json', 'utf-8'));
+const TEST_VECTORS: TestVector[] = JSON.parse(readFileSync('/tmp/jest.collected_test_vectors.json', 'utf-8'));
 
 describe.each(cartesianProduct(models, curves))('Test Vectors', function (m, curve) {
+  console.log(`Going to test {TEST_VECTORS.length} vectors`);
   test.each(TEST_VECTORS)('sign test vector', async function (test_case) {
+    console.log(TEST_VECTORS.length)
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({ ...defaultOptions, model: m.name, pressDelayAfter: 0 })
       const app = new TezosApp(sim.getTransport())
 
       const msg = Buffer.from(test_case.blob, 'hex')
       const respReq = app.sign(APP_DERIVATION, curve, msg)
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
-
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 5000)
       //try to navigate to the end of the transaction
       for (let i = 0; i < 30; i++) {
         await sim.clickRight()
@@ -87,16 +91,17 @@ describe.each(cartesianProduct(models, curves))('Test Vectors', function (m, cur
 })
 
 describe.each(cartesianProduct(models, curves))('Sample Operations', function (m, curve) {
+  console.log(`Going to test {SAMPLE_OPERATIONS.length} samples`);
   test.each(SAMPLE_OPERATIONS)('sign sample operation', async function (sample) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({ ...defaultOptions, model: m.name, pressDelayAfter: 0 })
       const app = new TezosApp(sim.getTransport())
 
       const msg = sample.blob
       const respReq = app.sign(APP_DERIVATION, curve, msg)
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 5000)
 
       //try to navigate to the end of the transaction
       for (let i = 0; i < 30; i++) {

@@ -15,16 +15,14 @@
  ******************************************************************************* */
 import Zemu from '@zondax/zemu'
 
-import { SAMPLE_OPERATIONS as SAMPLE } from './tezos'
+import { SAMPLE_OPERATIONS } from '../tests/tezos'
 import { TestVector } from '../test-vectors-gen/legacy'
 
-import { readdir, readFile } from 'fs'
+import { readdir, readFile, writeFile } from 'fs'
 import { promisify } from 'util'
 
-beforeAll(async () => {
-  await Zemu.checkAndPullImage()
-
-  SAMPLE_OPERATIONS.push(...await SAMPLE)
+async function readTestVectors(): Promise<TestVector[]> {
+  const vectors: TestVector[] = []
 
   await promisify(readdir)('test-vectors/')
     .then(filenames => {
@@ -36,13 +34,28 @@ beforeAll(async () => {
     })
     .then(allContents => {
       allContents.forEach(contents => {
-        TEST_VECTORS.push(...JSON.parse(contents))
+        vectors.push(...JSON.parse(contents))
       })
     })
     .catch(err => {
       throw err
     })
-})
 
-export const TEST_VECTORS: TestVector[] = []
-export const SAMPLE_OPERATIONS: { blob: Buffer }[] = []
+  return vectors
+}
+
+module.exports = async () => {
+  await Zemu.checkAndPullImage()
+
+  const writeFilePr = promisify(writeFile)
+
+  const vectors = await readTestVectors()
+  await writeFilePr('/tmp/jest.collected_test_vectors.json', JSON.stringify(vectors)).catch(err => {
+    throw err
+  })
+
+  const samples = await SAMPLE_OPERATIONS
+  await writeFilePr('/tmp/jest.forged_sample_operations.json', JSON.stringify(samples)).catch(err => {
+    throw err
+  })
+}
