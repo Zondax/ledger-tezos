@@ -572,4 +572,4 @@ export const SAMPLE_OPERATIONS = Promise.all(
   }),
 )
 
-export const SIMPLE_TRANSACTION = SAMPLE_OPERATIONS.then(arr => arr[5])
+export const SIMPLE_TRANSACTION = SAMPLE_OPERATIONS.then(arr => arr[6])
