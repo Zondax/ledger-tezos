@@ -21,11 +21,11 @@ import * as secp256k1 from 'noble-secp256k1'
 
 const ed25519 = require('ed25519-supercop')
 
+import { SAMPLE_OPERATIONS } from './tezos'
+
+import { readFileSync } from 'fs'
 import { TestVector } from '../test-vectors-gen/legacy'
 
-import { readFileSync } from 'fs';
-
-const SAMPLE_OPERATIONS: { blob: Buffer }[] = JSON.parse(readFileSync('/tmp/jest.forged_sample_operations.json', 'utf-8'));
 const TEST_VECTORS: TestVector[] = JSON.parse(readFileSync('/tmp/jest.collected_test_vectors.json', 'utf-8'));
 
 describe.each(cartesianProduct(models, curves))('Test Vectors', function (m, curve) {
@@ -98,7 +98,7 @@ describe.each(cartesianProduct(models, curves))('Sample Operations', function (m
       await sim.start({ ...defaultOptions, model: m.name, pressDelayAfter: 0 })
       const app = new TezosApp(sim.getTransport())
 
-      const msg = sample.blob
+      const msg = Buffer.from(sample.blob, 'hex')
       const respReq = app.sign(APP_DERIVATION, curve, msg)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 5000)

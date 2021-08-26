@@ -15,7 +15,6 @@
  ******************************************************************************* */
 import Zemu from '@zondax/zemu'
 
-import { SAMPLE_OPERATIONS } from '../tests/tezos'
 import { TestVector } from '../test-vectors-gen/legacy'
 
 import { readdir, readFile, writeFile } from 'fs'
@@ -51,11 +50,6 @@ module.exports = async () => {
 
   const vectors = await readTestVectors()
   await writeFilePr('/tmp/jest.collected_test_vectors.json', JSON.stringify(vectors)).catch(err => {
-    throw err
-  })
-
-  const samples = await SAMPLE_OPERATIONS
-  await writeFilePr('/tmp/jest.forged_sample_operations.json', JSON.stringify(samples)).catch(err => {
     throw err
   })
 }
