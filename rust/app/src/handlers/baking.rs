@@ -586,12 +586,12 @@ impl Viewable for BakingSignUI {
         }
 
         //write unsigned_hash to buffer
+        out[tx..tx + 32].copy_from_slice(&self.digest);
         tx += 32;
-        out[..32].copy_from_slice(&self.digest);
 
         //wrte signature to buffer
+        out[tx..tx + sz].copy_from_slice(&sig[..sz]);
         tx += sz;
-        out[32..32 + sz].copy_from_slice(&sig[..sz]);
 
         (tx, Error::Success as _)
     }

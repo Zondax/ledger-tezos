@@ -233,7 +233,7 @@ export default class TezosApp {
         .then(processQueryAuthKeyWithCurve, processErrorResponse);
   }
 
-  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, legacy = false, curve?: Curve, ins: number = INS.SIGN): Promise<ResponseSign> {
+  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, legacy = false, curve?: Curve, ins: number = INS.SIGN, with_hash = true): Promise<ResponseSign> {
     let payloadType = PAYLOAD_TYPE.ADD;
     let p2 = 0;
     if (chunkIdx === 1) {
@@ -273,12 +273,22 @@ export default class TezosApp {
         }
 
         if (returnCode === LedgerError.NoErrors && response.length > 2) {
-          return {
-            hash: response.slice(0, 32),
-            signature: response.slice(32, -2),
-            returnCode: returnCode,
-            errorMessage: errorMessage
-          };
+          if (with_hash) {
+            return {
+              hash: response.slice(0, 32),
+              signature: response.slice(32, -2),
+              returnCode: returnCode,
+              errorMessage: errorMessage
+            };
+          } else {
+            return {
+              signature: response.slice(0, 32),
+              hash: Buffer.alloc(32),
+              returnCode: returnCode,
+              errorMessage: errorMessage
+            };
+          }
+
         }
 
         return {
@@ -354,7 +364,7 @@ export default class TezosApp {
     return blake2.createHash('blake2b', {digestLength: 32}).update(msg).digest();
   }
 
-  //--------------------- lEGACY INSTRUCTIONS
+  //--------------------- LEGACY INSTRUCTIONS
   async legacyGetVersion(): Promise<ResponseLegacyVersion> {
     return this.transport.send(CLA, LEGACY_INS.VERSION, 0, 0).then(response => {
       const errorCodeData = response.slice(-2)
@@ -514,6 +524,26 @@ export default class TezosApp {
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
           result = await this.signSendChunk(1 + i, chunks.length, chunks[i], true, curve, LEGACY_INS.SIGN_WITH_HASH);
+          if (result.returnCode !== LedgerError.NoErrors) {
+            break;
+          }
+        }
+        return result;
+      }, processErrorResponse);
+    }, processErrorResponse);
+  }
+
+  async legacySign(path: string, curve: Curve, message: Buffer) {
+    return this.signGetChunks(path, message).then(chunks => {
+      return this.signSendChunk(1, chunks.length, chunks[0], true, curve, LEGACY_INS.SIGN, false).then(async response => {
+        let result = {
+          returnCode: response.returnCode,
+          errorMessage: response.errorMessage,
+          signature: null as null | Buffer,
+        };
+        for (let i = 1; i < chunks.length; i += 1) {
+          // eslint-disable-next-line no-await-in-loop
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], true, curve, LEGACY_INS.SIGN, false);
           if (result.returnCode !== LedgerError.NoErrors) {
             break;
           }

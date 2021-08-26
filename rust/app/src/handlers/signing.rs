@@ -304,14 +304,13 @@ impl Viewable for SignUI {
 
         //write unsigned_hash to buffer
         if self.send_hash {
+            out[tx..tx + Sign::SIGN_HASH_SIZE].copy_from_slice(&self.hash[..]);
             tx += Sign::SIGN_HASH_SIZE;
-            out[..Sign::SIGN_HASH_SIZE].copy_from_slice(&self.hash[..]);
         }
 
         //wrte signature to buffer
+        out[tx..tx + sig_size].copy_from_slice(&sig[..sig_size]);
         tx += sig_size;
-        out[Sign::SIGN_HASH_SIZE..Sign::SIGN_HASH_SIZE + sig_size]
-            .copy_from_slice(&sig[..sig_size]);
 
         (tx, Error::Success as _)
     }

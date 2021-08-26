@@ -10,15 +10,21 @@
     "Ledger"
   ],
   "scripts": {
-    "test": "jest --detectOpenHandles --testPathIgnorePatterns='dev.*'",
+    "test": "jest --detectOpenHandles --testPathIgnorePatterns='dev.*|testvectors.*'",
     "test_dev": "jest --detectOpenHandles",
-    "debug": "node debug/debug.mjs debug"
+    "debug": "node debug/debug.mjs debug",
+    "test-vectors-generate": "mkdir test-vectors; ts-node --project ./node.tsconfig.json test-vectors-gen/index.ts"
   },
   "dependencies": {
+    "@types/node": "^16.4.5",
     "@zondax/ledger-tezos": "link:../js",
     "@zondax/zemu": "^0.16.1"
   },
   "devDependencies": {
+    "@taquito/ledger-signer": "^10.0.0",
+    "@taquito/rpc": "^10.0.0",
+    "@taquito/taquito": "^10.0.0",
+    "@taquito/local-forging": "^10.0.0",
     "@types/jest": "^26.0.23",
     "@types/ledgerhq__hw-transport": "^4.21.3",
     "@typescript-eslint/eslint-plugin": "^4.24.0",
@@ -31,12 +37,13 @@
     "eslint-plugin-import": "^2.23.2",
     "eslint-plugin-jest": "^24.3.6",
     "eslint-plugin-prettier": "^3.3.1",
-    "jest": "26.6.3",
+    "jest": "^27",
     "jest-serial-runner": "^1.1.0",
     "jssha": "^3.1.1",
+    "noble-secp256k1": "^1.2.6",
     "prettier": "^2.3.0",
-    "ts-jest": "^26.5.6",
-    "typescript": "^4.2.3",
-    "noble-secp256k1": "^1.2.6"
+    "ts-jest": "^27",
+    "ts-node": "^10.1.0",
+    "typescript": "^4.3.5"
   }
 }
