@@ -20,7 +20,7 @@ use bolos::{
     hash::{Blake2b, Hasher},
     pic_str, PIC,
 };
-use zemu_sys::{zemu_log, Show, ViewError, Viewable};
+use zemu_sys::{Show, ViewError, Viewable};
 
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},

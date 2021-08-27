@@ -72,7 +72,7 @@ impl ApduHandler for GetAddress {
             // this way the "formatting" to `buffer` is all in the ui code
             let (sz, code) = ui.accept(buffer.write());
 
-            if code != Error::Success as _ {
+            if code != Error::Success as u16 {
                 Err(Error::try_from(code).map_err(|_| Error::ExecutionError)?)
             } else {
                 *tx = sz as u32;
