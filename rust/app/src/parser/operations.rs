@@ -228,7 +228,7 @@ impl<'b> core::fmt::Display for Entrypoint<'b> {
             Entrypoint::Custom(custom) => {
                 let custom = core::str::from_utf8(custom).expect("custom entrypoint was not utf8");
                 f.write_str(custom)
-            },
+            }
         }
     }
 }
