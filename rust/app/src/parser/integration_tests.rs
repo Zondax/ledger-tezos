@@ -17,176 +17,155 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::*;
 
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use crate::handlers::public_key::Addr;
 use crate::parser::operations::{Entrypoint, Operation};
 
 use super::operations::OperationType;
+use super::Zarith;
 
-fn data_file_path() -> PathBuf {
+fn data_dir_path() -> PathBuf {
     std::env::var_os("TEZOS_TEST_DATA")
         .unwrap_or("../../zemu/tests/data".to_string().into())
         .into()
 }
 
-fn get_json_from_data<P: AsRef<Path>>(filename: P) -> Value {
-    let path = data_file_path().join(filename);
+fn get_json_from_data<P, T>(filename: P) -> T
+where
+    P: AsRef<Path>,
+    T: DeserializeOwned,
+{
+    let path = data_dir_path().join(filename);
 
     let file = File::open(&path).expect(&format!("couldn't read file at {:?}", path));
 
     serde_json::from_reader(file).expect(&format!("couldn't parse json at {:?}", path))
 }
 
-#[test]
-fn simple_transfer_sample() {
-    //retrieve all samples
-    let samples = get_json_from_data("samples.json");
-    let samples = samples.as_array().expect("samples json wasn't an array");
+#[derive(Serialize, Deserialize)]
+struct JsonOperation {
+    branch: String,
+    contents: Vec<Map<String, Value>>,
+}
 
-    //get 6th sample
-    let sample = samples[6].as_object().expect("sample #6 wasn't an object");
+#[derive(Serialize, Deserialize)]
+struct Sample {
+    #[serde(default)]
+    name: String,
+    operation: JsonOperation,
+    blob: String,
+}
 
-    //get blob and decode hexstring
-    let blob = sample["blob"]
-        .as_str()
-        .expect("sample #6 .blob wasn't a string");
-    let blob = hex::decode(&blob).expect("sample #6 .blob wasn't a hex string");
+fn test_sample(name: &str, blob: String, branch: String, contents: Vec<Map<String, Value>>) {
+    let blob = hex::decode(&blob).expect(&format!("sample {} .blob wasn't a hex string", name));
 
     //parse forged op blob
-    let mut parsed = Operation::new(&blob).expect("sample #6 couldn't be parsed");
-
-    //get operation object
-    let operation = sample["operation"]
-        .as_object()
-        .expect("sample #6 .operation wasn't an object");
-
-    //verify that the branches match
-    let expected_branch_bs58 = operation["branch"]
-        .as_str()
-        .expect("sample #6 .branch wasn't a string");
+    let mut parsed = Operation::new(&blob).expect(&format!("sample {} couldn't be parsed", name));
 
     let mut branch_bs58 = [0; 51];
-    parsed
-        .base58_branch(&mut branch_bs58)
-        .expect("couldn't compute base 58 branch of sample #6");
+    parsed.base58_branch(&mut branch_bs58).expect(&format!(
+        "couldn't compute base 58 branch of sample {}",
+        name
+    ));
 
-    assert_eq!(branch_bs58, expected_branch_bs58.as_bytes());
+    assert_eq!(branch_bs58, branch.as_bytes());
 
     //retrieve ops from parsed and also ops in the operation
     let ops = parsed.mut_ops();
-    let contents = operation["contents"]
-        .as_array()
-        .expect("sample #6 .operation.contents wasn't an array");
 
-    //we should only have a single operation to parse
-    assert_eq!(contents.len(), 1);
+    //how many ops we expect to parse
+    let expected_n_ops = contents.len();
+    //n of ops parsed and checked
+    let mut n_ops = 0;
+    loop {
+        let item = ops.parse_next();
 
-    let op = ops
-        .parse_next()
-        .expect("unable to parse operation")
-        .expect("0 operations parsed?");
+        match item {
+            //if we reached the end, then we good
+            Ok(None) if n_ops == expected_n_ops => break,
+            //we were expecting more ops to parse, but we stopped early
+            Ok(None) => panic!(
+                "expected #{} operations, only #{} were parsed",
+                expected_n_ops, n_ops
+            ),
+            //generic error
+            Err(e) => panic!("error parsing operation #{}: {:?}", n_ops, e),
+            Ok(Some(op)) => {
+                //retrieve the operation as object
+                let json_op = contents[n_ops];
 
-    let json_op = contents[0]
-        .as_object()
-        .expect("sample #6 .operation.contents[0] wasn't an object");
-
-    //we should verify that this is indeed a transfer
-    assert!(op.is_transfer());
-
-    //verify the parsed one
-    verify_operation(op, json_op, 6, 0);
-}
-
-#[test]
-#[should_panic] //TODO
-fn all_samples() {
-    let samples = get_json_from_data("samples.json");
-
-    let samples = samples.as_array().expect("samples json wasn't an array");
-
-    for (i, sample) in samples.into_iter().enumerate() {
-        //get sample object
-        let sample = sample
-            .as_object()
-            .expect(&format!("sample #{} wasn't an object", i));
-
-        //get blob and decode from hexstring
-        let blob = sample["blob"]
-            .as_str()
-            .expect(&format!("sample #{} .blob wasn't a string", i));
-        let blob = hex::decode(&blob).expect(&format!("sample #{} .blob wasn't a hex string", i));
-
-        //parse forged op blob
-        let mut parsed = Operation::new(&blob).expect(&format!("sample #{} couldn't be parsed", i));
-
-        //get operation object
-        let operation = sample["operation"]
-            .as_object()
-            .expect(&format!("sample #{} .operation wasn't an object", i));
-
-        //verify that the branches match
-        let expected_branch_bs58 = operation["branch"]
-            .as_str()
-            .expect(&format!("sample #{} .branch wasn't a string", i));
-
-        let mut branch_bs58 = [0; 51];
-        parsed
-            .base58_branch(&mut branch_bs58)
-            .expect(&format!("couldn't compute base 58 branch of sample #{}", i));
-
-        assert_eq!(branch_bs58, expected_branch_bs58.as_bytes());
-
-        //retrieve ops from parsed and also ops in the operation
-        let ops = parsed.mut_ops();
-        let contents = operation["contents"].as_array().expect(&format!(
-            "sample #{} .operation.contents wasn't an array",
-            i
-        ));
-
-        //how many ops we expect to parse
-        let expected_n_ops = contents.len();
-        //n of ops parsed and checked
-        let mut n_ops = 0;
-        loop {
-            let item = ops.parse_next();
-
-            match item {
-                //if we reached the end, then we good
-                Ok(None) if n_ops == expected_n_ops => break,
-                //we were expecting more ops to parse, but we stopped early
-                Ok(None) => panic!(
-                    "expected #{} operations, only #{} were parsed",
-                    expected_n_ops, n_ops
-                ),
-                //generic error
-                Err(e) => panic!("error parsing operation #{}: {:?}", n_ops, e),
-                Ok(Some(op)) => {
-                    //retrieve the operation as object
-                    let json_op = contents[n_ops].as_object().expect(&format!(
-                        "sample #{} .operation.contents[{}] wasn't an object",
-                        i, n_ops
-                    ));
-
-                    //verify the parsed one
-                    verify_operation(op, json_op, i, n_ops);
-                    n_ops += 1;
-                }
+                //verify the parsed one
+                verify_operation(op, &json_op, &name, n_ops);
+                n_ops += 1;
             }
         }
     }
 }
 
+fn test_samples_in_file(filename: &str) {
+    let samples: Vec<Sample> = get_json_from_data(filename);
+
+    for (
+        i,
+        Sample {
+            name,
+            blob,
+            operation: JsonOperation { branch, contents },
+        },
+    ) in samples.into_iter().enumerate()
+    {
+        let name = if name.is_empty() {
+            format!("#{}", i)
+        } else {
+            name
+        };
+
+        test_sample(&name, blob, branch, contents)
+    }
+}
+
+#[test]
+#[should_panic] //TODO
+fn common_samples() {
+    test_samples_in_file("samples.json")
+}
+
+#[test]
+#[should_panic] //TODO
+fn michelson_samples() {
+    test_samples_in_file("michelson.json")
+}
+
+#[test]
+fn simple_transfer_sample() {
+    //retrieve all samples
+    let samples: Vec<Sample> = get_json_from_data("samples.json");
+
+    //get 6th sample
+    let Sample {
+        name: _,
+        operation: JsonOperation { branch, contents },
+        blob,
+    } = samples[6];
+
+    //we should only have a single operation to parse
+    assert_eq!(contents.len(), 1);
+
+    test_sample("#6", blob, branch, contents);
+}
+
 fn verify_operation<'b>(
     op: OperationType<'b>,
     json: &Map<String, Value>,
-    sample_n: usize,
+    sample_name: &str,
     op_n: usize,
 ) {
     //get operation kind as string
     let kind = json["kind"].as_str().expect(&format!(
-        "sample #{} .operation.contents[{}].kind",
-        sample_n, op_n
+        "sample {} .operation.contents[{}].kind",
+        sample_name, op_n
     ));
 
     //verify we parsed the right kind of operation
@@ -194,8 +173,8 @@ fn verify_operation<'b>(
     match (op, kind) {
         (OperationType::Transfer(tx), "transaction") => tx.is(json),
         (op, other) => panic!(
-            "sample #{}[{}]; expected op kind: {}, parsed as: {:?}",
-            sample_n, op_n, other, op
+            "sample {}[{}]; expected op kind: {}, parsed as: {:?}",
+            sample_name, op_n, other, op
         ),
     }
 }
@@ -218,7 +197,11 @@ impl<'b> super::operations::Transfer<'b> {
             .expect("given json .source is not a string");
         assert_eq!(source_base58, expected_source_base58.as_bytes());
 
-        //TODO: fee, counter, gas_limit, storage_limit, amount temporarily
+        self.amount().is(&json["amount"]);
+        self.counter().is(&json["counter"]);
+        self.fee().is(&json["fee"]);
+        self.gas_limit().is(&json["gas_limit"]);
+        self.storage_limit().is(&json["storage_limit"]);
 
         //verify the destination
         let destination_bs58 = {
@@ -268,5 +251,17 @@ impl<'b> super::operations::Transfer<'b> {
                 //TODO: verify michelson code (parameters.value)
             }
         }
+    }
+}
+
+impl<'b> Zarith<'b> {
+    fn is(&self, json: &Value) {
+        let num = json.as_f64().expect("given json for zarith was not an f64");
+
+        if let Some(neg) = self.is_negative() {
+            assert_eq!(neg, num < 0.0)
+        }
+
+        //TODO: verify value with parsed
     }
 }

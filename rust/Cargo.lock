@@ -401,6 +401,7 @@ dependencies = [
  "nom",
  "panic-halt",
  "property",
+ "serde",
  "serde_json",
  "serial_test",
  "sha2",
@@ -425,6 +426,20 @@ name = "serde"
 version = "1.0.129"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d1f72836d2aa753853178eda473a3b9d8e4eefdaf20523b919677e6de489f8f1"
+dependencies = [
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.129"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e57ae87ad533d9a56427558b516d0adac283614e347abf85b0dc0cbbf0a249f3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "serde_json"
