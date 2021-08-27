@@ -13,7 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use std::fs::File;
+use std::fs::{read_dir, File};
 use std::path::{Path, PathBuf};
 use std::prelude::v1::*;
 
@@ -32,25 +32,29 @@ fn data_dir_path() -> PathBuf {
         .into()
 }
 
-fn get_json_from_data<P, T>(filename: P) -> T
+fn test_vectors_path() -> PathBuf {
+    std::env::var_os("TEZOS_TEST_VECTORS")
+        .unwrap_or("../../zemu/test-vectors".to_string().into())
+        .into()
+}
+
+fn get_json_from_data<P, T>(path: P) -> T
 where
     P: AsRef<Path>,
     T: DeserializeOwned,
 {
-    let path = data_dir_path().join(filename);
+    let file = File::open(&path).expect(&format!("couldn't read file at {:?}", path.as_ref()));
 
-    let file = File::open(&path).expect(&format!("couldn't read file at {:?}", path));
-
-    serde_json::from_reader(file).expect(&format!("couldn't parse json at {:?}", path))
+    serde_json::from_reader(file).expect(&format!("couldn't parse json at {:?}", path.as_ref()))
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct JsonOperation {
     branch: String,
     contents: Vec<Map<String, Value>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct Sample {
     #[serde(default)]
     name: String,
@@ -94,7 +98,7 @@ fn test_sample(name: &str, blob: String, branch: String, contents: Vec<Map<Strin
             Err(e) => panic!("error parsing operation #{}: {:?}", n_ops, e),
             Ok(Some(op)) => {
                 //retrieve the operation as object
-                let json_op = contents[n_ops];
+                let json_op = &contents[n_ops];
 
                 //verify the parsed one
                 verify_operation(op, &json_op, &name, n_ops);
@@ -104,9 +108,12 @@ fn test_sample(name: &str, blob: String, branch: String, contents: Vec<Map<Strin
     }
 }
 
-fn test_samples_in_file(filename: &str) {
+//returns number of samples tested
+// if all samples were ok
+fn test_samples_in_file<P: AsRef<Path>>(filename: P) -> usize {
     let samples: Vec<Sample> = get_json_from_data(filename);
 
+    let mut n_samples = 0;
     for (
         i,
         Sample {
@@ -122,38 +129,74 @@ fn test_samples_in_file(filename: &str) {
             name
         };
 
-        test_sample(&name, blob, branch, contents)
+        test_sample(&name, blob, branch, contents);
+        n_samples += 1;
     }
+
+    n_samples
 }
 
 #[test]
-#[should_panic] //TODO
+#[should_panic(expected = "not yet implemented")] //TODO
 fn common_samples() {
-    test_samples_in_file("samples.json")
+    test_samples_in_file(data_dir_path().join("samples.json"));
 }
 
 #[test]
-#[should_panic] //TODO
+#[should_panic(expected = "not yet implemented")] //TODO
 fn michelson_samples() {
-    test_samples_in_file("michelson.json")
+    test_samples_in_file(data_dir_path().join("michelson.json"));
 }
 
 #[test]
 fn simple_transfer_sample() {
     //retrieve all samples
-    let samples: Vec<Sample> = get_json_from_data("samples.json");
+    let samples: Vec<Sample> = get_json_from_data(data_dir_path().join("samples.json"));
 
     //get 6th sample
     let Sample {
         name: _,
         operation: JsonOperation { branch, contents },
         blob,
-    } = samples[6];
+    } = samples[6].clone();
 
     //we should only have a single operation to parse
     assert_eq!(contents.len(), 1);
 
     test_sample("#6", blob, branch, contents);
+}
+
+#[test]
+fn test_vectors() {
+    let mut test_vectors_found = 0;
+    let mut total_tests = 0;
+
+    //get test_vector folder
+    let folder_path = test_vectors_path();
+    //ignore if the folder doesn't exist
+    if let Ok(dir) = read_dir(&folder_path) {
+        //go thru each item in `dir` and ignore all errors
+        for filename in dir
+            .filter_map(Result::ok)
+            .filter(|dir_entry| {
+                // but we only want the files
+                dir_entry
+                    .file_type()
+                    .map(|ft| ft.is_file())
+                    .unwrap_or_default()
+            })
+            //and we only interested in the path
+            .map(|dir_entry| dir_entry.path())
+        {
+            test_vectors_found += 1;
+            total_tests += test_samples_in_file(filename);
+        }
+    }
+
+    eprintln!(
+        "Test Vector files found #{}; Total tests run: #{}",
+        test_vectors_found, total_tests
+    )
 }
 
 fn verify_operation<'b>(
@@ -256,7 +299,17 @@ impl<'b> super::operations::Transfer<'b> {
 
 impl<'b> Zarith<'b> {
     fn is(&self, json: &Value) {
-        let num = json.as_f64().expect("given json for zarith was not an f64");
+        let num: f64 = json
+            .as_str()
+            .expect(&format!(
+                "given json for zarith was not a string; found={}",
+                json
+            ))
+            .parse()
+            .expect(&format!(
+                "given json for zarith couldn't be parsed to f64; json={}",
+                json
+            ));
 
         if let Some(neg) = self.is_negative() {
             assert_eq!(neg, num < 0.0)
