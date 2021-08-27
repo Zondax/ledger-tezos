@@ -109,7 +109,7 @@ mod tests {
         assert_eq!(*tx, 4 + 2);
         assert_error_code!(*tx, buffer, Success);
 
-        assert_eq!(buffer[0], BAKING as _);
+        assert_eq!(buffer[0], BAKING as u8);
         assert_eq!(buffer[1], VERSION_MAJOR);
         assert_eq!(buffer[2], VERSION_MINOR);
         assert_eq!(buffer[3], VERSION_PATCH);

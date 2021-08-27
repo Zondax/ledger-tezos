@@ -225,3 +225,6 @@ mod tests {
         assert_eq!(num.is_negative(), Some(false))
     }
 }
+
+#[cfg(test)]
+mod integration_tests;

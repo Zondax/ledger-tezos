@@ -23,6 +23,5 @@ module.exports = async () => {
 
   const unlinkPr = promisify(unlink);
 
-  await unlinkPr('/tmp/jest.forged_sample_operations.json').catch(err => { throw err })
   await unlinkPr('/tmp/jest.collected_test_vectors.json').catch(err => { throw err })
 }

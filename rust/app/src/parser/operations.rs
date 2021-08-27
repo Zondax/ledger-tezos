@@ -172,6 +172,10 @@ impl<'b> OperationType<'b> {
         Ok((rem, data))
     }
 
+    pub fn is_transfer(&self) -> bool {
+        matches!(self, OperationType::Transfer(_))
+    }
+
     pub fn ui_items(&self) -> usize {
         match self {
             OperationType::Transfer(_tx) => 8,
@@ -213,7 +217,24 @@ impl<'b> Entrypoint<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+impl<'b> core::fmt::Display for Entrypoint<'b> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Entrypoint::Default => write!(f, "default"),
+            Entrypoint::Root => write!(f, "root"),
+            Entrypoint::Do => write!(f, "do"),
+            Entrypoint::SetDelegate => write!(f, "set_delegate"),
+            Entrypoint::RemoveDelegate => write!(f, "remove_delegate"),
+            Entrypoint::Custom(custom) => {
+                let custom = core::str::from_utf8(custom).expect("custom entrypoint was not utf8");
+                f.write_str(custom)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[property(mut(disable), get(public), set(disable))]
 pub struct Parameters<'b> {
     entrypoint: Entrypoint<'b>,
     michelson: &'b [u8],

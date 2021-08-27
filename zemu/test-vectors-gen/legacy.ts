@@ -37,6 +37,7 @@ export type TestVector = {
   name: string
   blob: string
   output: Array<ExpectedPage>
+  operation: ForgeOperationsParams
 }
 
 async function generate_vector(n: number): Promise<TestVector> {
@@ -107,6 +108,7 @@ async function generate_vector(n: number): Promise<TestVector> {
     const test_vector: TestVector = {
       name: `Simple TX #${n}`,
       blob: forgedOp,
+      operation: op,
       output: [
         { idx: 0, key: 'Kind', val: ledger_fmt('Transaction') }, //page 0
         { idx: 1, key: 'Amount', val: ledger_fmt(amount.toString()) },
