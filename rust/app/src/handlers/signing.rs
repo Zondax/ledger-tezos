@@ -186,10 +186,11 @@ impl Viewable for SignUI {
 
             handle_ui_message(&mex[..], message, page)
         } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
+            use lexical_core::{write as itoa, Number};
+            let mut zarith_buf = [0; usize::FORMATTED_SIZE_DECIMAL];
+
             match op {
                 OperationType::Transfer(tx) => {
-                    let zarith_str = pic_str!(b"zarith");
-
                     match item_n {
                         //source
                         0 => {
@@ -221,18 +222,19 @@ impl Viewable for SignUI {
                             let title_content = pic_str!(b"Amount");
                             title[..title_content.len()].copy_from_slice(title_content);
 
-                            let _amount = tx.amount();
+                            let (_, amount) =
+                                tx.amount().read_as::<usize>().ok_or(ViewError::Unknown)?;
 
-                            handle_ui_message(zarith_str, message, page)
+                            handle_ui_message(itoa(amount, &mut zarith_buf), message, page)
                         }
                         //fee
                         3 => {
                             let title_content = pic_str!(b"Fee");
                             title[..title_content.len()].copy_from_slice(title_content);
 
-                            let _fee = tx.fee();
+                            let (_, fee) = tx.fee().read_as::<usize>().ok_or(ViewError::Unknown)?;
 
-                            handle_ui_message(zarith_str, message, page)
+                            handle_ui_message(itoa(fee, &mut zarith_buf), message, page)
                         }
                         //has_parameters
                         4 => {
@@ -253,27 +255,34 @@ impl Viewable for SignUI {
                             let title_content = pic_str!(b"Gas Limit");
                             title[..title_content.len()].copy_from_slice(title_content);
 
-                            let _gas_limit = tx.gas_limit();
+                            let (_, gas_limit) = tx
+                                .gas_limit()
+                                .read_as::<usize>()
+                                .ok_or(ViewError::Unknown)?;
 
-                            handle_ui_message(zarith_str, message, page)
+                            handle_ui_message(itoa(gas_limit, &mut zarith_buf), message, page)
                         }
                         //storage_limit
                         6 => {
                             let title_content = pic_str!(b"Storage Limit");
                             title[..title_content.len()].copy_from_slice(title_content);
 
-                            let _storage_limit = tx.storage_limit();
+                            let (_, storage_limit) = tx
+                                .storage_limit()
+                                .read_as::<usize>()
+                                .ok_or(ViewError::Unknown)?;
 
-                            handle_ui_message(zarith_str, message, page)
+                            handle_ui_message(itoa(storage_limit, &mut zarith_buf), message, page)
                         }
                         //counter
                         7 => {
                             let title_content = pic_str!(b"Counter");
                             title[..title_content.len()].copy_from_slice(title_content);
 
-                            let _counter = tx.counter();
+                            let (_, counter) =
+                                tx.counter().read_as::<usize>().ok_or(ViewError::Unknown)?;
 
-                            handle_ui_message(zarith_str, message, page)
+                            handle_ui_message(itoa(counter, &mut zarith_buf), message, page)
                         }
                         _ => panic!("should be next operation"),
                     }

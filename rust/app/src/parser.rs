@@ -76,6 +76,51 @@ impl<'b> Zarith<'b> {
     pub fn is_negative(&self) -> Option<bool> {
         self.is_negative
     }
+
+    /// Attempts to read the zarith number in an N
+    ///
+    /// The first value of the tuple is true when the number is negative
+    pub fn read_as<N>(&self) -> Option<(bool, N)>
+    where
+        //restrict so only integers can be used as containers to read the number into
+        N: core::ops::BitOrAssign + core::ops::Shl<usize, Output = N> + From<u8> + Default,
+    {
+        let mut out = Default::default();
+        let mut shift = 0;
+
+        let n_bits = core::mem::size_of::<N>() * 8;
+
+        let mut is_first = true;
+        for b in self.bytes.iter() {
+            let (mask, shift_add) = if is_first && self.is_negative.is_some() {
+                is_first = false;
+                //if this is the first byte and we did care for negative
+                //then mask off the first and second MSbit
+                // and signal to add 6 bits to the shift
+                (!0b1100_0000, 6)
+            } else {
+                //only mask off the MSB
+                // and signal to add 7 bits to the shift
+                (!0x80, 7)
+            };
+
+            if shift + shift_add > n_bits {
+                //we won't be able to fit
+                // so we return None
+                return None;
+            }
+
+            //mask the byte, removing the bits we don't want
+            // even tho we are gonna override them the next loop...
+            // and then shift that result by the number if bits written so far
+            out |= N::from(b & mask) << shift;
+
+            //increment the number of bits added to the number
+            shift += shift_add;
+        }
+
+        Some((self.is_negative.unwrap_or_default(), out))
+    }
 }
 
 pub fn public_key_hash(input: &[u8]) -> IResult<&[u8], (Curve, &[u8; 20]), ParserError> {
@@ -195,6 +240,8 @@ mod tests {
         let (_, num) = Zarith::from_bytes(end_early, false).expect("invalid input");
         assert_eq!(num.len(), 2);
         assert_eq!(num.is_negative(), None);
+        let num = num.read_as::<usize>().expect("didn't fit in usize").1;
+        assert_eq!(num, 0x881);
 
         //should get a single byte
         let single_byte = &[0x0a][..];
@@ -203,12 +250,18 @@ mod tests {
         assert_eq!(num.len(), 1);
         assert_eq!(num.is_negative(), None);
 
+        let num = num.read_as::<usize>().expect("didn't fit in usize").1;
+        assert_eq!(num, 0x0a);
+
         //should get a bunch of bytes
         let multi_byte = &[0x8a, 0x90, 0xf2, 0xe4, 0x88, 0x00][..];
 
         let (_, num) = Zarith::from_bytes(multi_byte, false).expect("invalid input");
         assert_eq!(num.len(), 6);
         assert_eq!(num.is_negative(), None);
+
+        let num = num.read_as::<u64>().expect("didn't fit in u64").1;
+        assert_eq!(num, 0x8C9C880A);
 
         //should be considered negative
         let negative = &[0b1100_0011, 0x23][..];
@@ -217,12 +270,20 @@ mod tests {
         assert_eq!(num.len(), 2);
         assert_eq!(num.is_negative(), Some(true));
 
+        let (neg, num) = num.read_as::<u64>().expect("didn't fit in u64");
+        assert!(neg);
+        assert_eq!(num, 0x8C3);
+
         //should be considered positive
         let positive = &[0b1000_0011, 0x23][..];
 
         let (_, num) = Zarith::from_bytes(positive, true).expect("invalid input");
         assert_eq!(num.len(), 2);
-        assert_eq!(num.is_negative(), Some(false))
+        assert_eq!(num.is_negative(), Some(false));
+
+        let (neg, num) = num.read_as::<u64>().expect("didn't fit in u64");
+        assert!(!neg);
+        assert_eq!(num, 0x8C3);
     }
 }
 
