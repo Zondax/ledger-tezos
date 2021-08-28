@@ -28,13 +28,13 @@ use super::Zarith;
 
 fn data_dir_path() -> PathBuf {
     std::env::var_os("TEZOS_TEST_DATA")
-        .unwrap_or("../../zemu/tests/data".to_string().into())
+        .unwrap_or_else(|| "../../zemu/tests/data".to_string().into())
         .into()
 }
 
 fn test_vectors_path() -> PathBuf {
     std::env::var_os("TEZOS_TEST_VECTORS")
-        .unwrap_or("../../zemu/test-vectors".to_string().into())
+        .unwrap_or_else(|| "../../zemu/test-vectors".to_string().into())
         .into()
 }
 
@@ -43,9 +43,11 @@ where
     P: AsRef<Path>,
     T: DeserializeOwned,
 {
-    let file = File::open(&path).expect(&format!("couldn't read file at {:?}", path.as_ref()));
+    let file = File::open(&path)
+        .unwrap_or_else(|e| panic!("couldn't read file at {:?}; err: {:?}", path.as_ref(), e));
 
-    serde_json::from_reader(file).expect(&format!("couldn't parse json at {:?}", path.as_ref()))
+    serde_json::from_reader(file)
+        .unwrap_or_else(|e| panic!("couldn't parse json at {:?}; err: {:?}", path.as_ref(), e))
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -63,16 +65,20 @@ struct Sample {
 }
 
 fn test_sample(name: &str, blob: String, branch: String, contents: Vec<Map<String, Value>>) {
-    let blob = hex::decode(&blob).expect(&format!("sample {} .blob wasn't a hex string", name));
+    let blob = hex::decode(&blob)
+        .unwrap_or_else(|e| panic!("sample {} .blob wasn't a hex string; err: {:?}", name, e));
 
     //parse forged op blob
-    let mut parsed = Operation::new(&blob).expect(&format!("sample {} couldn't be parsed", name));
+    let mut parsed = Operation::new(&blob)
+        .unwrap_or_else(|e| panic!("sample {} couldn't be parsed; err: {:?}", name, e));
 
     let mut branch_bs58 = [0; 51];
-    parsed.base58_branch(&mut branch_bs58).expect(&format!(
-        "couldn't compute base 58 branch of sample {}",
-        name
-    ));
+    parsed.base58_branch(&mut branch_bs58).unwrap_or_else(|e| {
+        panic!(
+            "couldn't compute base 58 branch of sample {}; err: {:?}",
+            name, e
+        )
+    });
 
     assert_eq!(branch_bs58, branch.as_bytes());
 
@@ -206,10 +212,12 @@ fn verify_operation<'b>(
     op_n: usize,
 ) {
     //get operation kind as string
-    let kind = json["kind"].as_str().expect(&format!(
-        "sample {} .operation.contents[{}].kind",
-        sample_name, op_n
-    ));
+    let kind = json["kind"].as_str().unwrap_or_else(|| {
+        panic!(
+            "sample {} .operation.contents[{}].kind was not a string",
+            sample_name, op_n
+        )
+    });
 
     //verify we parsed the right kind of operation
     // and check against it
@@ -301,15 +309,14 @@ impl<'b> Zarith<'b> {
     fn is(&self, json: &Value) {
         let num: f64 = json
             .as_str()
-            .expect(&format!(
-                "given json for zarith was not a string; found={}",
-                json
-            ))
+            .unwrap_or_else(|| panic!("given json for zarith was not a string; found={}", json))
             .parse()
-            .expect(&format!(
-                "given json for zarith couldn't be parsed to f64; json={}",
-                json
-            ));
+            .unwrap_or_else(|e| {
+                panic!(
+                    "given json for zarith couldn't be parsed to f64; json={}; err: {:?}",
+                    json, e
+                )
+            });
 
         if let Some(neg) = self.is_negative() {
             assert_eq!(neg, num < 0.0)
@@ -321,6 +328,8 @@ impl<'b> Zarith<'b> {
             z = z.copysign(-0.0);
         }
 
-        assert_eq!(z, num)
+        //we can't check equality for floating point numbers
+        // but we can check their different is smaller than an EPSILON
+        assert!((z - num).abs() < f64::EPSILON);
     }
 }

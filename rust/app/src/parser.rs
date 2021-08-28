@@ -119,7 +119,7 @@ impl<'b> Zarith<'b> {
             shift += shift_add;
         }
 
-        return Some((self.is_negative.unwrap_or_default(), out));
+        Some((self.is_negative.unwrap_or_default(), out))
     }
 }
 
