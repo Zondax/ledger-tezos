@@ -79,7 +79,7 @@ impl<T: Viewable + Sized + 'static> Show for T {
     unsafe fn show(self, flags: &mut u32) -> Result<(), ShowTooBig> {
         use crate::ui_toolkit::RUST_ZUI;
 
-        unsafe { RUST_ZUI.show(self)? }
+        RUST_ZUI.show(self)?;
 
         *flags |= IO_ASYNCH_REPLY;
         Ok(())

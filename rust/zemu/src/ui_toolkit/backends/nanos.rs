@@ -80,7 +80,7 @@ impl UIBackend<KEY_SIZE> for NanoSBackend {
         //compute len and split `message_buf` at the max line size or at the total len
         // if the total len is less than the size of 1 line
 
-        let len = strlen(message_buf.as_bytes());
+        let len = strlen(message_buf.as_bytes()).unwrap_or_else(|_| message_buf.as_bytes().len());
 
         let (line1, line2) = if len >= MESSAGE_LINE_SIZE {
             //we need to split the buffer to fit in 2 lines
@@ -259,9 +259,10 @@ mod cabi {
         let status = if status.is_null() {
             None
         } else {
-            let len = crate::ui_toolkit::c_strlen(status as *const u8);
+            let len = crate::ui_toolkit::c_strlen(status as *const u8, MESSAGE_SIZE)
+                .unwrap_or(MESSAGE_SIZE);
 
-            Some(unsafe { core::slice::from_raw_parts(status as *const u8, len) })
+            Some(core::slice::from_raw_parts(status as *const u8, len))
         };
 
         RUST_ZUI.show_idle(item_idx as usize, status)
@@ -289,8 +290,6 @@ mod cabi {
 }
 
 mod bindings {
-    use super::*;
-
     extern "C" {
         pub fn crapoline_ux_wait();
         pub fn crapoline_ux_menu_display(item_idx: u8);
