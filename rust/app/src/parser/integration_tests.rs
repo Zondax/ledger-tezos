@@ -315,6 +315,12 @@ impl<'b> Zarith<'b> {
             assert_eq!(neg, num < 0.0)
         }
 
-        //TODO: verify value with parsed
+        let (neg, z) = self.read_as::<u32>().expect("zarith didn't fit in u32");
+        let mut z = z as f64;
+        if neg {
+            z = z.copysign(-0.0);
+        }
+
+        assert_eq!(z, num)
     }
 }
