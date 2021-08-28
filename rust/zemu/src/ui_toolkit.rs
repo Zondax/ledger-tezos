@@ -310,7 +310,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
     fn format_key_with_page(&mut self) {
         if self.page_count > 1 {
             let key = self.backend.key_buf();
-            let key_len = strlen(&key[..]);
+            let key_len = strlen(&key[..]).unwrap_or_else(|_| key.len());
 
             if key_len < KS {
                 let mut tmp = ArrayString::from_byte_string(&key).expect("key was not utf8");
@@ -383,25 +383,34 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
     }
 }
 
+struct StrNotNullTerminated;
+
 /// This function returns the index of the first null byte in the slice
-fn strlen(s: &[u8]) -> usize {
+fn strlen(s: &[u8]) -> Result<usize, StrNotNullTerminated> {
     let mut count = 0;
     while let Some(&c) = s.get(count) {
         if c == 0 {
-            break;
+            return Ok(count);
         }
         count += 1;
     }
 
-    count
+    Err(StrNotNullTerminated)
 }
 
-/// This function returns the index of the first null byte in found
-pub(self) fn c_strlen(s: *const u8) -> usize {
+/// This function returns the index of the first null byte if found
+pub(self) fn c_strlen(s: *const u8, max: usize) -> Result<usize, StrNotNullTerminated> {
     let mut count = 0;
-    while unsafe { s.add(count).read() } != 0 {
+    loop {
+        if count >= max {
+            return Err(StrNotNullTerminated);
+        }
+
+        let c = unsafe { s.add(count).read() };
+        if c == 0 {
+            return Ok(count);
+        }
+
         count += 1;
     }
-
-    count
 }

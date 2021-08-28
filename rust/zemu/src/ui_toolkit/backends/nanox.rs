@@ -16,12 +16,10 @@
 use super::UIBackend;
 use crate::{
     ui::{manual_vtable::RefMutDynViewable, ViewError, Viewable},
-    ui_toolkit::{strlen, ZUI},
+    ui_toolkit::ZUI,
 };
 use bolos_derive::pic_str;
 use bolos_sys::pic::PIC;
-
-use arrayvec::ArrayString;
 
 pub const KEY_SIZE: usize = 63 + 1;
 //with null terminator
@@ -145,7 +143,7 @@ impl UIBackend<KEY_SIZE> for NanoXBackend {
 
     fn split_value_field(&mut self, _: &'static mut str) {}
 
-    fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
+    fn show_idle(&mut self, _item_idx: usize, status: Option<&[u8]>) {
         //FIXME: MENU_MAIN_APP_LINE2
         let status = status.unwrap_or(&pic_str!(b"DO NOT USE")[..]);
 
@@ -272,9 +270,10 @@ mod cabi {
         let status = if status.is_null() {
             None
         } else {
-            let len = crate::ui_toolkit::c_strlen(status as *const u8);
+            let len = crate::ui_toolkit::c_strlen(status as *const u8, MESSAGE_SIZE)
+                .unwrap_or(MESSAGE_SIZE);
 
-            Some(unsafe { core::slice::from_raw_parts(status as *const u8, len) })
+            Some(core::slice::from_raw_parts(status as *const u8, len))
         };
 
         RUST_ZUI.show_idle(item_idx as usize, status)
@@ -312,8 +311,6 @@ mod cabi {
 }
 
 mod bindings {
-    use super::*;
-
     extern "C" {
         pub fn crapoline_ux_wait();
         pub fn crapoline_ux_flow_init_idle_flow_toggle_expert();

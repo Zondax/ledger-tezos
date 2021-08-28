@@ -42,11 +42,11 @@ pub mod raw {
     }
 }
 
-/// Wrapper for 'os_sched_exit'
-/// Exit application with status
+/// Wrapper for 'halt'
+/// Resets the device
 #[cfg(bolos_sdk)]
-pub fn exit_app(status: u8) -> ! {
-    unsafe { raw::os_sched_exit(status as _) }
+pub fn exit_app(_status: u8) -> ! {
+    unsafe { raw::halt() }
     unsafe { core::hint::unreachable_unchecked() }
 }
 
