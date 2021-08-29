@@ -191,6 +191,8 @@ impl Viewable for SignUI {
         } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
             match op {
                 OperationType::Transfer(tx) => tx.render_item(item_n, title, message, page),
+                OperationType::Delegation(delegation) => {
+                    delegation.render_item(item_n, title, message, page)
                 }
             }
         } else {

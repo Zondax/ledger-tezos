@@ -136,11 +136,15 @@ impl<'b> EncodedOperations<'b> {
 }
 
 mod transfer;
+mod delegation;
+
 pub use transfer::Transfer;
+pub use delegation::Delegation;
 
 #[derive(Debug, Clone, Copy)]
 pub enum OperationType<'b> {
     Transfer(Transfer<'b>),
+    Delegation(Delegation<'b>)
 }
 
 impl<'b> OperationType<'b> {
@@ -163,7 +167,10 @@ impl<'b> OperationType<'b> {
                 (rem, Self::Transfer(data))
             }
             0x6D => todo!("origination"),
-            0x6E => todo!("delegation"),
+            0x6E => {
+                let (rem, data) = Delegation::from_bytes(rem)?;
+                (rem, Self::Delegation(data))
+            },
             _ => return Err(ParserError::UnknownOperation.into()),
         };
 
@@ -181,6 +188,7 @@ impl<'b> OperationType<'b> {
     pub fn ui_items(&self) -> usize {
         match self {
             Self::Transfer(tx) => tx.num_items(),
+            Self::Delegation(del) => del.num_items(),
         }
     }
 }
