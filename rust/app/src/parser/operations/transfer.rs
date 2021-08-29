@@ -18,12 +18,9 @@ use nom::{
     number::complete::{be_u32, le_u8},
     take, IResult,
 };
+use zemu_sys::ViewError;
 
-use crate::{
-    crypto::Curve,
-    handlers::parser_common::ParserError,
-    parser::{boolean, public_key_hash, Zarith},
-};
+use crate::{crypto::Curve, handlers::{handle_ui_message, parser_common::ParserError}, parser::{boolean, public_key_hash, DisplayableOperation, Zarith}};
 
 use super::ContractID;
 
@@ -86,14 +83,13 @@ pub struct Parameters<'b> {
 
 impl<'b> Parameters<'b> {
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
-        #[rustfmt::skip]
-        let (rem, (entrypoint, michelson)) =
-            do_parse!(input,
-                entrypoint: call!(Entrypoint::from_bytes) >>
-                length: be_u32 >>
-                out: take!(length) >>
-                (entrypoint, out)
-            )?;
+        let (rem, (entrypoint, michelson)) = do_parse!(
+            input,
+            entrypoint: call!(Entrypoint::from_bytes)
+                >> length: be_u32
+                >> out: take!(length)
+                >> (entrypoint, out)
+        )?;
 
         Ok((
             rem,
@@ -121,20 +117,21 @@ pub struct Transfer<'b> {
 impl<'b> Transfer<'b> {
     #[cfg(not(test))]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
-        #[rustfmt::skip]
-        let (rem, (source, fee, counter, gas_limit, storage_limit, amount, destination, parameters)) =
-            do_parse! {input,
-                source: public_key_hash >>
-                fee: call!(Zarith::from_bytes, false) >>
-                counter: call!(Zarith::from_bytes, false) >>
-                gas_limit: call!(Zarith::from_bytes, false) >>
-                storage_limit: call!(Zarith::from_bytes, false) >>
-                amount: call!(Zarith::from_bytes, false) >>
-                destination: call!(ContractID::from_bytes) >>
-                has_params: boolean >>
-                params: cond!(has_params, Parameters::from_bytes) >>
-                (source, fee, counter, gas_limit, storage_limit, amount, destination, params)
-            }?;
+        let (
+            rem,
+            (source, fee, counter, gas_limit, storage_limit, amount, destination, parameters),
+        ) = do_parse! {input,
+            source: public_key_hash >>
+            fee: call!(Zarith::from_bytes, false) >>
+            counter: call!(Zarith::from_bytes, false) >>
+            gas_limit: call!(Zarith::from_bytes, false) >>
+            storage_limit: call!(Zarith::from_bytes, false) >>
+            amount: call!(Zarith::from_bytes, false) >>
+            destination: call!(ContractID::from_bytes) >>
+            has_params: boolean >>
+            params: cond!(has_params, Parameters::from_bytes) >>
+            (source, fee, counter, gas_limit, storage_limit, amount, destination, params)
+        }?;
 
         Ok((
             rem,
@@ -156,21 +153,22 @@ impl<'b> Transfer<'b> {
         use nom::dbg_basic;
         use std::println;
 
-        #[rustfmt::skip]
-        let (rem, (source, fee, counter, gas_limit, storage_limit, amount, destination, parameters)) =
-            dbg_basic! {input,
-                do_parse!(
-                source: public_key_hash >>
-                fee: call!(Zarith::from_bytes, false) >>
-                counter: call!(Zarith::from_bytes, false) >>
-                gas_limit: call!(Zarith::from_bytes, false) >>
-                storage_limit: call!(Zarith::from_bytes, false) >>
-                amount: call!(Zarith::from_bytes, false) >>
-                destination: call!(ContractID::from_bytes) >>
-                has_params: boolean >>
-                params: cond!(has_params, Parameters::from_bytes) >>
-                (source, fee, counter, gas_limit, storage_limit, amount, destination, params)
-            )}?;
+        let (
+            rem,
+            (source, fee, counter, gas_limit, storage_limit, amount, destination, parameters),
+        ) = dbg_basic! {input,
+            do_parse!(
+            source: public_key_hash >>
+            fee: call!(Zarith::from_bytes, false) >>
+            counter: call!(Zarith::from_bytes, false) >>
+            gas_limit: call!(Zarith::from_bytes, false) >>
+            storage_limit: call!(Zarith::from_bytes, false) >>
+            amount: call!(Zarith::from_bytes, false) >>
+            destination: call!(ContractID::from_bytes) >>
+            has_params: boolean >>
+            params: cond!(has_params, Parameters::from_bytes) >>
+            (source, fee, counter, gas_limit, storage_limit, amount, destination, params)
+        )}?;
 
         Ok((
             rem,
@@ -185,6 +183,123 @@ impl<'b> Transfer<'b> {
                 parameters,
             },
         ))
+    }
+}
+
+impl<'a> DisplayableOperation for Transfer<'a> {
+    fn num_items(&self) -> usize {
+        8
+    }
+
+    #[inline(never)]
+    fn render_item(
+        &self,
+        item_n: u8,
+        title: &mut [u8],
+        message: &mut [u8],
+        page: u8,
+    ) -> Result<u8, ViewError> {
+        use bolos::{pic_str, PIC};
+        use lexical_core::{write as itoa, Number};
+
+        let mut zarith_buf = [0; usize::FORMATTED_SIZE_DECIMAL];
+
+        match item_n {
+            //source
+            0 => {
+                let title_content = pic_str!(b"Source");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let (crv, hash) = self.source();
+
+                let addr = crate::handlers::public_key::Addr::from_hash(hash, *crv)
+                    .map_err(|_| ViewError::Unknown)?;
+
+                let mex = addr.to_base58();
+                handle_ui_message(&mex[..], message, page)
+            }
+            //destination
+            1 => {
+                let title_content = pic_str!(b"Destination");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mut cid = [0; 36];
+                self.destination()
+                    .base58(&mut cid)
+                    .map_err(|_| ViewError::Unknown)?;
+
+                handle_ui_message(&cid[..], message, page)
+            }
+            //amount
+            2 => {
+                let title_content = pic_str!(b"Amount");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let (_, amount) = self.amount().read_as::<usize>().ok_or(ViewError::Unknown)?;
+
+                handle_ui_message(itoa(amount, &mut zarith_buf), message, page)
+            }
+            //fee
+            3 => {
+                let title_content = pic_str!(b"Fee");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let (_, fee) = self.fee().read_as::<usize>().ok_or(ViewError::Unknown)?;
+
+                handle_ui_message(itoa(fee, &mut zarith_buf), message, page)
+            }
+            //has_parameters
+            4 => {
+                let title_content = pic_str!(b"Parameters");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let parameters = self.parameters();
+
+                let msg = match parameters {
+                    Some(_) => pic_str!("has parameters..."),
+                    None => pic_str!("no parameters"),
+                };
+
+                handle_ui_message(msg.as_bytes(), message, page)
+            }
+            //gas_limit
+            5 => {
+                let title_content = pic_str!(b"Gas Limit");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let (_, gas_limit) = self
+                    .gas_limit()
+                    .read_as::<usize>()
+                    .ok_or(ViewError::Unknown)?;
+
+                handle_ui_message(itoa(gas_limit, &mut zarith_buf), message, page)
+            }
+            //storage_limit
+            6 => {
+                let title_content = pic_str!(b"Storage Limit");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let (_, storage_limit) = self
+                    .storage_limit()
+                    .read_as::<usize>()
+                    .ok_or(ViewError::Unknown)?;
+
+                handle_ui_message(itoa(storage_limit, &mut zarith_buf), message, page)
+            }
+            //counter
+            7 => {
+                let title_content = pic_str!(b"Counter");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let (_, counter) = self
+                    .counter()
+                    .read_as::<usize>()
+                    .ok_or(ViewError::Unknown)?;
+
+                handle_ui_message(itoa(counter, &mut zarith_buf), message, page)
+            }
+            _ => Err(ViewError::NoData),
+        }
     }
 }
 

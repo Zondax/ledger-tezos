@@ -15,13 +15,35 @@
 ********************************************************************************/
 use arrayref::array_ref;
 use nom::{bytes::complete::take, number::complete::le_u8, sequence::tuple, IResult};
+use zemu_sys::ViewError;
 
 use crate::{crypto::Curve, handlers::parser_common::ParserError};
 
 pub mod operations;
 
-//TODO: determine actual size so we can use other libs and pass this type around more armoniously
-// alternative: implement all the necessary traits and handle everything manually...
+///This trait defines the interface useful in the UI context
+/// so that all the different OperationTypes handle their own UI
+pub trait DisplayableOperation {
+    /// Returns the number of items to display
+    fn num_items(&self) -> usize;
+
+    /// This is invoked when a given page is to be displayed
+    ///
+    /// `item_n` is the item of the operation to display;
+    /// guarantee: 0 <= item_n < self.num_items()
+    /// `title` is the title of the item
+    /// `message` is the contents of the item
+    /// `page` is what page we are supposed to display, this is used to split big messages
+    ///
+    /// returns the total number of pages on success
+    ///
+    /// It's a good idea to always put `#[inline(never)]` on top of this
+    /// function's implementation
+    //#[inline(never)]
+    fn render_item(&self, item_n: u8, title: &mut [u8], message: &mut [u8], page: u8) -> Result<u8, ViewError>;
+}
+
+//legacy app stored in a uint64 always, we have `read_as`
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Zarith<'b> {
     bytes: &'b [u8],

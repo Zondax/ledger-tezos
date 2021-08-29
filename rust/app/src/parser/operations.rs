@@ -21,7 +21,7 @@ use crate::{
     handlers::{parser_common::ParserError, sha256x2},
 };
 
-use super::public_key_hash;
+use super::{DisplayableOperation, public_key_hash};
 
 #[derive(Debug, Clone, Copy, property::Property)]
 #[property(get(public), mut(public), set(disable))]
@@ -174,9 +174,13 @@ impl<'b> OperationType<'b> {
         matches!(self, OperationType::Transfer(_))
     }
 
+    /// Returns the number of different items
+    /// in a given `OperationType`
+    ///
+    /// Usually, the number of fields of an operaton
     pub fn ui_items(&self) -> usize {
         match self {
-            OperationType::Transfer(_tx) => 8,
+            Self::Transfer(tx) => tx.num_items(),
         }
     }
 }
