@@ -104,9 +104,7 @@ impl<'a> DisplayableOperation for Delegation<'a> {
                         let mex = addr.to_base58();
                         handle_ui_message(&mex[..], message, page)
                     }
-                    None => {
-                        handle_ui_message(&pic_str!(b"<REVOKED>")[..], message, page)
-                    }
+                    None => handle_ui_message(&pic_str!(b"<REVOKED>")[..], message, page),
                 }
             }
             //fee

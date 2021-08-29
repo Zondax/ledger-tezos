@@ -20,7 +20,11 @@ use nom::{
 };
 use zemu_sys::ViewError;
 
-use crate::{crypto::Curve, handlers::{handle_ui_message, parser_common::ParserError}, parser::{boolean, public_key_hash, DisplayableOperation, Zarith}};
+use crate::{
+    crypto::Curve,
+    handlers::{handle_ui_message, parser_common::ParserError},
+    parser::{boolean, public_key_hash, DisplayableOperation, Zarith},
+};
 
 use super::ContractID;
 

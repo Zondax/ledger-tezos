@@ -40,7 +40,13 @@ pub trait DisplayableOperation {
     /// It's a good idea to always put `#[inline(never)]` on top of this
     /// function's implementation
     //#[inline(never)]
-    fn render_item(&self, item_n: u8, title: &mut [u8], message: &mut [u8], page: u8) -> Result<u8, ViewError>;
+    fn render_item(
+        &self,
+        item_n: u8,
+        title: &mut [u8],
+        message: &mut [u8],
+        page: u8,
+    ) -> Result<u8, ViewError>;
 }
 
 //legacy app stored in a uint64 always, we have `read_as`

@@ -21,7 +21,7 @@ use crate::{
     handlers::{parser_common::ParserError, sha256x2},
 };
 
-use super::{DisplayableOperation, public_key_hash};
+use super::{public_key_hash, DisplayableOperation};
 
 #[derive(Debug, Clone, Copy, property::Property)]
 #[property(get(public), mut(public), set(disable))]
@@ -135,16 +135,16 @@ impl<'b> EncodedOperations<'b> {
     }
 }
 
-mod transfer;
 mod delegation;
+mod transfer;
 
-pub use transfer::Transfer;
 pub use delegation::Delegation;
+pub use transfer::Transfer;
 
 #[derive(Debug, Clone, Copy)]
 pub enum OperationType<'b> {
     Transfer(Transfer<'b>),
-    Delegation(Delegation<'b>)
+    Delegation(Delegation<'b>),
 }
 
 impl<'b> OperationType<'b> {
@@ -170,7 +170,7 @@ impl<'b> OperationType<'b> {
             0x6E => {
                 let (rem, data) = Delegation::from_bytes(rem)?;
                 (rem, Self::Delegation(data))
-            },
+            }
             _ => return Err(ParserError::UnknownOperation.into()),
         };
 
