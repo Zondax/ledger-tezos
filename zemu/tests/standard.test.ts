@@ -19,7 +19,7 @@ import { APP_DERIVATION, cartesianProduct, curves, defaultOptions, models } from
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import * as secp256k1 from 'noble-secp256k1'
 
-import { SIMPLE_TRANSACTION, SIMPLE_DELEGATION } from './tezos';
+import { SIMPLE_TRANSACTION, SIMPLE_DELEGATION } from './tezos'
 
 const ed25519 = require('ed25519-supercop')
 
@@ -147,126 +147,115 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
   })
 })
 
+const SIGN_TEST_DATA = cartesianProduct(curves, [
+  { name: 'transfer', nav: { s: [12, 0], x: [10, 0] }, op: SIMPLE_TRANSACTION },
+  { name: 'delegation', nav: { s: [10, 0], x: [8, 0] }, op: SIMPLE_DELEGATION },
+])
+
 describe.each(models)('Standard [%s]; sign', function (m) {
-  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION, SIMPLE_DELEGATION]))(
-    'sign message',
-    async function (curve, tx) {
-      const sim = new Zemu(m.path)
-      try {
-        await sim.start({ ...defaultOptions, model: m.name })
-        const app = new TezosApp(sim.getTransport())
-        const msg = Buffer.from(tx.blob, 'hex');
-        const respReq = app.sign(APP_DERIVATION, curve, msg)
+  test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+      const msg = Buffer.from(data.op.blob, 'hex')
+      const respReq = app.sign(APP_DERIVATION, curve, msg)
 
-        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-        let navigation;
-        if (m.name == 'nanox') {
-          navigation = [10, 0]
-        } else {
-          navigation = [12, 0]
-        }
-        await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${msg.length}-${curve}`, navigation)
+      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${data.name}-${curve}`, navigation)
 
-        const resp = await respReq
+      const resp = await respReq
 
-        console.log(resp, m.name)
+      console.log(resp, m.name)
 
-        expect(resp.returnCode).toEqual(0x9000)
-        expect(resp.errorMessage).toEqual('No errors')
-        expect(resp).toHaveProperty('hash')
-        expect(resp).toHaveProperty('signature')
-        expect(resp.hash).toEqual(app.sig_hash(msg))
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('hash')
+      expect(resp).toHaveProperty('signature')
+      expect(resp.hash).toEqual(app.sig_hash(msg))
 
-        const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
+      const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
-        let signatureOK = true
-        switch (curve) {
-          case Curve.Ed25519:
-          case Curve.Ed25519_Slip10:
-            signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1, 33))
-            break
+      let signatureOK = true
+      switch (curve) {
+        case Curve.Ed25519:
+        case Curve.Ed25519_Slip10:
+          signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1, 33))
+          break
 
-          case Curve.Secp256K1:
-            resp.signature[0] = 0x30
-            signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey)
-            break
+        case Curve.Secp256K1:
+          resp.signature[0] = 0x30
+          signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey)
+          break
 
-          case Curve.Secp256R1:
-            // FIXME: add later
-            // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
-            // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
-            break
+        case Curve.Secp256R1:
+          // FIXME: add later
+          // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
+          // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
+          break
 
-          default:
-            throw Error('not a valid curve type')
-        }
-        expect(signatureOK).toEqual(true)
-      } finally {
-        await sim.close()
+        default:
+          throw Error('not a valid curve type')
       }
-    },
-  )
+      expect(signatureOK).toEqual(true)
+    } finally {
+      await sim.close()
+    }
+  })
 })
 
 describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
-  test.each(cartesianProduct(curves, [SIMPLE_TRANSACTION, SIMPLE_DELEGATION]))(
-    'sign message',
-    async function (curve, tx) {
-      const sim = new Zemu(m.path)
-      try {
-        await sim.start({ ...defaultOptions, model: m.name })
-        const app = new TezosApp(sim.getTransport())
-        const msg = Buffer.from(tx.blob, 'hex');
-        const respReq = app.legacySignWithHash(APP_DERIVATION, curve, msg)
+  test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+      const msg = Buffer.from(data.op.blob, 'hex')
+      const respReq = app.legacySignWithHash(APP_DERIVATION, curve, msg)
 
-        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-        let navigation;
-        if (m.name == 'nanox') {
-          navigation = [10, 0]
-        } else {
-          navigation = [12, 0]
-        }
-        await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${msg.length}-${curve}`, navigation)
+      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${data.name}-${curve}`, navigation)
 
-        const resp = await respReq
+      const resp = await respReq
 
-        console.log(resp, m.name)
+      console.log(resp, m.name)
 
-        expect(resp.returnCode).toEqual(0x9000)
-        expect(resp.errorMessage).toEqual('No errors')
-        expect(resp).toHaveProperty('hash')
-        expect(resp).toHaveProperty('signature')
-        expect(resp.hash).toEqual(app.sig_hash(msg))
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('hash')
+      expect(resp).toHaveProperty('signature')
+      expect(resp.hash).toEqual(app.sig_hash(msg))
 
-        const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
+      const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
-        let signatureOK = true
-        switch (curve) {
-          case Curve.Ed25519:
-          case Curve.Ed25519_Slip10:
-            signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1, 33))
-            break
+      let signatureOK = true
+      switch (curve) {
+        case Curve.Ed25519:
+        case Curve.Ed25519_Slip10:
+          signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1, 33))
+          break
 
-          case Curve.Secp256K1:
-            resp.signature[0] = 0x30
-            signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey)
-            break
+        case Curve.Secp256K1:
+          resp.signature[0] = 0x30
+          signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey)
+          break
 
-          case Curve.Secp256R1:
-            // FIXME: add later
-            // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
-            // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
-            break
+        case Curve.Secp256R1:
+          // FIXME: add later
+          // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
+          // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
+          break
 
-          default:
-            throw Error('not a valid curve type')
-        }
-        expect(signatureOK).toEqual(true)
-      } finally {
-        await sim.close()
+        default:
+          throw Error('not a valid curve type')
       }
-    },
-  )
+      expect(signatureOK).toEqual(true)
+    } finally {
+      await sim.close()
+    }
+  })
 })
