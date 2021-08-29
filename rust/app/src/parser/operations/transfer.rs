@@ -22,7 +22,7 @@ use zemu_sys::ViewError;
 
 use crate::{
     crypto::Curve,
-    handlers::{handle_ui_message, parser_common::ParserError},
+    handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
     parser::{boolean, public_key_hash, DisplayableOperation, Zarith},
 };
 
@@ -216,8 +216,7 @@ impl<'a> DisplayableOperation for Transfer<'a> {
 
                 let (crv, hash) = self.source();
 
-                let addr = crate::handlers::public_key::Addr::from_hash(hash, *crv)
-                    .map_err(|_| ViewError::Unknown)?;
+                let addr = Addr::from_hash(hash, *crv).map_err(|_| ViewError::Unknown)?;
 
                 let mex = addr.to_base58();
                 handle_ui_message(&mex[..], message, page)
@@ -308,8 +307,86 @@ impl<'a> DisplayableOperation for Transfer<'a> {
 }
 
 #[cfg(test)]
+impl<'b> Transfer<'b> {
+    fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
+        let source = self.source();
+        let addr = Addr::from_hash(source.1, source.0)?;
+
+        Ok(addr.to_base58())
+    }
+
+    pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
+        //verify source address of the transfer
+        let source_base58 = self
+            .source_base58()
+            .expect("couldn't compute source base58");
+        let expected_source_base58 = json["source"]
+            .as_str()
+            .expect("given json .source is not a string");
+        assert_eq!(source_base58, expected_source_base58.as_bytes());
+
+        self.amount().is(&json["amount"]);
+        self.counter().is(&json["counter"]);
+        self.fee().is(&json["fee"]);
+        self.gas_limit().is(&json["gas_limit"]);
+        self.storage_limit().is(&json["storage_limit"]);
+
+        //verify the destination
+        let destination_bs58 = {
+            let mut out = [0; 36];
+            self.destination()
+                .base58(&mut out)
+                .expect("couldn't compute destination base58");
+            out
+        };
+        let expected_destination_base58 = json["destination"]
+            .as_str()
+            .expect("given json .destination is not a string");
+        assert_eq!(destination_bs58, expected_destination_base58.as_bytes());
+
+        //check parameters, either they are both in json and the parsed,
+        // or they are missing in both
+        match (
+            self.parameters(),
+            json.get("parameters").map(|j| {
+                j.as_object()
+                    .expect("given json .parameters is not an object")
+            }),
+        ) {
+            (None, None) => {}
+            (Some(_), None) => panic!("parsed parameters where none were given"),
+            (None, Some(_)) => panic!("parameters were not parsed where some were given"),
+            (Some(parsed), Some(expected)) => {
+                //if they are present, verify the entrypoint
+                // get entrypoint from json as string
+                let expected_entrypoint = expected["entrypoint"]
+                    .as_str()
+                    .expect("given json .parameters.entrypoint is not a string");
+
+                //verify entrypoint
+                match (parsed.entrypoint(), expected_entrypoint) {
+                    (Entrypoint::Default, "default")
+                    | (Entrypoint::Root, "root")
+                    | (Entrypoint::Do, "do")
+                    | (Entrypoint::SetDelegate, "set_delegate")
+                    | (Entrypoint::RemoveDelegate, "remove_delegate") => {}
+                    (Entrypoint::Custom(s), js) if s == &js.as_bytes() => {}
+                    (parsed, expected) => {
+                        panic!("expected entrypoint: {}, parsed: {}", expected, parsed)
+                    }
+                }
+
+                //TODO: verify michelson code (parameters.value)
+            }
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
-    use super::{Entrypoint, Transfer};
+    use crate::{crypto::Curve, parser::Zarith};
+
+    use super::{ContractID, Entrypoint, Parameters, Transfer};
 
     #[test]
     fn entrypoint() {

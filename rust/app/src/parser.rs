@@ -80,27 +80,6 @@ impl<'b> Zarith<'b> {
         Ok((rem, Self { bytes, is_negative }))
     }
 
-    #[cfg(test)]
-    pub fn from_bytes(input: &'b [u8], want_sign: bool) -> IResult<&[u8], Self, ParserError> {
-        use nom::{dbg_basic, take, take_till};
-        use std::println;
-
-        //keep taking bytes while the MSB is 1
-        let (_, bytes) = dbg_basic!(input, take_till!(|byte| byte & 0x80 == 0))?;
-
-        //take bytes + 1 since we miss the last byte with `take_till`
-        let (rem, bytes) = dbg_basic!(input, take!(bytes.len() + 1))?;
-
-        let is_negative = if want_sign {
-            //if the second bit of the first byte is set, then it's negative
-            Some(bytes[0] & 0x40 != 0)
-        } else {
-            None
-        };
-
-        Ok((rem, Self { bytes, is_negative }))
-    }
-
     pub fn is_negative(&self) -> Option<bool> {
         self.is_negative
     }
@@ -148,6 +127,57 @@ impl<'b> Zarith<'b> {
         }
 
         Some((self.is_negative.unwrap_or_default(), out))
+    }
+}
+
+#[cfg(test)]
+impl<'b> Zarith<'b> {
+    #[cfg(test)]
+    pub fn from_bytes(input: &'b [u8], want_sign: bool) -> IResult<&[u8], Self, ParserError> {
+        use nom::{dbg_basic, take, take_till};
+        use std::println;
+
+        //keep taking bytes while the MSB is 1
+        let (_, bytes) = dbg_basic!(input, take_till!(|byte| byte & 0x80 == 0))?;
+
+        //take bytes + 1 since we miss the last byte with `take_till`
+        let (rem, bytes) = dbg_basic!(input, take!(bytes.len() + 1))?;
+
+        let is_negative = if want_sign {
+            //if the second bit of the first byte is set, then it's negative
+            Some(bytes[0] & 0x40 != 0)
+        } else {
+            None
+        };
+
+        Ok((rem, Self { bytes, is_negative }))
+    }
+
+    pub fn is(&self, json: &serde_json::Value) {
+        let num: f64 = json
+            .as_str()
+            .unwrap_or_else(|| panic!("given json for zarith was not a string; found={}", json))
+            .parse()
+            .unwrap_or_else(|e| {
+                panic!(
+                    "given json for zarith couldn't be parsed to f64; json={}; err: {:?}",
+                    json, e
+                )
+            });
+
+        if let Some(neg) = self.is_negative() {
+            assert_eq!(neg, num < 0.0)
+        }
+
+        let (neg, z) = self.read_as::<u32>().expect("zarith didn't fit in u32");
+        let mut z = z as f64;
+        if neg {
+            z = z.copysign(-0.0);
+        }
+
+        //we can't check equality for floating point numbers
+        // but we can check their different is smaller than an EPSILON
+        assert!((z - num).abs() < f64::EPSILON);
     }
 }
 

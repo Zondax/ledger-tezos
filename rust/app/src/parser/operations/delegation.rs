@@ -18,7 +18,7 @@ use zemu_sys::ViewError;
 
 use crate::{
     crypto::Curve,
-    handlers::{handle_ui_message, parser_common::ParserError},
+    handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
     parser::{boolean, public_key_hash, DisplayableOperation, Zarith},
 };
 
@@ -86,8 +86,7 @@ impl<'a> DisplayableOperation for Delegation<'a> {
 
                 let (crv, hash) = self.source();
 
-                let addr = crate::handlers::public_key::Addr::from_hash(hash, *crv)
-                    .map_err(|_| ViewError::Unknown)?;
+                let addr = Addr::from_hash(hash, *crv).map_err(|_| ViewError::Unknown)?;
 
                 let mex = addr.to_base58();
                 handle_ui_message(&mex[..], message, page)
@@ -99,8 +98,7 @@ impl<'a> DisplayableOperation for Delegation<'a> {
 
                 match self.delegate() {
                     Some((crv, hash)) => {
-                        let addr = crate::handlers::public_key::Addr::from_hash(hash, *crv)
-                            .map_err(|_| ViewError::Unknown)?;
+                        let addr = Addr::from_hash(hash, *crv).map_err(|_| ViewError::Unknown)?;
                         let mex = addr.to_base58();
                         handle_ui_message(&mex[..], message, page)
                     }
@@ -153,6 +151,47 @@ impl<'a> DisplayableOperation for Delegation<'a> {
                 handle_ui_message(itoa(counter, &mut zarith_buf), message, page)
             }
             _ => Err(ViewError::NoData),
+        }
+    }
+}
+
+#[cfg(test)]
+impl<'b> Delegation<'b> {
+    fn addr_base58(&self, source: (Curve, &'b [u8; 20])) -> Result<[u8; 36], bolos::Error> {
+        let addr = Addr::from_hash(source.1, source.0)?;
+
+        Ok(addr.to_base58())
+    }
+
+    pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
+        //verify source address of the transfer
+        let source_base58 = self
+            .addr_base58(*self.source())
+            .expect("couldn't compute source base58");
+        let expected_source_base58 = json["source"]
+            .as_str()
+            .expect("given json .source is not a string");
+        assert_eq!(source_base58, expected_source_base58.as_bytes());
+
+        self.counter().is(&json["counter"]);
+        self.fee().is(&json["fee"]);
+        self.gas_limit().is(&json["gas_limit"]);
+        self.storage_limit().is(&json["storage_limit"]);
+
+        match (
+            self.delegate(),
+            json.get("delegate")
+                .map(|j| j.as_str().expect("given json .delegate is not a string")),
+        ) {
+            (None, None) => {}
+            (Some(_), None) => panic!("parsed delegate where none were given"),
+            (None, Some(_)) => panic!("delegate was not parsed where one was given"),
+            (Some(parsed), Some(expected_delegate_base58)) => {
+                let delegate_base58 = self
+                    .addr_base58(*parsed)
+                    .expect("couldn't compute delegate base58");
+                assert_eq!(delegate_base58, expected_delegate_base58.as_bytes())
+            }
         }
     }
 }

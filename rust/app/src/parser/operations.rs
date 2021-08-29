@@ -202,7 +202,7 @@ pub enum ContractID<'b> {
 impl<'b> ContractID<'b> {
     #[cfg(test)]
     fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
-        use nom::{dbg_basic, tuple as tuplem};
+        use nom::{dbg_basic, take, tuple as tuplem};
         use std::{eprintln, println};
 
         let (rem, tag) = dbg_basic!(input, le_u8)?;
@@ -285,10 +285,7 @@ mod tests {
     use crate::{
         crypto::Curve,
         handlers::public_key::Addr,
-        parser::{
-            operations::{ContractID, Operation, OperationType, Transfer},
-            Zarith,
-        },
+        parser::operations::{ContractID, Operation, OperationType},
     };
 
     #[test]
