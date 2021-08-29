@@ -16,9 +16,10 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-const dataPath = resolve(__dirname, "data")
+const dataPath = resolve(__dirname, 'data')
 
-export const SAMPLE_OPERATIONS: { op: any, blob: string }[] = JSON.parse(readFileSync(dataPath + '/samples.json', 'utf-8'))
-export const SAMPLE_CONTRACTS: { op: any, blob: string }[] = JSON.parse(readFileSync(dataPath + '/michelson.json', 'utf-8'))
+export const SAMPLE_OPERATIONS: { op: any; blob: string }[] = JSON.parse(readFileSync(dataPath + '/samples.json', 'utf-8'))
+export const SAMPLE_CONTRACTS: { op: any; blob: string }[] = JSON.parse(readFileSync(dataPath + '/michelson.json', 'utf-8'))
 
 export const SIMPLE_TRANSACTION = SAMPLE_OPERATIONS[6]
+export const SIMPLE_DELEGATION = SAMPLE_OPERATIONS[0]

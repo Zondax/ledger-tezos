@@ -27,7 +27,10 @@ use crate::{
     crypto::Curve,
     dispatcher::ApduHandler,
     handlers::handle_ui_message,
-    parser::operations::{Operation, OperationType},
+    parser::{
+        operations::{Operation, OperationType},
+        DisplayableOperation,
+    },
     sys,
     utils::{ApduBufferRead, Uploader},
 };
@@ -186,106 +189,10 @@ impl Viewable for SignUI {
 
             handle_ui_message(&mex[..], message, page)
         } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
-            use lexical_core::{write as itoa, Number};
-            let mut zarith_buf = [0; usize::FORMATTED_SIZE_DECIMAL];
-
             match op {
-                OperationType::Transfer(tx) => {
-                    match item_n {
-                        //source
-                        0 => {
-                            let title_content = pic_str!(b"Source");
-                            title[..title_content.len()].copy_from_slice(title_content);
-
-                            let (crv, hash) = tx.source();
-
-                            let addr = crate::handlers::public_key::Addr::from_hash(hash, *crv)
-                                .map_err(|_| ViewError::Unknown)?;
-
-                            let mex = addr.to_base58();
-                            handle_ui_message(&mex[..], message, page)
-                        }
-                        //destination
-                        1 => {
-                            let title_content = pic_str!(b"Destination");
-                            title[..title_content.len()].copy_from_slice(title_content);
-
-                            let mut cid = [0; 36];
-                            tx.destination()
-                                .base58(&mut cid)
-                                .map_err(|_| ViewError::Unknown)?;
-
-                            handle_ui_message(&cid[..], message, page)
-                        }
-                        //amount
-                        2 => {
-                            let title_content = pic_str!(b"Amount");
-                            title[..title_content.len()].copy_from_slice(title_content);
-
-                            let (_, amount) =
-                                tx.amount().read_as::<usize>().ok_or(ViewError::Unknown)?;
-
-                            handle_ui_message(itoa(amount, &mut zarith_buf), message, page)
-                        }
-                        //fee
-                        3 => {
-                            let title_content = pic_str!(b"Fee");
-                            title[..title_content.len()].copy_from_slice(title_content);
-
-                            let (_, fee) = tx.fee().read_as::<usize>().ok_or(ViewError::Unknown)?;
-
-                            handle_ui_message(itoa(fee, &mut zarith_buf), message, page)
-                        }
-                        //has_parameters
-                        4 => {
-                            let title_content = pic_str!(b"Parameters");
-                            title[..title_content.len()].copy_from_slice(title_content);
-
-                            let parameters = tx.parameters();
-
-                            let msg = match parameters {
-                                Some(_) => pic_str!("has parameters..."),
-                                None => pic_str!("no parameters"),
-                            };
-
-                            handle_ui_message(msg.as_bytes(), message, page)
-                        }
-                        //gas_limit
-                        5 => {
-                            let title_content = pic_str!(b"Gas Limit");
-                            title[..title_content.len()].copy_from_slice(title_content);
-
-                            let (_, gas_limit) = tx
-                                .gas_limit()
-                                .read_as::<usize>()
-                                .ok_or(ViewError::Unknown)?;
-
-                            handle_ui_message(itoa(gas_limit, &mut zarith_buf), message, page)
-                        }
-                        //storage_limit
-                        6 => {
-                            let title_content = pic_str!(b"Storage Limit");
-                            title[..title_content.len()].copy_from_slice(title_content);
-
-                            let (_, storage_limit) = tx
-                                .storage_limit()
-                                .read_as::<usize>()
-                                .ok_or(ViewError::Unknown)?;
-
-                            handle_ui_message(itoa(storage_limit, &mut zarith_buf), message, page)
-                        }
-                        //counter
-                        7 => {
-                            let title_content = pic_str!(b"Counter");
-                            title[..title_content.len()].copy_from_slice(title_content);
-
-                            let (_, counter) =
-                                tx.counter().read_as::<usize>().ok_or(ViewError::Unknown)?;
-
-                            handle_ui_message(itoa(counter, &mut zarith_buf), message, page)
-                        }
-                        _ => panic!("should be next operation"),
-                    }
+                OperationType::Transfer(tx) => tx.render_item(item_n, title, message, page),
+                OperationType::Delegation(delegation) => {
+                    delegation.render_item(item_n, title, message, page)
                 }
             }
         } else {

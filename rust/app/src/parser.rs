@@ -15,13 +15,41 @@
 ********************************************************************************/
 use arrayref::array_ref;
 use nom::{bytes::complete::take, number::complete::le_u8, sequence::tuple, IResult};
+use zemu_sys::ViewError;
 
 use crate::{crypto::Curve, handlers::parser_common::ParserError};
 
 pub mod operations;
 
-//TODO: determine actual size so we can use other libs and pass this type around more armoniously
-// alternative: implement all the necessary traits and handle everything manually...
+///This trait defines the interface useful in the UI context
+/// so that all the different OperationTypes handle their own UI
+pub trait DisplayableOperation {
+    /// Returns the number of items to display
+    fn num_items(&self) -> usize;
+
+    /// This is invoked when a given page is to be displayed
+    ///
+    /// `item_n` is the item of the operation to display;
+    /// guarantee: 0 <= item_n < self.num_items()
+    /// `title` is the title of the item
+    /// `message` is the contents of the item
+    /// `page` is what page we are supposed to display, this is used to split big messages
+    ///
+    /// returns the total number of pages on success
+    ///
+    /// It's a good idea to always put `#[inline(never)]` on top of this
+    /// function's implementation
+    //#[inline(never)]
+    fn render_item(
+        &self,
+        item_n: u8,
+        title: &mut [u8],
+        message: &mut [u8],
+        page: u8,
+    ) -> Result<u8, ViewError>;
+}
+
+//legacy app stored in a uint64 always, we have `read_as`
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Zarith<'b> {
     bytes: &'b [u8],
@@ -41,27 +69,6 @@ impl<'b> Zarith<'b> {
 
         //take bytes + 1 since we miss the last byte with `take_till`
         let (rem, bytes) = take(bytes.len() + 1)(input)?;
-
-        let is_negative = if want_sign {
-            //if the second bit of the first byte is set, then it's negative
-            Some(bytes[0] & 0x40 != 0)
-        } else {
-            None
-        };
-
-        Ok((rem, Self { bytes, is_negative }))
-    }
-
-    #[cfg(test)]
-    pub fn from_bytes(input: &'b [u8], want_sign: bool) -> IResult<&[u8], Self, ParserError> {
-        use nom::{dbg_basic, take, take_till};
-        use std::println;
-
-        //keep taking bytes while the MSB is 1
-        let (_, bytes) = dbg_basic!(input, take_till!(|byte| byte & 0x80 == 0))?;
-
-        //take bytes + 1 since we miss the last byte with `take_till`
-        let (rem, bytes) = dbg_basic!(input, take!(bytes.len() + 1))?;
 
         let is_negative = if want_sign {
             //if the second bit of the first byte is set, then it's negative
@@ -120,6 +127,57 @@ impl<'b> Zarith<'b> {
         }
 
         Some((self.is_negative.unwrap_or_default(), out))
+    }
+}
+
+#[cfg(test)]
+impl<'b> Zarith<'b> {
+    #[cfg(test)]
+    pub fn from_bytes(input: &'b [u8], want_sign: bool) -> IResult<&[u8], Self, ParserError> {
+        use nom::{dbg_basic, take, take_till};
+        use std::println;
+
+        //keep taking bytes while the MSB is 1
+        let (_, bytes) = dbg_basic!(input, take_till!(|byte| byte & 0x80 == 0))?;
+
+        //take bytes + 1 since we miss the last byte with `take_till`
+        let (rem, bytes) = dbg_basic!(input, take!(bytes.len() + 1))?;
+
+        let is_negative = if want_sign {
+            //if the second bit of the first byte is set, then it's negative
+            Some(bytes[0] & 0x40 != 0)
+        } else {
+            None
+        };
+
+        Ok((rem, Self { bytes, is_negative }))
+    }
+
+    pub fn is(&self, json: &serde_json::Value) {
+        let num: f64 = json
+            .as_str()
+            .unwrap_or_else(|| panic!("given json for zarith was not a string; found={}", json))
+            .parse()
+            .unwrap_or_else(|e| {
+                panic!(
+                    "given json for zarith couldn't be parsed to f64; json={}; err: {:?}",
+                    json, e
+                )
+            });
+
+        if let Some(neg) = self.is_negative() {
+            assert_eq!(neg, num < 0.0)
+        }
+
+        let (neg, z) = self.read_as::<u32>().expect("zarith didn't fit in u32");
+        let mut z = z as f64;
+        if neg {
+            z = z.copysign(-0.0);
+        }
+
+        //we can't check equality for floating point numbers
+        // but we can check their different is smaller than an EPSILON
+        assert!((z - num).abs() < f64::EPSILON);
     }
 }
 

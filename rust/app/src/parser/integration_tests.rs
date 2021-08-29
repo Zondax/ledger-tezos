@@ -20,11 +20,9 @@ use std::prelude::v1::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::handlers::public_key::Addr;
-use crate::parser::operations::{Entrypoint, Operation};
+use crate::parser::operations::Operation;
 
 use super::operations::OperationType;
-use super::Zarith;
 
 fn data_dir_path() -> PathBuf {
     std::env::var_os("TEZOS_TEST_DATA")
@@ -173,6 +171,24 @@ fn simple_transfer_sample() {
 }
 
 #[test]
+fn simple_delegation_sample() {
+    //retrieve all samples
+    let samples: Vec<Sample> = get_json_from_data(data_dir_path().join("samples.json"));
+
+    //get 6th sample
+    let Sample {
+        name: _,
+        operation: JsonOperation { branch, contents },
+        blob,
+    } = samples[0].clone();
+
+    //we should only have a single operation to parse
+    assert_eq!(contents.len(), 1);
+
+    test_sample("#0", blob, branch, contents);
+}
+
+#[test]
 fn test_vectors() {
     let mut test_vectors_found = 0;
     let mut total_tests = 0;
@@ -223,113 +239,10 @@ fn verify_operation<'b>(
     // and check against it
     match (op, kind) {
         (OperationType::Transfer(tx), "transaction") => tx.is(json),
+        (OperationType::Delegation(del), "delegation") => del.is(json),
         (op, other) => panic!(
             "sample {}[{}]; expected op kind: {}, parsed as: {:?}",
             sample_name, op_n, other, op
         ),
-    }
-}
-
-impl<'b> super::operations::Transfer<'b> {
-    fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
-        let source = self.source();
-        let addr = Addr::from_hash(source.1, source.0)?;
-
-        Ok(addr.to_base58())
-    }
-
-    fn is(&self, json: &Map<String, Value>) {
-        //verify source address of the transfer
-        let source_base58 = self
-            .source_base58()
-            .expect("couldn't compute source base58");
-        let expected_source_base58 = json["source"]
-            .as_str()
-            .expect("given json .source is not a string");
-        assert_eq!(source_base58, expected_source_base58.as_bytes());
-
-        self.amount().is(&json["amount"]);
-        self.counter().is(&json["counter"]);
-        self.fee().is(&json["fee"]);
-        self.gas_limit().is(&json["gas_limit"]);
-        self.storage_limit().is(&json["storage_limit"]);
-
-        //verify the destination
-        let destination_bs58 = {
-            let mut out = [0; 36];
-            self.destination()
-                .base58(&mut out)
-                .expect("couldn't compute destination base58");
-            out
-        };
-        let expected_destination_base58 = json["destination"]
-            .as_str()
-            .expect("given json .destination is not a string");
-        assert_eq!(destination_bs58, expected_destination_base58.as_bytes());
-
-        //check parameters, either they are both in json and the parsed,
-        // or they are missing in both
-        match (
-            self.parameters(),
-            json.get("parameters").map(|j| {
-                j.as_object()
-                    .expect("given json .parameters is not an object")
-            }),
-        ) {
-            (None, None) => {}
-            (Some(_), None) => panic!("parsed parameters where none were given"),
-            (None, Some(_)) => panic!("parameters were not parsed where some were given"),
-            (Some(parsed), Some(expected)) => {
-                //if they are present, verify the entrypoint
-                // get entrypoint from json as string
-                let expected_entrypoint = expected["entrypoint"]
-                    .as_str()
-                    .expect("given json .parameters.entrypoint is not a string");
-
-                //verify entrypoint
-                match (parsed.entrypoint(), expected_entrypoint) {
-                    (Entrypoint::Default, "default")
-                    | (Entrypoint::Root, "root")
-                    | (Entrypoint::Do, "do")
-                    | (Entrypoint::SetDelegate, "set_delegate")
-                    | (Entrypoint::RemoveDelegate, "remove_delegate") => {}
-                    (Entrypoint::Custom(s), js) if s == &js.as_bytes() => {}
-                    (parsed, expected) => {
-                        panic!("expected entrypoint: {}, parsed: {}", expected, parsed)
-                    }
-                }
-
-                //TODO: verify michelson code (parameters.value)
-            }
-        }
-    }
-}
-
-impl<'b> Zarith<'b> {
-    fn is(&self, json: &Value) {
-        let num: f64 = json
-            .as_str()
-            .unwrap_or_else(|| panic!("given json for zarith was not a string; found={}", json))
-            .parse()
-            .unwrap_or_else(|e| {
-                panic!(
-                    "given json for zarith couldn't be parsed to f64; json={}; err: {:?}",
-                    json, e
-                )
-            });
-
-        if let Some(neg) = self.is_negative() {
-            assert_eq!(neg, num < 0.0)
-        }
-
-        let (neg, z) = self.read_as::<u32>().expect("zarith didn't fit in u32");
-        let mut z = z as f64;
-        if neg {
-            z = z.copysign(-0.0);
-        }
-
-        //we can't check equality for floating point numbers
-        // but we can check their different is smaller than an EPSILON
-        assert!((z - num).abs() < f64::EPSILON);
     }
 }

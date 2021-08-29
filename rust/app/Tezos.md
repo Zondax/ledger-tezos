@@ -141,6 +141,21 @@ Custom named entrypoints are encoded as follows:
 
 #### Delegation
 
+`tezos-codec describe alpha.operation.contents binary schema` (search `Delegation` section)
+
+A delegation is encoded as follows:
+
+| Name           | Size | Contents          |
+|:---------------|:-----|:------------------|
+| tag            | 1    | 0x6E              |
+| source         | 21   | [Public Key Hash] |
+| fee            |      | [Zarith]          |
+| counter        |      | [Zarith]          |
+| gas\_limit     |      | [Zarith]          |
+| storage\_limit |      | [Zarith]          |
+| delegate?      | 1    | [bool]            |
+| delegate       |      | [Public Key Hash] |
+
 ## Primitive types
 
 There are a couple of "primitive" types that make up the rest of the types
