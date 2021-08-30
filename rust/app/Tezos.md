@@ -80,7 +80,7 @@ An endorsement is encoded as follows:
 
 | Name  | Size | Contents              |
 |:------|:-----|:----------------------|
-| tag   | 1    | 0x001                 |
+| tag   | 1    | 0x01                  |
 | level | 4    | Signed 32-bit integer |
 | nonce | 32   |                       |
 
