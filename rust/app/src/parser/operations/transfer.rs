@@ -192,7 +192,8 @@ impl<'b> Transfer<'b> {
 
 impl<'a> DisplayableOperation for Transfer<'a> {
     fn num_items(&self) -> usize {
-        8
+        //TODO: account for entrypoint if present
+        1 + 8
     }
 
     #[inline(never)]
@@ -209,8 +210,21 @@ impl<'a> DisplayableOperation for Transfer<'a> {
         let mut zarith_buf = [0; usize::FORMATTED_SIZE_DECIMAL];
 
         match item_n {
-            //source
+            //home
             0 => {
+                let title_content = pic_str!(b"Type");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mex = if self.parameters.is_some() {
+                    pic_str!("Contract Execution")
+                } else {
+                    pic_str!("Transaction")
+                };
+
+                handle_ui_message(mex.as_bytes(), message, page)
+            }
+            //source
+            1 => {
                 let title_content = pic_str!(b"Source");
                 title[..title_content.len()].copy_from_slice(title_content);
 
@@ -222,9 +236,13 @@ impl<'a> DisplayableOperation for Transfer<'a> {
                 handle_ui_message(&mex[..], message, page)
             }
             //destination
-            1 => {
-                let title_content = pic_str!(b"Destination");
-                title[..title_content.len()].copy_from_slice(title_content);
+            2 => {
+                let title_content = if self.parameters.is_some() {
+                    pic_str!("Contract Addr")
+                } else {
+                    pic_str!("Destination")
+                };
+                title[..title_content.len()].copy_from_slice(title_content.as_bytes());
 
                 let mut cid = [0; 36];
                 self.destination()
@@ -234,7 +252,7 @@ impl<'a> DisplayableOperation for Transfer<'a> {
                 handle_ui_message(&cid[..], message, page)
             }
             //amount
-            2 => {
+            3 => {
                 let title_content = pic_str!(b"Amount");
                 title[..title_content.len()].copy_from_slice(title_content);
 
@@ -243,7 +261,7 @@ impl<'a> DisplayableOperation for Transfer<'a> {
                 handle_ui_message(itoa(amount, &mut zarith_buf), message, page)
             }
             //fee
-            3 => {
+            4 => {
                 let title_content = pic_str!(b"Fee");
                 title[..title_content.len()].copy_from_slice(title_content);
 
@@ -252,21 +270,27 @@ impl<'a> DisplayableOperation for Transfer<'a> {
                 handle_ui_message(itoa(fee, &mut zarith_buf), message, page)
             }
             //has_parameters
-            4 => {
+            5 => {
                 let title_content = pic_str!(b"Parameters");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let parameters = self.parameters();
+                match self.parameters {
+                    Some(params) => {
+                        use bolos::hash::{Hasher, Sha256};
 
-                let msg = match parameters {
-                    Some(_) => pic_str!("has parameters..."),
-                    None => pic_str!("no parameters"),
-                };
+                        //TODO: display entrypoint
 
-                handle_ui_message(msg.as_bytes(), message, page)
+                        //Display sha256 of michelson code
+                        let sha =
+                            Sha256::digest(params.michelson).map_err(|_| ViewError::Unknown)?;
+
+                        handle_ui_message(&sha[..], message, page)
+                    }
+                    None => handle_ui_message(&pic_str!(b"no parameters...")[..], message, page),
+                }
             }
             //gas_limit
-            5 => {
+            6 => {
                 let title_content = pic_str!(b"Gas Limit");
                 title[..title_content.len()].copy_from_slice(title_content);
 
@@ -278,7 +302,7 @@ impl<'a> DisplayableOperation for Transfer<'a> {
                 handle_ui_message(itoa(gas_limit, &mut zarith_buf), message, page)
             }
             //storage_limit
-            6 => {
+            7 => {
                 let title_content = pic_str!(b"Storage Limit");
                 title[..title_content.len()].copy_from_slice(title_content);
 
@@ -290,7 +314,7 @@ impl<'a> DisplayableOperation for Transfer<'a> {
                 handle_ui_message(itoa(storage_limit, &mut zarith_buf), message, page)
             }
             //counter
-            7 => {
+            8 => {
                 let title_content = pic_str!(b"Counter");
                 title[..title_content.len()].copy_from_slice(title_content);
 

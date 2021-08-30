@@ -415,12 +415,12 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
 })
 
 const SIGN_TEST_DATA = cartesianProduct(curves, [
-  { name: 'transfer', nav: { s: [12, 0], x: [10, 0] }, op: SIMPLE_TRANSACTION },
-  { name: 'delegation', nav: { s: [10, 0], x: [8, 0] }, op: SIMPLE_DELEGATION },
-  { name: 'endorsement', nav: { s: [3, 0], x: [3, 0] }, op: SIMPLE_ENDORSEMENT },
+  { name: 'transfer', nav: { s: [13, 0], x: [11, 0] }, op: SIMPLE_TRANSACTION },
+  { name: 'delegation', nav: { s: [11, 0], x: [9, 0] }, op: SIMPLE_DELEGATION },
+  { name: 'endorsement', nav: { s: [4, 0], x: [4, 0] }, op: SIMPLE_ENDORSEMENT },
 ])
 
-describe.each(models)('Standard baking [%s] - sign', function (m) {
+describe.each(models)('Standard baking [%s] - sign operation', function (m) {
   test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
     const sim = new Zemu(m.path)
     try {
@@ -471,7 +471,7 @@ describe.each(models)('Standard baking [%s] - sign', function (m) {
   })
 })
 
-describe.each(models)('Standard baking [%s]; legacy - sign with hash', function (m) {
+describe.each(models)('Standard baking [%s]; legacy - sign op with hash', function (m) {
   test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
     const sim = new Zemu(m.path)
     try {

@@ -13,11 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use nom::{
-    bytes::complete::take,
-    number::complete::{be_i32, le_u8},
-    Finish, IResult,
-};
+use nom::{bytes::complete::take, number::complete::le_u8, Finish, IResult};
 
 use crate::{
     constants::tzprefix::{B, KT1, TZ1, TZ2, TZ3},
@@ -140,16 +136,18 @@ impl<'b> EncodedOperations<'b> {
 }
 
 mod delegation;
+mod endorsement;
 mod transfer;
 
 pub use delegation::Delegation;
+pub use endorsement::Endorsement;
 pub use transfer::Transfer;
 
 #[derive(Debug, Clone, Copy)]
 pub enum OperationType<'b> {
     Transfer(Transfer<'b>),
     Delegation(Delegation<'b>),
-    Endorsement(i32),
+    Endorsement(Endorsement),
 }
 
 impl<'b> OperationType<'b> {
@@ -158,7 +156,7 @@ impl<'b> OperationType<'b> {
 
         let (rem, data) = match tag {
             0x00 => {
-                let (rem, data) = be_i32(rem)?;
+                let (rem, data) = Endorsement::from_bytes(rem)?;
                 (rem, Self::Endorsement(data))
             }
             0x01 => todo!("seed nonce revelation"),
@@ -197,7 +195,7 @@ impl<'b> OperationType<'b> {
         match self {
             Self::Transfer(tx) => tx.num_items(),
             Self::Delegation(del) => del.num_items(),
-            Self::Endorsement(_) => 1,
+            Self::Endorsement(end) => end.num_items(),
         }
     }
 }
@@ -415,27 +413,6 @@ mod tests {
             }
             #[allow(unreachable_patterns)]
             opt => panic!("not the expected operation type, found: {:x?}", opt),
-        }
-    }
-
-    #[test]
-    fn endorsement() {
-        const INPUT_HEX: &str = "00\
-                                 fffffed4";
-
-        let input = hex::decode(INPUT_HEX).expect("invalid input hex");
-
-        let (rem, parsed) = OperationType::from_bytes(&input).expect("failed to parse endorsement");
-        assert_eq!(rem.len(), 0);
-
-        let expected = -300;
-        match parsed {
-            OperationType::Endorsement(level) => {
-                assert_eq!(level, expected);
-            }
-            other => {
-                panic!("endorsement expected, parsed: {:?}", other)
-            }
         }
     }
 }
