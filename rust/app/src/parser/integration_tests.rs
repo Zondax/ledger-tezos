@@ -258,16 +258,7 @@ fn verify_operation<'b>(
     match (op, kind) {
         (OperationType::Transfer(tx), "transaction") => tx.is(json),
         (OperationType::Delegation(del), "delegation") => del.is(json),
-        (OperationType::Endorsement(level), "endorsement") => {
-            let expected = json["level"].as_i64().unwrap_or_else(|| {
-                panic!(
-                    "sample {} .operation.contents[{}].level was not a number",
-                    sample_name, op_n
-                )
-            });
-
-            assert_eq!(level, expected as i32);
-        }
+        (OperationType::Endorsement(endorsement), "endorsement") => endorsement.is(json),
         (op, other) => panic!(
             "sample {}[{}]; expected op kind: {}, parsed as: {:?}",
             sample_name, op_n, other, op

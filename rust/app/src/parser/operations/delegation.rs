@@ -62,7 +62,7 @@ impl<'b> Delegation<'b> {
 
 impl<'a> DisplayableOperation for Delegation<'a> {
     fn num_items(&self) -> usize {
-        6
+        1 + 6
     }
 
     #[inline(never)]
@@ -79,8 +79,21 @@ impl<'a> DisplayableOperation for Delegation<'a> {
         let mut zarith_buf = [0; usize::FORMATTED_SIZE_DECIMAL];
 
         match item_n {
-            //source
+            //home
             0 => {
+                let title_content = pic_str!(b"Type");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mex = if self.delegate.is_some() {
+                    pic_str!("Delegation")
+                } else {
+                    pic_str!("Delegation Withdrawal")
+                };
+
+                handle_ui_message(mex.as_bytes(), message, page)
+            }
+            //source
+            1 => {
                 let title_content = pic_str!(b"Source");
                 title[..title_content.len()].copy_from_slice(title_content);
 
@@ -92,13 +105,13 @@ impl<'a> DisplayableOperation for Delegation<'a> {
                 handle_ui_message(&mex[..], message, page)
             }
             //delegation
-            1 => {
+            2 => {
                 let title_content = pic_str!(b"Delegation");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                match self.delegate() {
+                match self.delegate {
                     Some((crv, hash)) => {
-                        let addr = Addr::from_hash(hash, *crv).map_err(|_| ViewError::Unknown)?;
+                        let addr = Addr::from_hash(hash, crv).map_err(|_| ViewError::Unknown)?;
                         let mex = addr.to_base58();
                         handle_ui_message(&mex[..], message, page)
                     }
@@ -106,7 +119,7 @@ impl<'a> DisplayableOperation for Delegation<'a> {
                 }
             }
             //fee
-            2 => {
+            3 => {
                 let title_content = pic_str!(b"Fee");
                 title[..title_content.len()].copy_from_slice(title_content);
 
@@ -115,7 +128,7 @@ impl<'a> DisplayableOperation for Delegation<'a> {
                 handle_ui_message(itoa(fee, &mut zarith_buf), message, page)
             }
             //gas_limit
-            3 => {
+            4 => {
                 let title_content = pic_str!(b"Gas Limit");
                 title[..title_content.len()].copy_from_slice(title_content);
 
@@ -127,7 +140,7 @@ impl<'a> DisplayableOperation for Delegation<'a> {
                 handle_ui_message(itoa(gas_limit, &mut zarith_buf), message, page)
             }
             //storage_limit
-            4 => {
+            5 => {
                 let title_content = pic_str!(b"Storage Limit");
                 title[..title_content.len()].copy_from_slice(title_content);
 
@@ -139,7 +152,7 @@ impl<'a> DisplayableOperation for Delegation<'a> {
                 handle_ui_message(itoa(storage_limit, &mut zarith_buf), message, page)
             }
             //counter
-            5 => {
+            6 => {
                 let title_content = pic_str!(b"Counter");
                 title[..title_content.len()].copy_from_slice(title_content);
 
