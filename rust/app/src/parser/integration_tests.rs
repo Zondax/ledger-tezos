@@ -189,6 +189,24 @@ fn simple_delegation_sample() {
 }
 
 #[test]
+fn simple_endorsement_sample() {
+    //retrieve all samples
+    let samples: Vec<Sample> = get_json_from_data(data_dir_path().join("samples.json"));
+
+    //get 6th sample
+    let Sample {
+        name: _,
+        operation: JsonOperation { branch, contents },
+        blob,
+    } = samples[3].clone();
+
+    //we should only have a single operation to parse
+    assert_eq!(contents.len(), 1);
+
+    test_sample("#3", blob, branch, contents);
+}
+
+#[test]
 fn test_vectors() {
     let mut test_vectors_found = 0;
     let mut total_tests = 0;
@@ -240,6 +258,16 @@ fn verify_operation<'b>(
     match (op, kind) {
         (OperationType::Transfer(tx), "transaction") => tx.is(json),
         (OperationType::Delegation(del), "delegation") => del.is(json),
+        (OperationType::Endorsement(level), "endorsement") => {
+            let expected = json["level"].as_i64().unwrap_or_else(|| {
+                panic!(
+                    "sample {} .operation.contents[{}].level was not a number",
+                    sample_name, op_n
+                )
+            });
+
+            assert_eq!(level, expected as i32);
+        }
         (op, other) => panic!(
             "sample {}[{}]; expected op kind: {}, parsed as: {:?}",
             sample_name, op_n, other, op

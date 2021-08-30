@@ -19,7 +19,7 @@ import { APP_DERIVATION, cartesianProduct, curves, defaultOptions, models } from
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import * as secp256k1 from 'noble-secp256k1'
 
-import { SIMPLE_TRANSACTION, SIMPLE_DELEGATION } from './tezos'
+import { SIMPLE_TRANSACTION, SIMPLE_DELEGATION, SIMPLE_ENDORSEMENT } from './tezos'
 
 const ed25519 = require('ed25519-supercop')
 
@@ -150,6 +150,7 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
 const SIGN_TEST_DATA = cartesianProduct(curves, [
   { name: 'transfer', nav: { s: [12, 0], x: [10, 0] }, op: SIMPLE_TRANSACTION },
   { name: 'delegation', nav: { s: [10, 0], x: [8, 0] }, op: SIMPLE_DELEGATION },
+  { name: 'endorsement', nav: { s: [3, 0], x: [3, 0] }, op: SIMPLE_ENDORSEMENT },
 ])
 
 describe.each(models)('Standard [%s]; sign', function (m) {

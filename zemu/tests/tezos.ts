@@ -23,3 +23,4 @@ export const SAMPLE_CONTRACTS: { op: any; blob: string }[] = JSON.parse(readFile
 
 export const SIMPLE_TRANSACTION = SAMPLE_OPERATIONS[6]
 export const SIMPLE_DELEGATION = SAMPLE_OPERATIONS[0]
+export const SIMPLE_ENDORSEMENT = SAMPLE_OPERATIONS[3]
