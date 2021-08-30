@@ -74,6 +74,16 @@ An endorsement is encoded as follows:
 
 #### Seed nonce revelation
 
+`tezos-codec describe alpha.operation.contents binary schema` (search `Seed_nonce_revelation` section)
+
+An endorsement is encoded as follows:
+
+| Name  | Size | Contents              |
+|:------|:-----|:----------------------|
+| tag   | 1    | 0x001                 |
+| level | 4    | Signed 32-bit integer |
+| nonce | 32   |                       |
+
 #### Double endorsement evidence
 
 #### Double baking evidence
@@ -196,7 +206,7 @@ For signed numbers, the second MSB of the first byte is used to encode if the nu
 
 `tezos-codec describe ground.bytes binary schema`
 
-A sequence of bytes is prefixed with the sequence length in 4 bytes
+A sequence of unknown lenght of bytes is prefixed with the sequence length in 4 bytes
 
 ### Float
 

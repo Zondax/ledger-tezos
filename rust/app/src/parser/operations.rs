@@ -137,10 +137,12 @@ impl<'b> EncodedOperations<'b> {
 
 mod delegation;
 mod endorsement;
+mod seed_nonce_revelation;
 mod transfer;
 
 pub use delegation::Delegation;
 pub use endorsement::Endorsement;
+pub use seed_nonce_revelation::SeedNonceRevelation;
 pub use transfer::Transfer;
 
 #[derive(Debug, Clone, Copy)]
@@ -148,6 +150,7 @@ pub enum OperationType<'b> {
     Transfer(Transfer<'b>),
     Delegation(Delegation<'b>),
     Endorsement(Endorsement),
+    SeedNonceRevelation(SeedNonceRevelation<'b>),
 }
 
 impl<'b> OperationType<'b> {
@@ -159,7 +162,10 @@ impl<'b> OperationType<'b> {
                 let (rem, data) = Endorsement::from_bytes(rem)?;
                 (rem, Self::Endorsement(data))
             }
-            0x01 => todo!("seed nonce revelation"),
+            0x01 => {
+                let (rem, data) = SeedNonceRevelation::from_bytes(rem)?;
+                (rem, Self::SeedNonceRevelation(data))
+            }
             0x02 => todo!("double endorsement evidence"),
             0x03 => todo!("double baking evidence"),
             0x04 => todo!("activate account"),
@@ -196,6 +202,7 @@ impl<'b> OperationType<'b> {
             Self::Transfer(tx) => tx.num_items(),
             Self::Delegation(del) => del.num_items(),
             Self::Endorsement(end) => end.num_items(),
+            Self::SeedNonceRevelation(snr) => snr.num_items(),
         }
     }
 }

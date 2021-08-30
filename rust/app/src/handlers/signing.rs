@@ -197,6 +197,9 @@ impl Viewable for SignUI {
                 OperationType::Endorsement(endorsement) => {
                     endorsement.render_item(item_n, title, message, page)
                 }
+                OperationType::SeedNonceRevelation(snr) => {
+                    snr.render_item(item_n, title, message, page)
+                }
             }
         } else {
             Err(ViewError::NoData)
