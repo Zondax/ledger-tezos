@@ -194,6 +194,16 @@ impl Viewable for SignUI {
                 OperationType::Delegation(delegation) => {
                     delegation.render_item(item_n, title, message, page)
                 }
+                OperationType::Endorsement(level) => {
+                    use lexical_core::{write as itoa, Number};
+
+                    let title_content = pic_str!(b"Endorsement");
+                    title[..title_content.len()].copy_from_slice(title_content);
+
+                    let mut zarith_buf = [0; i32::FORMATTED_SIZE_DECIMAL];
+
+                    handle_ui_message(itoa(level, &mut zarith_buf), message, page)
+                }
             }
         } else {
             Err(ViewError::NoData)

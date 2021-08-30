@@ -63,6 +63,15 @@ There are many operation content types, each prefixed with a tag and then the co
 
 #### Endorsement
 
+`tezos-codec describe alpha.operation.contents binary schema` (search `Endorsement` section)
+
+An endorsement is encoded as follows:
+
+| Name           | Size | Contents                 |
+|:---------------|:-----|:-------------------------|
+| tag            | 1    | 0x00                     |
+| level          | 4    | Signed 32-bit integer    |
+
 #### Seed nonce revelation
 
 #### Double endorsement evidence
