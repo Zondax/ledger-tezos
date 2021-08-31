@@ -315,7 +315,7 @@ impl<'b> ContractID<'b> {
     }
 
     pub fn is_implicit(&self) -> bool {
-        matches!{self, Self::Implicit(_, _)}
+        matches! {self, Self::Implicit(_, _)}
     }
 }
 

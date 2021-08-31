@@ -150,7 +150,7 @@ impl<'b> DisplayableOperation for Proposals<'b> {
                 let title_content = pic_str!(b"Proposal #"!);
                 let title_len = title_content.len();
                 title[..title_len].copy_from_slice(&title_content[..]);
-                if title_len + buf_len + 1< title.len() {
+                if title_len + buf_len + 1 < title.len() {
                     //copy the index of the proposal
                     title[title_len..title_len + buf_len].copy_from_slice(&proposal_n[..buf_len]);
                     title[title_len + buf_len] = 0; //null terminate
