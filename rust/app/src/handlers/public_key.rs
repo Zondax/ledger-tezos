@@ -99,7 +99,7 @@ impl Addr {
         sys::zemu_log_stack("Addr::new after hash\x00");
 
         //legacy/src/to_string.c:135
-        this.prefix.copy_from_slice(pubkey.curve().to_prefix());
+        this.prefix.copy_from_slice(pubkey.curve().to_hash_prefix());
 
         super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
 
@@ -139,7 +139,7 @@ impl Addr {
         let mut this: Self = Default::default();
 
         this.hash.copy_from_slice(&hash[..]);
-        this.prefix.copy_from_slice(crv.to_prefix());
+        this.prefix.copy_from_slice(crv.to_hash_prefix());
 
         super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
 

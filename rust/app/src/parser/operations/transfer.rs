@@ -188,6 +188,13 @@ impl<'b> Transfer<'b> {
             },
         ))
     }
+
+    fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
+        let source = self.source();
+        let addr = Addr::from_hash(source.1, source.0)?;
+
+        Ok(addr.to_base58())
+    }
 }
 
 impl<'a> DisplayableOperation for Transfer<'a> {
@@ -228,11 +235,7 @@ impl<'a> DisplayableOperation for Transfer<'a> {
                 let title_content = pic_str!(b"Source");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let (crv, hash) = self.source();
-
-                let addr = Addr::from_hash(hash, *crv).map_err(|_| ViewError::Unknown)?;
-
-                let mex = addr.to_base58();
+                let mex = self.source_base58().map_err(|_| ViewError::Unknown)?;
                 handle_ui_message(&mex[..], message, page)
             }
             //destination
@@ -332,13 +335,6 @@ impl<'a> DisplayableOperation for Transfer<'a> {
 
 #[cfg(test)]
 impl<'b> Transfer<'b> {
-    fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
-        let source = self.source();
-        let addr = Addr::from_hash(source.1, source.0)?;
-
-        Ok(addr.to_base58())
-    }
-
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
         //verify source address of the transfer
         let source_base58 = self
