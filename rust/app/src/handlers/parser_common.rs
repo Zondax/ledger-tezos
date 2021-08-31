@@ -52,6 +52,7 @@ pub enum ParserError {
     parser_invalid_token_transfer_type,
     UnknownOperation,
     InvalidBallotVote,
+    ProposalsLengthInvalid,
 }
 
 impl From<ErrorKind> for ParserError {
