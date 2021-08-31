@@ -201,6 +201,7 @@ impl Viewable for SignUI {
                     snr.render_item(item_n, title, message, page)
                 }
                 OperationType::Ballot(vote) => vote.render_item(item_n, title, message, page),
+                OperationType::Reveal(rev) => rev.render_item(item_n, title, message, page),
             }
         } else {
             Err(ViewError::NoData)

@@ -123,6 +123,20 @@ A ballot `vote` is encoded as follows:
 
 #### Reveal
 
+`tezos-codec describe alpha.operation.contents binary schema` (search `Reveal` section)
+
+A transaction is encoded as follows:
+
+| Name           | Size | Contents          |
+|:---------------|:-----|:------------------|
+| tag            | 1    | 0x6B              |
+| source         | 21   | [Public Key Hash] |
+| fee            |      | [Zarith]          |
+| counter        |      | [Zarith]          |
+| gas\_limit     |      | [Zarith]          |
+| storage\_limit |      | [Zarith]          |
+| public\_key    |      | [Public Key]      |
+
 #### Transaction
 
 `tezos-codec describe alpha.operation.contents binary schema` (search `Transaction` section)
@@ -297,10 +311,10 @@ Note: unspecified value for padding
 [delegation]: (#delegation)
 [zarith]: (#zarith)
 [transaction parameters]: (#parameters)
-[public key hash]: (#public-key-hash)
+[public key hash]: (#public-key)
+[public key]: (#public-key)
 [bool]: (#boolean)
 [bytes]: (#bytes)
 [operations]: (#operation-types)
 [entrypoint]: (#entrypoint)
-[Entrypoint]: (#entrypoint)
 [Vote]: (#vote)

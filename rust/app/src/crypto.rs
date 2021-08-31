@@ -191,13 +191,24 @@ impl Curve {
         SecretKey::new(self, *path)
     }
 
-    pub fn to_prefix(self) -> &'static [u8] {
+    pub fn to_hash_prefix(self) -> &'static [u8] {
         use crate::constants::tzprefix;
 
         sys::PIC::new(match self {
             Curve::Ed25519 | Curve::Bip32Ed25519 => tzprefix::TZ1,
             Curve::Secp256K1 => tzprefix::TZ2,
             Curve::Secp256R1 => tzprefix::TZ3,
+        })
+        .into_inner()
+    }
+
+    pub fn to_prefix(self) -> &'static [u8] {
+        use crate::constants::tzprefix;
+
+        sys::PIC::new(match self {
+            Curve::Ed25519 | Curve::Bip32Ed25519 => tzprefix::EDPK,
+            Curve::Secp256K1 => tzprefix::SPPK,
+            Curve::Secp256R1 => tzprefix::P2PK,
         })
         .into_inner()
     }
