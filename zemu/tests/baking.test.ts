@@ -19,7 +19,7 @@ import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import { APP_DERIVATION, cartesianProduct, curves, defaultOptions } from './common'
 import * as secp256k1 from 'noble-secp256k1'
 
-import { SIMPLE_TRANSACTION, SIMPLE_DELEGATION, SIMPLE_ENDORSEMENT } from './tezos'
+import { SAMPLE_TRANSACTION, SAMPLE_DELEGATION, SAMPLE_ENDORSEMENT, SAMPLE_SEED_NONCE_REVELATION } from './tezos'
 
 const ed25519 = require('ed25519-supercop')
 
@@ -415,9 +415,10 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
 })
 
 const SIGN_TEST_DATA = cartesianProduct(curves, [
-  { name: 'transfer', nav: { s: [13, 0], x: [11, 0] }, op: SIMPLE_TRANSACTION },
-  { name: 'delegation', nav: { s: [11, 0], x: [9, 0] }, op: SIMPLE_DELEGATION },
-  { name: 'endorsement', nav: { s: [4, 0], x: [4, 0] }, op: SIMPLE_ENDORSEMENT },
+  { name: 'transfer', nav: { s: [13, 0], x: [11, 0] }, op: SAMPLE_TRANSACTION },
+  { name: 'delegation', nav: { s: [11, 0], x: [9, 0] }, op: SAMPLE_DELEGATION },
+  { name: 'endorsement', nav: { s: [4, 0], x: [4, 0] }, op: SAMPLE_ENDORSEMENT },
+  { name: 'seed-nonce-revelation', nav: { s: [6, 0], x: [5, 0] }, op: SAMPLE_SEED_NONCE_REVELATION },
 ])
 
 describe.each(models)('Standard baking [%s] - sign operation', function (m) {
