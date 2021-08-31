@@ -19,7 +19,7 @@ import { APP_DERIVATION, cartesianProduct, curves, defaultOptions, models } from
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import * as secp256k1 from 'noble-secp256k1'
 
-import { SAMPLE_TRANSACTION, SAMPLE_DELEGATION, SAMPLE_ENDORSEMENT, SAMPLE_SEED_NONCE_REVELATION } from './tezos'
+import { SAMPLE_TRANSACTION, SAMPLE_DELEGATION, SAMPLE_ENDORSEMENT, SAMPLE_SEED_NONCE_REVELATION, SAMPLE_BALLOT } from './tezos'
 
 const ed25519 = require('ed25519-supercop')
 
@@ -152,6 +152,7 @@ const SIGN_TEST_DATA = cartesianProduct(curves, [
   { name: 'delegation', nav: { s: [11, 0], x: [9, 0] }, op: SAMPLE_DELEGATION },
   { name: 'endorsement', nav: { s: [4, 0], x: [4, 0] }, op: SAMPLE_ENDORSEMENT },
   { name: 'seed-nonce-revelation', nav: { s: [6, 0], x: [5, 0] }, op: SAMPLE_SEED_NONCE_REVELATION },
+  { name: 'ballot', nav: { s: [9, 0], x: [7, 0] }, op: SAMPLE_BALLOT },
 ])
 
 describe.each(models)('Standard [%s]; sign operation', function (m) {

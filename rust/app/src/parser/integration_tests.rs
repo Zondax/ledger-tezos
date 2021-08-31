@@ -225,6 +225,24 @@ fn seed_nonce_revelation_sample() {
 }
 
 #[test]
+fn ballot_sample() {
+    //retrieve all samples
+    let samples: Vec<Sample> = get_json_from_data(data_dir_path().join("samples.json"));
+
+    //get 6th sample
+    let Sample {
+        name: _,
+        operation: JsonOperation { branch, contents },
+        blob,
+    } = samples[2].clone();
+
+    //we should only have a single operation to parse
+    assert_eq!(contents.len(), 1);
+
+    test_sample("#2", blob, branch, contents);
+}
+
+#[test]
 fn test_vectors() {
     let mut test_vectors_found = 0;
     let mut total_tests = 0;
@@ -278,6 +296,7 @@ fn verify_operation<'b>(
         (OperationType::Delegation(del), "delegation") => del.is(json),
         (OperationType::Endorsement(endorsement), "endorsement") => endorsement.is(json),
         (OperationType::SeedNonceRevelation(snr), "seed_nonce_revelation") => snr.is(json),
+        (OperationType::Ballot(vote), "ballot") => vote.is(json),
         (op, other) => panic!(
             "sample {}[{}]; expected op kind: {}, parsed as: {:?}",
             sample_name, op_n, other, op

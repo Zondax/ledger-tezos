@@ -94,6 +94,29 @@ An endorsement is encoded as follows:
 
 #### Ballot
 
+`tezos-codec describe alpha.operation.contents binary schema` (search `Ballot` section)
+
+An endorsement is encoded as follows:
+
+| Name     | Size | Contents              |
+|:---------|:-----|:----------------------|
+| tag      | 1    | 0x06                  |
+| source   | 21   | [Public Key Hash]     |
+| period   | 4    | Signed 32-bit integer |
+| proposal | 32   |                       |
+| ballot   | 1    | [Vote]                |
+
+##### Vote
+
+A ballot `vote` is encoded as follows:
+
+| Value | Meaning           |
+|-------|-------------------|
+| 0x00  | yay               |
+| 0x01  | nay               |
+| 0x02  | pass              |
+
+
 #### Endorsement with slot
 
 #### Failing Noop
@@ -280,3 +303,4 @@ Note: unspecified value for padding
 [operations]: (#operation-types)
 [entrypoint]: (#entrypoint)
 [Entrypoint]: (#entrypoint)
+[Vote]: (#vote)

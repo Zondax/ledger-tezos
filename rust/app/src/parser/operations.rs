@@ -135,11 +135,13 @@ impl<'b> EncodedOperations<'b> {
     }
 }
 
+mod ballot;
 mod delegation;
 mod endorsement;
 mod seed_nonce_revelation;
 mod transfer;
 
+pub use ballot::Ballot;
 pub use delegation::Delegation;
 pub use endorsement::Endorsement;
 pub use seed_nonce_revelation::SeedNonceRevelation;
@@ -151,6 +153,7 @@ pub enum OperationType<'b> {
     Delegation(Delegation<'b>),
     Endorsement(Endorsement),
     SeedNonceRevelation(SeedNonceRevelation<'b>),
+    Ballot(Ballot<'b>),
 }
 
 impl<'b> OperationType<'b> {
@@ -170,7 +173,10 @@ impl<'b> OperationType<'b> {
             0x03 => todo!("double baking evidence"),
             0x04 => todo!("activate account"),
             0x05 => todo!("proposalas"),
-            0x06 => todo!("ballot"),
+            0x06 => {
+                let (rem, data) = Ballot::from_bytes(rem)?;
+                (rem, Self::Ballot(data))
+            }
             0x0A => todo!("endorsement with slot"),
             0x11 => todo!("failing noop"),
             0x6B => todo!("reveal"),
@@ -203,6 +209,7 @@ impl<'b> OperationType<'b> {
             Self::Delegation(del) => del.num_items(),
             Self::Endorsement(end) => end.num_items(),
             Self::SeedNonceRevelation(snr) => snr.num_items(),
+            Self::Ballot(vote) => vote.num_items(),
         }
     }
 }
