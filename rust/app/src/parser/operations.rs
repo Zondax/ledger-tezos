@@ -138,6 +138,7 @@ impl<'b> EncodedOperations<'b> {
 mod ballot;
 mod delegation;
 mod endorsement;
+mod proposals;
 mod reveal;
 mod seed_nonce_revelation;
 mod transfer;
@@ -145,6 +146,7 @@ mod transfer;
 pub use ballot::Ballot;
 pub use delegation::Delegation;
 pub use endorsement::Endorsement;
+pub use proposals::Proposals;
 pub use reveal::Reveal;
 pub use seed_nonce_revelation::SeedNonceRevelation;
 pub use transfer::Transfer;
@@ -157,6 +159,7 @@ pub enum OperationType<'b> {
     SeedNonceRevelation(SeedNonceRevelation<'b>),
     Ballot(Ballot<'b>),
     Reveal(Reveal<'b>),
+    Proposals(Proposals<'b>),
 }
 
 impl<'b> OperationType<'b> {
@@ -175,7 +178,10 @@ impl<'b> OperationType<'b> {
             0x02 => todo!("double endorsement evidence"),
             0x03 => todo!("double baking evidence"),
             0x04 => todo!("activate account"),
-            0x05 => todo!("proposalas"),
+            0x05 => {
+                let (rem, data) = Proposals::from_bytes(rem)?;
+                (rem, Self::Proposals(data))
+            }
             0x06 => {
                 let (rem, data) = Ballot::from_bytes(rem)?;
                 (rem, Self::Ballot(data))
@@ -217,6 +223,7 @@ impl<'b> OperationType<'b> {
             Self::SeedNonceRevelation(snr) => snr.num_items(),
             Self::Ballot(vote) => vote.num_items(),
             Self::Reveal(rev) => rev.num_items(),
+            Self::Proposals(prop) => prop.num_items(),
         }
     }
 }
@@ -305,6 +312,10 @@ impl<'b> ContractID<'b> {
             .expect("encoded in base58 is not the right length");
 
         Ok(())
+    }
+
+    pub fn is_implicit(&self) -> bool {
+        matches!{self, Self::Implicit(_, _)}
     }
 }
 

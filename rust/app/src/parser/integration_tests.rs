@@ -316,6 +316,7 @@ fn verify_operation<'b>(
         (OperationType::SeedNonceRevelation(snr), "seed_nonce_revelation") => snr.is(json),
         (OperationType::Ballot(vote), "ballot") => vote.is(json),
         (OperationType::Reveal(rev), "reveal") => rev.is(json),
+        (OperationType::Proposals(prop), "proposals") => prop.is(json),
         (op, other) => panic!(
             "sample {}[{}]; expected op kind: {}, parsed as: {:?}",
             sample_name, op_n, other, op

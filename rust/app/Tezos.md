@@ -90,7 +90,21 @@ An endorsement is encoded as follows:
 
 #### Activate account
 
-#### Proposals
+#### Proposals 
+
+`tezos-codec describe alpha.operation.contents binary schema` (search `Proposals` section)
+
+An endorsement is encoded as follows:
+
+| Name             | Size | Contents               |
+| :--------------- | :--- | :--------------------- |
+| tag              | 1    | 0x05                   |
+| source           | 21   | [Public Key Hash]      |
+| period           | 4    | Signed 32-bit integer  |
+| proposals length | 4    | Next field lenght (BE) |
+| proposals        |      | Proposals [bytes]      |
+
+Proposals is a sequence of sequences of 32 bytes, each representing a different proposal
 
 #### Ballot
 

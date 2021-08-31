@@ -240,10 +240,10 @@ impl<'a> DisplayableOperation for Transfer<'a> {
             }
             //destination
             2 => {
-                let title_content = if self.parameters.is_some() {
-                    pic_str!("Contract Addr")
-                } else {
+                let title_content = if self.destination.is_implicit() {
                     pic_str!("Destination")
+                } else {
+                    pic_str!("Contract Addr")
                 };
                 title[..title_content.len()].copy_from_slice(title_content.as_bytes());
 
@@ -375,7 +375,21 @@ impl<'b> Transfer<'b> {
         ) {
             (None, None) => {}
             (Some(_), None) => panic!("parsed parameters where none were given"),
-            (None, Some(_)) => panic!("parameters were not parsed where some were given"),
+            (None, Some(maybe_default)) => {
+                let maybe_default = serde_json::Value::Object(maybe_default.clone());
+                let default = serde_json::json!({
+                    "entrypoint": "default",
+                    "value" : {
+                        "prim": "Unit"
+                    }
+                });
+
+                //if it's a `default` then the blob doesn't actually contain anything
+                // for the paremeters, so it's ok
+                if default != maybe_default {
+                    panic!("parameters were not parsed where some were given")
+                }
+            }
             (Some(parsed), Some(expected)) => {
                 //if they are present, verify the entrypoint
                 // get entrypoint from json as string
