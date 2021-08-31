@@ -200,6 +200,7 @@ impl Viewable for SignUI {
                 OperationType::SeedNonceRevelation(snr) => {
                     snr.render_item(item_n, title, message, page)
                 }
+                OperationType::Ballot(vote) => vote.render_item(item_n, title, message, page),
             }
         } else {
             Err(ViewError::NoData)

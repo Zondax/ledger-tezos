@@ -112,4 +112,5 @@ pub mod tzprefix {
     pub const P2PK: &[u8] = &[3, 178, 139, 127];
 
     pub const B: &[u8] = &[1, 52];
+    pub const P: &[u8] = &[2, 170];
 }
