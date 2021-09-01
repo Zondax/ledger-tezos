@@ -139,6 +139,7 @@ mod ballot;
 mod delegation;
 mod endorsement;
 mod proposals;
+mod origination;
 mod reveal;
 mod seed_nonce_revelation;
 mod transfer;
@@ -147,6 +148,7 @@ pub use ballot::Ballot;
 pub use delegation::Delegation;
 pub use endorsement::Endorsement;
 pub use proposals::Proposals;
+pub use origination::Origination;
 pub use reveal::Reveal;
 pub use seed_nonce_revelation::SeedNonceRevelation;
 pub use transfer::Transfer;
@@ -160,6 +162,7 @@ pub enum OperationType<'b> {
     Ballot(Ballot<'b>),
     Reveal(Reveal<'b>),
     Proposals(Proposals<'b>),
+    Origination(Origination<'b>),
 }
 
 impl<'b> OperationType<'b> {
@@ -196,7 +199,10 @@ impl<'b> OperationType<'b> {
                 let (rem, data) = Transfer::from_bytes(rem)?;
                 (rem, Self::Transfer(data))
             }
-            0x6D => todo!("origination"),
+            0x6D => {
+                let (rem, data) = Origination::from_bytes(rem)?;
+                (rem, Self::Origination(data))
+            }
             0x6E => {
                 let (rem, data) = Delegation::from_bytes(rem)?;
                 (rem, Self::Delegation(data))
@@ -224,6 +230,7 @@ impl<'b> OperationType<'b> {
             Self::Ballot(vote) => vote.num_items(),
             Self::Reveal(rev) => rev.num_items(),
             Self::Proposals(prop) => prop.num_items(),
+            Self::Origination(orig) => orig.num_items(),
         }
     }
 }

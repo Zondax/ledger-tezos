@@ -209,6 +209,38 @@ Custom named entrypoints are encoded as follows:
 
 #### Origination
 
+`tezos-codec describe alpha.operation.contents binary schema` (search `Origination` section)
+
+A transaction is encoded as follows:
+
+| Name           | Size | Contents          |
+|:---------------|:-----|:------------------|
+| tag            | 1    | 0x6D              |
+| source         | 21   | [Public Key Hash] |
+| fee            |      | [Zarith]          |
+| counter        |      | [Zarith]          |
+| gas\_limit     |      | [Zarith]          |
+| storage\_limit |      | [Zarith]          |
+| balance        |      | [Zarith]          |
+| delegate?      | 1    | [bool]            |
+| delegate       | 21   | [Public Key Hash] |
+| script         |      | [Script]          |
+
+##### Script
+
+`tezos-codec describe alpha.operation.contents binary schema` (search `alpha.scripted.contracts` section)
+
+Scripts in an [Origination] operation contain 2 major sections, `code` and `storage`,
+these are both sequence of byets and are prepended with their length as follows:
+
+| Name    | Size | Contents               |
+|---------|------|------------------------|
+| length  | 4    | next field length (BE) |
+| code    |      | [Bytes]                |
+| length  | 4    | next field length (BE) |
+| storage |      | [Bytes]                |
+
+
 #### Delegation
 
 `tezos-codec describe alpha.operation.contents binary schema` (search `Delegation` section)
@@ -332,3 +364,4 @@ Note: unspecified value for padding
 [operations]: (#operation-types)
 [entrypoint]: (#entrypoint)
 [Vote]: (#vote)
+[Script]: (#script)

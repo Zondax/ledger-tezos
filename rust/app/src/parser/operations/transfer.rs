@@ -286,8 +286,11 @@ impl<'a> DisplayableOperation for Transfer<'a> {
                         //Display sha256 of michelson code
                         let sha =
                             Sha256::digest(params.michelson).map_err(|_| ViewError::Unknown)?;
+                        let mut hex_buf = [0; 32 * 2];
+                        //this is impossible that will error since the sizes are all checked
+                        hex::encode_to_slice(&sha[..], &mut hex_buf).unwrap();
 
-                        handle_ui_message(&sha[..], message, page)
+                        handle_ui_message(&hex_buf[..], message, page)
                     }
                     None => handle_ui_message(&pic_str!(b"no parameters...")[..], message, page),
                 }

@@ -203,6 +203,7 @@ impl Viewable for SignUI {
                 OperationType::Ballot(vote) => vote.render_item(item_n, title, message, page),
                 OperationType::Reveal(rev) => rev.render_item(item_n, title, message, page),
                 OperationType::Proposals(props) => props.render_item(item_n, title, message, page),
+                OperationType::Origination(orig) => orig.render_item(item_n, title, message, page),
             }
         } else {
             Err(ViewError::NoData)
