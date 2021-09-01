@@ -20,7 +20,7 @@ import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import * as secp256k1 from 'noble-secp256k1'
 
 import {
-  SAMPLE_PROPOSAL,
+  SAMPLE_PROPOSALS,
   SAMPLE_ORIGINATION,
   SAMPLE_TRANSACTION,
   SAMPLE_DELEGATION,
