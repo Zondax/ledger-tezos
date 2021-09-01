@@ -10,9 +10,10 @@ use zemu_sys::{Show, ViewError, Viewable};
 use bolos::{
     crypto::bip32::BIP32Path,
     hash::{Blake2b, Hasher},
+    pic_str, PIC,
 };
 
-use crate::handlers::parser_common::ParserError;
+use crate::handlers::{handle_ui_message, parser_common::ParserError};
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::{self, Curve},
@@ -57,60 +58,36 @@ impl TryFrom<u8> for Preemble {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Branch(pub [u8; 32]);
-
-impl Branch {
-    pub const HEX_LEN: usize = 32 * 2;
-
-    #[inline(never)]
-    pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], Self, ParserError> {
-        let (raw, branchbytes) = take(32usize)(bytes)?;
-        let mut branch = [0u8; 32];
-        branch.copy_from_slice(branchbytes);
-        Ok((raw, Self(branch)))
-    }
-}
-
-pub const ENDORSEMENT_DATA_LENGTH: usize = 42;
-
-pub struct EndorsementData {
+pub struct EndorsementData<'b> {
     pub baker_preemble: Preemble,
     pub chain_id: u32,
-    pub branch: Branch,
+    pub branch: &'b [u8; 32],
     pub tag: u8, //TODO: what to do with this??
     pub level: u32,
 }
 
-impl EndorsementData {
+impl<'b> EndorsementData<'b> {
     #[inline(never)]
-    pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], Self, ParserError> {
+    pub fn from_bytes(bytes: &'b [u8]) -> nom::IResult<&[u8], Self, ParserError> {
         let (rem, preemble) = le_u8(bytes)?;
         let baker_preemble: Preemble =
             Preemble::try_from(preemble).map_err(|_| ParserError::parser_unexpected_error)?;
         let (rem, chain_id) = be_u32(rem)?;
-        let (rem, branch) = Branch::from_bytes(rem)?;
+        let (rem, branch) = take(32usize)(rem)?;
+        let branch = arrayref::array_ref!(branch, 0, 32);
         let (rem, tag) = le_u8(rem)?;
         let (rem, level) = be_u32(rem)?;
-        let result = EndorsementData {
-            baker_preemble,
-            chain_id,
-            branch,
-            tag,
-            level,
-        };
-        Ok((rem, result))
-    }
 
-    #[inline(never)]
-    pub fn to_bytes(&self) -> [u8; ENDORSEMENT_DATA_LENGTH] {
-        let mut result = [0u8; ENDORSEMENT_DATA_LENGTH];
-        result[0] = self.baker_preemble.into();
-        result[1..5].copy_from_slice(&self.chain_id.to_be_bytes());
-        result[5..37].copy_from_slice(&self.branch.0);
-        result[37..41].copy_from_slice(&self.level.to_be_bytes());
-        result[41] = self.tag;
-        result
+        Ok((
+            rem,
+            Self {
+                baker_preemble,
+                chain_id,
+                branch,
+                tag,
+                level,
+            },
+        ))
     }
 
     #[inline(never)]
@@ -118,9 +95,57 @@ impl EndorsementData {
         WaterMark::is_valid_blocklevel(self.level)
             && (self.level > hw.level || (hw.level == self.level && !hw.endorsement))
     }
-}
 
-pub const BLOCKDATA_LENGTH: usize = 10;
+    pub fn num_items(&self) -> usize {
+        4
+    }
+
+    pub fn render_item(
+        &self,
+        item_n: u8,
+        title: &mut [u8],
+        message: &mut [u8],
+        page: u8,
+    ) -> Result<u8, ViewError> {
+        use lexical_core::{write as itoa, Number};
+
+        match item_n {
+            0 => {
+                let title_content = pic_str!(b"Baking Sign");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                handle_ui_message(&pic_str!(b"Endorsement")[..], message, page)
+            }
+            1 => {
+                let title_content = pic_str!(b"Branch");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mut hex_buf = [0; 32 * 2];
+                //this is impossible that will error since the sizes are all checked
+                hex::encode_to_slice(&self.branch[..], &mut hex_buf).unwrap();
+
+                handle_ui_message(&hex_buf[..], message, page)
+            }
+            2 => {
+                let title_content = pic_str!(b"Blocklevel");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mut itoa_buf = [0u8; u32::FORMATTED_SIZE_DECIMAL];
+
+                handle_ui_message(itoa(self.level, &mut itoa_buf), message, page)
+            }
+            3 => {
+                let title_content = pic_str!(b"ChainID");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mut itoa_buf = [0u8; u32::FORMATTED_SIZE_DECIMAL];
+
+                handle_ui_message(itoa(self.chain_id, &mut itoa_buf), message, page)
+            }
+            _ => Err(ViewError::NoData),
+        }
+    }
+}
 
 pub struct BlockData {
     pub baker_preemble: Preemble,
@@ -138,28 +163,61 @@ impl BlockData {
         let (rem, chain_id) = be_u32(rem)?;
         let (rem, level) = be_u32(rem)?;
         let (rem, proto) = le_u8(rem)?;
-        let result = BlockData {
-            baker_preemble,
-            chain_id,
-            level,
-            proto,
-        };
-        Ok((rem, result))
-    }
 
-    #[inline(never)]
-    pub fn to_bytes(&self) -> [u8; BLOCKDATA_LENGTH] {
-        let mut result = [0u8; BLOCKDATA_LENGTH];
-        result[0] = self.baker_preemble.into();
-        result[1..5].copy_from_slice(&self.chain_id.to_be_bytes());
-        result[5..9].copy_from_slice(&self.level.to_be_bytes());
-        result[9] = self.proto;
-        result
+        Ok((
+            rem,
+            Self {
+                baker_preemble,
+                chain_id,
+                level,
+                proto,
+            },
+        ))
     }
 
     #[inline(never)]
     pub fn validate_with_watermark(&self, hw: &WaterMark) -> bool {
         WaterMark::is_valid_blocklevel(self.level) && (self.level > hw.level)
+    }
+
+    pub fn num_items(&self) -> usize {
+        3
+    }
+
+    pub fn render_item(
+        &self,
+        item_n: u8,
+        title: &mut [u8],
+        message: &mut [u8],
+        page: u8,
+    ) -> Result<u8, ViewError> {
+        use lexical_core::{write as itoa, Number};
+
+        match item_n {
+            0 => {
+                let title_content = pic_str!(b"Baking Sign");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                handle_ui_message(&pic_str!(b"Blocklevel")[..], message, page)
+            }
+            1 => {
+                let title_content = pic_str!(b"ChainID");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mut itoa_buf = [0u8; u32::FORMATTED_SIZE_DECIMAL];
+
+                handle_ui_message(itoa(self.chain_id, &mut itoa_buf), message, page)
+            }
+            2 => {
+                let title_content = pic_str!(b"Blocklevel");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let mut itoa_buf = [0u8; u32::FORMATTED_SIZE_DECIMAL];
+
+                handle_ui_message(itoa(self.level, &mut itoa_buf), message, page)
+            }
+            _ => Err(ViewError::NoData),
+        }
     }
 }
 
@@ -204,8 +262,10 @@ impl From<Bip32PathAndCurve> for [u8; 52] {
 
         let curve = from.curve.into();
         out[0] = curve;
+
         let components = from.path.components();
         out[1] = components.len() as u8;
+
         for i in 0..components.len() {
             out[2 + i * 4..2 + (i + 1) * 4].copy_from_slice(&components[i].to_be_bytes()[..]);
         }
@@ -320,7 +380,7 @@ impl Baking {
                         //TODO: show endorsement data on screen
                     }
 
-                    let digest = Self::blake2b_digest(&endorsement.to_bytes())?;
+                    let digest = Self::blake2b_digest(&cdata)?;
 
                     BakingSignUI {
                         endorsement: Some(endorsement),
@@ -336,7 +396,7 @@ impl Baking {
                         return Err(Error::DataInvalid);
                     }
 
-                    let digest = Self::blake2b_digest(&blockdata.to_bytes())?;
+                    let digest = Self::blake2b_digest(&cdata)?;
                     //TODO: show blocklevel on screen
                     BakingSignUI {
                         endorsement: None,
@@ -378,39 +438,18 @@ impl Baking {
 }
 
 struct BakingSignUI {
-    pub endorsement: Option<EndorsementData>,
+    pub endorsement: Option<EndorsementData<'static>>,
     pub blocklevel: Option<BlockData>,
     pub digest: [u8; 32],
-}
-
-fn write_u32_to_ui_buffer(num: u32, buffer: &mut [u8]) -> Result<usize, Error> {
-    //TODO: use a zxlib function for this
-    let mut num_size: usize = 0;
-    if num == 0 {
-        buffer[0] = 48;
-        num_size = 1;
-    } else {
-        let mut digits = num;
-        while digits > 0 {
-            buffer[num_size] = (48 + digits % 10) as u8; //0x30 + digit
-            digits /= 10;
-            num_size += 1;
-            if num_size >= buffer.len() {
-                return Err(Error::OutputBufferTooSmall);
-            }
-        }
-    }
-    buffer.reverse();
-    Ok(num_size)
 }
 
 //FIXME: split the below code for endorsements and blocklevel signing
 impl Viewable for BakingSignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
-        if self.endorsement.is_some() {
-            Ok(4)
-        } else if self.blocklevel.is_some() {
-            Ok(3)
+        if let Some(endorsement) = &self.endorsement {
+            Ok(endorsement.num_items() as u8)
+        } else if let Some(blocklevel) = &self.blocklevel {
+            Ok(blocklevel.num_items() as u8)
         } else {
             Err(ViewError::NoData)
         }
@@ -424,166 +463,56 @@ impl Viewable for BakingSignUI {
         page: u8,
     ) -> Result<u8, ViewError> {
         if let Some(endorsement) = &self.endorsement {
-            const BRANCH_HEX_LEN: usize = Branch::HEX_LEN;
-
-            match item_n {
-                0 => {
-                    let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let message_content = bolos::PIC::new(b"Endorsement\x00").into_inner();
-                    message[..message_content.len()].copy_from_slice(message_content);
-
-                    Ok(1)
-                }
-                1 => {
-                    let title_content = bolos::PIC::new(b"Branch\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let m_len = message.len() - 1; //null byte terminator
-                    if m_len <= BRANCH_HEX_LEN {
-                        let chunk = endorsement
-                            .branch
-                            .0
-                            .chunks(m_len / 2) //divide in non-overlapping chunks
-                            .nth(page as usize) //get the nth chunk
-                            .ok_or(ViewError::Unknown)?;
-
-                        hex::encode_to_slice(chunk, &mut message[..chunk.len() * 2])
-                            .map_err(|_| ViewError::Unknown)?;
-                        message[chunk.len() * 2] = 0; //null terminate
-
-                        let n_pages = BRANCH_HEX_LEN / m_len;
-
-                        Ok(1 + n_pages as u8)
-                    } else {
-                        hex::encode_to_slice(
-                            &endorsement.branch.0[..],
-                            &mut message[..BRANCH_HEX_LEN],
-                        )
-                        .map_err(|_| ViewError::Unknown)?;
-                        message[BRANCH_HEX_LEN] = 0; //null terminate
-
-                        Ok(1)
-                    }
-                }
-                2 => {
-                    let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let mut buffer = [0u8; 100];
-                    let num_digits = write_u32_to_ui_buffer(endorsement.level, &mut buffer)
-                        .map_err(|_| ViewError::Unknown)?;
-                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                    message[num_digits] = 0;
-
-                    Ok(1)
-                }
-                3 => {
-                    let title_content = bolos::PIC::new(b"ChainID\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let mut buffer = [0u8; 100];
-                    let num_digits = write_u32_to_ui_buffer(endorsement.chain_id, &mut buffer)
-                        .map_err(|_| ViewError::Unknown)?;
-                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                    message[num_digits] = 0;
-
-                    Ok(1)
-                }
-                _ => Err(ViewError::NoData),
-            }
+            endorsement.render_item(item_n, title, message, page)
         } else if let Some(block) = &self.blocklevel {
-            match item_n {
-                0 => {
-                    let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let message_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
-                    message[..message_content.len()].copy_from_slice(message_content);
-
-                    Ok(1)
-                }
-                1 => {
-                    let title_content = bolos::PIC::new(b"Chain_ID\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let mut buffer = [0u8; 100];
-                    let num_digits = write_u32_to_ui_buffer(block.chain_id, &mut buffer)
-                        .map_err(|_| ViewError::Unknown)?;
-                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                    message[num_digits] = 0;
-
-                    Ok(1)
-                }
-                2 => {
-                    let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let mut buffer = [0u8; 100];
-                    let num_digits = write_u32_to_ui_buffer(block.level, &mut buffer)
-                        .map_err(|_| ViewError::Unknown)?;
-                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                    message[num_digits] = 0;
-
-                    Ok(1)
-                }
-                _ => Err(ViewError::NoData),
-            }
+            block.render_item(item_n, title, message, page)
         } else {
             Err(ViewError::NoData)
         }
     }
 
     fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
-        let blocklevel: u32;
-        let is_endorsement: bool;
-        if let Some(endorsement) = &self.endorsement {
-            blocklevel = endorsement.level;
-            is_endorsement = true;
-        } else if let Some(block) = &self.blocklevel {
-            blocklevel = block.level;
-            is_endorsement = false;
-        } else {
-            return (0, Error::DataInvalid as u16);
-        }
+        let (blocklevel, is_endorsement) = match (&self.endorsement, &self.blocklevel) {
+            (Some(endorsement), None) => (endorsement.level, true),
+            (None, Some(block)) => (block.level, false),
+            _ => return (0, Error::DataInvalid as _),
+        };
+
         let new_hw = WaterMark {
             level: blocklevel,
             endorsement: is_endorsement,
         };
-        match HWM::write(new_hw) {
-            Err(_) => return (0, Error::ExecutionError as _),
-            Ok(()) => (),
+        if HWM::write(new_hw).is_err() {
+            return (0, Error::ExecutionError as _);
         }
 
-        //TODO: we need a macro for this
         let current_path = match unsafe { BAKINGPATH.read() } {
+            Ok(path) => path,
             Err(_) => return (0, Error::ExecutionError as _),
-            Ok(k) => k,
         };
+
         //path seems to be initialized so we can return it
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
         let bip32_nvm = match Bip32PathAndCurve::try_from_bytes(&current_path) {
+            Ok(bip) => bip,
             Err(e) => return (0, e as _),
-            Ok(k) => k,
         };
 
         let secret = bip32_nvm.curve.to_secret(&bip32_nvm.path);
 
         let mut sig = [0; 100];
-
-        let sz = secret.sign(&self.digest, &mut sig[..]).unwrap_or(0);
-        if sz == 0 {
-            return (0, Error::ExecutionError as _);
-        }
-
-        let mut tx = 0;
+        let sz = match secret.sign(&self.digest, &mut sig[..]) {
+            Ok(sz) => sz,
+            Err(_) => return (0, Error::ExecutionError as _),
+        };
 
         //reset globals to avoid skipping `Init`
         if let Err(e) = cleanup_globals() {
             return (0, e as _);
         }
+
+        let mut tx = 0;
 
         //write unsigned_hash to buffer
         out[tx..tx + 32].copy_from_slice(&self.digest);
@@ -789,7 +718,7 @@ mod tests {
         let (_, endorsement) = EndorsementData::from_bytes(&v).unwrap();
         assert_eq!(endorsement.baker_preemble, Preemble::InvalidPreemble);
         assert_eq!(endorsement.chain_id, 1);
-        assert_eq!(endorsement.branch, Branch([0u8; 32]));
+        assert_eq!(endorsement.branch, &[0u8; 32]);
         assert_eq!(endorsement.tag, 5);
         assert_eq!(endorsement.level, 15);
     }
