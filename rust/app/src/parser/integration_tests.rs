@@ -141,7 +141,6 @@ fn test_samples_in_file<P: AsRef<Path>>(filename: P) -> usize {
 }
 
 #[test]
-#[should_panic(expected = "not yet implemented")] //TODO
 fn common_samples() {
     test_samples_in_file(data_dir_path().join("samples.json"));
 }
