@@ -79,7 +79,8 @@ async function generate_vector(n: number): Promise<TestVector> {
     //branch is the block block hash we want to submit this transaction to
     const { hash } = await Tezos.rpc.getBlockHeader()
 
-    const amount = 0.01
+    const amount = 0.01 * MUTEZ_MULT
+    const counterNum = (parseInt(counter || '0', 10) + 1);
 
     //prepare operation
     const op: ForgeOperationsParams = {
@@ -88,12 +89,12 @@ async function generate_vector(n: number): Promise<TestVector> {
         {
           kind: OpKind.TRANSACTION,
           destination: addresses.k1,
-          amount: (amount * MUTEZ_MULT).toString(), //has to be in mutez
+          amount: amount.toString(), //has to be in mutez
           fee: estimate.suggestedFeeMutez.toString(),
           gas_limit: estimate.gasLimit.toString(),
           storage_limit: estimate.storageLimit.toString(),
           source,
-          counter: (parseInt(counter || '0', 10) + 1).toString(),
+          counter: counterNum.toString(),
         },
       ],
     }
@@ -110,12 +111,16 @@ async function generate_vector(n: number): Promise<TestVector> {
       blob: forgedOp,
       operation: op,
       output: [
-        { idx: 0, key: 'Kind', val: ledger_fmt('Transaction') }, //page 0
-        { idx: 1, key: 'Amount', val: ledger_fmt(amount.toString()) },
-        { idx: 2, key: 'Fee', val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },
-        { idx: 3, key: 'Source', val: ledger_fmt(source) },
-        { idx: 4, key: 'Destination', val: ledger_fmt(addresses.k1) },
-        { idx: 5, key: 'Storage limit', val: ledger_fmt(estimate.storageLimit.toString()) },
+        { idx: 0, key: 'Operation', val: ledger_fmt(hash) }, //page 0
+        { idx: 1, key: 'Type', val: ledger_fmt('Transaction') }, //page 0
+        { idx: 2, key: 'Source', val: ledger_fmt(source) },
+        { idx: 3, key: 'Destination', val: ledger_fmt(addresses.k1) },
+        { idx: 4, key: 'Amount', val: ledger_fmt(amount.toString()) },
+        { idx: 5, key: 'Fee', val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },
+        { idx: 6, key: 'Parameters', val: ledger_fmt('no parameters...') },
+        { idx: 7, key: 'Gas Limit', val: ledger_fmt(estimate.gasLimit.toString()) },
+        { idx: 8, key: 'Storage Limit', val: ledger_fmt(estimate.storageLimit.toString()) },
+        { idx: 9, key: 'Counter', val: ledger_fmt(counterNum.toString()) },
       ],
     }
 
