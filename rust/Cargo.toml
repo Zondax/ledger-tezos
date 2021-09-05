@@ -2,7 +2,7 @@
 members = [
     "app",
     "bolos", "bolos-sys", "bolos-impl", "bolos-mock", "bolos-common", "bolos-derive",
-    "zemu"
+    "zemu", "zuit",
 ]
 
 resolver = "2"

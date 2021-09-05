@@ -121,10 +121,21 @@ impl ApduHandler for Sign {
     }
 }
 
-struct SignUI {
+pub(crate) struct SignUI {
     hash: [u8; Sign::SIGN_HASH_SIZE],
     send_hash: bool,
     parsed: Operation<'static>,
+}
+
+#[cfg(test)]
+impl Operation<'static> {
+    pub(crate) fn to_sign_ui(self) -> SignUI {
+        SignUI {
+            hash: [0; Sign::SIGN_HASH_SIZE],
+            send_hash: false,
+            parsed: self,
+        }
+    }
 }
 
 impl SignUI {

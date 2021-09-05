@@ -19,6 +19,7 @@ use std::prelude::v1::*;
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{Map, Value};
+use zuit::MockDriver;
 
 use crate::parser::operations::Operation;
 
@@ -55,20 +56,44 @@ struct JsonOperation {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+struct ExpectedPage {
+    idx: usize,
+
+    #[serde(alias = "key")]
+    title: String,
+
+    #[serde(alias = "val")]
+    message: Vec<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 struct Sample {
     #[serde(default)]
     name: String,
     operation: JsonOperation,
     blob: String,
+    #[serde(alias = "output")]
+    ui: Option<Vec<ExpectedPage>>,
 }
 
-fn test_sample(name: &str, blob: String, branch: String, contents: Vec<Map<String, Value>>) {
+fn test_sample(
+    name: &str,
+    blob: String,
+    branch: String,
+    contents: Vec<Map<String, Value>>,
+    ui: Option<Vec<ExpectedPage>>,
+) {
     let blob = hex::decode(&blob)
         .unwrap_or_else(|e| panic!("sample {} .blob wasn't a hex string; err: {:?}", name, e));
+    let blob = blob.leak();
 
     //parse forged op blob
-    let mut parsed = Operation::new(&blob)
+    let mut parsed = Operation::new(blob)
         .unwrap_or_else(|e| panic!("sample {} couldn't be parsed; err: {:?}", name, e));
+
+    if let Some(ui) = ui {
+        verify_ui(name, parsed, ui)
+    }
 
     let mut branch_bs58 = [0; 51];
     parsed.base58_branch(&mut branch_bs58).unwrap_or_else(|e| {
@@ -124,6 +149,7 @@ fn test_samples_in_file<P: AsRef<Path>>(filename: P) -> usize {
             name,
             blob,
             operation: JsonOperation { branch, contents },
+            ui,
         },
     ) in samples.into_iter().enumerate()
     {
@@ -133,7 +159,7 @@ fn test_samples_in_file<P: AsRef<Path>>(filename: P) -> usize {
             name
         };
 
-        test_sample(&name, blob, branch, contents);
+        test_sample(&name, blob, branch, contents, ui);
         n_samples += 1;
     }
 
@@ -160,12 +186,13 @@ fn transfer_sample() {
         name: _,
         operation: JsonOperation { branch, contents },
         blob,
+        ui,
     } = samples[6].clone();
 
     //we should only have a single operation to parse
     assert_eq!(contents.len(), 1);
 
-    test_sample("#6", blob, branch, contents);
+    test_sample("#6", blob, branch, contents, ui);
 }
 
 #[test]
@@ -178,12 +205,13 @@ fn delegation_sample() {
         name: _,
         operation: JsonOperation { branch, contents },
         blob,
+        ui,
     } = samples[0].clone();
 
     //we should only have a single operation to parse
     assert_eq!(contents.len(), 1);
 
-    test_sample("#0", blob, branch, contents);
+    test_sample("#0", blob, branch, contents, ui);
 }
 
 #[test]
@@ -196,12 +224,13 @@ fn endorsement_sample() {
         name: _,
         operation: JsonOperation { branch, contents },
         blob,
+        ui,
     } = samples[3].clone();
 
     //we should only have a single operation to parse
     assert_eq!(contents.len(), 1);
 
-    test_sample("#3", blob, branch, contents);
+    test_sample("#3", blob, branch, contents, ui);
 }
 
 #[test]
@@ -214,12 +243,13 @@ fn seed_nonce_revelation_sample() {
         name: _,
         operation: JsonOperation { branch, contents },
         blob,
+        ui,
     } = samples[4].clone();
 
     //we should only have a single operation to parse
     assert_eq!(contents.len(), 1);
 
-    test_sample("#4", blob, branch, contents);
+    test_sample("#4", blob, branch, contents, ui);
 }
 
 #[test]
@@ -232,12 +262,13 @@ fn ballot_sample() {
         name: _,
         operation: JsonOperation { branch, contents },
         blob,
+        ui,
     } = samples[2].clone();
 
     //we should only have a single operation to parse
     assert_eq!(contents.len(), 1);
 
-    test_sample("#2", blob, branch, contents);
+    test_sample("#2", blob, branch, contents, ui);
 }
 
 #[test]
@@ -250,12 +281,13 @@ fn reveal_sample() {
         name: _,
         operation: JsonOperation { branch, contents },
         blob,
+        ui,
     } = samples[1].clone();
 
     //we should only have a single operation to parse
     assert_eq!(contents.len(), 1);
 
-    test_sample("#1", blob, branch, contents);
+    test_sample("#1", blob, branch, contents, ui);
 }
 
 #[test]
@@ -339,4 +371,78 @@ fn verify_operation<'b>(
             sample_name, op_n, other, op
         ),
     }
+}
+
+fn verify_ui(sample_name: &str, op: Operation<'static>, ui: Vec<ExpectedPage>) {
+    let mut driver = MockDriver::<_, 30, 4096>::new(op.to_sign_ui());
+    driver.drive();
+
+    let produced_ui = driver.out_ui();
+
+    for ExpectedPage {
+        idx,
+        title,
+        message,
+    } in ui.into_iter()
+    {
+        let produced_pages = produced_ui
+            .get(idx)
+            .unwrap_or_else(|| panic!("sample {} expected ui for item #{}", sample_name, idx));
+
+        //chain together a (repeating) title, to each produced page - expected message pair
+        let iter = std::iter::once(title)
+            .cycle()
+            .zip(produced_pages.iter().enumerate().zip(message.into_iter()));
+
+        for (expected_title, ((page_n, page), expected_message)) in iter {
+            let title = {
+                let len = strlen(&page.title[..]);
+
+                std::str::from_utf8(&page.title[..len]).unwrap_or_else(|e| {
+                    panic!(
+                        "sample {}'s title for item #{}, page #{} was not utf-8: {:?}",
+                        sample_name, idx, page_n, e
+                    )
+                })
+            };
+
+            //we just check if if starts with since we ignore the paging at the end
+            if !title.starts_with(&expected_title) {
+                panic!(
+                    "sample {}'s title for item #{}, page #{} did not match with expected! title={}; expected={}",
+                    sample_name, idx, page_n, title, expected_title
+                );
+            }
+
+            let message = {
+                let len = strlen(&page.message[..]);
+
+                std::str::from_utf8(&page.message[..len]).unwrap_or_else(|e| {
+                    panic!(
+                        "sample {}'s message for item #{}, page #{} was not utf-8: {:?}",
+                        sample_name, idx, page_n, e
+                    )
+                })
+            };
+
+            assert_eq!(
+                message, expected_message,
+                "sample {}'s message for item #{}, page #{} did not match with expected!",
+                sample_name, idx, page_n
+            )
+        }
+    }
+}
+
+/// This function returns the index of the first null byte in the slice
+fn strlen(s: &[u8]) -> usize {
+    let mut count = 0;
+    while let Some(&c) = s.get(count) {
+        if c == 0 {
+            return count;
+        }
+        count += 1;
+    }
+
+    panic!("byte slice did not terminate with null byte, s: {:x?}", s)
 }
