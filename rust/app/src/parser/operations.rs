@@ -178,9 +178,6 @@ impl<'b> OperationType<'b> {
                 let (rem, data) = SeedNonceRevelation::from_bytes(rem)?;
                 (rem, Self::SeedNonceRevelation(data))
             }
-            0x02 => todo!("double endorsement evidence"),
-            0x03 => todo!("double baking evidence"),
-            0x04 => todo!("activate account"),
             0x05 => {
                 let (rem, data) = Proposals::from_bytes(rem)?;
                 (rem, Self::Proposals(data))
@@ -189,8 +186,6 @@ impl<'b> OperationType<'b> {
                 let (rem, data) = Ballot::from_bytes(rem)?;
                 (rem, Self::Ballot(data))
             }
-            0x0A => todo!("endorsement with slot"),
-            0x11 => todo!("failing noop"),
             0x6B => {
                 let (rem, data) = Reveal::from_bytes(rem)?;
                 (rem, Self::Reveal(data))
@@ -206,6 +201,14 @@ impl<'b> OperationType<'b> {
             0x6E => {
                 let (rem, data) = Delegation::from_bytes(rem)?;
                 (rem, Self::Delegation(data))
+            }
+            //double endorsement evidence
+            //double baking evidence
+            //activate account
+            //endorsement with slot
+            //failing noop
+            0x02 | 0x03 | 0x04 | 0x0A | 0x11 => {
+                return Err(ParserError::UnimplementedOperation.into())
             }
             _ => return Err(ParserError::UnknownOperation.into()),
         };

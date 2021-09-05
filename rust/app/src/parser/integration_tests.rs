@@ -300,12 +300,13 @@ fn origination_sample() {
         name: _,
         operation: JsonOperation { branch, contents },
         blob,
+        ui,
     } = samples[20].clone();
 
     //we should only have a single operation to parse
     assert_eq!(contents.len(), 1);
 
-    test_sample("#20", blob, branch, contents);
+    test_sample("#20", blob, branch, contents, ui);
 }
 
 #[test]
