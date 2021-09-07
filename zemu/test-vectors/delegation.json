@@ -1,0 +1,757 @@
+[
+    {
+        "name": "Simple Delegation #0",
+        "blob": "0c128adef34018b096608ccd2c88110eb2e3fad9983cb8615ab2f1f38dc0ba9f6e009a6090844356d979899622d85ba1602740fcaa84cb03a4f50ecc080000",
+        "operation": {
+            "branch": "BKobi7aPeYfqMCBofHY6mzyjLEd9h7mnxuFEYR7nCdvuqHQzxWC",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244388"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BKobi7aPeYfqMCBofHY6mzyjLEd9h7mnxuFEYR7nCdvuqHQzxWC"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation Withdrawal"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "<REVOKED>"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244388"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Delegation #1",
+        "blob": "0c128adef34018b096608ccd2c88110eb2e3fad9983cb8615ab2f1f38dc0ba9f6e009a6090844356d979899622d85ba1602740fcaa84cb03a5f50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "operation": {
+            "branch": "BKobi7aPeYfqMCBofHY6mzyjLEd9h7mnxuFEYR7nCdvuqHQzxWC",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244389"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BKobi7aPeYfqMCBofHY6mzyjLEd9h7mnxuFEYR7nCdvuqHQzxWC"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244389"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Delegation #2",
+        "blob": "0c128adef34018b096608ccd2c88110eb2e3fad9983cb8615ab2f1f38dc0ba9f6e009a6090844356d979899622d85ba1602740fcaa84cb03a6f50ecc080000",
+        "operation": {
+            "branch": "BKobi7aPeYfqMCBofHY6mzyjLEd9h7mnxuFEYR7nCdvuqHQzxWC",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244390"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BKobi7aPeYfqMCBofHY6mzyjLEd9h7mnxuFEYR7nCdvuqHQzxWC"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation Withdrawal"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "<REVOKED>"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244390"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Delegation #3",
+        "blob": "7eeb14fb57d5c07869d855fdc5cfe218569a2e42827f4bd5767d0e19f0551c516e009a6090844356d979899622d85ba1602740fcaa84cb03a7f50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "operation": {
+            "branch": "BLgBHwksfq7biTFHDpTNkwaRTNF1ZiiNKQDjbaaMSzkuswJ7Fde",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244391"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLgBHwksfq7biTFHDpTNkwaRTNF1ZiiNKQDjbaaMSzkuswJ7Fde"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244391"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Delegation #4",
+        "blob": "45f2934fddd6bdb90eab569810daa7eea823bf5f259705fa20bb37f5c447def36e009a6090844356d979899622d85ba1602740fcaa84cb03a8f50ecc080000",
+        "operation": {
+            "branch": "BLF63yi2EKLpSRLjpGEKfwPsok7BcrRNFu2wedvVcmjiht3uWPU",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244392"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLF63yi2EKLpSRLjpGEKfwPsok7BcrRNFu2wedvVcmjiht3uWPU"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation Withdrawal"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "<REVOKED>"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244392"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Delegation #5",
+        "blob": "45f2934fddd6bdb90eab569810daa7eea823bf5f259705fa20bb37f5c447def36e009a6090844356d979899622d85ba1602740fcaa84cb03a9f50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "operation": {
+            "branch": "BLF63yi2EKLpSRLjpGEKfwPsok7BcrRNFu2wedvVcmjiht3uWPU",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244393"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLF63yi2EKLpSRLjpGEKfwPsok7BcrRNFu2wedvVcmjiht3uWPU"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244393"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Delegation #6",
+        "blob": "45f2934fddd6bdb90eab569810daa7eea823bf5f259705fa20bb37f5c447def36e009a6090844356d979899622d85ba1602740fcaa84cb03aaf50ecc080000",
+        "operation": {
+            "branch": "BLF63yi2EKLpSRLjpGEKfwPsok7BcrRNFu2wedvVcmjiht3uWPU",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244394"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLF63yi2EKLpSRLjpGEKfwPsok7BcrRNFu2wedvVcmjiht3uWPU"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation Withdrawal"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "<REVOKED>"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244394"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Delegation #7",
+        "blob": "5029f503ae6875e361b3d9ed862c3f2383b143b33acfee6320eac4794acb57596e009a6090844356d979899622d85ba1602740fcaa84cb03abf50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "operation": {
+            "branch": "BLKb1ok26C5UvMqibkxCwmXphoCCb7hUMFHoLMTKi87bqLe4vyi",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244395"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLKb1ok26C5UvMqibkxCwmXphoCCb7hUMFHoLMTKi87bqLe4vyi"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244395"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Delegation #8",
+        "blob": "e2071c6a8c3ec977e6510c7c7c150335d8b9ef647e47f2dd3ac9a03c1d326a596e009a6090844356d979899622d85ba1602740fcaa84cb03acf50ecc080000",
+        "operation": {
+            "branch": "BMRpuqcWXRwkVchw8oeMfohzbEkAAmJLvYfwsok2bmVx5kXj9Wi",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244396"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMRpuqcWXRwkVchw8oeMfohzbEkAAmJLvYfwsok2bmVx5kXj9Wi"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation Withdrawal"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "<REVOKED>"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244396"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Delegation #9",
+        "blob": "e2071c6a8c3ec977e6510c7c7c150335d8b9ef647e47f2dd3ac9a03c1d326a596e009a6090844356d979899622d85ba1602740fcaa84cb03adf50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "operation": {
+            "branch": "BMRpuqcWXRwkVchw8oeMfohzbEkAAmJLvYfwsok2bmVx5kXj9Wi",
+            "contents": [
+                {
+                    "kind": "delegation",
+                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "fee": "459",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244397"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMRpuqcWXRwkVchw8oeMfohzbEkAAmJLvYfwsok2bmVx5kXj9Wi"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Delegation"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Delegation",
+                "val": [
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "459"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "244397"
+                ]
+            }
+        ]
+    }
+]
