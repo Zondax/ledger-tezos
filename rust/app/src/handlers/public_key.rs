@@ -18,13 +18,7 @@ use std::convert::TryFrom;
 
 use zemu_sys::{Show, ViewError, Viewable};
 
-use crate::{
-    constants::ApduError as Error,
-    crypto,
-    dispatcher::ApduHandler,
-    sys::{self, Error as SysError},
-    utils::ApduBufferRead,
-};
+use crate::{constants::ApduError as Error, crypto, dispatcher::ApduHandler, handlers::handle_ui_message, sys::{self, Error as SysError}, utils::ApduBufferRead};
 
 pub struct GetAddress;
 
@@ -167,30 +161,15 @@ impl Viewable for AddrUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
+        use bolos::{PIC, pic_str};
+
         if let 0 = item_n {
-            let title_content = bolos::PIC::new(b"Address\x00").into_inner();
+            let title_content = pic_str!(b"Address");
 
             title[..title_content.len()].copy_from_slice(title_content);
 
             let addr_bytes = self.addr.to_base58();
-            let m_len = message.len() - 1;
-            if addr_bytes.len() > m_len {
-                let chunk = addr_bytes
-                    .chunks(m_len)
-                    .nth(page as usize)
-                    .ok_or(ViewError::Unknown)?;
-
-                let len = std::cmp::min(chunk.len(), m_len);
-                message[..len].copy_from_slice(chunk);
-
-                message[len] = 0;
-                let n_pages = addr_bytes.len() / m_len;
-                Ok(1 + n_pages as u8)
-            } else {
-                message[..addr_bytes.len()].copy_from_slice(&addr_bytes[..]);
-                message[addr_bytes.len()] = 0;
-                Ok(1)
-            }
+            handle_ui_message(&addr_bytes[..], message, page)
         } else {
             Err(ViewError::NoData)
         }
