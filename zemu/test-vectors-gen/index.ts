@@ -13,6 +13,7 @@
         "reveal": "./reveal.ts",
         "origination": "./origination.ts",
         "ballot": "./ballot.ts",
+        "proposals": "./proposals.ts",
     };
 
     if (myArgs[0] === undefined) {
