@@ -10,7 +10,8 @@
         // "simple": "./simple.ts",
         "legacy": "./legacy.ts",
         "delegation": "./delegation.ts",
-        "reveal": "./reveal.ts"
+        "reveal": "./reveal.ts",
+        "origination": "./origination.ts",
     };
 
     if (myArgs[0] === undefined) {
