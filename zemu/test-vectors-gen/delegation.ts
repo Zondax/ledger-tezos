@@ -52,7 +52,7 @@ async function generate_vector(n: number): Promise<TestVector> {
       ed10: await getAddress(app, Curve.Ed25519_Slip10),
       ed: await getAddress(app, Curve.Ed25519),
       k1: await getAddress(app, Curve.Secp256K1),
-      //p256: await getAddress(app, Curve.Secp256R1),
+      p256: await getAddress(app, Curve.Secp256R1),
     }
     console.log(`populated addresses: ${JSON.stringify(addresses)}`)
 
@@ -80,13 +80,19 @@ async function generate_vector(n: number): Promise<TestVector> {
 
     const counterNum = (parseInt(counter || '0', 10) + 1 + n);
 
-    let op_type = "Delegation";
-    let delegation_str = addresses.k1;
-    let delegate: string | undefined = addresses.k1;
-    if (n % 2 == 0) {
-      op_type = "Delegation Withdrawal"
+    let delegation_type = "Delegation";
+    let delegation_str = addresses.ed;
+    let delegate: string | undefined = addresses.ed;
+    if (n % 3 == 0) {
+      delegation_str = addresses.p256
+      delegate = addresses.p256
+    } else if (n % 2 == 0) {
+      delegation_str = addresses.k1
+      delegate = addresses.k1
+    } else if (n % 5 == 0) {
+      delegation_type = "Delegation Withdrawal"
       delegation_str = "<REVOKED>"
-      delegate = undefined;
+      delegate = undefined
     }
 
     //prepare operation
@@ -118,7 +124,7 @@ async function generate_vector(n: number): Promise<TestVector> {
       operation: op,
       output: [
         { idx: 0, key: 'Operation', val: ledger_fmt(hash) }, //page 0
-        { idx: 1, key: 'Type', val: ledger_fmt(op_type) }, //page 0
+        { idx: 1, key: 'Type', val: ledger_fmt(delegation_type) }, //page 0
         { idx: 2, key: 'Source', val: ledger_fmt(source) },
         { idx: 3, key: 'Delegation', val: ledger_fmt(delegation_str) },
         { idx: 4, key: 'Fee', val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },

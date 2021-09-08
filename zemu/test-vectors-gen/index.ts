@@ -1,10 +1,16 @@
 (async () => {
-    const myArgs = process.argv.slice(2);
+    let myArgs = process.argv.slice(2);
+
+    const force = myArgs[0] == '-f';
+    if (force) {
+        myArgs = myArgs.slice(1); //chop off the -f
+    }
 
     const options: {[index: string]: string} = {
         // "simple": "./simple.ts",
         "legacy": "./legacy.ts",
-        "delegation": "./delegation.ts"
+        "delegation": "./delegation.ts",
+        "reveal": "./reveal.ts"
     };
 
     if (myArgs[0] === undefined) {
@@ -21,10 +27,23 @@
         console.log(`Invalid option ${select} specified.`);
         console.log(`Available options: ${Object.keys(options)}`);
     } else {
+        const fs = require('fs');
         console.log(`Generating ${iters} test vectors via ${myArgs[0]} and saving to ${filename}`)
-        const vectors = await require(select).run(iters);
 
-        require('fs').writeFileSync(filename, JSON.stringify(vectors, null, 4));
-        console.log(`Saved ${iters} test vectors to ${filename}`);
+        try {
+            fs.accessSync(filename);
+            //file exists
+            if (force) {
+                console.log(`${filename} exists but -f was passed so it will be overridden`)
+                throw "forced generation"
+            }
+
+            console.log(`${filename} exists, pass '-f' as first argument to override`)
+        } catch(no_exist) {
+            const vectors = await require(select).run(iters);
+
+            fs.writeFileSync(filename, JSON.stringify(vectors, null, 4));
+            console.log(`Saved ${iters} test vectors to ${filename}`);
+        }
     }
 })();

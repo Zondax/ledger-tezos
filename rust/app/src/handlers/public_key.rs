@@ -18,7 +18,14 @@ use std::convert::TryFrom;
 
 use zemu_sys::{Show, ViewError, Viewable};
 
-use crate::{constants::ApduError as Error, crypto, dispatcher::ApduHandler, handlers::handle_ui_message, sys::{self, Error as SysError}, utils::ApduBufferRead};
+use crate::{
+    constants::ApduError as Error,
+    crypto,
+    dispatcher::ApduHandler,
+    handlers::handle_ui_message,
+    sys::{self, Error as SysError},
+    utils::ApduBufferRead,
+};
 
 pub struct GetAddress;
 
@@ -161,7 +168,7 @@ impl Viewable for AddrUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
-        use bolos::{PIC, pic_str};
+        use bolos::{pic_str, PIC};
 
         if let 0 = item_n {
             let title_content = pic_str!(b"Address");

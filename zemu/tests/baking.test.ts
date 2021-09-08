@@ -25,7 +25,6 @@ import {
   SAMPLE_ENDORSEMENT,
   SAMPLE_SEED_NONCE_REVELATION,
   SAMPLE_BALLOT,
-  SAMPLE_REVEAL,
 } from './tezos'
 
 const ed25519 = require('ed25519-supercop')
@@ -425,7 +424,6 @@ const SIGN_TEST_DATA = cartesianProduct(curves, [
   { name: 'endorsement', nav: { s: [4, 0], x: [4, 0] }, op: SAMPLE_ENDORSEMENT },
   { name: 'seed-nonce-revelation', nav: { s: [6, 0], x: [5, 0] }, op: SAMPLE_SEED_NONCE_REVELATION },
   { name: 'ballot', nav: { s: [9, 0], x: [7, 0] }, op: SAMPLE_BALLOT },
-  { name: 'reveal', nav: { s: [11, 0], x: [10, 0] }, op: SAMPLE_REVEAL },
   { name: 'proposals', nav: { s: [10, 0], x: [7, 0] }, op: SAMPLE_PROPOSALS },
   { name: 'origination', nav: { s: [14, 0], x: [13, 0] }, op: SAMPLE_ORIGINATION },
 ])

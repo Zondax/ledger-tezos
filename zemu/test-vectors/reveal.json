@@ -1,18 +1,18 @@
 [
     {
-        "name": "Simple Delegation #0",
-        "blob": "1b40a8625b360756acf8f299598f0ae20e9cd9927c551119c57d8474b01938546e009a6090844356d979899622d85ba1602740fcaa84cb03a4f50ecc0800ff02792d0b9d857f711e03998bd0a2f219c053704bae",
+        "name": "Simple Reveal #0",
+        "blob": "5b63b84e39fa2b92c91d6089fbf9c8299b2c0b2cb4bdfdc1ff76bc3c4aa9c1ed6b01011b2295c8d30e31f5d231f26e551a63a81fd2b7f602c28a1dcc080001024be779908a4b3f78f457f75106748a75357717413010d2adcf1c377c6fa39da0",
         "operation": {
-            "branch": "BKvHTybHYK17yXL6edSTMozgdX8XxqMuh8EUP9QPt78Bg5C1n5z",
+            "branch": "BLQXkwv8LQ4jdQ15GZYpFgcQfhEyho6F4dXdhjuDHBXehnB4pzq",
             "contents": [
                 {
-                    "kind": "delegation",
-                    "delegate": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
-                    "fee": "459",
+                    "kind": "reveal",
+                    "fee": "374",
                     "gas_limit": "1100",
                     "storage_limit": "0",
-                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244388"
+                    "source": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "counter": "476482",
+                    "public_key": "sppk7Zt4j5hS3FQcyLzbKnyY2XmiMZ8zV8DPPEyrLvdWhpSn1drhNfi"
                 }
             ]
         },
@@ -21,35 +21,35 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BKvHTybHYK17yXL6edSTMozgdX8XxqMuh8EUP9QPt78Bg5C1n5z"
+                    "BLQXkwv8LQ4jdQ15GZYpFgcQfhEyho6F4dXdhjuDHBXehnB4pzq"
                 ]
             },
             {
                 "idx": 1,
                 "key": "Type",
                 "val": [
-                    "Delegation"
+                    "Revelation"
                 ]
             },
             {
                 "idx": 2,
                 "key": "Source",
                 "val": [
-                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
                 ]
             },
             {
                 "idx": 3,
-                "key": "Delegation",
+                "key": "Public Key",
                 "val": [
-                    "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u"
+                    "sppk7Zt4j5hS3FQcyLzbKnyY2XmiMZ8zV8DPPEyrLvdWhpSn1drhNfi"
                 ]
             },
             {
                 "idx": 4,
                 "key": "Fee",
                 "val": [
-                    "459"
+                    "374"
                 ]
             },
             {
@@ -70,25 +70,25 @@
                 "idx": 7,
                 "key": "Counter",
                 "val": [
-                    "244388"
+                    "476482"
                 ]
             }
         ]
     },
     {
-        "name": "Simple Delegation #1",
-        "blob": "1b40a8625b360756acf8f299598f0ae20e9cd9927c551119c57d8474b01938546e009a6090844356d979899622d85ba1602740fcaa84cb03a5f50ecc0800ff00c860be673ae47ec549f9b5a01a8ccb657be75b6a",
+        "name": "Simple Reveal #1",
+        "blob": "1930251aacba97f8495cdc3951e83662ceba8086394c6978a58faf802f66367e6b009a6090844356d979899622d85ba1602740fcaa84f602a5f50ecc0800005ea2fdd9e74297ca55236a42f3426cc8bfa50314e2f1e56f66ff082b6284cc4e",
         "operation": {
-            "branch": "BKvHTybHYK17yXL6edSTMozgdX8XxqMuh8EUP9QPt78Bg5C1n5z",
+            "branch": "BKuNjMBEqpMusaVv8NcvtFZNmau2n6ueuqfd6t1Fz6AU4vfukx6",
             "contents": [
                 {
-                    "kind": "delegation",
-                    "delegate": "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ",
-                    "fee": "459",
+                    "kind": "reveal",
+                    "fee": "374",
                     "gas_limit": "1100",
                     "storage_limit": "0",
                     "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244389"
+                    "counter": "244389",
+                    "public_key": "edpkuMuJaxgsvpqk3J2gtA9EEEPzu8wjmuBUi1BvykuuYCCBs4jGUd"
                 }
             ]
         },
@@ -97,14 +97,14 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BKvHTybHYK17yXL6edSTMozgdX8XxqMuh8EUP9QPt78Bg5C1n5z"
+                    "BKuNjMBEqpMusaVv8NcvtFZNmau2n6ueuqfd6t1Fz6AU4vfukx6"
                 ]
             },
             {
                 "idx": 1,
                 "key": "Type",
                 "val": [
-                    "Delegation"
+                    "Revelation"
                 ]
             },
             {
@@ -116,16 +116,16 @@
             },
             {
                 "idx": 3,
-                "key": "Delegation",
+                "key": "Public Key",
                 "val": [
-                    "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ"
+                    "edpkuMuJaxgsvpqk3J2gtA9EEEPzu8wjmuBUi1BvykuuYCCBs4jGUd"
                 ]
             },
             {
                 "idx": 4,
                 "key": "Fee",
                 "val": [
-                    "459"
+                    "374"
                 ]
             },
             {
@@ -152,19 +152,19 @@
         ]
     },
     {
-        "name": "Simple Delegation #2",
-        "blob": "82b4b8d5fae1a73fad9a215cd54aa9bc4f23d07aa4e75f095514c52dc58a4acc6e009a6090844356d979899622d85ba1602740fcaa84cb03a6f50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "name": "Simple Reveal #2",
+        "blob": "699c67487fad1ea2adf8eb73b89a22c4bc21dbecafe7c638a29cac7f191d30c46b02792d0b9d857f711e03998bd0a2f219c053704baef602c58a1dcc08000202280242bd4885c6beb133bf21d63e24f8fca58c4a806129002ffed27b15ac3227",
         "operation": {
-            "branch": "BLhr3Un6ji69shm1ay5byj3MBVdwAhcSa9W4aAVr3KWt61EySrQ",
+            "branch": "BLWo2SPgu7tVpJ4aebyQhWYX69icQRG8B9xp1qeYfJxkHQji9Lx",
             "contents": [
                 {
-                    "kind": "delegation",
-                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
-                    "fee": "459",
+                    "kind": "reveal",
+                    "fee": "374",
                     "gas_limit": "1100",
                     "storage_limit": "0",
-                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244390"
+                    "source": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
+                    "counter": "476485",
+                    "public_key": "p2pk64snMk6AwW8PsAu4GEsykk8J57Q7SDEb4rmXRntJEWN4SkS5pQX"
                 }
             ]
         },
@@ -173,111 +173,35 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BLhr3Un6ji69shm1ay5byj3MBVdwAhcSa9W4aAVr3KWt61EySrQ"
+                    "BLWo2SPgu7tVpJ4aebyQhWYX69icQRG8B9xp1qeYfJxkHQji9Lx"
                 ]
             },
             {
                 "idx": 1,
                 "key": "Type",
                 "val": [
-                    "Delegation"
+                    "Revelation"
                 ]
             },
             {
                 "idx": 2,
                 "key": "Source",
-                "val": [
-                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
-                ]
-            },
-            {
-                "idx": 3,
-                "key": "Delegation",
-                "val": [
-                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
-                ]
-            },
-            {
-                "idx": 4,
-                "key": "Fee",
-                "val": [
-                    "459"
-                ]
-            },
-            {
-                "idx": 5,
-                "key": "Gas Limit",
-                "val": [
-                    "1100"
-                ]
-            },
-            {
-                "idx": 6,
-                "key": "Storage Limit",
-                "val": [
-                    "0"
-                ]
-            },
-            {
-                "idx": 7,
-                "key": "Counter",
-                "val": [
-                    "244390"
-                ]
-            }
-        ]
-    },
-    {
-        "name": "Simple Delegation #3",
-        "blob": "82b4b8d5fae1a73fad9a215cd54aa9bc4f23d07aa4e75f095514c52dc58a4acc6e009a6090844356d979899622d85ba1602740fcaa84cb03a7f50ecc0800ff02792d0b9d857f711e03998bd0a2f219c053704bae",
-        "operation": {
-            "branch": "BLhr3Un6ji69shm1ay5byj3MBVdwAhcSa9W4aAVr3KWt61EySrQ",
-            "contents": [
-                {
-                    "kind": "delegation",
-                    "delegate": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
-                    "fee": "459",
-                    "gas_limit": "1100",
-                    "storage_limit": "0",
-                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244391"
-                }
-            ]
-        },
-        "output": [
-            {
-                "idx": 0,
-                "key": "Operation",
-                "val": [
-                    "BLhr3Un6ji69shm1ay5byj3MBVdwAhcSa9W4aAVr3KWt61EySrQ"
-                ]
-            },
-            {
-                "idx": 1,
-                "key": "Type",
-                "val": [
-                    "Delegation"
-                ]
-            },
-            {
-                "idx": 2,
-                "key": "Source",
-                "val": [
-                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
-                ]
-            },
-            {
-                "idx": 3,
-                "key": "Delegation",
                 "val": [
                     "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u"
                 ]
             },
             {
+                "idx": 3,
+                "key": "Public Key",
+                "val": [
+                    "p2pk64snMk6AwW8PsAu4GEsykk8J57Q7SDEb4rmXRntJEWN4SkS5pQX"
+                ]
+            },
+            {
                 "idx": 4,
                 "key": "Fee",
                 "val": [
-                    "459"
+                    "374"
                 ]
             },
             {
@@ -298,25 +222,25 @@
                 "idx": 7,
                 "key": "Counter",
                 "val": [
-                    "244391"
+                    "476485"
                 ]
             }
         ]
     },
     {
-        "name": "Simple Delegation #4",
-        "blob": "5b1581420e0dc9035af3654853d022b7d53b6c6d3fb1b16885558b348f2f60876e009a6090844356d979899622d85ba1602740fcaa84cb03a8f50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "name": "Simple Reveal #3",
+        "blob": "699c67487fad1ea2adf8eb73b89a22c4bc21dbecafe7c638a29cac7f191d30c46b01011b2295c8d30e31f5d231f26e551a63a81fd2b7f602c58a1dcc080001024be779908a4b3f78f457f75106748a75357717413010d2adcf1c377c6fa39da0",
         "operation": {
-            "branch": "BLQPxJHiVH9nPnfCBQHzTE2NWZzfroVJAy9mECb5cd3LKeW1nnV",
+            "branch": "BLWo2SPgu7tVpJ4aebyQhWYX69icQRG8B9xp1qeYfJxkHQji9Lx",
             "contents": [
                 {
-                    "kind": "delegation",
-                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
-                    "fee": "459",
+                    "kind": "reveal",
+                    "fee": "374",
                     "gas_limit": "1100",
                     "storage_limit": "0",
-                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244392"
+                    "source": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "counter": "476485",
+                    "public_key": "sppk7Zt4j5hS3FQcyLzbKnyY2XmiMZ8zV8DPPEyrLvdWhpSn1drhNfi"
                 }
             ]
         },
@@ -325,35 +249,35 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BLQPxJHiVH9nPnfCBQHzTE2NWZzfroVJAy9mECb5cd3LKeW1nnV"
+                    "BLWo2SPgu7tVpJ4aebyQhWYX69icQRG8B9xp1qeYfJxkHQji9Lx"
                 ]
             },
             {
                 "idx": 1,
                 "key": "Type",
                 "val": [
-                    "Delegation"
+                    "Revelation"
                 ]
             },
             {
                 "idx": 2,
                 "key": "Source",
-                "val": [
-                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
-                ]
-            },
-            {
-                "idx": 3,
-                "key": "Delegation",
                 "val": [
                     "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
                 ]
             },
             {
+                "idx": 3,
+                "key": "Public Key",
+                "val": [
+                    "sppk7Zt4j5hS3FQcyLzbKnyY2XmiMZ8zV8DPPEyrLvdWhpSn1drhNfi"
+                ]
+            },
+            {
                 "idx": 4,
                 "key": "Fee",
                 "val": [
-                    "459"
+                    "374"
                 ]
             },
             {
@@ -374,24 +298,25 @@
                 "idx": 7,
                 "key": "Counter",
                 "val": [
-                    "244392"
+                    "476485"
                 ]
             }
         ]
     },
     {
-        "name": "Simple Delegation #5",
-        "blob": "5b1581420e0dc9035af3654853d022b7d53b6c6d3fb1b16885558b348f2f60876e009a6090844356d979899622d85ba1602740fcaa84cb03a9f50ecc080000",
+        "name": "Simple Reveal #4",
+        "blob": "d6782d26499b2d33a648c563fb681951a2275bd9181ec0096350e87458af78566b02792d0b9d857f711e03998bd0a2f219c053704baef602c78a1dcc08000202280242bd4885c6beb133bf21d63e24f8fca58c4a806129002ffed27b15ac3227",
         "operation": {
-            "branch": "BLQPxJHiVH9nPnfCBQHzTE2NWZzfroVJAy9mECb5cd3LKeW1nnV",
+            "branch": "BMLjfniC366nZ59v1z1AGtHxHXxRNgfoHGohkaM77y7HLAS8YF2",
             "contents": [
                 {
-                    "kind": "delegation",
-                    "fee": "459",
+                    "kind": "reveal",
+                    "fee": "374",
                     "gas_limit": "1100",
                     "storage_limit": "0",
-                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244393"
+                    "source": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
+                    "counter": "476487",
+                    "public_key": "p2pk64snMk6AwW8PsAu4GEsykk8J57Q7SDEb4rmXRntJEWN4SkS5pQX"
                 }
             ]
         },
@@ -400,14 +325,90 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BLQPxJHiVH9nPnfCBQHzTE2NWZzfroVJAy9mECb5cd3LKeW1nnV"
+                    "BMLjfniC366nZ59v1z1AGtHxHXxRNgfoHGohkaM77y7HLAS8YF2"
                 ]
             },
             {
                 "idx": 1,
                 "key": "Type",
                 "val": [
-                    "Delegation Withdrawal"
+                    "Revelation"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Public Key",
+                "val": [
+                    "p2pk64snMk6AwW8PsAu4GEsykk8J57Q7SDEb4rmXRntJEWN4SkS5pQX"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "374"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "476487"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Reveal #5",
+        "blob": "d6782d26499b2d33a648c563fb681951a2275bd9181ec0096350e87458af78566b009a6090844356d979899622d85ba1602740fcaa84f602a9f50ecc0800005ea2fdd9e74297ca55236a42f3426cc8bfa50314e2f1e56f66ff082b6284cc4e",
+        "operation": {
+            "branch": "BMLjfniC366nZ59v1z1AGtHxHXxRNgfoHGohkaM77y7HLAS8YF2",
+            "contents": [
+                {
+                    "kind": "reveal",
+                    "fee": "374",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244393",
+                    "public_key": "edpkuMuJaxgsvpqk3J2gtA9EEEPzu8wjmuBUi1BvykuuYCCBs4jGUd"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMLjfniC366nZ59v1z1AGtHxHXxRNgfoHGohkaM77y7HLAS8YF2"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Revelation"
                 ]
             },
             {
@@ -419,16 +420,16 @@
             },
             {
                 "idx": 3,
-                "key": "Delegation",
+                "key": "Public Key",
                 "val": [
-                    "<REVOKED>"
+                    "edpkuMuJaxgsvpqk3J2gtA9EEEPzu8wjmuBUi1BvykuuYCCBs4jGUd"
                 ]
             },
             {
                 "idx": 4,
                 "key": "Fee",
                 "val": [
-                    "459"
+                    "374"
                 ]
             },
             {
@@ -455,19 +456,19 @@
         ]
     },
     {
-        "name": "Simple Delegation #6",
-        "blob": "7a81de90ec556373c08046e0bce4a2ed616b8956ccf383d1776822c4ffe2a7756e009a6090844356d979899622d85ba1602740fcaa84cb03aaf50ecc0800ff02792d0b9d857f711e03998bd0a2f219c053704bae",
+        "name": "Simple Reveal #6",
+        "blob": "46dfe3174e54955103837740cf9c3c26481cbd118df6e0a7380005803b22b6006b01011b2295c8d30e31f5d231f26e551a63a81fd2b7f602c88a1dcc080001024be779908a4b3f78f457f75106748a75357717413010d2adcf1c377c6fa39da0",
         "operation": {
-            "branch": "BLeEcvgr3nwnBAJ4oV2Nouo8MEUvgvoRkGW1D2oWebUNK6KmJ5u",
+            "branch": "BLFVjMeK2SAasXZcu3pp2X92doNS9BBo9Vz6HcRdVz4njoaUsiz",
             "contents": [
                 {
-                    "kind": "delegation",
-                    "delegate": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
-                    "fee": "459",
+                    "kind": "reveal",
+                    "fee": "374",
                     "gas_limit": "1100",
                     "storage_limit": "0",
-                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244394"
+                    "source": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "counter": "476488",
+                    "public_key": "sppk7Zt4j5hS3FQcyLzbKnyY2XmiMZ8zV8DPPEyrLvdWhpSn1drhNfi"
                 }
             ]
         },
@@ -476,35 +477,35 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BLeEcvgr3nwnBAJ4oV2Nouo8MEUvgvoRkGW1D2oWebUNK6KmJ5u"
+                    "BLFVjMeK2SAasXZcu3pp2X92doNS9BBo9Vz6HcRdVz4njoaUsiz"
                 ]
             },
             {
                 "idx": 1,
                 "key": "Type",
                 "val": [
-                    "Delegation"
+                    "Revelation"
                 ]
             },
             {
                 "idx": 2,
                 "key": "Source",
                 "val": [
-                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
                 ]
             },
             {
                 "idx": 3,
-                "key": "Delegation",
+                "key": "Public Key",
                 "val": [
-                    "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u"
+                    "sppk7Zt4j5hS3FQcyLzbKnyY2XmiMZ8zV8DPPEyrLvdWhpSn1drhNfi"
                 ]
             },
             {
                 "idx": 4,
                 "key": "Fee",
                 "val": [
-                    "459"
+                    "374"
                 ]
             },
             {
@@ -525,25 +526,25 @@
                 "idx": 7,
                 "key": "Counter",
                 "val": [
-                    "244394"
+                    "476488"
                 ]
             }
         ]
     },
     {
-        "name": "Simple Delegation #7",
-        "blob": "7a81de90ec556373c08046e0bce4a2ed616b8956ccf383d1776822c4ffe2a7756e009a6090844356d979899622d85ba1602740fcaa84cb03abf50ecc0800ff00c860be673ae47ec549f9b5a01a8ccb657be75b6a",
+        "name": "Simple Reveal #7",
+        "blob": "46dfe3174e54955103837740cf9c3c26481cbd118df6e0a7380005803b22b6006b009a6090844356d979899622d85ba1602740fcaa84f602abf50ecc0800005ea2fdd9e74297ca55236a42f3426cc8bfa50314e2f1e56f66ff082b6284cc4e",
         "operation": {
-            "branch": "BLeEcvgr3nwnBAJ4oV2Nouo8MEUvgvoRkGW1D2oWebUNK6KmJ5u",
+            "branch": "BLFVjMeK2SAasXZcu3pp2X92doNS9BBo9Vz6HcRdVz4njoaUsiz",
             "contents": [
                 {
-                    "kind": "delegation",
-                    "delegate": "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ",
-                    "fee": "459",
+                    "kind": "reveal",
+                    "fee": "374",
                     "gas_limit": "1100",
                     "storage_limit": "0",
                     "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244395"
+                    "counter": "244395",
+                    "public_key": "edpkuMuJaxgsvpqk3J2gtA9EEEPzu8wjmuBUi1BvykuuYCCBs4jGUd"
                 }
             ]
         },
@@ -552,14 +553,14 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BLeEcvgr3nwnBAJ4oV2Nouo8MEUvgvoRkGW1D2oWebUNK6KmJ5u"
+                    "BLFVjMeK2SAasXZcu3pp2X92doNS9BBo9Vz6HcRdVz4njoaUsiz"
                 ]
             },
             {
                 "idx": 1,
                 "key": "Type",
                 "val": [
-                    "Delegation"
+                    "Revelation"
                 ]
             },
             {
@@ -571,16 +572,16 @@
             },
             {
                 "idx": 3,
-                "key": "Delegation",
+                "key": "Public Key",
                 "val": [
-                    "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ"
+                    "edpkuMuJaxgsvpqk3J2gtA9EEEPzu8wjmuBUi1BvykuuYCCBs4jGUd"
                 ]
             },
             {
                 "idx": 4,
                 "key": "Fee",
                 "val": [
-                    "459"
+                    "374"
                 ]
             },
             {
@@ -607,19 +608,19 @@
         ]
     },
     {
-        "name": "Simple Delegation #8",
-        "blob": "7a81de90ec556373c08046e0bce4a2ed616b8956ccf383d1776822c4ffe2a7756e009a6090844356d979899622d85ba1602740fcaa84cb03acf50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "name": "Simple Reveal #8",
+        "blob": "46dfe3174e54955103837740cf9c3c26481cbd118df6e0a7380005803b22b6006b02792d0b9d857f711e03998bd0a2f219c053704baef602cb8a1dcc08000202280242bd4885c6beb133bf21d63e24f8fca58c4a806129002ffed27b15ac3227",
         "operation": {
-            "branch": "BLeEcvgr3nwnBAJ4oV2Nouo8MEUvgvoRkGW1D2oWebUNK6KmJ5u",
+            "branch": "BLFVjMeK2SAasXZcu3pp2X92doNS9BBo9Vz6HcRdVz4njoaUsiz",
             "contents": [
                 {
-                    "kind": "delegation",
-                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
-                    "fee": "459",
+                    "kind": "reveal",
+                    "fee": "374",
                     "gas_limit": "1100",
                     "storage_limit": "0",
-                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244396"
+                    "source": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
+                    "counter": "476491",
+                    "public_key": "p2pk64snMk6AwW8PsAu4GEsykk8J57Q7SDEb4rmXRntJEWN4SkS5pQX"
                 }
             ]
         },
@@ -628,111 +629,35 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BLeEcvgr3nwnBAJ4oV2Nouo8MEUvgvoRkGW1D2oWebUNK6KmJ5u"
+                    "BLFVjMeK2SAasXZcu3pp2X92doNS9BBo9Vz6HcRdVz4njoaUsiz"
                 ]
             },
             {
                 "idx": 1,
                 "key": "Type",
                 "val": [
-                    "Delegation"
+                    "Revelation"
                 ]
             },
             {
                 "idx": 2,
                 "key": "Source",
-                "val": [
-                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
-                ]
-            },
-            {
-                "idx": 3,
-                "key": "Delegation",
-                "val": [
-                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
-                ]
-            },
-            {
-                "idx": 4,
-                "key": "Fee",
-                "val": [
-                    "459"
-                ]
-            },
-            {
-                "idx": 5,
-                "key": "Gas Limit",
-                "val": [
-                    "1100"
-                ]
-            },
-            {
-                "idx": 6,
-                "key": "Storage Limit",
-                "val": [
-                    "0"
-                ]
-            },
-            {
-                "idx": 7,
-                "key": "Counter",
-                "val": [
-                    "244396"
-                ]
-            }
-        ]
-    },
-    {
-        "name": "Simple Delegation #9",
-        "blob": "5b63b84e39fa2b92c91d6089fbf9c8299b2c0b2cb4bdfdc1ff76bc3c4aa9c1ed6e009a6090844356d979899622d85ba1602740fcaa84cb03adf50ecc0800ff02792d0b9d857f711e03998bd0a2f219c053704bae",
-        "operation": {
-            "branch": "BLQXkwv8LQ4jdQ15GZYpFgcQfhEyho6F4dXdhjuDHBXehnB4pzq",
-            "contents": [
-                {
-                    "kind": "delegation",
-                    "delegate": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
-                    "fee": "459",
-                    "gas_limit": "1100",
-                    "storage_limit": "0",
-                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
-                    "counter": "244397"
-                }
-            ]
-        },
-        "output": [
-            {
-                "idx": 0,
-                "key": "Operation",
-                "val": [
-                    "BLQXkwv8LQ4jdQ15GZYpFgcQfhEyho6F4dXdhjuDHBXehnB4pzq"
-                ]
-            },
-            {
-                "idx": 1,
-                "key": "Type",
-                "val": [
-                    "Delegation"
-                ]
-            },
-            {
-                "idx": 2,
-                "key": "Source",
-                "val": [
-                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
-                ]
-            },
-            {
-                "idx": 3,
-                "key": "Delegation",
                 "val": [
                     "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u"
                 ]
             },
             {
+                "idx": 3,
+                "key": "Public Key",
+                "val": [
+                    "p2pk64snMk6AwW8PsAu4GEsykk8J57Q7SDEb4rmXRntJEWN4SkS5pQX"
+                ]
+            },
+            {
                 "idx": 4,
                 "key": "Fee",
                 "val": [
-                    "459"
+                    "374"
                 ]
             },
             {
@@ -753,7 +678,83 @@
                 "idx": 7,
                 "key": "Counter",
                 "val": [
-                    "244397"
+                    "476491"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Reveal #9",
+        "blob": "2e9fa8698a1364fc22fb73225aaa0b8ff35c8bf4208d06e46b63cfc58e3900ac6b01011b2295c8d30e31f5d231f26e551a63a81fd2b7f602cb8a1dcc080001024be779908a4b3f78f457f75106748a75357717413010d2adcf1c377c6fa39da0",
+        "operation": {
+            "branch": "BL4pGsjF6SVH2L8U53Q3bURZsN36pVJkNf1QEnWdJhXPRN9mFmV",
+            "contents": [
+                {
+                    "kind": "reveal",
+                    "fee": "374",
+                    "gas_limit": "1100",
+                    "storage_limit": "0",
+                    "source": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "counter": "476491",
+                    "public_key": "sppk7Zt4j5hS3FQcyLzbKnyY2XmiMZ8zV8DPPEyrLvdWhpSn1drhNfi"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BL4pGsjF6SVH2L8U53Q3bURZsN36pVJkNf1QEnWdJhXPRN9mFmV"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Revelation"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Public Key",
+                "val": [
+                    "sppk7Zt4j5hS3FQcyLzbKnyY2XmiMZ8zV8DPPEyrLvdWhpSn1drhNfi"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Fee",
+                "val": [
+                    "374"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Gas Limit",
+                "val": [
+                    "1100"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Storage Limit",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Counter",
+                "val": [
+                    "476491"
                 ]
             }
         ]
