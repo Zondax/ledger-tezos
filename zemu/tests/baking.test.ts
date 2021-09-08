@@ -23,7 +23,6 @@ import {
   SAMPLE_PROPOSALS,
   SAMPLE_ENDORSEMENT,
   SAMPLE_SEED_NONCE_REVELATION,
-  SAMPLE_BALLOT,
 } from './tezos'
 
 const ed25519 = require('ed25519-supercop')
@@ -422,7 +421,6 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
 const SIGN_TEST_DATA = cartesianProduct(curves, [
   { name: 'endorsement', nav: { s: [4, 0], x: [4, 0] }, op: SAMPLE_ENDORSEMENT },
   { name: 'seed-nonce-revelation', nav: { s: [6, 0], x: [5, 0] }, op: SAMPLE_SEED_NONCE_REVELATION },
-  { name: 'ballot', nav: { s: [9, 0], x: [7, 0] }, op: SAMPLE_BALLOT },
   { name: 'proposals', nav: { s: [10, 0], x: [7, 0] }, op: SAMPLE_PROPOSALS },
 ])
 

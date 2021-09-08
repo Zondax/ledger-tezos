@@ -12,6 +12,7 @@
         "delegation": "./delegation.ts",
         "reveal": "./reveal.ts",
         "origination": "./origination.ts",
+        "ballot": "./ballot.ts",
     };
 
     if (myArgs[0] === undefined) {
