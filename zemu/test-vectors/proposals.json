@@ -1,0 +1,622 @@
+[
+    {
+        "name": "Simple Proposals #0",
+        "blob": "b2edbcafd1e6a3ccf0ada55d8e291be8dd01dd475233334bf22c1eb1c484e9ee05009a6090844356d979899622d85ba1602740fcaa8400000000000000403e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb4596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba56",
+        "operation": {
+            "branch": "BM55pywwm3TMe2rVaNU6eq1oBZL2SMqCDoqnp9XUH4hAs7raTdY",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 0,
+                    "proposals": [
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb",
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BM55pywwm3TMe2rVaNU6eq1oBZL2SMqCDoqnp9XUH4hAs7raTdY"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Proposals #1",
+        "blob": "93e90f0dd92c1389a7a0158aa7cbe13e5eb479d98c9c3c2c25032b8e27ef663405009a6090844356d979899622d85ba1602740fcaa8400000001000000404596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba563e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb",
+        "operation": {
+            "branch": "BLqRWQqBMa7wzbXsjQSqvLkv3JoxZTcL1TDtMbjFMeyDTu7zSML",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 1,
+                    "proposals": [
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i",
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLqRWQqBMa7wzbXsjQSqvLkv3JoxZTcL1TDtMbjFMeyDTu7zSML"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "1"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Proposals #2",
+        "blob": "93e90f0dd92c1389a7a0158aa7cbe13e5eb479d98c9c3c2c25032b8e27ef663405009a6090844356d979899622d85ba1602740fcaa8400000002000000403e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb4596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba56",
+        "operation": {
+            "branch": "BLqRWQqBMa7wzbXsjQSqvLkv3JoxZTcL1TDtMbjFMeyDTu7zSML",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 2,
+                    "proposals": [
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb",
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLqRWQqBMa7wzbXsjQSqvLkv3JoxZTcL1TDtMbjFMeyDTu7zSML"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "2"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Proposals #3",
+        "blob": "7ff40fcd58610a5e5576711e7ac5c7ad94344e36129b454142aed4955edde1ad05009a6090844356d979899622d85ba1602740fcaa8400000003000000404596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba563e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb",
+        "operation": {
+            "branch": "BLgdjSmUASh9veptJMEP9NLHvCWQpyB1RVXmYxiDGnoLeYDsCmZ",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 3,
+                    "proposals": [
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i",
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLgdjSmUASh9veptJMEP9NLHvCWQpyB1RVXmYxiDGnoLeYDsCmZ"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "3"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Proposals #4",
+        "blob": "7ff40fcd58610a5e5576711e7ac5c7ad94344e36129b454142aed4955edde1ad05009a6090844356d979899622d85ba1602740fcaa8400000004000000403e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb4596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba56",
+        "operation": {
+            "branch": "BLgdjSmUASh9veptJMEP9NLHvCWQpyB1RVXmYxiDGnoLeYDsCmZ",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 4,
+                    "proposals": [
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb",
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLgdjSmUASh9veptJMEP9NLHvCWQpyB1RVXmYxiDGnoLeYDsCmZ"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "4"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Proposals #5",
+        "blob": "7ff40fcd58610a5e5576711e7ac5c7ad94344e36129b454142aed4955edde1ad05009a6090844356d979899622d85ba1602740fcaa8400000005000000404596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba563e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb",
+        "operation": {
+            "branch": "BLgdjSmUASh9veptJMEP9NLHvCWQpyB1RVXmYxiDGnoLeYDsCmZ",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 5,
+                    "proposals": [
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i",
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLgdjSmUASh9veptJMEP9NLHvCWQpyB1RVXmYxiDGnoLeYDsCmZ"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "5"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Proposals #6",
+        "blob": "14bdd6a9ccd934f1b826beea6c40cd723493a7722dbc3b92f13438a6843eef6905009a6090844356d979899622d85ba1602740fcaa8400000006000000403e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb4596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba56",
+        "operation": {
+            "branch": "BKsR9hfpRh7Ajk2cir63njQ2xBSR4YS7jJwdsoQkvt3DvGjEdFw",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 6,
+                    "proposals": [
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb",
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BKsR9hfpRh7Ajk2cir63njQ2xBSR4YS7jJwdsoQkvt3DvGjEdFw"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "6"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Proposals #7",
+        "blob": "14bdd6a9ccd934f1b826beea6c40cd723493a7722dbc3b92f13438a6843eef6905009a6090844356d979899622d85ba1602740fcaa8400000007000000404596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba563e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb",
+        "operation": {
+            "branch": "BKsR9hfpRh7Ajk2cir63njQ2xBSR4YS7jJwdsoQkvt3DvGjEdFw",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 7,
+                    "proposals": [
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i",
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BKsR9hfpRh7Ajk2cir63njQ2xBSR4YS7jJwdsoQkvt3DvGjEdFw"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "7"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Proposals #8",
+        "blob": "96e0f6056003e94fb2553aafbf3f1410788b77bdb91a3433033b02fab848be4705009a6090844356d979899622d85ba1602740fcaa8400000008000000403e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb4596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba56",
+        "operation": {
+            "branch": "BLrjL9KuvUhs7sevZvsTzUJygwGy9wugi64RuoZJJu45fEVvrEz",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 8,
+                    "proposals": [
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb",
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLrjL9KuvUhs7sevZvsTzUJygwGy9wugi64RuoZJJu45fEVvrEz"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "8"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Proposals #9",
+        "blob": "96e0f6056003e94fb2553aafbf3f1410788b77bdb91a3433033b02fab848be4705009a6090844356d979899622d85ba1602740fcaa8400000009000000404596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba563e5e3a606afab74a59ca09e333633e2770b6492c5e594455b71e9a2f0ea92afb",
+        "operation": {
+            "branch": "BLrjL9KuvUhs7sevZvsTzUJygwGy9wugi64RuoZJJu45fEVvrEz",
+            "contents": [
+                {
+                    "kind": "proposals",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 9,
+                    "proposals": [
+                        "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i",
+                        "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                    ]
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLrjL9KuvUhs7sevZvsTzUJygwGy9wugi64RuoZJJu45fEVvrEz"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Proposals"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "9"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal #1",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Proposal #2",
+                "val": [
+                    "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+                ]
+            }
+        ]
+    }
+]
