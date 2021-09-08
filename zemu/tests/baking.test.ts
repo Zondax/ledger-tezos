@@ -20,7 +20,6 @@ import { APP_DERIVATION, cartesianProduct, curves, defaultOptions } from './comm
 import * as secp256k1 from 'noble-secp256k1'
 
 import {
-  SAMPLE_ENDORSEMENT,
   SAMPLE_SEED_NONCE_REVELATION,
 } from './tezos'
 
@@ -418,7 +417,6 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
 })
 
 const SIGN_TEST_DATA = cartesianProduct(curves, [
-  { name: 'endorsement', nav: { s: [4, 0], x: [4, 0] }, op: SAMPLE_ENDORSEMENT },
   { name: 'seed-nonce-revelation', nav: { s: [6, 0], x: [5, 0] }, op: SAMPLE_SEED_NONCE_REVELATION },
 ])
 

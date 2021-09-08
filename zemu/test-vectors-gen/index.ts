@@ -14,6 +14,7 @@
         "origination": "./origination.ts",
         "ballot": "./ballot.ts",
         "proposals": "./proposals.ts",
+        "endorsement": "./endorsement.ts",
     };
 
     if (myArgs[0] === undefined) {
