@@ -71,15 +71,10 @@ async function generate_vector(n: number): Promise<TestVector> {
     //slice to skip "m/" which is not wanted by taquito
     //false so prompt is optional
     //derivation type is optional but we specify for clarity
-    try {
     Tezos.setProvider({
       signer: new LedgerSigner(sim.getTransport(), APP_DERIVATION.slice(2), false, derivation_type),
       forger: new LocalForger(),
     })
-    } catch(e) {
-      console.log(e);
-      throw e;
-    }
 
     // estimate fees of operation (alternatively can be set manually)
     const mby_estimate = await Tezos.estimate.reveal();
@@ -134,9 +129,6 @@ async function generate_vector(n: number): Promise<TestVector> {
     }
 
     return test_vector
-  } catch (e) {
-    console.log(e)
-    throw e;
   } finally {
     await sim.close()
   }

@@ -19,10 +19,6 @@ import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import { APP_DERIVATION, cartesianProduct, curves, defaultOptions } from './common'
 import * as secp256k1 from 'noble-secp256k1'
 
-import {
-  SAMPLE_SEED_NONCE_REVELATION,
-} from './tezos'
-
 const ed25519 = require('ed25519-supercop')
 
 const Resolve = require('path').resolve
@@ -417,10 +413,9 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
 })
 
 const SIGN_TEST_DATA = cartesianProduct(curves, [
-  { name: 'seed-nonce-revelation', nav: { s: [6, 0], x: [5, 0] }, op: SAMPLE_SEED_NONCE_REVELATION },
 ])
 
-describe.each(models)('Standard baking [%s] - sign operation', function (m) {
+describe.skip.each(models)('Standard baking [%s] - sign operation', function (m) {
   test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
     const sim = new Zemu(m.path)
     try {
@@ -471,7 +466,7 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
   })
 })
 
-describe.each(models)('Standard baking [%s]; legacy - sign op with hash', function (m) {
+describe.skip.each(models)('Standard baking [%s]; legacy - sign op with hash', function (m) {
   test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
     const sim = new Zemu(m.path)
     try {

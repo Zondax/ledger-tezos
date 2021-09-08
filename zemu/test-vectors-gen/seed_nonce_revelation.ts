@@ -1,5 +1,5 @@
 import { OpKind, TezosToolkit } from '@taquito/taquito'
-import { ForgeOperationsParams, OperationContentsBallotEnum } from '@taquito/rpc'
+import { ForgeOperationsParams } from '@taquito/rpc'
 import { LedgerSigner, DerivationType } from '@taquito/ledger-signer'
 import { LocalForger } from '@taquito/local-forging'
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
@@ -69,34 +69,25 @@ async function generate_vector(n: number): Promise<TestVector> {
       forger: new LocalForger(),
     })
 
+    const randomBytesArr = Array.from({ length: 32 }, () => Math.floor(Math.random() * 255))
+    const randomBytes = Buffer.from(randomBytesArr).toString('hex')
+
     const source = await Tezos.signer.publicKeyHash()
 
     const { counter } = await Tezos.rpc.getContract(source)
     //branch is the block block hash we want to submit this transaction to
     const { hash } = await Tezos.rpc.getBlockHeader()
 
-    const counterNum = (parseInt(counter || '0', 10) + 1 + n);
-
-    let ballot: OperationContentsBallotEnum = "pass";
-    let proposal = "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV";
-    if (n % 3 == 0) {
-      ballot = "yay"
-    } else if (n % 2 == 0) {
-      proposal = "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
-      ballot = "nay"
-    }
-
+    const counterNum = parseInt(counter || '0', 10) + 1 + n
 
     //prepare operation
     const op: ForgeOperationsParams = {
       branch: hash,
       contents: [
         {
-          kind: OpKind.BALLOT,
-          source,
-          period: n,
-          ballot,
-          proposal
+          kind: OpKind.SEED_NONCE_REVELATION,
+          level: n,
+          nonce: randomBytes,
         },
       ],
     }
@@ -109,16 +100,14 @@ async function generate_vector(n: number): Promise<TestVector> {
 
     //generate test vector with operation and blob
     const test_vector: TestVector = {
-      name: `Simple Ballot #${n}`,
+      name: `Simple Seed Nonce Revelation #${n}`,
       blob: forgedOp,
       operation: op,
       output: [
         { idx: 0, key: 'Operation', val: ledger_fmt(hash) }, //page 0
-        { idx: 1, key: 'Type', val: ledger_fmt("Ballot") }, //page 0
-        { idx: 2, key: 'Source', val: ledger_fmt(source) },
-        { idx: 3, key: 'Period', val: ledger_fmt(n.toString()) },
-        { idx: 4, key: 'Proposal', val: ledger_fmt(proposal) },
-        { idx: 5, key: 'Vote', val: ledger_fmt(ballot) },
+        { idx: 1, key: 'Type', val: ledger_fmt('Seed Nonce Revelation') }, //page 0
+        { idx: 2, key: 'Level', val: ledger_fmt(n.toString()) },
+        { idx: 3, key: 'Nonce', val: ledger_fmt(randomBytes) },
       ],
     }
 

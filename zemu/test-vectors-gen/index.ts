@@ -15,6 +15,7 @@
         "ballot": "./ballot.ts",
         "proposals": "./proposals.ts",
         "endorsement": "./endorsement.ts",
+        "seed": "./seed_nonce_revelation.ts",
     };
 
     if (myArgs[0] === undefined) {
