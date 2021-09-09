@@ -215,6 +215,7 @@ impl Viewable for SignUI {
                 OperationType::Reveal(rev) => rev.render_item(item_n, title, message, page),
                 OperationType::Proposals(props) => props.render_item(item_n, title, message, page),
                 OperationType::Origination(orig) => orig.render_item(item_n, title, message, page),
+                OperationType::ActivateAccount(act) => act.render_item(item_n, title, message, page),
             }
         } else {
             Err(ViewError::NoData)

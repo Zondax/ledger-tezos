@@ -143,6 +143,7 @@ mod proposals;
 mod reveal;
 mod seed_nonce_revelation;
 mod transfer;
+mod activate_account;
 
 pub use ballot::Ballot;
 pub use delegation::Delegation;
@@ -152,6 +153,7 @@ pub use proposals::Proposals;
 pub use reveal::Reveal;
 pub use seed_nonce_revelation::SeedNonceRevelation;
 pub use transfer::Transfer;
+pub use activate_account::ActivateAccount;
 
 #[derive(Debug, Clone, Copy)]
 pub enum OperationType<'b> {
@@ -163,6 +165,7 @@ pub enum OperationType<'b> {
     Reveal(Reveal<'b>),
     Proposals(Proposals<'b>),
     Origination(Origination<'b>),
+    ActivateAccount(ActivateAccount<'b>)
 }
 
 impl<'b> OperationType<'b> {
@@ -177,6 +180,10 @@ impl<'b> OperationType<'b> {
             0x01 => {
                 let (rem, data) = SeedNonceRevelation::from_bytes(rem)?;
                 (rem, Self::SeedNonceRevelation(data))
+            }
+            0x04 => {
+                let (rem, data) = ActivateAccount::from_bytes(rem)?;
+                (rem, Self::ActivateAccount(data))
             }
             0x05 => {
                 let (rem, data) = Proposals::from_bytes(rem)?;
@@ -207,7 +214,7 @@ impl<'b> OperationType<'b> {
             //activate account
             //endorsement with slot
             //failing noop
-            0x02 | 0x03 | 0x04 | 0x0A | 0x11 => {
+            0x02 | 0x03 | 0x0A | 0x11 => {
                 return Err(ParserError::UnimplementedOperation.into())
             }
             _ => return Err(ParserError::UnknownOperation.into()),
@@ -234,6 +241,7 @@ impl<'b> OperationType<'b> {
             Self::Reveal(rev) => rev.num_items(),
             Self::Proposals(prop) => prop.num_items(),
             Self::Origination(orig) => orig.num_items(),
+            Self::ActivateAccount(act) => act.num_items(),
         }
     }
 }

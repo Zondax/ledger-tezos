@@ -35,6 +35,11 @@ both:
 	$(MAKE)
 	BAKING=tezos_baking $(MAKE)
 
+test_vectors:
+	cd zemu && \
+		yarn test-vectors-generate activation
+	$(MAKE) -C rust test_vectors
+
 .PHONY: legacy legacy_wallet legacy_baking legacy_impl
 legacy:
 	$(MAKE) clean_legacy

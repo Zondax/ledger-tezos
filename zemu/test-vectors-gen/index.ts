@@ -3,7 +3,8 @@
 
     const options: {[index: string]: string} = {
         // "simple": "./simple.ts",
-        "legacy": "./legacy.ts"
+        "legacy": "./legacy.ts",
+        "activation": "./activate_account.ts",
     };
 
     if (myArgs[0] === undefined) {
