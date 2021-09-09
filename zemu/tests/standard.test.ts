@@ -19,6 +19,8 @@ import { APP_DERIVATION, cartesianProduct, curves, defaultOptions, models } from
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import * as secp256k1 from 'noble-secp256k1'
 
+import { SAMPLE_TRANSACTION } from './tezos'
+
 const ed25519 = require('ed25519-supercop')
 
 describe.each(models)('Standard', function (m) {
@@ -145,10 +147,9 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
   })
 })
 
-const SIGN_TEST_DATA = cartesianProduct(curves, [
-])
+const SIGN_TEST_DATA = cartesianProduct(curves, [{ name: 'transfer', nav: { s: [13, 0], x: [11, 0] }, op: SAMPLE_TRANSACTION }])
 
-describe.skip.each(models)('Standard [%s]; sign operation', function (m) {
+describe.each(models)('Standard [%s]; sign operation', function (m) {
   test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
     const sim = new Zemu(m.path)
     try {
@@ -202,7 +203,7 @@ describe.skip.each(models)('Standard [%s]; sign operation', function (m) {
   })
 })
 
-describe.skip.each(models)('Standard [%s]; legacy - sign op with hash', function (m) {
+describe.each(models)('Standard [%s]; legacy - sign op with hash', function (m) {
   test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
     const sim = new Zemu(m.path)
     try {
