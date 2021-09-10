@@ -44,6 +44,7 @@ test_vectors:
 		yarn test-vectors-generate proposals && \
 		yarn test-vectors-generate endorsement && \
 		yarn test-vectors-generate seed && \
+    yarn test-vectors-generate activation && \
 		yarn test-vectors-generate origination
 	$(MAKE) -C rust test_vectors
 

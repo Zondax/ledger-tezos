@@ -310,6 +310,29 @@ fn origination_sample() {
 }
 
 #[test]
+fn account_activation_sample() {
+    //retrieve all samples
+    let samples: Vec<Sample> = get_json_from_data(data_dir_path().join("samples.json"));
+
+    //get 6th sample
+    let Sample {
+        name: _,
+        operation: JsonOperation { branch, contents },
+        blob,
+        ui,
+    } = samples
+        .last()
+        .cloned()
+        .expect("we have at least one element in our samples!");
+
+    //we should only have a single operation to parse
+    assert_eq!(contents.len(), 1);
+
+    let name = format!("#{}", samples.len() - 1);
+    test_sample(&name, blob, branch, contents, ui);
+}
+
+#[test]
 fn test_vectors() {
     let mut test_vectors_found = 0;
     let mut total_tests = 0;
@@ -367,6 +390,7 @@ fn verify_operation<'b>(
         (OperationType::Reveal(rev), "reveal") => rev.is(json),
         (OperationType::Proposals(prop), "proposals") => prop.is(json),
         (OperationType::Origination(orig), "origination") => orig.is(json),
+        (OperationType::ActivateAccount(act), "activate_account") => act.is(json),
         (op, other) => panic!(
             "sample {}[{}]; expected op kind: {}, parsed as: {:?}",
             sample_name, op_n, other, op
