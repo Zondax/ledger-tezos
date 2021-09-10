@@ -375,7 +375,9 @@ fn verify_operation<'b>(
 }
 
 fn verify_ui(sample_name: &str, op: Operation<'static>, ui: Vec<ExpectedPage>) {
-    let mut driver = MockDriver::<_, 30, 4096>::new(op.to_sign_ui());
+    let mut driver = MockDriver::<_, 18, 4096>::new(op.to_sign_ui());
+
+    println!("Checking UI for sample {:?}...", sample_name);
     driver.drive();
 
     let produced_ui = driver.out_ui();

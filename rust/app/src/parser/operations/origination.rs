@@ -103,7 +103,7 @@ impl<'b> Origination<'b> {
 
 impl<'a> DisplayableOperation for Origination<'a> {
     fn num_items(&self) -> usize {
-        1 + 8
+        1 + 9
     }
 
     #[inline(never)]
@@ -216,7 +216,18 @@ impl<'a> DisplayableOperation for Origination<'a> {
 
                 handle_ui_message(itoa(storage_limit, &mut zarith_buf), message, page)
             }
+            //counter
+            9 => {
+                let title_content = pic_str!(b"Counter");
+                title[..title_content.len()].copy_from_slice(title_content);
 
+                let (_, counter) = self
+                    .counter()
+                    .read_as::<usize>()
+                    .ok_or(ViewError::Unknown)?;
+
+                handle_ui_message(itoa(counter, &mut zarith_buf), message, page)
+            }
             _ => Err(ViewError::NoData),
         }
     }

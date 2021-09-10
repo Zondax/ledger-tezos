@@ -19,16 +19,7 @@ import { APP_DERIVATION, cartesianProduct, curves, defaultOptions, models } from
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import * as secp256k1 from 'noble-secp256k1'
 
-import {
-  SAMPLE_PROPOSALS,
-  SAMPLE_ORIGINATION,
-  SAMPLE_TRANSACTION,
-  SAMPLE_DELEGATION,
-  SAMPLE_ENDORSEMENT,
-  SAMPLE_SEED_NONCE_REVELATION,
-  SAMPLE_BALLOT,
-  SAMPLE_REVEAL,
-} from './tezos'
+import { SAMPLE_TRANSACTION } from './tezos'
 
 const ed25519 = require('ed25519-supercop')
 
@@ -156,16 +147,7 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
   })
 })
 
-const SIGN_TEST_DATA = cartesianProduct(curves, [
-  { name: 'transfer', nav: { s: [13, 0], x: [11, 0] }, op: SAMPLE_TRANSACTION },
-  { name: 'delegation', nav: { s: [11, 0], x: [9, 0] }, op: SAMPLE_DELEGATION },
-  { name: 'endorsement', nav: { s: [4, 0], x: [4, 0] }, op: SAMPLE_ENDORSEMENT },
-  { name: 'seed-nonce-revelation', nav: { s: [6, 0], x: [5, 0] }, op: SAMPLE_SEED_NONCE_REVELATION },
-  { name: 'ballot', nav: { s: [9, 0], x: [7, 0] }, op: SAMPLE_BALLOT },
-  { name: 'reveal', nav: { s: [11, 0], x: [10, 0] }, op: SAMPLE_REVEAL },
-  { name: 'proposals', nav: { s: [10, 0], x: [7, 0] }, op: SAMPLE_PROPOSALS },
-  { name: 'origination', nav: { s: [14, 0], x: [13, 0] }, op: SAMPLE_ORIGINATION },
-])
+const SIGN_TEST_DATA = cartesianProduct(curves, [{ name: 'transfer', nav: { s: [13, 0], x: [11, 0] }, op: SAMPLE_TRANSACTION }])
 
 describe.each(models)('Standard [%s]; sign operation', function (m) {
   test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {

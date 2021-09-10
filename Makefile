@@ -35,6 +35,18 @@ both:
 	$(MAKE)
 	BAKING=tezos_baking $(MAKE)
 
+test_vectors:
+	cd zemu && \
+		yarn test-vectors-generate legacy && \
+		yarn test-vectors-generate delegation && \
+		yarn test-vectors-generate reveal && \
+		yarn test-vectors-generate ballot && \
+		yarn test-vectors-generate proposals && \
+		yarn test-vectors-generate endorsement && \
+		yarn test-vectors-generate seed && \
+		yarn test-vectors-generate origination
+	$(MAKE) -C rust test_vectors
+
 .PHONY: legacy legacy_wallet legacy_baking legacy_impl
 legacy:
 	$(MAKE) clean_legacy

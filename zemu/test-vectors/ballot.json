@@ -1,0 +1,602 @@
+[
+    {
+        "name": "Simple Ballot #0",
+        "blob": "efda90da510cfd93d21cbff8ff233cb533035c6aa7802838d8f3cd12d214689906009a6090844356d979899622d85ba1602740fcaa8400000000cbb944f74244ea2681981f25995f8ebba8ff6cee8c036892fe901cb760c4e39e00",
+        "operation": {
+            "branch": "BMXv5Vi3SjLsodZyUSstYbJ9Fzeu5wWbuJnCu5rTPbkUwDp5E21",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 0,
+                    "ballot": "yay",
+                    "proposal": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMXv5Vi3SjLsodZyUSstYbJ9Fzeu5wWbuJnCu5rTPbkUwDp5E21"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "yay"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Ballot #1",
+        "blob": "efda90da510cfd93d21cbff8ff233cb533035c6aa7802838d8f3cd12d214689906009a6090844356d979899622d85ba1602740fcaa8400000001cbb944f74244ea2681981f25995f8ebba8ff6cee8c036892fe901cb760c4e39e02",
+        "operation": {
+            "branch": "BMXv5Vi3SjLsodZyUSstYbJ9Fzeu5wWbuJnCu5rTPbkUwDp5E21",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 1,
+                    "ballot": "pass",
+                    "proposal": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMXv5Vi3SjLsodZyUSstYbJ9Fzeu5wWbuJnCu5rTPbkUwDp5E21"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "1"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "pass"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Ballot #2",
+        "blob": "5f88d54d53299acbc38642aa3e0f88bf2b1abe26e911ca0b87f002265cac5e1406009a6090844356d979899622d85ba1602740fcaa84000000024596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba5601",
+        "operation": {
+            "branch": "BLSMdroVxJ9KEc6SQau6ptjbYMpKHfWzHMPmNserNYVuoYa5QzN",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 2,
+                    "ballot": "nay",
+                    "proposal": "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLSMdroVxJ9KEc6SQau6ptjbYMpKHfWzHMPmNserNYVuoYa5QzN"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "2"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "nay"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Ballot #3",
+        "blob": "5f88d54d53299acbc38642aa3e0f88bf2b1abe26e911ca0b87f002265cac5e1406009a6090844356d979899622d85ba1602740fcaa8400000003cbb944f74244ea2681981f25995f8ebba8ff6cee8c036892fe901cb760c4e39e00",
+        "operation": {
+            "branch": "BLSMdroVxJ9KEc6SQau6ptjbYMpKHfWzHMPmNserNYVuoYa5QzN",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 3,
+                    "ballot": "yay",
+                    "proposal": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLSMdroVxJ9KEc6SQau6ptjbYMpKHfWzHMPmNserNYVuoYa5QzN"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "3"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "yay"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Ballot #4",
+        "blob": "5f88d54d53299acbc38642aa3e0f88bf2b1abe26e911ca0b87f002265cac5e1406009a6090844356d979899622d85ba1602740fcaa84000000044596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba5601",
+        "operation": {
+            "branch": "BLSMdroVxJ9KEc6SQau6ptjbYMpKHfWzHMPmNserNYVuoYa5QzN",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 4,
+                    "ballot": "nay",
+                    "proposal": "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLSMdroVxJ9KEc6SQau6ptjbYMpKHfWzHMPmNserNYVuoYa5QzN"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "4"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "nay"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Ballot #5",
+        "blob": "cd85332e4a45366a4ca26e74e72c0503af0e8d3720f9d3ae825450efdaf5cd6c06009a6090844356d979899622d85ba1602740fcaa8400000005cbb944f74244ea2681981f25995f8ebba8ff6cee8c036892fe901cb760c4e39e02",
+        "operation": {
+            "branch": "BMGo5NQfhJ3kbXqJyGyZmDWmsv8fJKnMvoBwrxrtTSNbM5pFbXm",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 5,
+                    "ballot": "pass",
+                    "proposal": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMGo5NQfhJ3kbXqJyGyZmDWmsv8fJKnMvoBwrxrtTSNbM5pFbXm"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "5"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "pass"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Ballot #6",
+        "blob": "cd85332e4a45366a4ca26e74e72c0503af0e8d3720f9d3ae825450efdaf5cd6c06009a6090844356d979899622d85ba1602740fcaa8400000006cbb944f74244ea2681981f25995f8ebba8ff6cee8c036892fe901cb760c4e39e00",
+        "operation": {
+            "branch": "BMGo5NQfhJ3kbXqJyGyZmDWmsv8fJKnMvoBwrxrtTSNbM5pFbXm",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 6,
+                    "ballot": "yay",
+                    "proposal": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMGo5NQfhJ3kbXqJyGyZmDWmsv8fJKnMvoBwrxrtTSNbM5pFbXm"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "6"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "yay"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Ballot #7",
+        "blob": "2f1541f5fbf137164b1bb64b2598d8b575a534e7a72a59cecb804806bff03bed06009a6090844356d979899622d85ba1602740fcaa8400000007cbb944f74244ea2681981f25995f8ebba8ff6cee8c036892fe901cb760c4e39e02",
+        "operation": {
+            "branch": "BL521TEXuVWaT13SPtkKcGCYxLsAcepT48wXun3KkG1L7M83SVM",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 7,
+                    "ballot": "pass",
+                    "proposal": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BL521TEXuVWaT13SPtkKcGCYxLsAcepT48wXun3KkG1L7M83SVM"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "7"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "pass"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Ballot #8",
+        "blob": "2f1541f5fbf137164b1bb64b2598d8b575a534e7a72a59cecb804806bff03bed06009a6090844356d979899622d85ba1602740fcaa84000000084596285c6871691e25196c6a8d26d90a3ac91375731e3926103c517a13a0ba5601",
+        "operation": {
+            "branch": "BL521TEXuVWaT13SPtkKcGCYxLsAcepT48wXun3KkG1L7M83SVM",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 8,
+                    "ballot": "nay",
+                    "proposal": "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BL521TEXuVWaT13SPtkKcGCYxLsAcepT48wXun3KkG1L7M83SVM"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "8"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "nay"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Ballot #9",
+        "blob": "2f1541f5fbf137164b1bb64b2598d8b575a534e7a72a59cecb804806bff03bed06009a6090844356d979899622d85ba1602740fcaa8400000009cbb944f74244ea2681981f25995f8ebba8ff6cee8c036892fe901cb760c4e39e00",
+        "operation": {
+            "branch": "BL521TEXuVWaT13SPtkKcGCYxLsAcepT48wXun3KkG1L7M83SVM",
+            "contents": [
+                {
+                    "kind": "ballot",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "period": 9,
+                    "ballot": "yay",
+                    "proposal": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BL521TEXuVWaT13SPtkKcGCYxLsAcepT48wXun3KkG1L7M83SVM"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Ballot"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Period",
+                "val": [
+                    "9"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Proposal",
+                "val": [
+                    "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Vote",
+                "val": [
+                    "yay"
+                ]
+            }
+        ]
+    }
+]

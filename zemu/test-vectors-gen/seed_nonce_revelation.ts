@@ -14,12 +14,12 @@ import { ledger_fmt } from './common'
 const MUTEZ_MULT = 1_000_000
 
 async function getAddress(app: TezosApp, curve: Curve): Promise<string> {
-  const response = await app.legacyGetPubKey(APP_DERIVATION, curve)
+  const response = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
   return response.address
 }
 
-const models: DeviceModel[] = [{ name: 'nanos', prefix: 'S', path: Resolve('../legacy/output/app.elf') }]
+const models: DeviceModel[] = [{ name: 'nanos', prefix: 'S', path: Resolve('../rust/app/output/app_s.elf') }]
 
 export async function run(n: number): Promise<TestVector[]> {
   const vectors = []
@@ -69,9 +69,8 @@ async function generate_vector(n: number): Promise<TestVector> {
       forger: new LocalForger(),
     })
 
-    //1 tezos = 1'000'000 mutez (micro tez)
-    // estimate fees of operation (alternatively can be set manually)
-    const estimate = await Tezos.estimate.transfer({ to: addresses.k1, amount: 0.01, mutez: false })
+    const randomBytesArr = Array.from({ length: 32 }, () => Math.floor(Math.random() * 255))
+    const randomBytes = Buffer.from(randomBytesArr).toString('hex')
 
     const source = await Tezos.signer.publicKeyHash()
 
@@ -79,22 +78,16 @@ async function generate_vector(n: number): Promise<TestVector> {
     //branch is the block block hash we want to submit this transaction to
     const { hash } = await Tezos.rpc.getBlockHeader()
 
-    const amount = 0.01 * MUTEZ_MULT
-    const counterNum = (parseInt(counter || '0', 10) + 1);
+    const counterNum = parseInt(counter || '0', 10) + 1 + n
 
     //prepare operation
     const op: ForgeOperationsParams = {
       branch: hash,
       contents: [
         {
-          kind: OpKind.TRANSACTION,
-          destination: addresses.k1,
-          amount: amount.toString(), //has to be in mutez
-          fee: estimate.suggestedFeeMutez.toString(),
-          gas_limit: estimate.gasLimit.toString(),
-          storage_limit: estimate.storageLimit.toString(),
-          source,
-          counter: counterNum.toString(),
+          kind: OpKind.SEED_NONCE_REVELATION,
+          level: n,
+          nonce: randomBytes,
         },
       ],
     }
@@ -107,20 +100,14 @@ async function generate_vector(n: number): Promise<TestVector> {
 
     //generate test vector with operation and blob
     const test_vector: TestVector = {
-      name: `Simple TX #${n}`,
+      name: `Simple Seed Nonce Revelation #${n}`,
       blob: forgedOp,
       operation: op,
       output: [
         { idx: 0, key: 'Operation', val: ledger_fmt(hash) }, //page 0
-        { idx: 1, key: 'Type', val: ledger_fmt('Transaction') }, //page 0
-        { idx: 2, key: 'Source', val: ledger_fmt(source) },
-        { idx: 3, key: 'Destination', val: ledger_fmt(addresses.k1) },
-        { idx: 4, key: 'Amount', val: ledger_fmt(amount.toString()) },
-        { idx: 5, key: 'Fee', val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },
-        { idx: 6, key: 'Parameters', val: ledger_fmt('no parameters...') },
-        { idx: 7, key: 'Gas Limit', val: ledger_fmt(estimate.gasLimit.toString()) },
-        { idx: 8, key: 'Storage Limit', val: ledger_fmt(estimate.storageLimit.toString()) },
-        { idx: 9, key: 'Counter', val: ledger_fmt(counterNum.toString()) },
+        { idx: 1, key: 'Type', val: ledger_fmt('Seed Nonce Revelation') }, //page 0
+        { idx: 2, key: 'Level', val: ledger_fmt(n.toString()) },
+        { idx: 3, key: 'Nonce', val: ledger_fmt(randomBytes) },
       ],
     }
 
@@ -129,19 +116,3 @@ async function generate_vector(n: number): Promise<TestVector> {
     await sim.close()
   }
 }
-
-/**
- Example operation (legacy)
-
- payload(hex):
- CLA INS P1 P2 PLEN
- 80 04 81 00 58
- 03e11258d2d3a574f86ce556e9a779b80371d2416c20e3868341b918861f0ef5f56c009a6090844356d979899622d85ba1602740fcaa84ba03abc939f70b00904e00018907e2009bc7da38c9cf0cf97bb331ef86d5392b00
-
- Output:
- Amount: 0.01
- Fee: 0.000442
- Source: tz address (pages)
- Destination: tz address (pages)
- Storage limit: 0
- * * */
