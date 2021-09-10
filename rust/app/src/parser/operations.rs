@@ -135,6 +135,7 @@ impl<'b> EncodedOperations<'b> {
     }
 }
 
+mod activate_account;
 mod ballot;
 mod delegation;
 mod endorsement;
@@ -143,8 +144,8 @@ mod proposals;
 mod reveal;
 mod seed_nonce_revelation;
 mod transfer;
-mod activate_account;
 
+pub use activate_account::ActivateAccount;
 pub use ballot::Ballot;
 pub use delegation::Delegation;
 pub use endorsement::Endorsement;
@@ -153,7 +154,6 @@ pub use proposals::Proposals;
 pub use reveal::Reveal;
 pub use seed_nonce_revelation::SeedNonceRevelation;
 pub use transfer::Transfer;
-pub use activate_account::ActivateAccount;
 
 #[derive(Debug, Clone, Copy)]
 pub enum OperationType<'b> {
@@ -165,7 +165,7 @@ pub enum OperationType<'b> {
     Reveal(Reveal<'b>),
     Proposals(Proposals<'b>),
     Origination(Origination<'b>),
-    ActivateAccount(ActivateAccount<'b>)
+    ActivateAccount(ActivateAccount<'b>),
 }
 
 impl<'b> OperationType<'b> {
@@ -214,9 +214,7 @@ impl<'b> OperationType<'b> {
             //activate account
             //endorsement with slot
             //failing noop
-            0x02 | 0x03 | 0x0A | 0x11 => {
-                return Err(ParserError::UnimplementedOperation.into())
-            }
+            0x02 | 0x03 | 0x0A | 0x11 => return Err(ParserError::UnimplementedOperation.into()),
             _ => return Err(ParserError::UnknownOperation.into()),
         };
 

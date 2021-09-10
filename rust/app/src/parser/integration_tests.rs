@@ -320,7 +320,10 @@ fn account_activation_sample() {
         operation: JsonOperation { branch, contents },
         blob,
         ui,
-    } = samples.last().cloned().expect("we have at least one element in our samples!");
+    } = samples
+        .last()
+        .cloned()
+        .expect("we have at least one element in our samples!");
 
     //we should only have a single operation to parse
     assert_eq!(contents.len(), 1);
