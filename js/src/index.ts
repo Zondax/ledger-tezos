@@ -492,13 +492,13 @@ export default class TezosApp {
     switch (curve) {
         case Curve.Ed25519:
         case Curve.Ed25519_Slip10:
-          key = key.slice(1);
+          key = key.slice(1); //this skips the len byte
         break;
 
         case Curve.Secp256K1:
         case Curve.Secp256R1:
           const last = key.readUInt8(64);
-          key = key.slice(0, 33);
+          key = key.slice(0, 33); //we actually override [0] down below
           key.writeUInt8(0x02 + (last & 0x01));
         break;
     }

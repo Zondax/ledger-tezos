@@ -14,12 +14,12 @@ import { ledger_fmt } from './common'
 const MUTEZ_MULT = 1_000_000
 
 async function getAddress(app: TezosApp, curve: Curve): Promise<string> {
-  const response = await app.legacyGetPubKey(APP_DERIVATION, curve)
+  const response = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
   return response.address
 }
 
-const models: DeviceModel[] = [{ name: 'nanos', prefix: 'S', path: Resolve('../legacy/output/app.elf') }]
+const models: DeviceModel[] = [{ name: 'nanos', prefix: 'S', path: Resolve('../rust/app/output/app_s.elf') }]
 
 export async function run(n: number): Promise<TestVector[]> {
   const vectors = []
@@ -52,7 +52,7 @@ async function generate_vector(n: number): Promise<TestVector> {
       ed10: await getAddress(app, Curve.Ed25519_Slip10),
       ed: await getAddress(app, Curve.Ed25519),
       k1: await getAddress(app, Curve.Secp256K1),
-      p256: await getAddress(app, Curve.Secp256R1),
+      //p256: await getAddress(app, Curve.Secp256R1),
     }
     console.log(`populated addresses: ${JSON.stringify(addresses)}`)
 
@@ -61,40 +61,46 @@ async function generate_vector(n: number): Promise<TestVector> {
     //get taquito toolkit and set ledger signer
     const Tezos = new TezosToolkit('https://granadanet.tezos.dev.zondax.net')
 
+    let derivation_type = DerivationType.ED25519;
+    if (n % 3 == 0) {
+      derivation_type = DerivationType.SECP256K1
+    } else if (n % 2 == 0) {
+      derivation_type = DerivationType.P256
+    }
+
     //slice to skip "m/" which is not wanted by taquito
     //false so prompt is optional
     //derivation type is optional but we specify for clarity
     Tezos.setProvider({
-      signer: new LedgerSigner(sim.getTransport(), APP_DERIVATION.slice(2), false, DerivationType.ED25519),
+      signer: new LedgerSigner(sim.getTransport(), APP_DERIVATION.slice(2), false, derivation_type),
       forger: new LocalForger(),
     })
 
-    //1 tezos = 1'000'000 mutez (micro tez)
     // estimate fees of operation (alternatively can be set manually)
-    const estimate = await Tezos.estimate.transfer({ to: addresses.k1, amount: 0.01, mutez: false })
+    const mby_estimate = await Tezos.estimate.reveal();
+    const estimate = mby_estimate ? mby_estimate : { gasLimit: 10, storageLimit: 100, suggestedFeeMutez: 1234 };
 
-    const source = await Tezos.signer.publicKeyHash()
+    const source = await Tezos.signer.publicKeyHash().catch(e => { console.log(e); throw e });
+    const pk = await Tezos.signer.publicKey().catch(e => {console.log(e); throw e});
 
     const { counter } = await Tezos.rpc.getContract(source)
     //branch is the block block hash we want to submit this transaction to
     const { hash } = await Tezos.rpc.getBlockHeader()
 
-    const amount = 0.01 * MUTEZ_MULT
-    const counterNum = (parseInt(counter || '0', 10) + 1);
+    const counterNum = (parseInt(counter || '0', 10) + 1 + n);
 
     //prepare operation
     const op: ForgeOperationsParams = {
       branch: hash,
       contents: [
         {
-          kind: OpKind.TRANSACTION,
-          destination: addresses.k1,
-          amount: amount.toString(), //has to be in mutez
+          kind: OpKind.REVEAL,
           fee: estimate.suggestedFeeMutez.toString(),
           gas_limit: estimate.gasLimit.toString(),
           storage_limit: estimate.storageLimit.toString(),
           source,
           counter: counterNum.toString(),
+          public_key: pk,
         },
       ],
     }
@@ -107,20 +113,18 @@ async function generate_vector(n: number): Promise<TestVector> {
 
     //generate test vector with operation and blob
     const test_vector: TestVector = {
-      name: `Simple TX #${n}`,
+      name: `Simple Reveal #${n}`,
       blob: forgedOp,
       operation: op,
       output: [
         { idx: 0, key: 'Operation', val: ledger_fmt(hash) }, //page 0
-        { idx: 1, key: 'Type', val: ledger_fmt('Transaction') }, //page 0
+        { idx: 1, key: 'Type', val: ledger_fmt("Revelation") }, //page 0
         { idx: 2, key: 'Source', val: ledger_fmt(source) },
-        { idx: 3, key: 'Destination', val: ledger_fmt(addresses.k1) },
-        { idx: 4, key: 'Amount', val: ledger_fmt(amount.toString()) },
-        { idx: 5, key: 'Fee', val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },
-        { idx: 6, key: 'Parameters', val: ledger_fmt('no parameters...') },
-        { idx: 7, key: 'Gas Limit', val: ledger_fmt(estimate.gasLimit.toString()) },
-        { idx: 8, key: 'Storage Limit', val: ledger_fmt(estimate.storageLimit.toString()) },
-        { idx: 9, key: 'Counter', val: ledger_fmt(counterNum.toString()) },
+        { idx: 3, key: 'Public Key', val: ledger_fmt(pk) },
+        { idx: 4, key: 'Fee', val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },
+        { idx: 5, key: 'Gas Limit', val: ledger_fmt(estimate.gasLimit.toString()) },
+        { idx: 6, key: 'Storage Limit', val: ledger_fmt(estimate.storageLimit.toString()) },
+        { idx: 7, key: 'Counter', val: ledger_fmt(counterNum.toString()) },
       ],
     }
 
@@ -129,19 +133,3 @@ async function generate_vector(n: number): Promise<TestVector> {
     await sim.close()
   }
 }
-
-/**
- Example operation (legacy)
-
- payload(hex):
- CLA INS P1 P2 PLEN
- 80 04 81 00 58
- 03e11258d2d3a574f86ce556e9a779b80371d2416c20e3868341b918861f0ef5f56c009a6090844356d979899622d85ba1602740fcaa84ba03abc939f70b00904e00018907e2009bc7da38c9cf0cf97bb331ef86d5392b00
-
- Output:
- Amount: 0.01
- Fee: 0.000442
- Source: tz address (pages)
- Destination: tz address (pages)
- Storage limit: 0
- * * */
