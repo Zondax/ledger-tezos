@@ -247,9 +247,9 @@ impl<'a> DisplayableOperation for Transfer<'a> {
                 };
                 title[..title_content.len()].copy_from_slice(title_content.as_bytes());
 
-                let mut cid = [0; 36];
-                self.destination()
-                    .base58(&mut cid)
+                let cid = self
+                    .destination()
+                    .base58()
                     .map_err(|_| ViewError::Unknown)?;
 
                 handle_ui_message(&cid[..], message, page)
@@ -355,13 +355,11 @@ impl<'b> Transfer<'b> {
         self.storage_limit().is(&json["storage_limit"]);
 
         //verify the destination
-        let destination_bs58 = {
-            let mut out = [0; 36];
-            self.destination()
-                .base58(&mut out)
-                .expect("couldn't compute destination base58");
-            out
-        };
+        let destination_bs58 = self
+            .destination()
+            .base58()
+            .expect("couldn't compute destination base58");
+
         let expected_destination_base58 = json["destination"]
             .as_str()
             .expect("given json .destination is not a string");

@@ -105,7 +105,7 @@ impl<'b> DisplayableOperation for Reveal<'b> {
                 let title_content = pic_str!("Public Key");
                 title[..title_content.len()].copy_from_slice(title_content.as_bytes());
 
-                let mut public_key = [0; 55];
+                let mut public_key = [0; MAX_PK_BASE58_LEN];
                 let pk_len = pk_to_base58(self.public_key, &mut public_key)
                     .map_err(|_| ViewError::Unknown)?;
 
@@ -164,7 +164,11 @@ impl<'b> DisplayableOperation for Reveal<'b> {
 /// Encodes a public key as base58 on the provided `out` buffer
 ///
 /// returns the number of bytes written
-fn pk_to_base58((crv, bytes): (Curve, &[u8]), out: &mut [u8; 55]) -> Result<usize, bolos::Error> {
+const MAX_PK_BASE58_LEN: usize = 55;
+fn pk_to_base58(
+    (crv, bytes): (Curve, &[u8]),
+    out: &mut [u8; MAX_PK_BASE58_LEN],
+) -> Result<usize, bolos::Error> {
     let prefix = crv.to_prefix();
 
     let mut checksum = [0; 4];
@@ -203,7 +207,7 @@ impl<'b> Reveal<'b> {
         self.storage_limit.is(&json["storage_limit"]);
 
         //verify public key
-        let mut pk_base58 = [0; 55];
+        let mut pk_base58 = [0; MAX_PK_BASE58_LEN];
         let pk_base58_len = pk_to_base58(self.public_key, &mut pk_base58)
             .expect("couldn't compute public key base58");
 

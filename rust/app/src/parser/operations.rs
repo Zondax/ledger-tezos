@@ -33,6 +33,8 @@ pub struct Operation<'b> {
 }
 
 impl<'b> Operation<'b> {
+    pub const BASE58_BRANCH_LEN: usize = 51;
+
     pub fn new(input: &'b [u8]) -> Result<Self, ParserError> {
         let (rem, branch) = take::<_, _, ParserError>(32usize)(input).finish()?;
         let branch = arrayref::array_ref!(branch, 0, 32);
@@ -43,7 +45,8 @@ impl<'b> Operation<'b> {
         })
     }
 
-    pub fn base58_branch(&self, out: &mut [u8; 51]) -> Result<(), bolos::Error> {
+    #[inline(never)]
+    pub fn base58_branch(&self) -> Result<[u8; Operation::BASE58_BRANCH_LEN], bolos::Error> {
         let mut checksum = [0; 4];
 
         sha256x2(&[B, &self.branch[..]], &mut checksum)?;
@@ -56,11 +59,12 @@ impl<'b> Operation<'b> {
             array
         };
 
+        let mut out = [0; Self::BASE58_BRANCH_LEN];
         bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right length");
 
-        Ok(())
+        Ok(out)
     }
 }
 
@@ -251,6 +255,8 @@ pub enum ContractID<'b> {
 }
 
 impl<'b> ContractID<'b> {
+    pub const BASE58_LEN: usize = 36;
+
     #[cfg(test)]
     fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         use nom::{dbg_basic, take, tuple as tuplem};
@@ -304,7 +310,8 @@ impl<'b> ContractID<'b> {
         }
     }
 
-    pub fn base58(&self, out: &mut [u8; 36]) -> Result<(), bolos::Error> {
+    #[inline(never)]
+    pub fn base58(&self) -> Result<[u8; ContractID::BASE58_LEN], bolos::Error> {
         let (prefix, hash) = match *self {
             Self::Originated(h) => (KT1, h),
             Self::Implicit(Curve::Bip32Ed25519 | Curve::Ed25519, h) => (TZ1, h),
@@ -323,11 +330,12 @@ impl<'b> ContractID<'b> {
             array
         };
 
+        let mut out = [0; Self::BASE58_LEN];
         bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not the right length");
 
-        Ok(())
+        Ok(out)
     }
 
     pub fn is_implicit(&self) -> bool {
@@ -379,11 +387,10 @@ mod tests {
             ContractID::Originated(arrayref::array_ref!(input, 1, 20))
         );
 
-        let mut cid = crate::constants::tzprefix::KT1.to_vec();
-        cid.extend_from_slice(&parsed.hash()[..]);
-
-        let cid = bs58::encode(cid).with_check().into_string();
-        assert_eq!(cid.as_str(), CONTRACT_BASE58);
+        let cid = parsed
+            .base58()
+            .expect("couldn't encode contract id to base 58");
+        assert_eq!(&cid[..], CONTRACT_BASE58.as_bytes());
     }
 
     #[test]
@@ -394,11 +401,10 @@ mod tests {
         let input = hex::decode(INPUT_HEX).expect("invalid input hex");
         let mut parsed = Operation::new(&input).expect("couldn't parse branch");
 
-        let mut vbr = crate::constants::tzprefix::B.to_vec();
-        vbr.extend_from_slice(&parsed.branch()[..]);
-
-        let branch = bs58::encode(vbr).with_check().into_string();
-        assert_eq!(&branch, BRANCH_BASE58);
+        let branch = parsed
+            .base58_branch()
+            .expect("couldn't encode branch to base58");
+        assert_eq!(&branch[..], BRANCH_BASE58.as_bytes());
 
         let ops = parsed.mut_ops();
         let op = ops
@@ -431,11 +437,10 @@ mod tests {
         let input = hex::decode(INPUT_HEX).expect("invalid input hex");
         let mut parsed = Operation::new(&input).expect("couldn't parse branch");
 
-        let mut vbr = crate::constants::tzprefix::B.to_vec();
-        vbr.extend_from_slice(&parsed.branch()[..]);
-
-        let branch = bs58::encode(vbr).with_check().into_string();
-        assert_eq!(&branch, BRANCH_BASE58);
+        let branch = parsed
+            .base58_branch()
+            .expect("couldn't encode branch to base58");
+        assert_eq!(&branch[..], BRANCH_BASE58.as_bytes());
 
         let ops = parsed.mut_ops();
         let op1 = ops

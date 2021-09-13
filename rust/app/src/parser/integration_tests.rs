@@ -95,8 +95,7 @@ fn test_sample(
         verify_ui(name, parsed, ui)
     }
 
-    let mut branch_bs58 = [0; 51];
-    parsed.base58_branch(&mut branch_bs58).unwrap_or_else(|e| {
+    let branch_bs58 = parsed.base58_branch().unwrap_or_else(|e| {
         panic!(
             "couldn't compute base 58 branch of sample {}; err: {:?}",
             name, e

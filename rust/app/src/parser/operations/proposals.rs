@@ -38,6 +38,8 @@ pub struct Proposals<'b> {
 }
 
 impl<'b> Proposals<'b> {
+    pub const PROPOSAL_BASE58_LEN: usize = 51;
+
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, (source, period, proposals)) = do_parse! {input,
             source: public_key_hash >>
@@ -60,10 +62,10 @@ impl<'b> Proposals<'b> {
         ))
     }
 
+    #[inline(never)]
     pub fn proposal_base58(
         proposal: &[u8; PROPOSAL_BYTES_LEN],
-        out: &mut [u8; 51],
-    ) -> Result<(), bolos::Error> {
+    ) -> Result<[u8; Proposals::PROPOSAL_BASE58_LEN], bolos::Error> {
         let mut checksum = [0; 4];
 
         sha256x2(&[P, &proposal[..]], &mut checksum)?;
@@ -76,11 +78,12 @@ impl<'b> Proposals<'b> {
             array
         };
 
+        let mut out = [0; Self::PROPOSAL_BASE58_LEN];
         bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right length");
 
-        Ok(())
+        Ok(out)
     }
 
     fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
@@ -161,8 +164,7 @@ impl<'b> DisplayableOperation for Proposals<'b> {
                 }
 
                 //get base58 of the proposal data
-                let mut mex = [0; 51];
-                Self::proposal_base58(&self.proposals[n as usize], &mut mex)
+                let mex = Self::proposal_base58(&self.proposals[n as usize])
                     .map_err(|_| ViewError::Unknown)?;
 
                 handle_ui_message(&mex[..], message, page)
@@ -194,8 +196,7 @@ impl<'b> Proposals<'b> {
             .as_array()
             .expect("given json .proposals is not an array");
         for (i, prop) in self.proposals.iter().enumerate() {
-            let mut prop_base58 = [0; 51];
-            Self::proposal_base58(prop, &mut prop_base58)
+            let prop_base58 = Self::proposal_base58(prop)
                 .unwrap_or_else(|_| panic!("couldn't encode proposal #{} as base58", i));
 
             let expected_prop_base58 = expected_props_base58[i]

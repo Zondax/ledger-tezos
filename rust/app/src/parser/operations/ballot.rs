@@ -62,6 +62,8 @@ pub struct Ballot<'b> {
 }
 
 impl<'b> Ballot<'b> {
+    pub const PROPOSAL_BASE58_LEN: usize = 51;
+
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, (source, period, proposal, ballot)) = do_parse! {input,
             source: public_key_hash >>
@@ -87,7 +89,8 @@ impl<'b> Ballot<'b> {
         ))
     }
 
-    pub fn proposal_base58(&self, out: &mut [u8; 51]) -> Result<(), bolos::Error> {
+    #[inline(never)]
+    pub fn proposal_base58(&self) -> Result<[u8; Ballot::PROPOSAL_BASE58_LEN], bolos::Error> {
         let mut checksum = [0; 4];
 
         sha256x2(&[P, &self.proposal[..]], &mut checksum)?;
@@ -100,11 +103,12 @@ impl<'b> Ballot<'b> {
             array
         };
 
+        let mut out = [0; Self::PROPOSAL_BASE58_LEN];
         bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right length");
 
-        Ok(())
+        Ok(out)
     }
 }
 
@@ -158,9 +162,7 @@ impl<'b> DisplayableOperation for Ballot<'b> {
                 let title_content = pic_str!(b"Proposal");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let mut mex = [0; 51];
-                self.proposal_base58(&mut mex)
-                    .map_err(|_| ViewError::Unknown)?;
+                let mex = self.proposal_base58().map_err(|_| ViewError::Unknown)?;
 
                 handle_ui_message(&mex[..], message, page)
             }
@@ -216,8 +218,8 @@ impl<'b> Ballot<'b> {
             (parsed, got) => panic!("parsed ballot was {:?}; expected {}", parsed, got),
         }
 
-        let mut proposal_base58 = [0; 51];
-        self.proposal_base58(&mut proposal_base58)
+        let proposal_base58 = self
+            .proposal_base58()
             .expect("couldn't compute proposal base58");
 
         let expected_proposal_base58 = json["proposal"]

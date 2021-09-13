@@ -193,9 +193,9 @@ impl Viewable for SignUI {
             let title_content = pic_str!(b"Operation");
             title[..title_content.len()].copy_from_slice(title_content);
 
-            let mut mex = [0; 51];
-            self.parsed
-                .base58_branch(&mut mex)
+            let mex = self
+                .parsed
+                .base58_branch()
                 .map_err(|_| ViewError::Unknown)?;
 
             handle_ui_message(&mex[..], message, page)
