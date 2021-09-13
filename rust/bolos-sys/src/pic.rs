@@ -33,6 +33,16 @@ use core::ops::{Deref, DerefMut};
 /// let _: &PIC<[u8; 1024]> = &BUFFER;
 /// assert_eq!(&[0; 1024], &*BUFFER);
 /// ```
+///
+/// # Notes on ?Sized types
+/// Currently, for every ?Sized type that we need, a separate implementation *has* to be made
+///
+/// This is because by passing the pointer to C we lose some "fattiness" (for example the length of the item)
+/// of the pointer, and we can't manually reconstruct it.
+/// If `pic` were ever to be moved to pure rust this limitation could be circumvented.
+///
+/// An API exists for putting the "fettiness" back, see [Pointee](core::ptr::Pointee),
+/// but it's currently unstable
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct PIC<T> {
@@ -99,15 +109,6 @@ impl<'a, T> PIC<&'a mut T> {
         }
     }
 }
-
-// Currently for every ?Sized type that we need a separate implementation *has* to be made
-//
-// This is because by passing the pointer to C we lose some "fattiness" (for example the length of the item)
-// of the pointer, and we can't manually reconstruct it.
-// If `pic` were ever to be moved to pure rust this limitation could be circumvented.
-//
-// An API exists for putting the "fettiness" back, see [Pointee](core::ptr::Pointee),
-// but it's currently unstable
 
 impl<'a> PIC<&'a str> {
     pub fn into_inner(self) -> &'a str {
