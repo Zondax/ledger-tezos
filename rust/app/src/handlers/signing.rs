@@ -29,7 +29,7 @@ use crate::{
     handlers::handle_ui_message,
     parser::{
         operations::{Operation, OperationType},
-        DisplayableOperation,
+        DisplayableItem, Preemble,
     },
     sys,
     utils::{ApduBufferRead, Uploader},
@@ -89,11 +89,20 @@ impl Sign {
         }
 
         let unsigned_hash = Self::blake2b_digest(data)?;
+        let (_, preemble) = Preemble::from_bytes(data).map_err(|_| Error::DataInvalid)?;
 
-        let ui = SignUI {
-            hash: unsigned_hash,
-            send_hash,
-            parsed: Operation::new(data).map_err(|_| Error::DataInvalid)?,
+        let ui = match preemble {
+            Preemble::Operation => SignUI {
+                hash: unsigned_hash,
+                send_hash,
+                parsed: Some(Operation::new(data).map_err(|_| Error::DataInvalid)?),
+            },
+            Preemble::Michelson => SignUI {
+                hash: unsigned_hash,
+                send_hash,
+                parsed: None,
+            },
+            _ => return Err(Error::CommandNotAllowed),
         };
 
         unsafe { ui.show(flags) }
@@ -124,7 +133,7 @@ impl ApduHandler for Sign {
 pub(crate) struct SignUI {
     hash: [u8; Sign::SIGN_HASH_SIZE],
     send_hash: bool,
-    parsed: Operation<'static>,
+    parsed: Option<Operation<'static>>,
 }
 
 #[cfg(test)]
@@ -133,7 +142,7 @@ impl Operation<'static> {
         SignUI {
             hash: [0; Sign::SIGN_HASH_SIZE],
             send_hash: false,
-            parsed: self,
+            parsed: Some(self),
         }
     }
 }
@@ -147,7 +156,8 @@ impl SignUI {
     ) -> Result<Option<(u8, OperationType<'static>)>, ViewError> {
         item_idx -= 1; //remove branch idx
 
-        let mut parsed = self.parsed;
+        //we shouldn't be here if parsed is None
+        let mut parsed = self.parsed.ok_or(ViewError::Unknown)?;
         let ops = parsed.mut_ops();
 
         //we don't call this if we haven't verified all info first
@@ -169,16 +179,20 @@ impl SignUI {
 
 impl Viewable for SignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
-        let mut parsed = self.parsed;
-        let ops = parsed.mut_ops();
+        match self.parsed {
+            None => Ok(1),
+            Some(mut parsed) => {
+                let ops = parsed.mut_ops();
 
-        let mut items_counter = 1; //start with branch
+                let mut items_counter = 1; //start with branch
 
-        while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
-            items_counter += op.ui_items();
+                while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
+                    items_counter += op.ui_items();
+                }
+
+                Ok(items_counter as u8)
+            }
         }
-
-        Ok(items_counter as u8)
     }
 
     #[inline(never)]
@@ -189,38 +203,58 @@ impl Viewable for SignUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
-        if let 0 = item_n {
-            let title_content = pic_str!(b"Operation");
-            title[..title_content.len()].copy_from_slice(title_content);
+        match self.parsed {
+            None => match item_n {
+                0 => {
+                    let title_content = pic_str!(b"Sign Michelson Hash");
+                    title[..title_content.len()].copy_from_slice(title_content);
 
-            let mex = self
-                .parsed
-                .base58_branch()
-                .map_err(|_| ViewError::Unknown)?;
+                    let mut hex_buf = [0; Sign::SIGN_HASH_SIZE * 2];
+                    //this is impossible that will error since the sizes are all checked
+                    hex::encode_to_slice(self.hash, &mut hex_buf).unwrap();
 
-            handle_ui_message(&mex[..], message, page)
-        } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
-            match op {
-                OperationType::Transfer(tx) => tx.render_item(item_n, title, message, page),
-                OperationType::Delegation(delegation) => {
-                    delegation.render_item(item_n, title, message, page)
+                    handle_ui_message(&hex_buf[..], message, page)
                 }
-                OperationType::Endorsement(endorsement) => {
-                    endorsement.render_item(item_n, title, message, page)
-                }
-                OperationType::SeedNonceRevelation(snr) => {
-                    snr.render_item(item_n, title, message, page)
-                }
-                OperationType::Ballot(vote) => vote.render_item(item_n, title, message, page),
-                OperationType::Reveal(rev) => rev.render_item(item_n, title, message, page),
-                OperationType::Proposals(props) => props.render_item(item_n, title, message, page),
-                OperationType::Origination(orig) => orig.render_item(item_n, title, message, page),
-                OperationType::ActivateAccount(act) => {
-                    act.render_item(item_n, title, message, page)
+                _ => Err(ViewError::NoData),
+            },
+            Some(parsed) => {
+                if let 0 = item_n {
+                    let title_content = pic_str!(b"Operation");
+                    title[..title_content.len()].copy_from_slice(title_content);
+
+                    let mex = parsed.base58_branch().map_err(|_| ViewError::Unknown)?;
+
+                    handle_ui_message(&mex[..], message, page)
+                } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
+                    match op {
+                        OperationType::Transfer(tx) => tx.render_item(item_n, title, message, page),
+                        OperationType::Delegation(delegation) => {
+                            delegation.render_item(item_n, title, message, page)
+                        }
+                        OperationType::Endorsement(endorsement) => {
+                            endorsement.render_item(item_n, title, message, page)
+                        }
+                        OperationType::SeedNonceRevelation(snr) => {
+                            snr.render_item(item_n, title, message, page)
+                        }
+                        OperationType::Ballot(vote) => {
+                            vote.render_item(item_n, title, message, page)
+                        }
+                        OperationType::Reveal(rev) => rev.render_item(item_n, title, message, page),
+                        OperationType::Proposals(props) => {
+                            props.render_item(item_n, title, message, page)
+                        }
+                        OperationType::Origination(orig) => {
+                            orig.render_item(item_n, title, message, page)
+                        }
+                        OperationType::ActivateAccount(act) => {
+                            act.render_item(item_n, title, message, page)
+                        }
+                    }
+                } else {
+                    Err(ViewError::NoData)
                 }
             }
-        } else {
-            Err(ViewError::NoData)
         }
     }
 

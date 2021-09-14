@@ -23,7 +23,7 @@ use zemu_sys::ViewError;
 use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
-    parser::{boolean, public_key_hash, DisplayableOperation, Zarith},
+    parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
 
 use super::ContractID;
@@ -197,7 +197,7 @@ impl<'b> Transfer<'b> {
     }
 }
 
-impl<'a> DisplayableOperation for Transfer<'a> {
+impl<'a> DisplayableItem for Transfer<'a> {
     fn num_items(&self) -> usize {
         //TODO: account for entrypoint if present
         1 + 8

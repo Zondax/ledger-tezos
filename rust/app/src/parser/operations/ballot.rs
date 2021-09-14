@@ -24,7 +24,7 @@ use crate::{
     constants::tzprefix::P,
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr, sha256x2},
-    parser::{public_key_hash, DisplayableOperation},
+    parser::{public_key_hash, DisplayableItem},
 };
 
 use core::convert::{TryFrom, TryInto};
@@ -112,7 +112,7 @@ impl<'b> Ballot<'b> {
     }
 }
 
-impl<'b> DisplayableOperation for Ballot<'b> {
+impl<'b> DisplayableItem for Ballot<'b> {
     fn num_items(&self) -> usize {
         1 + 4
     }

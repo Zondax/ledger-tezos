@@ -21,7 +21,7 @@ use crate::{
     handlers::{parser_common::ParserError, sha256x2},
 };
 
-use super::{public_key_hash, DisplayableOperation};
+use super::{public_key_hash, DisplayableItem};
 
 #[derive(Debug, Clone, Copy, property::Property)]
 #[property(get(public), mut(public), set(disable))]

@@ -20,7 +20,7 @@ use zemu_sys::ViewError;
 use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
-    parser::DisplayableOperation,
+    parser::DisplayableItem,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, property::Property)]
@@ -58,7 +58,7 @@ impl<'b> ActivateAccount<'b> {
     }
 }
 
-impl<'b> DisplayableOperation for ActivateAccount<'b> {
+impl<'b> DisplayableItem for ActivateAccount<'b> {
     fn num_items(&self) -> usize {
         1 + 2
     }

@@ -19,7 +19,7 @@ import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import { APP_DERIVATION, cartesianProduct, curves, defaultOptions } from './common'
 import * as secp256k1 from 'noble-secp256k1'
 
-import { SAMPLE_TRANSACTION } from './tezos'
+import { SAMPLE_DELEGATION } from './tezos'
 
 const ed25519 = require('ed25519-supercop')
 
@@ -294,6 +294,23 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
   })
 })
 
+function get_endorsement_info(chain_id: number, branch: Buffer, tag: number, level: number): Buffer {
+  const result = Buffer.alloc(42);
+  result.writeUInt32BE(chain_id, 1);
+  branch.copy(result, 5);
+  result.writeUInt8(tag, 37);
+  result.writeUInt32BE(level, 38);
+  return result;
+}
+
+function get_blocklevel_info(chain_id: number, level: number, proto: number): Buffer {
+  const result = Buffer.alloc(10);
+  result.writeUInt32BE(chain_id, 1);
+  result.writeUInt32BE(level, 5);
+  result.writeUInt8(proto, 9);
+  return result;
+}
+
 describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function (m) {
   test.each(curves)('Sign endorsement [%s]', async function (curve) {
     const sim = new Zemu(m.path)
@@ -305,9 +322,8 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const baker_blob = app.get_endorsement_info(2, 0, Buffer.alloc(32), 5, 2)
-
-      const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob)
+      const baker_blob = get_endorsement_info(0, Buffer.alloc(32), 5, 2)
+      const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob, 'endorsement')
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       if (m.name == 'nanox') {
@@ -336,9 +352,9 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const baker_blob = app.get_blocklevel_info(1, 0, 123456, 1)
+      const baker_blob = get_blocklevel_info(0, 123456, 1)
 
-      const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob)
+      const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob, 'blocklevel')
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       if (m.name == 'nanox') {
@@ -367,9 +383,9 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const baker_blob = app.get_blocklevel_info(1, 0, 5, 1)
+      const baker_blob = get_blocklevel_info(0, 5, 1)
 
-      const sigreq = app.signBaker(APP_DERIVATION, curve, baker_blob)
+      const sigreq = app.signBaker(APP_DERIVATION, curve, baker_blob, 'blocklevel')
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       if (m.name == 'nanox') {
         await sim.clickRight()
@@ -383,16 +399,16 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       expect(sig.returnCode).toEqual(0x9000)
 
       //this should fail as the level is equal to previously signed!!
-      const baker_blob2 = app.get_blocklevel_info(1, 0, 5, 1)
+      const baker_blob2 = get_blocklevel_info(0, 5, 1)
 
-      const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2)
+      const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2, 'blocklevel')
       console.log(sig2, m.name)
       expect(sig2.returnCode).not.toEqual(0x9000)
 
       //this should success as the level is equal to previously signed but is endorsement!!
-      const baker_blob3 = app.get_endorsement_info(2, 0, Buffer.alloc(32), 5, 5)
+      const baker_blob3 = get_endorsement_info(0, Buffer.alloc(32), 5, 5)
 
-      const sigreq3 = app.signBaker(APP_DERIVATION, curve, baker_blob3)
+      const sigreq3 = app.signBaker(APP_DERIVATION, curve, baker_blob3, 'endorsement')
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
       if (m.name == 'nanox') {
@@ -414,7 +430,7 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
   })
 })
 
-const SIGN_TEST_DATA = cartesianProduct(curves, [{ name: 'transfer', nav: { s: [13, 0], x: [11, 0] }, op: SAMPLE_TRANSACTION }])
+const SIGN_TEST_DATA = cartesianProduct(curves, [{ name: 'delegation', nav: { s: [11, 0], x: [9, 0] }, op: SAMPLE_DELEGATION }])
 
 describe.each(models)('Standard baking [%s] - sign operation', function (m) {
   test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
@@ -423,7 +439,7 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
       const msg = Buffer.from(data.op.blob, 'hex')
-      const respReq = app.sign(APP_DERIVATION, curve, msg)
+      const respReq = app.signBaker(APP_DERIVATION, curve, msg, 'delegation')
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 200000)
 

@@ -58,7 +58,7 @@ cfg_if! {
                                               LegacyQueryAuthKey, LegacyQueryAuthKeyWithCurve};
         //baking-only new instructions
         use crate::handlers::baking::{AuthorizeBaking, DeAuthorizeBaking, QueryAuthKey,
-                                      QueryAuthKeyWithCurve, BakerSign};
+                                      QueryAuthKeyWithCurve, Baking};
     } else if #[cfg(feature = "wallet")] {
         //wallet-only legacy instructions
         pub const INS_LEGACY_SIGN_UNSAFE: u8 = 0x5;
@@ -145,7 +145,7 @@ pub fn apdu_dispatch<'apdu>(
                 INS_DEAUTHORIZE_BAKING => return DeAuthorizeBaking::handle(flags, tx, apdu_buffer),
                 INS_QUERY_AUTH_KEY => return QueryAuthKey::handle(flags, tx, apdu_buffer),
                 INS_QUERY_AUTH_KEY_WITH_CURVE => return QueryAuthKeyWithCurve::handle(flags, tx, apdu_buffer),
-                INS_BAKER_SIGN => return BakerSign::handle(flags, tx, apdu_buffer),
+                INS_BAKER_SIGN => return Baking::handle(flags, tx, apdu_buffer),
 
                 INS_LEGACY_AUTHORIZE_BAKING => return LegacyAuthorize::handle(flags, tx, apdu_buffer),
                 INS_LEGACY_DEAUTHORIZE => return LegacyDeAuthorize::handle(flags, tx, apdu_buffer),

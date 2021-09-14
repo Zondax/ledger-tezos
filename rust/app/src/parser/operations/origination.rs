@@ -19,7 +19,7 @@ use zemu_sys::ViewError;
 use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
-    parser::{boolean, public_key_hash, DisplayableOperation, Zarith},
+    parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
@@ -101,7 +101,7 @@ impl<'b> Origination<'b> {
     }
 }
 
-impl<'a> DisplayableOperation for Origination<'a> {
+impl<'a> DisplayableItem for Origination<'a> {
     fn num_items(&self) -> usize {
         1 + 9
     }

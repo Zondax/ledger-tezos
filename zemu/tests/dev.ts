@@ -92,6 +92,10 @@ export default class TezosAppDev extends TezosApp {
   }
 
   async blind_sign(path: string, curve: Curve, message: Buffer) {
+    //prepend 0x05 to signal a michelson packed struct
+    // which is signed blindly based on the hash only
+    message = Buffer.concat([Buffer.from([5]), message])
+
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.SIGN).then(async response => {
         let result = {

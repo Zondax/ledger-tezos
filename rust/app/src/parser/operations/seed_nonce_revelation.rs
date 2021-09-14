@@ -18,7 +18,7 @@ use zemu_sys::ViewError;
 
 use crate::{
     handlers::{handle_ui_message, parser_common::ParserError},
-    parser::DisplayableOperation,
+    parser::DisplayableItem,
 };
 
 const SEED_NONCE_BYTES_LEN: usize = 32;
@@ -40,7 +40,7 @@ impl<'b> SeedNonceRevelation<'b> {
     }
 }
 
-impl<'b> DisplayableOperation for SeedNonceRevelation<'b> {
+impl<'b> DisplayableItem for SeedNonceRevelation<'b> {
     fn num_items(&self) -> usize {
         1 + 2
     }

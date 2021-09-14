@@ -18,7 +18,7 @@ use zemu_sys::ViewError;
 
 use crate::{
     handlers::{handle_ui_message, parser_common::ParserError},
-    parser::DisplayableOperation,
+    parser::DisplayableItem,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
@@ -35,7 +35,7 @@ impl Endorsement {
     }
 }
 
-impl DisplayableOperation for Endorsement {
+impl DisplayableItem for Endorsement {
     fn num_items(&self) -> usize {
         1 + 1
     }

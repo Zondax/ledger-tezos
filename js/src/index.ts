@@ -299,26 +299,25 @@ export default class TezosApp {
       }, processErrorResponse);
   }
 
-  get_endorsement_info(preemble: number, chain_id: number, branch: Buffer, tag: number, level: number): Buffer {
-    let result = Buffer.alloc(42);
-    result.writeUInt8(preemble, 0);
-    result.writeUInt32BE(chain_id, 1);
-    branch.copy(result, 5);
-    result.writeUInt8(tag, 37);
-    result.writeUInt32BE(level, 38);
-    return result;
-  }
+  async signBaker(path: string, curve: Curve, message: Buffer, message_type: 'endorsement' | 'blocklevel' | 'delegation') {
+    //we prepend the appropriate "magic byte"
+    //based on the type of the content that we want to sign
+    let magic_byte;
+    switch (message_type) {
+        case 'blocklevel':
+          magic_byte = 1;
+          break;
+        case 'endorsement':
+          magic_byte = 2;
+          break;
+        case 'delegation':
+          magic_byte = 3;
+          break;
+        default:
+          throw "Invalid message type"
+    }
+    message = Buffer.concat([Buffer.from([magic_byte]), message]);
 
-  get_blocklevel_info(preemble: number, chain_id: number, level: number, proto: number): Buffer {
-    let result = Buffer.alloc(10);
-    result.writeUInt8(preemble, 0);
-    result.writeUInt32BE(chain_id, 1);
-    result.writeUInt32BE(level, 5);
-    result.writeUInt8(proto, 9);
-    return result;
-  }
-
-  async signBaker(path: string, curve: Curve, message: Buffer) {
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.BAKER_SIGN).then(async response => {
         let result = {
@@ -338,8 +337,33 @@ export default class TezosApp {
     }, processErrorResponse);
   }
 
+  async signOperation(path: string, curve: Curve, message: Buffer) {
+    //prepend 0x03 to signal an operation as the message
+    message = Buffer.concat([Buffer.from([3]), message]);
 
-  async sign(path: string, curve: Curve, message: Buffer) {
+    return this.signGetChunks(path, message).then(chunks => {
+      return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.SIGN).then(async response => {
+        let result = {
+          returnCode: response.returnCode,
+          errorMessage: response.errorMessage,
+          signature: null as null | Buffer,
+        };
+        for (let i = 1; i < chunks.length; i += 1) {
+          // eslint-disable-next-line no-await-in-loop
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.SIGN);
+          if (result.returnCode !== LedgerError.NoErrors) {
+            break;
+          }
+        }
+        return result;
+      }, processErrorResponse);
+    }, processErrorResponse);
+  }
+
+  async signMichelson(path: string, curve: Curve, message: Buffer) {
+    //prepend 0x05 to signal some packed michelson data
+    message = Buffer.concat([Buffer.from([5]), message]);
+
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.SIGN).then(async response => {
         let result = {
@@ -513,7 +537,28 @@ export default class TezosApp {
     return bs58.encode(Buffer.concat([prefix, hash, checksum]));
   }
 
-  async legacySignWithHash(path: string, curve: Curve, message: Buffer) {
+  async legacySignWithHash(path: string, curve: Curve, message: Buffer, message_type: 'endorsement' | 'blocklevel' | 'operation' | 'michelson' = 'operation') {
+    //we prepend the appropriate "magic byte"
+    //based on the type of the content that we want to sign
+    let magic_byte;
+    switch (message_type) {
+        case 'blocklevel':
+          magic_byte = 1;
+          break;
+        case 'endorsement':
+          magic_byte = 2;
+          break;
+        case 'operation':
+          magic_byte = 3;
+          break;
+        case 'michelson':
+          magic_byte = 5;
+          break;
+        default:
+          throw "Invalid message type"
+    }
+    message = Buffer.concat([Buffer.from([magic_byte]), message]);
+
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], true, curve, LEGACY_INS.SIGN_WITH_HASH).then(async response => {
         let result = {
@@ -533,7 +578,28 @@ export default class TezosApp {
     }, processErrorResponse);
   }
 
-  async legacySign(path: string, curve: Curve, message: Buffer) {
+  async legacySign(path: string, curve: Curve, message: Buffer, message_type: 'endorsement' | 'blocklevel' | 'operation' | 'michelson' = 'operation') {
+    //we prepend the appropriate "magic byte"
+    //based on the type of the content that we want to sign
+    let magic_byte;
+    switch (message_type) {
+        case 'blocklevel':
+          magic_byte = 1;
+          break;
+        case 'endorsement':
+          magic_byte = 2;
+          break;
+        case 'operation':
+          magic_byte = 3;
+          break;
+        case 'michelson':
+          magic_byte = 5;
+          break;
+        default:
+          throw "Invalid message type"
+    }
+    message = Buffer.concat([Buffer.from([magic_byte]), message]);
+
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], true, curve, LEGACY_INS.SIGN, false).then(async response => {
         let result = {
