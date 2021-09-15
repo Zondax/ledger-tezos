@@ -52,7 +52,9 @@ impl<'apdu> ApduBufferRead<'apdu> {
     ///
     /// The function checks if there's at least the minimum required number of bytes (APDU_MIN_LENGTH)
     /// and if the byte slice is at least as long as rx
+    #[inline(never)]
     pub fn new(buf: &'apdu mut [u8], rx: u32) -> Result<Self, ApduBufferReadError> {
+        crate::sys::zemu_log_stack("ApduBufferRead::new\x00");
         //check buf is at least 4
         Self::check_min_len(buf.len(), APDU_MIN_LENGTH as usize, None)?;
 

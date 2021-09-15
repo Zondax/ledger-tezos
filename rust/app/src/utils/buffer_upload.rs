@@ -100,6 +100,7 @@ impl Uploader {
         }
     }
 
+    #[inline(never)]
     pub fn upload(
         &mut self,
         buffer: &ApduBufferRead<'_>,

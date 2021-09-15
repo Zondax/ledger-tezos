@@ -383,8 +383,28 @@ export default class TezosApp {
     }, processErrorResponse);
   }
 
-  sig_hash(msg: Buffer): Buffer {
+  sig_hash(msg: Buffer, msg_type: 'blocklevel' | 'endorsement' | 'operation' | 'michelson'): Buffer {
     const blake2 = require('blake2');
+
+    let magic_byte;
+    switch (msg_type) {
+        case 'blocklevel':
+          magic_byte = 1;
+          break;
+        case 'endorsement':
+          magic_byte = 2;
+          break;
+        case 'operation':
+          magic_byte = 3;
+          break;
+        case 'michelson':
+          magic_byte = 5;
+          break;
+        default:
+          throw "Invalid message type"
+    }
+    msg = Buffer.concat([Buffer.from([magic_byte]), msg]);
+
     return blake2.createHash('blake2b', {digestLength: 32}).update(msg).digest();
   }
 

@@ -295,19 +295,19 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
 })
 
 function get_endorsement_info(chain_id: number, branch: Buffer, tag: number, level: number): Buffer {
-  const result = Buffer.alloc(42);
-  result.writeUInt32BE(chain_id, 1);
-  branch.copy(result, 5);
-  result.writeUInt8(tag, 37);
-  result.writeUInt32BE(level, 38);
+  const result = Buffer.alloc(41);
+  result.writeUInt32BE(chain_id, 0);
+  branch.copy(result, 4);
+  result.writeUInt8(tag, 36);
+  result.writeUInt32BE(level, 37);
   return result;
 }
 
 function get_blocklevel_info(chain_id: number, level: number, proto: number): Buffer {
-  const result = Buffer.alloc(10);
-  result.writeUInt32BE(chain_id, 1);
-  result.writeUInt32BE(level, 5);
-  result.writeUInt8(proto, 9);
+  const result = Buffer.alloc(9);
+  result.writeUInt32BE(chain_id, 0);
+  result.writeUInt32BE(level, 4);
+  result.writeUInt8(proto, 8);
   return result;
 }
 
@@ -438,6 +438,10 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
+
+      const authResp = await app.authorizeBaking(APP_DERIVATION, curve)
+      expect(authResp.returnCode).toEqual(0x9000)
+
       const msg = Buffer.from(data.op.blob, 'hex')
       const respReq = app.signBaker(APP_DERIVATION, curve, msg, 'delegation')
 
@@ -454,7 +458,7 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg))
+      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
@@ -489,6 +493,10 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
+
+      const authResp = await app.authorizeBaking(APP_DERIVATION, curve)
+      expect(authResp.returnCode).toEqual(0x9000)
+
       const msg = Buffer.from(data.op.blob, 'hex')
       const respReq = app.legacySignWithHash(APP_DERIVATION, curve, msg)
 
@@ -505,7 +513,7 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg))
+      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 

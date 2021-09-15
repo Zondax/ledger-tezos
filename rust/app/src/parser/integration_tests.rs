@@ -95,7 +95,7 @@ fn test_sample(
         verify_ui(name, parsed, ui)
     }
 
-    let branch_bs58 = parsed.base58_branch().unwrap_or_else(|e| {
+    let branch_bs58 = parsed.get_base58_branch().unwrap_or_else(|e| {
         panic!(
             "couldn't compute base 58 branch of sample {}; err: {:?}",
             name, e

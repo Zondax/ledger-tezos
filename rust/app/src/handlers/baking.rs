@@ -158,7 +158,8 @@ impl Baking {
         path: &sys::crypto::bip32::BIP32Path<BIP32_MAX_LENGTH>,
     ) -> Result<(), Error> {
         //Check if the current baking path in NVM is initialized
-        let current_path = unsafe { BAKINGPATH.read() }.map_err(|_| Error::DataInvalid)?;
+        let current_path =
+            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
         //path seems to be initialized so we can return it
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
@@ -173,12 +174,91 @@ impl Baking {
     }
 
     #[inline(never)]
+    fn handle_endorsement(
+        input: &'static [u8],
+        send_hash: bool,
+        digest: [u8; 32],
+    ) -> Result<BakingSignUI, Error> {
+        let hw = HWM::read()?;
+
+        let (_, endorsement) =
+            EndorsementData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
+        if !endorsement.validate_with_watermark(&hw) {
+            return Err(Error::DataInvalid);
+            //TODO: show endorsement data on screen
+        }
+
+        Ok(BakingSignUI::Endorsement {
+            send_hash,
+            data: endorsement,
+            digest,
+        })
+    }
+
+    #[inline(never)]
+    fn handle_blockdata(
+        input: &'static [u8],
+        send_hash: bool,
+        digest: [u8; 32],
+    ) -> Result<BakingSignUI, Error> {
+        let hw = HWM::read()?;
+
+        let (_, blockdata) = BlockData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
+
+        if !blockdata.validate_with_watermark(&hw) {
+            return Err(Error::DataInvalid);
+        }
+
+        Ok(BakingSignUI::BlockLevel {
+            send_hash,
+            data: blockdata,
+            digest,
+        })
+    }
+
+    #[inline(never)]
+    fn handle_delegation(
+        input: &'static [u8],
+        send_hash: bool,
+        digest: [u8; 32],
+    ) -> Result<BakingSignUI, Error> {
+        use crate::parser::operations::{Operation, OperationType};
+
+        let operation = Operation::new(input).map_err(|_| Error::DataInvalid)?;
+
+        let op = operation
+            .ops()
+            .peek_next()
+            .map_err(|_| Error::DataInvalid)?
+            .ok_or(Error::DataInvalid)?;
+
+        match op {
+            OperationType::Delegation(deleg) => {
+                //verify that delegation.source == delegation.delegate
+                // and it matches the authorized key for baking
+                // (BAKINGPATH)
+
+                Ok(BakingSignUI::Delegation {
+                    send_hash,
+                    digest,
+                    branch: operation.branch(),
+                    data: deleg,
+                })
+            }
+            _ => Err(Error::CommandNotAllowed),
+        }
+    }
+
+    #[inline(never)]
     pub fn baker_sign(
+        send_hash: bool,
         p2: u8,
         init_data: &[u8],
         cdata: &'static [u8],
         flags: &mut u32,
     ) -> Result<u32, Error> {
+        crate::sys::zemu_log_stack("Baking::baker_sign\x00");
+
         let curve = Curve::try_from(p2).map_err(|_| Error::InvalidP1P2)?;
         let path =
             BIP32Path::<BIP32_MAX_LENGTH>::read(init_data).map_err(|_| Error::DataInvalid)?;
@@ -186,63 +266,14 @@ impl Baking {
         Self::check_with_nvm_pathandcurve(&curve, &path)?;
 
         unsafe { PATH.replace((path, curve)) };
-        let hw = HWM::read()?;
-        //do watermarks checks
 
         let digest = Self::blake2b_digest(cdata)?;
         let (rem, preemble) = Preemble::from_bytes(cdata).map_err(|_| Error::DataInvalid)?;
 
         let baking_ui = match preemble {
-            Preemble::Endorsement => {
-                let (_, endorsement) =
-                    EndorsementData::from_bytes(rem).map_err(|_| Error::DataInvalid)?;
-                if !endorsement.validate_with_watermark(&hw) {
-                    return Err(Error::DataInvalid);
-                    //TODO: show endorsement data on screen
-                }
-
-                BakingSignUI::Endorsement {
-                    data: endorsement,
-                    digest,
-                }
-            }
-            Preemble::Block => {
-                let (_, blockdata) = BlockData::from_bytes(rem).map_err(|_| Error::DataInvalid)?;
-
-                if !blockdata.validate_with_watermark(&hw) {
-                    return Err(Error::DataInvalid);
-                }
-
-                BakingSignUI::BlockLevel {
-                    data: blockdata,
-                    digest,
-                }
-            }
-            Preemble::Operation => {
-                use crate::parser::operations::{Operation, OperationType};
-
-                let operation = Operation::new(rem).map_err(|_| Error::DataInvalid)?;
-
-                let op = operation
-                    .ops()
-                    .peek_next()
-                    .map_err(|_| Error::DataInvalid)?
-                    .ok_or(Error::DataInvalid)?;
-
-                match op {
-                    OperationType::Delegation(deleg) => {
-                        //verify that delegation.source == delegation.delegate
-                        // and it matches the authorized key for baking
-                        // (BAKINGPATH)
-
-                        BakingSignUI::Delegation {
-                            digest,
-                            data: deleg,
-                        }
-                    }
-                    _ => return Err(Error::CommandNotAllowed),
-                }
-            }
+            Preemble::Endorsement => Self::handle_endorsement(rem, send_hash, digest)?,
+            Preemble::Block => Self::handle_blockdata(rem, send_hash, digest)?,
+            Preemble::Operation => Self::handle_delegation(rem, send_hash, digest)?,
             _ => return Err(Error::CommandNotAllowed),
         };
 
@@ -254,15 +285,19 @@ impl Baking {
 
 enum BakingSignUI {
     Endorsement {
+        send_hash: bool,
         digest: [u8; 32],
         data: EndorsementData<'static>,
     },
     BlockLevel {
+        send_hash: bool,
         digest: [u8; 32],
         data: BlockData,
     },
     Delegation {
+        send_hash: bool,
         digest: [u8; 32],
+        branch: &'static [u8; 32],
         data: Delegation<'static>,
     },
 }
@@ -272,7 +307,7 @@ impl Viewable for BakingSignUI {
         let n = match self {
             BakingSignUI::Endorsement { data, .. } => data.num_items(),
             BakingSignUI::BlockLevel { data, .. } => data.num_items(),
-            BakingSignUI::Delegation { data, .. } => data.num_items(),
+            BakingSignUI::Delegation { data, .. } => 1 + data.num_items(),
         };
 
         Ok(n as u8)
@@ -290,13 +325,30 @@ impl Viewable for BakingSignUI {
                 data.render_item(item_n, title, message, page)
             }
             BakingSignUI::BlockLevel { data, .. } => data.render_item(item_n, title, message, page),
-            BakingSignUI::Delegation { data, .. } => data.render_item(item_n, title, message, page),
+            BakingSignUI::Delegation { data, branch, .. } => {
+                if let 0 = item_n {
+                    use bolos::{pic_str, PIC};
+
+                    let title_content = pic_str!(b"Operation");
+                    title[..title_content.len()].copy_from_slice(title_content);
+
+                    let mex = crate::parser::operations::Operation::base58_branch(&branch).map_err(|_| ViewError::Unknown)?;
+
+                    crate::handlers::handle_ui_message(&mex[..], message, page)
+                } else {
+                    data.render_item(item_n - 1, title, message, page)
+                }
+            }
         }
     }
 
     fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
-        let digest = match self {
-            BakingSignUI::Endorsement { digest, data } => {
+        let (digest, send_hash) = match self {
+            BakingSignUI::Endorsement {
+                digest,
+                data,
+                send_hash,
+            } => {
                 if HWM::write(WaterMark {
                     level: data.level,
                     endorsement: true,
@@ -306,9 +358,13 @@ impl Viewable for BakingSignUI {
                     return (0, Error::ExecutionError as _);
                 }
 
-                digest
+                (digest, send_hash)
             }
-            BakingSignUI::BlockLevel { digest, data } => {
+            BakingSignUI::BlockLevel {
+                digest,
+                data,
+                send_hash,
+            } => {
                 if HWM::write(WaterMark {
                     level: data.level,
                     endorsement: false,
@@ -318,9 +374,11 @@ impl Viewable for BakingSignUI {
                     return (0, Error::ExecutionError as _);
                 }
 
-                digest
+                (digest, send_hash)
             }
-            BakingSignUI::Delegation { digest, .. } => digest,
+            BakingSignUI::Delegation {
+                digest, send_hash, ..
+            } => (digest, send_hash),
         };
 
         let current_path = match unsafe { BAKINGPATH.read() } {
@@ -351,9 +409,11 @@ impl Viewable for BakingSignUI {
 
         let mut tx = 0;
 
-        //write unsigned_hash to buffer
-        out[tx..tx + 32].copy_from_slice(digest);
-        tx += 32;
+        if *send_hash {
+            //write unsigned_hash to buffer
+            out[tx..tx + 32].copy_from_slice(digest);
+            tx += 32;
+        }
 
         //wrte signature to buffer
         out[tx..tx + sz].copy_from_slice(&sig[..sz]);
@@ -513,7 +573,7 @@ impl ApduHandler for Baking {
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), Error> {
         if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
-            *tx = Self::baker_sign(upload.p2, upload.first, upload.data, flags)?;
+            *tx = Self::baker_sign(true, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())

@@ -103,11 +103,13 @@ pub trait ApduHandler {
     ) -> Result<(), ApduError>;
 }
 
+#[inline(never)]
 pub fn apdu_dispatch<'apdu>(
     flags: &mut u32,
     tx: &mut u32,
     apdu_buffer: ApduBufferRead<'apdu>,
 ) -> Result<(), ApduError> {
+    crate::sys::zemu_log_stack("apdu_dispatch\x00");
     *flags = 0;
     *tx = 0;
 
@@ -190,12 +192,13 @@ pub fn handle_apdu(flags: &mut u32, tx: &mut u32, rx: u32, apdu_buffer: &mut [u8
     crate::sys::zemu_log_stack("handle_apdu\x00");
 
     //construct reader
-    let status_word = ApduBufferRead::new(apdu_buffer, rx)
-        .map_err(|_| ApduError::WrongLength) //if ther's an error constructing the wrapper, error
-        .and_then(|read| apdu_dispatch(flags, tx, read)) //dispatch
-        .and(Err::<(), _>(ApduError::Success)) //if we were successfull in dispatch, then it's success
-        .map_err(|e| e as u16) //convert to u16
-        .unwrap_err(); //get the status
+    let status_word = match ApduBufferRead::new(apdu_buffer, rx) {
+        Ok(reader) => apdu_dispatch(flags, tx, reader)
+            .and(Err::<(), _>(ApduError::Success))
+            .map_err(|e| e as u16)
+            .unwrap_err(),
+        Err(_) => ApduError::WrongLength as u16,
+    };
 
     let txu = *tx as usize;
     apdu_buffer[txu..txu + 2].copy_from_slice(&status_word.to_be_bytes()[..]);

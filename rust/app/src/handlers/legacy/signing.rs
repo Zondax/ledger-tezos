@@ -17,7 +17,6 @@
 use crate::{
     constants::ApduError as Error,
     dispatcher::ApduHandler,
-    handlers::signing::Sign,
     utils::{ApduBufferRead, Uploader},
 };
 
@@ -35,6 +34,8 @@ impl ApduHandler for LegacySign {
         tx: &mut u32,
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), Error> {
+        use crate::handlers::signing::Sign;
+
         if let Some(upload) = Uploader::new(Sign).upload(&buffer)? {
             *tx = Sign::start_sign(false, upload.p2, upload.first, upload.data, flags)?;
         }
@@ -56,13 +57,14 @@ impl ApduHandler for LegacySign {
         use crate::handlers::baking::Baking;
 
         if let Some(upload) = Uploader::new(Baking).upload(&buffer)? {
-            *tx = Baking::baker_sign(upload.p2, upload.first, upload.data, flags)?;
+            *tx = Baking::baker_sign(false, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())
     }
 }
 
+#[cfg(not(feature = "baking"))]
 impl ApduHandler for LegacySignWithHash {
     #[inline(never)]
     fn handle<'apdu>(
@@ -70,10 +72,30 @@ impl ApduHandler for LegacySignWithHash {
         tx: &mut u32,
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), Error> {
-        *tx = 0;
+        use crate::handlers::signing::Sign;
 
         if let Some(upload) = Uploader::new(Sign).upload(&buffer)? {
             *tx = Sign::start_sign(true, upload.p2, upload.first, upload.data, flags)?;
+        }
+
+        Ok(())
+    }
+}
+
+//override legacy handler in baking mode
+// to redirect to bakersign instead as baking signing has reduced functionality
+#[cfg(feature = "baking")]
+impl ApduHandler for LegacySignWithHash {
+    #[inline(never)]
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        use crate::handlers::baking::Baking;
+
+        if let Some(upload) = Uploader::new(Baking).upload(&buffer)? {
+            *tx = Baking::baker_sign(true, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())
@@ -88,7 +110,7 @@ impl ApduHandler for LegacySignUnsafe {
         tx: &mut u32,
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), Error> {
-        *tx = 0;
+        use crate::handlers::signing::Sign;
 
         if let Some(upload) = Uploader::new(Sign).upload(&buffer)? {
             *tx = Sign::start_sign(false, upload.p2, upload.first, upload.data, flags)?;

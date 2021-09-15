@@ -89,13 +89,13 @@ impl Sign {
         }
 
         let unsigned_hash = Self::blake2b_digest(data)?;
-        let (_, preemble) = Preemble::from_bytes(data).map_err(|_| Error::DataInvalid)?;
+        let (rem, preemble) = Preemble::from_bytes(data).map_err(|_| Error::DataInvalid)?;
 
         let ui = match preemble {
             Preemble::Operation => SignUI {
                 hash: unsigned_hash,
                 send_hash,
-                parsed: Some(Operation::new(data).map_err(|_| Error::DataInvalid)?),
+                parsed: Some(Operation::new(rem).map_err(|_| Error::DataInvalid)?),
             },
             Preemble::Michelson => SignUI {
                 hash: unsigned_hash,
@@ -222,7 +222,7 @@ impl Viewable for SignUI {
                     let title_content = pic_str!(b"Operation");
                     title[..title_content.len()].copy_from_slice(title_content);
 
-                    let mex = parsed.base58_branch().map_err(|_| ViewError::Unknown)?;
+                    let mex = parsed.get_base58_branch().map_err(|_| ViewError::Unknown)?;
 
                     handle_ui_message(&mex[..], message, page)
                 } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {

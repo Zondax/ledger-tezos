@@ -64,6 +64,7 @@ impl<'b> DisplayableItem for EndorsementData<'b> {
         1 + 3
     }
 
+    #[inline(never)]
     fn render_item(
         &self,
         item_n: u8,
@@ -145,6 +146,7 @@ impl DisplayableItem for BlockData {
         1 + 2
     }
 
+    #[inline(never)]
     fn render_item(
         &self,
         item_n: u8,
