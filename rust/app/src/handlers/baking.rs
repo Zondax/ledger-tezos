@@ -27,7 +27,6 @@ use crate::{
     crypto::{self, Curve},
     dispatcher::ApduHandler,
     handlers::hwm::{WaterMark, HWM},
-    handlers::public_key::GetAddress,
     parser::{
         baking::{BlockData, EndorsementData},
         operations::Delegation,
@@ -36,7 +35,6 @@ use crate::{
     sys::{self, flash_slot::Wear, new_flash_slot},
     utils::{ApduBufferRead, Uploader},
 };
-use bolos::flash_slot::WearError;
 
 const N_PAGES_BAKINGPATH: usize = 1;
 
@@ -133,7 +131,7 @@ impl Baking {
     fn get_public(key: crypto::PublicKey, buffer: &mut [u8]) -> Result<u32, Error> {
         let key = key.as_ref();
         let len = key.len();
-        buffer[..len].copy_from_slice(&key);
+        buffer[..len].copy_from_slice(key);
         Ok(len as u32)
     }
 
@@ -154,7 +152,7 @@ impl Baking {
         //path seems to be initialized so we can return it
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        let nvm_bip = Bip32PathAndCurve::try_from_bytes(&current_path)?
+        let nvm_bip = Bip32PathAndCurve::try_from_bytes(current_path)?
             .ok_or(Error::ApduCodeConditionsNotSatisfied)?;
 
         if nvm_bip.path != *path || nvm_bip.curve != *curve {
@@ -322,7 +320,7 @@ impl Viewable for BakingSignUI {
                     let title_content = pic_str!(b"Operation");
                     title[..title_content.len()].copy_from_slice(title_content);
 
-                    let mex = crate::parser::operations::Operation::base58_branch(&branch)
+                    let mex = crate::parser::operations::Operation::base58_branch(branch)
                         .map_err(|_| ViewError::Unknown)?;
 
                     crate::handlers::handle_ui_message(&mex[..], message, page)
@@ -380,7 +378,7 @@ impl Viewable for BakingSignUI {
         //path seems to be initialized so we can return it
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        let bip32_nvm = match Bip32PathAndCurve::try_from_bytes(&current_path) {
+        let bip32_nvm = match Bip32PathAndCurve::try_from_bytes(current_path) {
             Ok(Some(bip)) => bip,
             //should never reach here since we had checked it earlier
             Ok(None) => return (0, Error::ApduCodeConditionsNotSatisfied as _),

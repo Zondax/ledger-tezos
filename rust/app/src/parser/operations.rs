@@ -48,7 +48,7 @@ impl<'b> Operation<'b> {
 
     #[inline(never)]
     pub fn get_base58_branch(&self) -> Result<[u8; Operation::BASE58_BRANCH_LEN], bolos::Error> {
-        Self::base58_branch(&self.branch)
+        Self::base58_branch(self.branch)
     }
 
     #[inline(never)]

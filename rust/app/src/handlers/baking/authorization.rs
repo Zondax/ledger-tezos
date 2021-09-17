@@ -15,7 +15,7 @@
 ********************************************************************************/
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
-    crypto::{self, Curve},
+    crypto::{Curve},
     dispatcher::ApduHandler,
     handlers::{
         handle_ui_message,
@@ -25,11 +25,11 @@ use crate::{
     sys::{self, crypto::bip32::BIP32Path},
     utils::ApduBufferRead,
 };
-use bolos::{errors::SyscallError, pic_str, PIC};
+use bolos::{ pic_str, PIC};
 use core::convert::TryFrom;
 use zemu_sys::{Show, ViewError, Viewable};
 
-use super::{Baking, Bip32PathAndCurve, BAKINGPATH};
+use super::{ Bip32PathAndCurve, BAKINGPATH};
 
 pub struct AuthorizeBaking;
 
@@ -146,12 +146,12 @@ impl Viewable for AuthorizeUI {
         let key = pk.as_ref();
         let len = key.len();
         out[0] = len as u8;
-        out[1..1 + len].copy_from_slice(&key);
+        out[1..1 + len].copy_from_slice(key);
 
         (1 + len as usize, Error::Success as _)
     }
 
-    fn reject(&mut self, out: &mut [u8]) -> (usize, u16) {
+    fn reject(&mut self, _: &mut [u8]) -> (usize, u16) {
         (0, Error::CommandNotAllowed as _)
     }
 }
@@ -163,7 +163,7 @@ impl DeAuthorizeBaking {
     pub fn deauthorize(flags: &mut u32) -> Result<u32, Error> {
         let path = unsafe { BAKINGPATH.read() }
             .map_err(|_| Error::ApduCodeConditionsNotSatisfied)
-            .and_then(|slot| Bip32PathAndCurve::try_from_bytes(&slot))?
+            .and_then(|slot| Bip32PathAndCurve::try_from_bytes(slot))?
             .ok_or(Error::ApduCodeConditionsNotSatisfied)?;
 
         let addr = GetAddress::new_key(path.curve, &path.path)

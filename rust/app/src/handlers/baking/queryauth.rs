@@ -15,14 +15,13 @@
 ********************************************************************************/
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
-    crypto::{self, Curve},
+    crypto::Curve,
     dispatcher::ApduHandler,
     handlers::{
         handle_ui_message,
-        hwm::HWM,
         public_key::{Addr, GetAddress},
     },
-    sys::{self, crypto::bip32::BIP32Path},
+    sys::crypto::bip32::BIP32Path,
     utils::ApduBufferRead,
 };
 use bolos::{pic_str, PIC};
@@ -30,7 +29,7 @@ use zemu_sys::{Show, ViewError, Viewable};
 
 use core::convert::TryFrom;
 
-use super::{Baking, Bip32PathAndCurve, BAKINGPATH};
+use super::{Bip32PathAndCurve, BAKINGPATH};
 
 #[inline(never)]
 fn query(
@@ -45,7 +44,7 @@ fn query(
 
     //path seems to be initialized so we can return it
     //check if it is a good path
-    let curve_and_path = Bip32PathAndCurve::try_from_bytes(&current_path)?
+    let curve_and_path = Bip32PathAndCurve::try_from_bytes(current_path)?
         .ok_or(Error::ApduCodeConditionsNotSatisfied)?;
 
     let mut ui = QueryAuthUI::new(curve_and_path, with_curve)?;

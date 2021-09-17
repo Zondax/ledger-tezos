@@ -21,8 +21,8 @@ use crate::{
     utils::ApduBufferRead,
 };
 
-use core::convert::TryFrom;
 use bolos::crypto::bip32::BIP32Path;
+use core::convert::TryFrom;
 
 pub struct LegacyAuthorize;
 pub struct LegacyDeAuthorize;
@@ -57,7 +57,11 @@ impl ApduHandler for LegacyAuthorize {
 
 impl ApduHandler for LegacyDeAuthorize {
     #[inline(never)]
-    fn handle<'apdu>(flags: &mut u32, tx: &mut u32, buffer: ApduBufferRead<'apdu>) -> Result<(), Error> {
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
         *tx = 0;
 
         let req_confirmation = buffer.p1() >= 1;
