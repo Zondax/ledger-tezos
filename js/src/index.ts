@@ -227,9 +227,11 @@ export default class TezosApp {
         .then(processDeAuthorizeBakingResponse, processErrorResponse);
   }
 
-  async queryAuthKeyWithCurve(): Promise<ResponseQueryAuthKey> {
+  async queryAuthKeyWithCurve(confirm = false): Promise<ResponseQueryAuthKey> {
+    const confirmation = confirm ? 1 : 0;
+
     return this.transport
-        .send(CLA, INS.QUERY_AUTH_KEY_WITH_CURVE, 0x01, 0x00, Buffer.alloc(0), [LedgerError.NoErrors])
+        .send(CLA, INS.QUERY_AUTH_KEY_WITH_CURVE, confirmation, 0x00, Buffer.alloc(0), [LedgerError.NoErrors])
         .then(processQueryAuthKeyWithCurve, processErrorResponse);
   }
 

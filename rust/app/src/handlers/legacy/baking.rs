@@ -13,7 +13,16 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use crate::{constants::ApduError as Error, dispatcher::ApduHandler, utils::ApduBufferRead};
+use crate::{
+    constants::{ApduError as Error, BIP32_MAX_LENGTH},
+    crypto::Curve,
+    dispatcher::ApduHandler,
+    handlers::baking::{AuthorizeBaking, DeAuthorizeBaking, QueryAuthKey},
+    utils::ApduBufferRead,
+};
+
+use core::convert::TryFrom;
+use bolos::crypto::bip32::BIP32Path;
 
 pub struct LegacyAuthorize;
 pub struct LegacyDeAuthorize;
@@ -22,28 +31,74 @@ pub struct LegacyQueryAuthKeyWithCurve;
 
 impl ApduHandler for LegacyAuthorize {
     #[inline(never)]
-    fn handle<'apdu>(_: &mut u32, _: &mut u32, _: ApduBufferRead<'apdu>) -> Result<(), Error> {
-        Err(Error::CommandNotAllowed)
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        let req_confirmation = buffer.p1() >= 1;
+
+        //confirmation mandatory
+        if !req_confirmation {
+            return Err(Error::ApduCodeConditionsNotSatisfied);
+        }
+
+        let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
+
+        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
+        let bip32_path =
+            BIP32Path::<BIP32_MAX_LENGTH>::read(cdata).map_err(|_| Error::DataInvalid)?;
+
+        *tx = AuthorizeBaking::authorize(curve, bip32_path, flags)? as u32;
+
+        Ok(())
     }
 }
 
 impl ApduHandler for LegacyDeAuthorize {
     #[inline(never)]
-    fn handle<'apdu>(_: &mut u32, _: &mut u32, _: ApduBufferRead<'apdu>) -> Result<(), Error> {
-        Err(Error::CommandNotAllowed)
+    fn handle<'apdu>(flags: &mut u32, tx: &mut u32, buffer: ApduBufferRead<'apdu>) -> Result<(), Error> {
+        *tx = 0;
+
+        let req_confirmation = buffer.p1() >= 1;
+
+        //confirmation mandatory
+        if !req_confirmation {
+            return Err(Error::ApduCodeConditionsNotSatisfied);
+        }
+
+        *tx = DeAuthorizeBaking::deauthorize(flags)?;
+
+        Ok(())
     }
 }
 
 impl ApduHandler for LegacyQueryAuthKey {
     #[inline(never)]
-    fn handle<'apdu>(_: &mut u32, _: &mut u32, _: ApduBufferRead<'apdu>) -> Result<(), Error> {
-        Err(Error::CommandNotAllowed)
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        let req_confirmation = buffer.p1() >= 1;
+
+        *tx = QueryAuthKey::query(req_confirmation, buffer.write(), flags)?;
+
+        Ok(())
     }
 }
 
 impl ApduHandler for LegacyQueryAuthKeyWithCurve {
     #[inline(never)]
-    fn handle<'apdu>(_: &mut u32, _: &mut u32, _: ApduBufferRead<'apdu>) -> Result<(), Error> {
-        Err(Error::CommandNotAllowed)
+    fn handle<'apdu>(
+        flags: &mut u32,
+        tx: &mut u32,
+        buffer: ApduBufferRead<'apdu>,
+    ) -> Result<(), Error> {
+        let req_confirmation = buffer.p1() >= 1;
+
+        *tx = QueryAuthKey::query(req_confirmation, buffer.write(), flags)?;
+
+        Ok(())
     }
 }

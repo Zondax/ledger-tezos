@@ -1,3 +1,4 @@
+use core::mem::MaybeUninit;
 /*******************************************************************************
 *   (c) 2021 Zondax GmbH
 *
@@ -34,7 +35,12 @@ impl PublicKey {
     pub fn hash(&self, out: &mut [u8; 20]) -> Result<(), Error> {
         sys::zemu_log_stack("PublicKey::hash\x00");
 
-        let mut hasher = Blake2b::new()?;
+        let mut hasher = {
+            let mut loc = MaybeUninit::<Blake2b<20>>::uninit();
+            Blake2b::new_gce(&mut loc)?;
+
+            unsafe { loc.assume_init() }
+        };
 
         match self.curve() {
             Curve::Bip32Ed25519 | Curve::Ed25519 => {

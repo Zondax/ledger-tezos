@@ -14,10 +14,17 @@
 *  limitations under the License.
 ********************************************************************************/
 use blake2::digest::{Reset, Update, VariableOutputDirty};
+use core::mem::MaybeUninit;
 
 pub struct Blake2b<const S: usize>(blake2::VarBlake2b);
 
 impl<const S: usize> Blake2b<S> {
+    pub fn new_gce(loc: &mut MaybeUninit<Self>) -> Result<(), crate::Error> {
+        loc.write(Self::new());
+
+        Ok(())
+    }
+
     pub fn new() -> Result<Self, crate::Error> {
         blake2::VarBlake2b::new(S)
             .map(Self)

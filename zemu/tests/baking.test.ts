@@ -243,7 +243,13 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const respReq = app.authorizeBaking(APP_DERIVATION, curve)
+
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-authorize-${curve}`, [3, 0])
+
+      const resp = await respReq;
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
@@ -257,18 +263,31 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const respReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.clickRight();
+      await sim.clickRight();
+      await sim.clickRight();
+      await sim.clickBoth();
+      const resp = await respReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const query = await app.queryAuthKeyWithCurve()
+      const queryReq = app.queryAuthKeyWithCurve(true)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-full-cycle-query-with-curve-${curve}`, [3, 0])
+      const query = await queryReq;
 
       console.log(query, m.name)
       expect(query.returnCode).toEqual(0x9000)
       expect(query.curve).toEqual(curve)
 
-      const query2 = await app.deauthorizeBaking()
+      const query2Req = app.deauthorizeBaking()
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-full-cycle-deauthorize-${curve}`, [3, 0])
+      const query2 = await query2Req
 
       console.log(query2, m.name)
       expect(query2.returnCode).toEqual(0x9000)
@@ -278,7 +297,13 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
       console.log(query3, m.name)
       expect(query3.returnCode).not.toEqual(0x9000)
 
-      const query4 = await app.authorizeBaking(APP_DERIVATION, curve)
+      const query4Req = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.clickRight();
+      await sim.clickRight();
+      await sim.clickRight();
+      await sim.clickBoth();
+      const query4 = await query4Req;
 
       console.log(query4, m.name)
       expect(query4.returnCode).toEqual(0x9000)

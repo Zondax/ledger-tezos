@@ -91,6 +91,7 @@ pub struct Addr {
 }
 
 impl Addr {
+    #[inline(never)]
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         sys::zemu_log_stack("Addr::new\x00");
 
@@ -172,7 +173,6 @@ impl Viewable for AddrUI {
 
         if let 0 = item_n {
             let title_content = pic_str!(b"Address");
-
             title[..title_content.len()].copy_from_slice(title_content);
 
             let addr_bytes = self.addr.to_base58();

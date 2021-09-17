@@ -47,6 +47,18 @@ static mut BAKINGPATH: WearLeveller =
     new_flash_slot!(N_PAGES_BAKINGPATH).expect("NVM might be corrupted");
 
 #[derive(Debug, PartialEq, Clone)]
+/// Utility struct to store and read BIP32Path and Curve from NVM slots
+///
+/// # Codec
+///
+/// [0] = 0x00 | 0x2A; 0x00 indicates that the data left blank
+///
+/// [1] = `Curve`; byte representation of (`Curve`)[crypto::Curve]
+///
+/// [2] = number of components in the path (i)
+///
+/// [3..3+i*4] = `BIP32Path`;
+/// byte representation of (`BIP32Path`)[sys::crypto::bip32::BIP32Path]
 pub struct Bip32PathAndCurve {
     pub curve: crypto::Curve,
     pub path: sys::crypto::bip32::BIP32Path<BIP32_MAX_LENGTH>,
@@ -60,43 +72,58 @@ impl Bip32PathAndCurve {
         Self { curve, path }
     }
 
-    pub fn try_from_bytes(from: &[u8; 52]) -> Result<Self, Error> {
-        let curve = crypto::Curve::try_from(from[0]).map_err(|_| Error::DataInvalid)?;
-        let components_length = from[1];
+    /// Attempt to read a Bip32PathAndCurve from some bytes
+    pub fn try_from_bytes(from: &[u8; 52]) -> Result<Option<Self>, Error> {
+        //the slot could have been purposely emptied of data
+        // for example when we deauthorize
+        if from[0] == 0 {
+            return Ok(None);
+        }
+        let curve = crypto::Curve::try_from(from[1]).map_err(|_| Error::DataInvalid)?;
+        let components_length = from[2];
 
         if components_length > BIP32_MAX_LENGTH as u8 {
             return Err(Error::WrongLength);
         }
 
+        //we reread from 2 since `read` expectes
+        // the components prefixed with the number of components,
+        // so we also + 1 to get that prefix
         let path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(
-            &from[1..(2 + components_length * 4).into()],
+            &from[2..2 + 1 + 4 * components_length as usize],
         )
         .map_err(|_| Error::DataInvalid)?;
 
-        Ok(Self { curve, path })
+        Ok(Some(Self { curve, path }))
+    }
+
+    ///Used to set a slot as empty when writing to NVM
+    ///
+    /// Useful on deauthorization
+    pub fn empty() -> [u8; 52] {
+        [0; 52]
     }
 }
 
 impl From<Bip32PathAndCurve> for [u8; 52] {
     fn from(from: Bip32PathAndCurve) -> Self {
         let mut out = [0; 52];
+        out[0] = 42; //we write to indicate that we actually have data here
 
         let curve = from.curve.into();
-        out[0] = curve;
+        out[1] = curve;
 
         let components = from.path.components();
-        out[1] = components.len() as u8;
+        out[2] = components.len() as u8;
 
-        for i in 0..components.len() {
-            out[2 + i * 4..2 + (i + 1) * 4].copy_from_slice(&components[i].to_be_bytes()[..]);
-        }
+        out[3..]
+            .chunks_exact_mut(4)
+            .zip(components)
+            .for_each(|(chunk, comp)| chunk.copy_from_slice(&comp.to_be_bytes()[..]));
+
         out
     }
 }
-
-//TODO: Or grab this from signing.rs??
-#[bolos::lazy_static]
-static mut PATH: Option<(BIP32Path<BIP32_MAX_LENGTH>, Curve)> = None;
 
 pub struct Baking;
 
@@ -108,42 +135,6 @@ impl Baking {
         let len = key.len();
         buffer[..len].copy_from_slice(&key);
         Ok(len as u32)
-    }
-
-    //FIXME: make this part of impl Bip32PathAndCurve?
-    #[inline(never)]
-    fn check_and_store_path(path_and_curve: Bip32PathAndCurve) -> Result<(), Error> {
-        //Check if the current baking path in NVM is un-initialized
-        let current_path = unsafe { BAKINGPATH.read() };
-        if let Err(error_msg) = current_path {
-            if error_msg != WearError::Uninitialized {
-                //Something else went wrong
-                Err(Error::ExecutionError)
-            } else {
-                //store path and curve in NVM
-                let data: [u8; 52] = path_and_curve.into();
-                unsafe { BAKINGPATH.write(data) }.map_err(|_| Error::ExecutionError)?;
-                Ok(())
-            }
-        } else {
-            //path seems to be initialized
-            Err(Error::ApduCodeConditionsNotSatisfied)
-        }
-    }
-
-    //FIXME: make this part of impl Bip32PathAndCurve?
-    #[inline(never)]
-    fn check_and_delete_path() -> Result<(), Error> {
-        //Check if the current baking path in NVM is initialized
-        let current_path = unsafe { BAKINGPATH.read() };
-        if current_path.is_err() {
-            //There was no initial path
-            Err(Error::ApduCodeConditionsNotSatisfied)
-        } else {
-            //path seems to be initialized so we can remove it
-            unsafe { BAKINGPATH.format() }.map_err(|_| Error::ExecutionError)?;
-            Ok(())
-        }
     }
 
     //FIXME: grab this from signing.rs
@@ -163,7 +154,8 @@ impl Baking {
         //path seems to be initialized so we can return it
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        let nvm_bip = Bip32PathAndCurve::try_from_bytes(&current_path)?;
+        let nvm_bip = Bip32PathAndCurve::try_from_bytes(&current_path)?
+            .ok_or(Error::ApduCodeConditionsNotSatisfied)?;
 
         if nvm_bip.path != *path || nvm_bip.curve != *curve {
             //TODO: show that bip32 paths don't match??
@@ -265,8 +257,6 @@ impl Baking {
 
         Self::check_with_nvm_pathandcurve(&curve, &path)?;
 
-        unsafe { PATH.replace((path, curve)) };
-
         let digest = Self::blake2b_digest(cdata)?;
         let (rem, preemble) = Preemble::from_bytes(cdata).map_err(|_| Error::DataInvalid)?;
 
@@ -332,7 +322,8 @@ impl Viewable for BakingSignUI {
                     let title_content = pic_str!(b"Operation");
                     title[..title_content.len()].copy_from_slice(title_content);
 
-                    let mex = crate::parser::operations::Operation::base58_branch(&branch).map_err(|_| ViewError::Unknown)?;
+                    let mex = crate::parser::operations::Operation::base58_branch(&branch)
+                        .map_err(|_| ViewError::Unknown)?;
 
                     crate::handlers::handle_ui_message(&mex[..], message, page)
                 } else {
@@ -390,7 +381,9 @@ impl Viewable for BakingSignUI {
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
         let bip32_nvm = match Bip32PathAndCurve::try_from_bytes(&current_path) {
-            Ok(bip) => bip,
+            Ok(Some(bip)) => bip,
+            //should never reach here since we had checked it earlier
+            Ok(None) => return (0, Error::ApduCodeConditionsNotSatisfied as _),
             Err(e) => return (0, e as _),
         };
 
@@ -401,11 +394,6 @@ impl Viewable for BakingSignUI {
             Ok(sz) => sz,
             Err(_) => return (0, Error::ExecutionError as _),
         };
-
-        //reset globals to avoid skipping `Init`
-        if let Err(e) = cleanup_globals() {
-            return (0, e as _);
-        }
 
         let mut tx = 0;
 
@@ -423,147 +411,15 @@ impl Viewable for BakingSignUI {
     }
 
     fn reject(&mut self, _: &mut [u8]) -> (usize, u16) {
-        let _ = cleanup_globals();
         (0, Error::CommandNotAllowed as _)
     }
 }
 
-fn cleanup_globals() -> Result<(), Error> {
-    unsafe { PATH.take() };
+mod authorization;
+pub use authorization::{AuthorizeBaking, DeAuthorizeBaking};
 
-    Ok(())
-}
-
-pub struct AuthorizeBaking;
-pub struct DeAuthorizeBaking;
-pub struct QueryAuthKey;
-pub struct QueryAuthKeyWithCurve;
-
-impl ApduHandler for AuthorizeBaking {
-    #[inline(never)]
-    fn handle<'apdu>(
-        _: &mut u32,
-        tx: &mut u32,
-        buffer: ApduBufferRead<'apdu>,
-    ) -> Result<(), Error> {
-        *tx = 0;
-
-        let req_confirmation = buffer.p1() >= 1;
-
-        //TODO: show confirmation
-        if !req_confirmation {
-            return Err(Error::ApduCodeConditionsNotSatisfied);
-        }
-
-        let curve = crypto::Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
-
-        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
-        let bip32_path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(cdata)
-            .map_err(|_| Error::DataInvalid)?;
-
-        let key = GetAddress::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
-        let path_and_data = Bip32PathAndCurve::new(curve, bip32_path);
-        Baking::check_and_store_path(path_and_data)?;
-
-        let buffer = buffer.write();
-        let pk_len = Baking::get_public(key, &mut buffer[1..])?;
-        buffer[0] = pk_len as u8;
-
-        HWM::reset(0).map_err(|_| Error::Busy)?;
-
-        *tx = pk_len + 1;
-
-        Ok(())
-    }
-}
-
-impl ApduHandler for DeAuthorizeBaking {
-    #[inline(never)]
-    fn handle<'apdu>(
-        _: &mut u32,
-        tx: &mut u32,
-        buffer: ApduBufferRead<'apdu>,
-    ) -> Result<(), Error> {
-        *tx = 0;
-
-        let req_confirmation = buffer.p1() >= 1;
-
-        if !req_confirmation {
-            return Err(Error::ApduCodeConditionsNotSatisfied);
-        }
-
-        //TODO: show confirmation of deletion on screen
-        //FIXME: check if we need to format the HWM??
-        HWM::format()?;
-        Baking::check_and_delete_path()?;
-
-        Ok(())
-    }
-}
-
-impl ApduHandler for QueryAuthKey {
-    #[inline(never)]
-    fn handle<'apdu>(
-        _: &mut u32,
-        tx: &mut u32,
-        buffer: ApduBufferRead<'apdu>,
-    ) -> Result<(), Error> {
-        *tx = 0;
-
-        let req_confirmation = buffer.p1() >= 1;
-
-        if req_confirmation {
-            //TODO show confirmation on screen??
-        }
-        //Check if the current baking path in NVM is initialized
-        let current_path =
-            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
-        //path seems to be initialized so we can return it
-        //check if it is a good path
-        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        Bip32PathAndCurve::try_from_bytes(&current_path)?;
-
-        let bip32_pathsize = current_path[1] as usize;
-
-        let buffer = buffer.write();
-        buffer[0..1 + 4 * bip32_pathsize].copy_from_slice(&current_path[1..2 + 4 * bip32_pathsize]);
-
-        *tx = 1 + 4 * bip32_pathsize as u32;
-        Ok(())
-    }
-}
-
-impl ApduHandler for QueryAuthKeyWithCurve {
-    #[inline(never)]
-    fn handle<'apdu>(
-        _: &mut u32,
-        tx: &mut u32,
-        buffer: ApduBufferRead<'apdu>,
-    ) -> Result<(), Error> {
-        *tx = 0;
-
-        let req_confirmation = buffer.p1() >= 1;
-
-        if req_confirmation {
-            //TODO show confirmation on screen??
-        }
-        //Check if the current baking path in NVM is initialized
-        let current_path =
-            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
-        //path seems to be initialized so we can return it
-        //check if it is a good path
-        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        Bip32PathAndCurve::try_from_bytes(&current_path)?;
-
-        let bip32_pathsize = current_path[1] as usize;
-
-        let buffer = buffer.write();
-        buffer[0..2 + 4 * bip32_pathsize].copy_from_slice(&current_path[0..2 + 4 * bip32_pathsize]);
-        *tx = 2 + 4 * bip32_pathsize as u32;
-
-        Ok(())
-    }
-}
+mod queryauth;
+pub use queryauth::{QueryAuthKey, QueryAuthKeyWithCurve};
 
 impl ApduHandler for Baking {
     #[inline(never)]
@@ -600,7 +456,7 @@ mod tests {
         let derived = Bip32PathAndCurve::try_from_bytes(&data);
 
         assert!(derived.is_ok());
-        assert_eq!(derived.unwrap(), path_and_curve);
+        assert_eq!(derived.unwrap().unwrap(), path_and_curve);
     }
 
     #[test]

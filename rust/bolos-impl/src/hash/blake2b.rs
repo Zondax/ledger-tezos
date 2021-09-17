@@ -20,12 +20,21 @@ use crate::{errors::catch, Error};
 
 use super::CxHash;
 
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
+
 #[repr(transparent)]
 pub struct Blake2b<const S: usize> {
     state: cx_blake2b_t,
 }
 
 impl<const S: usize> Blake2b<S> {
+    #[inline(always)]
+    pub fn new_gce(loc: &mut MaybeUninit<Self>) -> Result<(), Error> {
+        let state = unsafe { addr_of_mut!((*loc.as_mut_ptr()).state) };
+
+        Self::init_state(state)
+    }
+
     #[inline(never)]
     pub fn new() -> Result<Self, Error> {
         zemu_sys::zemu_log_stack("Blake2b::new\x00");
@@ -38,18 +47,18 @@ impl<const S: usize> Blake2b<S> {
         Ok(this)
     }
 
-    fn init_state(state: &mut cx_blake2b_t) -> Result<(), Error> {
+    fn init_state(state: *mut cx_blake2b_t) -> Result<(), Error> {
         cfg_if! {
             if #[cfg(nanox)] {
                 let might_throw = || unsafe {
-                    crate::raw::cx_blake2b_init(state as *mut _, (S * 8) as u32);
+                    crate::raw::cx_blake2b_init(state, (S * 8) as u32);
                 };
 
                 catch(might_throw)?;
             } else if #[cfg(nanos)] {
                 let r = unsafe {
                     crate::raw::cx_blake2b_init_no_throw(
-                        state as *mut _,
+                        state,
                         (S * 8) as u32
                     )
                 };
