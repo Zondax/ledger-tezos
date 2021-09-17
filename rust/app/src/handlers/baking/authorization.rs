@@ -15,7 +15,7 @@
 ********************************************************************************/
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
-    crypto::{Curve},
+    crypto::Curve,
     dispatcher::ApduHandler,
     handlers::{
         handle_ui_message,
@@ -25,11 +25,11 @@ use crate::{
     sys::{self, crypto::bip32::BIP32Path},
     utils::ApduBufferRead,
 };
-use bolos::{ pic_str, PIC};
+use bolos::{pic_str, PIC};
 use core::convert::TryFrom;
 use zemu_sys::{Show, ViewError, Viewable};
 
-use super::{ Bip32PathAndCurve, BAKINGPATH};
+use super::{Bip32PathAndCurve, BAKINGPATH};
 
 pub struct AuthorizeBaking;
 
