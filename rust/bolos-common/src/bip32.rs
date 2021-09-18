@@ -109,7 +109,7 @@ impl<const LEN: usize> BIP32Path<LEN> {
     }
 
     pub fn serialize(&self) -> std::vec::Vec<u8> {
-        let mut v = std::vec::Vec::with_capacity(4 * LEN + 1);
+        let mut v = std::vec::Vec::with_capacity(1 + 4 * self.len as usize);
         v.push(self.len);
 
         for &p in self.components.iter().take(self.len as usize) {

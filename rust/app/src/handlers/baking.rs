@@ -24,7 +24,7 @@ use bolos::{
 
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
-    crypto::{self, Curve},
+    crypto::Curve,
     dispatcher::ApduHandler,
     handlers::hwm::{WaterMark, HWM},
     parser::{
@@ -32,7 +32,7 @@ use crate::{
         operations::Delegation,
         DisplayableItem, Preemble,
     },
-    sys::{self, flash_slot::Wear, new_flash_slot},
+    sys::{flash_slot::Wear, new_flash_slot},
     utils::{ApduBufferRead, Uploader},
 };
 
@@ -57,16 +57,13 @@ static mut BAKINGPATH: WearLeveller =
 ///
 /// [3..3+i*4] = `BIP32Path`;
 /// byte representation of (`BIP32Path`)[sys::crypto::bip32::BIP32Path]
-pub struct Bip32PathAndCurve {
-    pub curve: crypto::Curve,
-    pub path: sys::crypto::bip32::BIP32Path<BIP32_MAX_LENGTH>,
+struct Bip32PathAndCurve {
+    curve: Curve,
+    path: BIP32Path<BIP32_MAX_LENGTH>,
 }
 
 impl Bip32PathAndCurve {
-    pub fn new(
-        curve: crypto::Curve,
-        path: sys::crypto::bip32::BIP32Path<BIP32_MAX_LENGTH>,
-    ) -> Self {
+    pub fn new(curve: Curve, path: BIP32Path<BIP32_MAX_LENGTH>) -> Self {
         Self { curve, path }
     }
 
@@ -77,7 +74,7 @@ impl Bip32PathAndCurve {
         if from[0] == 0 {
             return Ok(None);
         }
-        let curve = crypto::Curve::try_from(from[1]).map_err(|_| Error::DataInvalid)?;
+        let curve = Curve::try_from(from[1]).map_err(|_| Error::DataInvalid)?;
         let components_length = from[2];
 
         if components_length > BIP32_MAX_LENGTH as u8 {
@@ -87,10 +84,9 @@ impl Bip32PathAndCurve {
         //we reread from 2 since `read` expectes
         // the components prefixed with the number of components,
         // so we also + 1 to get that prefix
-        let path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(
-            &from[2..2 + 1 + 4 * components_length as usize],
-        )
-        .map_err(|_| Error::DataInvalid)?;
+        let path =
+            BIP32Path::<BIP32_MAX_LENGTH>::read(&from[2..2 + 1 + 4 * components_length as usize])
+                .map_err(|_| Error::DataInvalid)?;
 
         Ok(Some(Self { curve, path }))
     }
@@ -126,15 +122,6 @@ impl From<Bip32PathAndCurve> for [u8; 52] {
 pub struct Baking;
 
 impl Baking {
-    //FIXME: Ideally grab this function from public_key.rs?
-    #[inline(never)]
-    fn get_public(key: crypto::PublicKey, buffer: &mut [u8]) -> Result<u32, Error> {
-        let key = key.as_ref();
-        let len = key.len();
-        buffer[..len].copy_from_slice(key);
-        Ok(len as u32)
-    }
-
     //FIXME: grab this from signing.rs
     #[inline(never)]
     fn blake2b_digest(buffer: &[u8]) -> Result<[u8; 32], Error> {
@@ -142,10 +129,7 @@ impl Baking {
     }
 
     #[inline(never)]
-    fn check_with_nvm_pathandcurve(
-        curve: &crypto::Curve,
-        path: &sys::crypto::bip32::BIP32Path<BIP32_MAX_LENGTH>,
-    ) -> Result<(), Error> {
+    fn check_with_stored(curve: Curve, path: &BIP32Path<BIP32_MAX_LENGTH>) -> Result<bool, Error> {
         //Check if the current baking path in NVM is initialized
         let current_path =
             unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
@@ -155,12 +139,29 @@ impl Baking {
         let nvm_bip = Bip32PathAndCurve::try_from_bytes(current_path)?
             .ok_or(Error::ApduCodeConditionsNotSatisfied)?;
 
-        if nvm_bip.path != *path || nvm_bip.curve != *curve {
-            //TODO: show that bip32 paths don't match??
-            Err(Error::DataInvalid)
-        } else {
-            Ok(())
-        }
+        Ok(nvm_bip.path == *path && nvm_bip.curve == curve)
+    }
+
+    /// Will store a curve and path in NVM memory
+    pub fn store_baking_key(curve: Curve, path: BIP32Path<BIP32_MAX_LENGTH>) -> Result<(), Error> {
+        let path_and_curve = Bip32PathAndCurve::new(curve, path);
+
+        unsafe { BAKINGPATH.write(path_and_curve.into()) }.map_err(|_| Error::ExecutionError)
+    }
+
+    /// Will remove the stored baking key
+    pub fn remove_baking_key() -> Result<(), Error> {
+        unsafe { BAKINGPATH.write(Bip32PathAndCurve::empty()) }.map_err(|_| Error::ExecutionError)
+    }
+
+    /// Will attempt to read a curve and path stored in NVM memory
+    pub fn read_baking_key() -> Result<Option<(Curve, BIP32Path<BIP32_MAX_LENGTH>)>, Error> {
+        let current =
+            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
+
+        let path_and_curve = Bip32PathAndCurve::try_from_bytes(current)?;
+
+        Ok(path_and_curve.map(|both| (both.curve, both.path)))
     }
 
     #[inline(never)]
@@ -253,7 +254,9 @@ impl Baking {
         let path =
             BIP32Path::<BIP32_MAX_LENGTH>::read(init_data).map_err(|_| Error::DataInvalid)?;
 
-        Self::check_with_nvm_pathandcurve(&curve, &path)?;
+        if !Self::check_with_stored(curve, &path)? {
+            return Err(Error::DataInvalid);
+        }
 
         let digest = Self::blake2b_digest(cdata)?;
         let (rem, preemble) = Preemble::from_bytes(cdata).map_err(|_| Error::DataInvalid)?;

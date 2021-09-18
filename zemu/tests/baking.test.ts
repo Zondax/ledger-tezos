@@ -319,6 +319,42 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
   })
 })
 
+describe.each(models)('Standard baking [%s]; legacy - setup', function (m) {
+  test.each(curves)('Setup baking %s', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name, X11: true })
+      const app = new TezosApp(sim.getTransport())
+
+      const respReq = app.legacySetup(APP_DERIVATION, curve, 42, 10, 0xDEADBEEF);
+
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-setup-${curve}`, [6, 0])
+
+      const resp = await respReq;
+
+      console.log(resp, m.name)
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp).toHaveProperty('publicKey')
+      expect(resp).toHaveProperty('address')
+
+      const hwmCheck = await app.legacyGetAllWatermark();
+
+      console.log(hwmCheck, m.name)
+      expect(hwmCheck.returnCode).toEqual(0x9000)
+
+      expect(hwmCheck.main).toEqual(42)
+      expect(hwmCheck).toHaveProperty('test')
+      expect(hwmCheck.test).toEqual(10)
+      expect(hwmCheck).toHaveProperty('chain_id')
+      expect(hwmCheck.chain_id).toEqual(0xDEADBEEF)
+
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
 function get_endorsement_info(chain_id: number, branch: Buffer, tag: number, level: number): Buffer {
   const result = Buffer.alloc(41);
   result.writeUInt32BE(chain_id, 0);

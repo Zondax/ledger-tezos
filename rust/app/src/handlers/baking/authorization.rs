@@ -29,7 +29,7 @@ use bolos::{pic_str, PIC};
 use core::convert::TryFrom;
 use zemu_sys::{Show, ViewError, Viewable};
 
-use super::{Bip32PathAndCurve, BAKINGPATH};
+use super::Baking;
 
 pub struct AuthorizeBaking;
 
@@ -132,8 +132,7 @@ impl Viewable for AuthorizeUI {
         };
 
         //store in memory
-        let path_and_curve = Bip32PathAndCurve::new(self.curve, self.path);
-        if unsafe { BAKINGPATH.write(path_and_curve.into()) }.is_err() {
+        if Baking::store_baking_key(self.curve, self.path).is_err() {
             return (0, Error::ExecutionError as _);
         }
 
@@ -161,12 +160,10 @@ pub struct DeAuthorizeBaking;
 impl DeAuthorizeBaking {
     #[inline(never)]
     pub fn deauthorize(flags: &mut u32) -> Result<u32, Error> {
-        let path = unsafe { BAKINGPATH.read() }
-            .map_err(|_| Error::ApduCodeConditionsNotSatisfied)
-            .and_then(|slot| Bip32PathAndCurve::try_from_bytes(slot))?
-            .ok_or(Error::ApduCodeConditionsNotSatisfied)?;
+        let (curve, path) =
+            Baking::read_baking_key()?.ok_or(Error::ApduCodeConditionsNotSatisfied)?;
 
-        let addr = GetAddress::new_key(path.curve, &path.path)
+        let addr = GetAddress::new_key(curve, &path)
             .and_then(|key| Addr::new(&key))
             .map_err(|_| Error::ExecutionError)?;
 
@@ -238,7 +235,7 @@ impl Viewable for DeAuthorizeUI {
             return (0, Error::ExecutionError as _);
         }
 
-        if unsafe { BAKINGPATH.write(Bip32PathAndCurve::empty()) }.is_err() {
+        if Baking::remove_baking_key().is_err() {
             return (0, Error::ExecutionError as _);
         }
 

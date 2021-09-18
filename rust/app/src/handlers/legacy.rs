@@ -23,3 +23,6 @@ pub mod hwm;
 
 #[cfg(feature = "baking")]
 pub mod baking;
+
+#[cfg(feature = "baking")]
+pub mod setup;

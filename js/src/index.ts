@@ -472,6 +472,57 @@ export default class TezosApp {
     }, processErrorResponse)
   }
 
+  async legacyGetAllWatermark(): Promise<ResponseLegacyHWM> {
+    return this.transport.send(CLA, LEGACY_INS.QUERY_ALL_HWM, 0, 0).then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      const main = response.slice(0, 4).readInt32BE();
+      const test = response.slice(4, 8).readInt32BE();
+      const chain_id = response.slice(8, -2).readInt32BE();
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        main,
+        test,
+        chain_id
+      }
+    }, processErrorResponse)
+  }
+
+  async legacySetup(
+  path: string,
+  curve: Curve,
+  main_level: number,
+  test_level: number,
+  chain_id = 0x7a06a770,
+): Promise<ResponseAddress> {
+  const serializedPath = serializePath(path);
+
+  let data = Buffer.allocUnsafe(4 * 3 + path.length)
+  data.writeInt32BE(chain_id)
+  data.writeInt32BE(main_level)
+  data.writeInt32BE(test_level)
+  data = Buffer.concat([data, serializedPath]);
+
+  return this.transport.send(CLA, LEGACY_INS.SETUP, 0, curve, data).then(response => {
+    const errorCodeData = response.slice(-2)
+    const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
+
+    const publicKey = response.slice(0, -2);
+    const address = this.publicKeyToAddress(publicKey, curve);
+
+    return {
+      returnCode,
+      errorMessage: errorCodeToString(returnCode),
+      publicKey,
+      address
+    }
+  }, processErrorResponse)
+}
+
+
   async legacyGetPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
     const serializedPath = serializePath(path);
     return this.transport

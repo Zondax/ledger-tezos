@@ -83,7 +83,7 @@ impl ApduHandler for GetAddress {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy, Debug)]
 pub struct Addr {
     prefix: [u8; 3],
     hash: [u8; 20],
