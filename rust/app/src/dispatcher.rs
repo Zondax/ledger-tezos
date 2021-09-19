@@ -55,8 +55,9 @@ cfg_if! {
         use crate::handlers::legacy::hwm::{LegacyResetHWM, LegacyQueryMainHWM,
                                            LegacyQueryAllHWM};
         use crate::handlers::legacy::baking::{LegacyAuthorize, LegacyDeAuthorize,
-                                              LegacyQueryAuthKey, LegacyQueryAuthKeyWithCurve};
-        use crate::handlers::legacy::setup::LegacySetup;
+                                              LegacyQueryAuthKey, LegacyQueryAuthKeyWithCurve,
+                                              LegacySetup};
+        use crate::handlers::legacy::hmac::LegacyHMAC;
 
         //baking-only new instructions
         use crate::handlers::baking::{AuthorizeBaking, DeAuthorizeBaking, QueryAuthKey,
@@ -157,7 +158,7 @@ pub fn apdu_dispatch<'apdu>(
                 INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => return LegacyQueryAuthKeyWithCurve::handle(flags, tx, apdu_buffer),
 
                 INS_LEGACY_SETUP => return LegacySetup::handle(flags, tx, apdu_buffer),
-                INS_LEGACY_HMAC => return Err(CommandNotAllowed),
+                INS_LEGACY_HMAC => return LegacyHMAC::handle(flags, tx, apdu_buffer),
                 _ => {}
             }
         } else if #[cfg(feature = "wallet")] {

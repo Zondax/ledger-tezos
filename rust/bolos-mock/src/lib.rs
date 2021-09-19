@@ -39,6 +39,7 @@ pub use errors::Error;
 
 pub mod crypto;
 pub mod hash;
+pub mod hmac;
 
 mod panic {
     #[macro_export]

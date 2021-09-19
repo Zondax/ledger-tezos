@@ -13,17 +13,31 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use std::convert::Infallible;
 
-pub mod public_key;
-pub mod signing;
-pub mod version;
+pub struct Sha256HMAC {}
 
-#[cfg(feature = "baking")]
-pub mod hwm;
+impl Sha256HMAC {
+    pub fn new(_key: &[u8]) -> Result<Self, Infallible> {
+        todo!("sha256 hmac new")
+    }
 
-#[cfg(feature = "baking")]
-pub mod baking;
+    pub fn finalize_hmac_into(
+        #[allow(unused_mut)] mut self,
+        _input: &[u8],
+        _out: &mut [u8; 32],
+    ) -> Result<(), Infallible> {
+        todo!("sha256 hmac finalize into")
+    }
 
+    pub fn finalize_hmac(
+        #[allow(unused_mut)] mut self,
+        input: &[u8],
+    ) -> Result<[u8; 32], Infallible> {
+        let mut out = [0; 32];
 
-#[cfg(feature = "baking")]
-pub mod hmac;
+        self.finalize_hmac_into(input, &mut out)?;
+
+        Ok(out)
+    }
+}

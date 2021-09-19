@@ -13,17 +13,5 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-
-pub mod public_key;
-pub mod signing;
-pub mod version;
-
-#[cfg(feature = "baking")]
-pub mod hwm;
-
-#[cfg(feature = "baking")]
-pub mod baking;
-
-
-#[cfg(feature = "baking")]
-pub mod hmac;
+mod sha256;
+pub use sha256::Sha256HMAC;

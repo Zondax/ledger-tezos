@@ -52,7 +52,7 @@ impl Sign {
 
     //(actual_size, [u8; MAX_SIGNATURE_SIZE])
     #[inline(never)]
-    fn sign<const LEN: usize>(
+    pub fn sign<const LEN: usize>(
         curve: Curve,
         path: &BIP32Path<LEN>,
         data: &[u8],

@@ -47,6 +47,7 @@ pub use errors::Error;
 
 pub mod crypto;
 pub mod hash;
+pub mod hmac;
 
 /// Provides a macro to register a panic handler with this crate
 mod panic {

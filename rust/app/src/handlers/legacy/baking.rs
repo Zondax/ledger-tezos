@@ -24,6 +24,9 @@ use crate::{
 use bolos::crypto::bip32::BIP32Path;
 use core::convert::TryFrom;
 
+mod setup;
+pub use setup::LegacySetup;
+
 pub struct LegacyAuthorize;
 pub struct LegacyDeAuthorize;
 pub struct LegacyQueryAuthKey;

@@ -22,4 +22,6 @@
 #define HAVE_SHA256
 #define HAVE_SHA512
 
+#define HAVE_HMAC
+
 #endif // DEFINES_H_

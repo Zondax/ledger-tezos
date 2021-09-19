@@ -422,6 +422,9 @@ pub use authorization::{AuthorizeBaking, DeAuthorizeBaking};
 mod queryauth;
 pub use queryauth::{QueryAuthKey, QueryAuthKeyWithCurve};
 
+mod hmac;
+pub use hmac::HMAC;
+
 impl ApduHandler for Baking {
     #[inline(never)]
     fn handle<'apdu>(

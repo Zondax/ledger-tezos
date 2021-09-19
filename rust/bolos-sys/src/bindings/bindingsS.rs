@@ -3274,6 +3274,337 @@ extern "C" {
         perso_len: size_t,
     ) -> cx_err_t;
 }
+#[doc = " HMAC context, abstract type"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_hmac_t {
+    pub key: [u8; 128usize],
+    pub hash_ctx: cx_hash_t,
+}
+#[test]
+fn bindgen_test_layout_cx_hmac_t() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_hmac_t>(),
+        136usize,
+        concat!("Size of: ", stringify!(cx_hmac_t))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_hmac_t>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_hmac_t))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hmac_t>())).key as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hmac_t),
+            "::",
+            stringify!(key)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hmac_t>())).hash_ctx as *const _ as usize },
+        128usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hmac_t),
+            "::",
+            stringify!(hash_ctx)
+        )
+    );
+}
+impl Default for cx_hmac_t {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+#[doc = " HMAC context, concrete type for sha224/sha256"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_hmac_sha256_t {
+    pub key: [u8; 128usize],
+    pub hash_ctx: cx_sha256_t,
+}
+#[test]
+fn bindgen_test_layout_cx_hmac_sha256_t() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_hmac_sha256_t>(),
+        236usize,
+        concat!("Size of: ", stringify!(cx_hmac_sha256_t))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_hmac_sha256_t>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_hmac_sha256_t))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hmac_sha256_t>())).key as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hmac_sha256_t),
+            "::",
+            stringify!(key)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hmac_sha256_t>())).hash_ctx as *const _ as usize },
+        128usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hmac_sha256_t),
+            "::",
+            stringify!(hash_ctx)
+        )
+    );
+}
+impl Default for cx_hmac_sha256_t {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+extern "C" {
+    #[doc = " Init a hmac sha256 context."]
+    #[doc = ""]
+    #[doc = " @param [out] hash        the context to init."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @param [in] key         hmac key value"]
+    #[doc = "    Passing a NULL pointeur, will reinit the context with the previously set key."]
+    #[doc = "    If no key has already been set, passing NULL will lead into an undefined behavior."]
+    #[doc = ""]
+    #[doc = " @param [in] key_len     hmac key length"]
+    #[doc = "    The key length shall be less than 64 bytes"]
+    #[doc = ""]
+    #[doc = " @return algorithm  identifier"]
+    pub fn cx_hmac_sha256_init_no_throw(
+        hmac: *mut cx_hmac_sha256_t,
+        key: *const u8,
+        key_len: size_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " One shot hmac sha256 digest"]
+    #[doc = ""]
+    #[doc = " @param  [in] key_in"]
+    #[doc = "   hmac key value"]
+    #[doc = ""]
+    #[doc = " @param  [in] key_len"]
+    #[doc = "   Length of the hmac key"]
+    #[doc = ""]
+    #[doc = " @param  [in] in"]
+    #[doc = "   Input data to compute the hash"]
+    #[doc = ""]
+    #[doc = " @param  [in] len"]
+    #[doc = "   Length of input to data."]
+    #[doc = ""]
+    #[doc = " @param [out] out"]
+    #[doc = "   Produced hmac"]
+    #[doc = ""]
+    #[doc = " @param [in] mac_len"]
+    #[doc = "    mac buffer size, if buffer is too small to store the mac an exception is thrown"]
+    pub fn cx_hmac_sha256(
+        key: *const u8,
+        key_len: size_t,
+        in_: *const u8,
+        len: size_t,
+        mac: *mut u8,
+        mac_len: size_t,
+    ) -> size_t;
+}
+#[doc = " HMAC context, concrete type for sha384/sha512"]
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cx_hmac_sha512_t {
+    pub key: [u8; 128usize],
+    pub hash_ctx: cx_sha512_t,
+}
+#[test]
+fn bindgen_test_layout_cx_hmac_sha512_t() {
+    assert_eq!(
+        ::core::mem::size_of::<cx_hmac_sha512_t>(),
+        332usize,
+        concat!("Size of: ", stringify!(cx_hmac_sha512_t))
+    );
+    assert_eq!(
+        ::core::mem::align_of::<cx_hmac_sha512_t>(),
+        4usize,
+        concat!("Alignment of ", stringify!(cx_hmac_sha512_t))
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hmac_sha512_t>())).key as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hmac_sha512_t),
+            "::",
+            stringify!(key)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::core::ptr::null::<cx_hmac_sha512_t>())).hash_ctx as *const _ as usize },
+        128usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(cx_hmac_sha512_t),
+            "::",
+            stringify!(hash_ctx)
+        )
+    );
+}
+impl Default for cx_hmac_sha512_t {
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
+}
+extern "C" {
+    #[doc = " Init a hmac sha512 context."]
+    #[doc = ""]
+    #[doc = " @param [out] hash        the context to init."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @param [in] key         hmac key value"]
+    #[doc = "    Passing a NULL pointeur, will reinit the context with the previously set key."]
+    #[doc = "    If no key has already been set, passing NULL will lead into an undefined behavior."]
+    #[doc = ""]
+    #[doc = " @param [in] key_len     hmac key length"]
+    #[doc = "    The key length shall be less than 128 bytes"]
+    #[doc = ""]
+    #[doc = " @return algorithm  identifier"]
+    pub fn cx_hmac_sha512_init_no_throw(
+        hmac: *mut cx_hmac_sha512_t,
+        key: *const u8,
+        key_len: size_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " One shot hmac sha512 digest"]
+    #[doc = ""]
+    #[doc = " @param  [in] key_in"]
+    #[doc = "   hmac key value"]
+    #[doc = ""]
+    #[doc = " @param  [in] key_len"]
+    #[doc = "   Length of the hmac key"]
+    #[doc = ""]
+    #[doc = " @param  [in] in"]
+    #[doc = "   Input data to compute the hash"]
+    #[doc = ""]
+    #[doc = " @param  [in] len"]
+    #[doc = "   Length of input to data."]
+    #[doc = ""]
+    #[doc = " @param [out] out"]
+    #[doc = "   Produced hmac"]
+    #[doc = ""]
+    #[doc = " @param [in] mac_len"]
+    #[doc = "    mac buffer size, if buffer is too small to store the mac an exception is thrown"]
+    pub fn cx_hmac_sha512(
+        key: *const u8,
+        key_len: size_t,
+        in_: *const u8,
+        len: size_t,
+        mac: *mut u8,
+        mac_len: size_t,
+    ) -> size_t;
+}
+extern "C" {
+    #[doc = " @param [in,out] hmac"]
+    #[doc = "    Univers Continuation Blob."]
+    #[doc = "    The hmac context pointer shall point to  either a cx_ripemd160_t, either a cx_sha256_t  or cx_sha512_t ."]
+    #[doc = "    The hmac context shall be inited with 'cx_xxx_init'"]
+    #[doc = "    The hmac context shall be in RAM"]
+    #[doc = "    The function should be called with a nice cast."]
+    #[doc = ""]
+    #[doc = " @param [in] mode"]
+    #[doc = "    Crypto mode flags. See Above."]
+    #[doc = "    If CX_LAST is set and CX_NO_REINIT is not set, context is automatically re-inited."]
+    #[doc = "    Supported flags:"]
+    #[doc = "      - CX_LAST"]
+    #[doc = "     - CX_NO_REINIT"]
+    #[doc = ""]
+    #[doc = " @param [in] in"]
+    #[doc = "    Input data to add to current hmac"]
+    #[doc = ""]
+    #[doc = " @param [in] len"]
+    #[doc = "    Length of input to data."]
+    #[doc = ""]
+    #[doc = " @param [out] mac"]
+    #[doc = "    Either:"]
+    #[doc = "      - NULL (ignored) if CX_LAST is NOT set"]
+    #[doc = "      - produced hmac  if CX_LAST is set"]
+    #[doc = ""]
+    #[doc = " @param [in] mac_len"]
+    #[doc = "    Either:"]
+    #[doc = "      - O, if mac is NULL"]
+    #[doc = "      - mac buffer size, if buffer is too small to store the mac an exception is thrown"]
+    #[doc = ""]
+    pub fn cx_hmac_no_throw(
+        hmac: *mut cx_hmac_t,
+        mode: u32,
+        in_: *const u8,
+        len: size_t,
+        mac: *mut u8,
+        mac_len: size_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Generic Initialization of hashmac context with parameter"]
+    #[doc = ""]
+    #[doc = " @param [out] hmac"]
+    #[doc = "    The context to init."]
+    #[doc = "    The context shall be in RAM"]
+    #[doc = ""]
+    #[doc = " @param [in] hash_id the hash identifier."]
+    #[doc = ""]
+    #[doc = " @param [in] key"]
+    #[doc = "    hmac key value"]
+    #[doc = "    Passing a NULL pointeur, will reinit the context with the previously set key."]
+    #[doc = "    If no key has already been set, passing NULL will lead into an undefined behavior."]
+    #[doc = ""]
+    #[doc = " @param [in] key_len     hmac key length"]
+    #[doc = "    The key length shall be less than 128 bytes"]
+    #[doc = ""]
+    #[doc = " @return algorithm  identifier"]
+    pub fn cx_hmac_init(
+        hmac: *mut cx_hmac_t,
+        hash_id: cx_md_t,
+        key: *const u8,
+        key_len: size_t,
+    ) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Add more data to hashmac."]
+    #[doc = ""]
+    #[doc = " Equivalent to cx_hmac_no_throw(hmac, 0, in, len,  NULL, 0);"]
+    #[doc = ""]
+    #[doc = " @param [in,out] hmac"]
+    #[doc = "    Univers Continuation Blob."]
+    #[doc = "    The hmac context pointer shall point to  either a cx_ripemd160_t, either a cx_sha256_t  or cx_sha512_t ."]
+    #[doc = "    The hmac context shall be inited with 'cx_xxx_init'"]
+    #[doc = "    The hmac context shall be in RAM"]
+    #[doc = "    The function should be called with a nice cast."]
+    #[doc = ""]
+    #[doc = " @param [in] in"]
+    #[doc = "    Input data to add to current hmac"]
+    #[doc = ""]
+    #[doc = " @param [in] len"]
+    #[doc = "    Length of input to data."]
+    #[doc = ""]
+    #[doc = ""]
+    pub fn cx_hmac_update(hmac: *mut cx_hmac_t, in_: *const u8, in_len: size_t) -> cx_err_t;
+}
+extern "C" {
+    #[doc = " Finalize hashmac and get result"]
+    #[doc = ""]
+    #[doc = " Equivalent to cx_hmac_no_throw(hash, CX_LAST, NULL, 0, out, out_len);"]
+    #[doc = ""]
+    #[doc = " @param [out] out"]
+    #[doc = "    produced hash  if CX_LAST is set"]
+    #[doc = ""]
+    #[doc = " @param [in] out_len"]
+    #[doc = "    max (most significant) bytes of hashmac to retrieve"]
+    pub fn cx_hmac_final(ctx: *mut cx_hmac_t, out: *mut u8, out_len: *mut size_t) -> cx_err_t;
+}
 #[doc = " Elliptic Curve public key"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -5231,6 +5562,7 @@ pub union APSR_Type {
     pub b: APSR_Type__bindgen_ty_1,
     #[doc = "< Type      used for word access"]
     pub w: u32,
+    _bindgen_union_align: u32,
 }
 #[repr(C)]
 #[repr(align(4))]
@@ -5402,6 +5734,7 @@ pub union IPSR_Type {
     pub b: IPSR_Type__bindgen_ty_1,
     #[doc = "< Type      used for word access"]
     pub w: u32,
+    _bindgen_union_align: u32,
 }
 #[repr(C)]
 #[repr(align(4))]
@@ -5506,6 +5839,7 @@ pub union xPSR_Type {
     pub b: xPSR_Type__bindgen_ty_1,
     #[doc = "< Type      used for word access"]
     pub w: u32,
+    _bindgen_union_align: u32,
 }
 #[repr(C)]
 #[repr(align(4))]
@@ -5725,6 +6059,7 @@ pub union CONTROL_Type {
     pub b: CONTROL_Type__bindgen_ty_1,
     #[doc = "< Type      used for word access"]
     pub w: u32,
+    _bindgen_union_align: u32,
 }
 #[repr(C)]
 #[repr(align(4))]
@@ -6388,6 +6723,7 @@ pub struct _mbstate_t {
 pub union _mbstate_t__bindgen_ty_1 {
     pub __wch: wint_t,
     pub __wchb: [cty::c_uchar; 4usize],
+    _bindgen_union_align: u32,
 }
 #[test]
 fn bindgen_test_layout__mbstate_t__bindgen_ty_1() {
@@ -7347,6 +7683,7 @@ pub struct _reent {
 pub union _reent__bindgen_ty_1 {
     pub _reent: _reent__bindgen_ty_1__bindgen_ty_1,
     pub _unused: _reent__bindgen_ty_1__bindgen_ty_2,
+    _bindgen_union_align: [u64; 30usize],
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
