@@ -54,7 +54,7 @@ impl<'b> ActivateAccount<'b> {
         let source = self.public_key_hash;
         let addr = Addr::from_hash(source.1, source.0)?;
 
-        Ok(addr.to_base58())
+        Ok(addr.base58())
     }
 }
 

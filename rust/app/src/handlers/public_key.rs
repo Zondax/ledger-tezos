@@ -110,7 +110,7 @@ impl Addr {
 
     //[u8; PKH_STRING] without null byte
     // legacy/src/types.h:156
-    pub fn to_base58(&self) -> [u8; 36] {
+    pub fn base58(&self) -> [u8; 36] {
         let input = {
             let mut array = [0; 27];
             array[..3].copy_from_slice(&self.prefix[..]);
@@ -175,7 +175,7 @@ impl Viewable for AddrUI {
             let title_content = pic_str!(b"Address");
             title[..title_content.len()].copy_from_slice(title_content);
 
-            let addr_bytes = self.addr.to_base58();
+            let addr_bytes = self.addr.base58();
             handle_ui_message(&addr_bytes[..], message, page)
         } else {
             Err(ViewError::NoData)
@@ -192,7 +192,7 @@ impl Viewable for AddrUI {
         tx += pkey.len();
 
         if self.with_addr {
-            let addr = self.addr.to_base58();
+            let addr = self.addr.base58();
 
             out[tx..tx + addr.len()].copy_from_slice(&addr[..]);
 
@@ -253,7 +253,7 @@ mod tests {
         );
 
         let expected = "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ";
-        let output = addr.to_base58();
+        let output = addr.base58();
         let output = std::str::from_utf8(&output[..]).unwrap();
 
         assert_eq!(expected, output);

@@ -136,7 +136,7 @@ impl Viewable for SetupUI {
                 let title_content = pic_str!(b"Address");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                handle_ui_message(&self.addr.to_base58()[..], message, page)
+                handle_ui_message(&self.addr.base58()[..], message, page)
             }
             2 => {
                 let title_content = pic_str!(b"Chain");
@@ -293,7 +293,7 @@ mod tests {
             ("Type".to_string(), "Setup Baking".to_string()),
             (
                 "Address".to_string(),
-                String::from_utf8(addr.to_base58().to_vec()).unwrap(),
+                String::from_utf8(addr.base58().to_vec()).unwrap(),
             ),
             ("Chain".to_string(), "".to_string()),
             ("Main Chain HWM".to_string(), format!("{}", 42)),

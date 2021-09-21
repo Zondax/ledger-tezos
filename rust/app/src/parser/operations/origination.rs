@@ -91,12 +91,12 @@ impl<'b> Origination<'b> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
-        Ok(addr.to_base58())
+        Ok(addr.base58())
     }
 
     fn delegate_base58(&self) -> Result<Option<[u8; 36]>, bolos::Error> {
         self.delegate
-            .map(|(crv, hash)| Addr::from_hash(hash, crv).map(|a| a.to_base58()))
+            .map(|(crv, hash)| Addr::from_hash(hash, crv).map(|a| a.base58()))
             .transpose()
     }
 }

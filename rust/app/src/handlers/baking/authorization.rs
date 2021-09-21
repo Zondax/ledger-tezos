@@ -118,7 +118,7 @@ impl Viewable for AuthorizeUI {
                 let title_content = pic_str!(b"Address");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                handle_ui_message(&self.addr.to_base58()[..], message, page)
+                handle_ui_message(&self.addr.base58()[..], message, page)
             }
             _ => Err(ViewError::NoData),
         }
@@ -224,7 +224,7 @@ impl Viewable for DeAuthorizeUI {
                 let title_content = pic_str!(b"Address");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                handle_ui_message(&self.addr.to_base58()[..], message, page)
+                handle_ui_message(&self.addr.base58()[..], message, page)
             }
             _ => Err(ViewError::NoData),
         }

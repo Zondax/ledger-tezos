@@ -32,7 +32,7 @@ use core::convert::TryFrom;
 pub struct HMAC;
 
 //apdu_hmac.c:23
-const KEY_SHA256: &'static [u8] = &[
+const KEY_SHA256: &[u8] = &[
     0x6c, 0x4e, 0x7e, 0x70, 0x6c, 0x54, 0xd3, 0x67, 0xc8, 0x7a, 0x8d, 0x89, 0xc1, 0x6a, 0xdf, 0xe0,
     0x6c, 0xb5, 0x68, 0x0c, 0xb7, 0xd1, 0x8e, 0x62, 0x5a, 0x90, 0x47, 0x5e, 0xc0, 0xdb, 0xdb, 0x9f,
 ];
@@ -71,12 +71,12 @@ impl HMAC {
     }
 
     #[inline(never)]
-    pub fn hmac<'apdu>(
+    pub fn hmac(
         curve: Curve,
         path: BIP32Path<BIP32_MAX_LENGTH>,
         //offset in `buffer.payload()` of the bytes we already read
         offset: usize,
-        buffer: ApduBufferRead<'apdu>,
+        buffer: ApduBufferRead<'_>,
     ) -> Result<u32, Error> {
         let hash_hmac_key_sig = Self::sig_and_hash_hmac_key(curve, path)?;
 

@@ -377,7 +377,7 @@ mod tests {
         );
 
         let addr = Addr::from_hash(parsed.hash(), Curve::Bip32Ed25519).unwrap();
-        assert_eq!(&addr.to_base58()[..], PKH_BASE58.as_bytes());
+        assert_eq!(&addr.base58()[..], PKH_BASE58.as_bytes());
     }
 
     #[test]

@@ -13,30 +13,36 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use std::convert::Infallible;
+use std::{convert::Infallible, mem::MaybeUninit};
 
 pub struct Sha256HMAC {}
 
 impl Sha256HMAC {
-    pub fn new(_key: &[u8]) -> Result<Self, Infallible> {
-        todo!("sha256 hmac new")
+    pub fn new(key: &[u8]) -> Result<Self, Infallible> {
+        let mut loc = MaybeUninit::uninit();
+
+        Self::new_gce(&mut loc, key).map(|_| unsafe { loc.assume_init() })
+    }
+
+    pub fn new_gce(_loc: &mut MaybeUninit<Self>, _key: &[u8]) -> Result<(), Infallible> {
+        todo!("sha256 hmac new gce")
+    }
+
+    pub fn update(&mut self, _input: &[u8]) -> Result<(), Infallible> {
+        todo!("sha256 hmac update")
     }
 
     pub fn finalize_hmac_into(
         #[allow(unused_mut)] mut self,
-        _input: &[u8],
         _out: &mut [u8; 32],
     ) -> Result<(), Infallible> {
         todo!("sha256 hmac finalize into")
     }
 
-    pub fn finalize_hmac(
-        #[allow(unused_mut)] mut self,
-        input: &[u8],
-    ) -> Result<[u8; 32], Infallible> {
+    pub fn finalize_hmac(#[allow(unused_mut)] mut self) -> Result<[u8; 32], Infallible> {
         let mut out = [0; 32];
 
-        self.finalize_hmac_into(input, &mut out)?;
+        self.finalize_hmac_into(&mut out)?;
 
         Ok(out)
     }
