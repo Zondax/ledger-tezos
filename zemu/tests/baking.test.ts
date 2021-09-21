@@ -323,10 +323,10 @@ describe.each(models)('Standard baking [%s]; legacy - setup', function (m) {
   test.each(curves)('Setup baking %s', async function (curve) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name, X11: true })
+      await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
-      const respReq = app.legacySetup(APP_DERIVATION, curve, 42, 10, 0xdeadbeef)
+      const respReq = app.legacySetup(APP_DERIVATION, curve, 42, 10, 0xbeef)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-setup-${curve}`, [6, 0])
@@ -347,7 +347,7 @@ describe.each(models)('Standard baking [%s]; legacy - setup', function (m) {
       expect(hwmCheck).toHaveProperty('test')
       expect(hwmCheck.test).toEqual(10)
       expect(hwmCheck).toHaveProperty('chain_id')
-      expect(hwmCheck.chain_id).toEqual(0xdeadbeef)
+      expect(hwmCheck.chain_id).toEqual(0xbeef)
     } finally {
       await sim.close()
     }

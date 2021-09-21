@@ -500,10 +500,10 @@ export default class TezosApp {
 ): Promise<ResponseAddress> {
   const serializedPath = serializePath(path);
 
-  let data = Buffer.allocUnsafe(4 * 3 + path.length)
-  data.writeInt32BE(chain_id)
-  data.writeInt32BE(main_level)
-  data.writeInt32BE(test_level)
+  let data = Buffer.allocUnsafe(4 * 3)
+  data.writeUInt32BE(chain_id)
+  data.writeUInt32BE(main_level, 4)
+  data.writeUInt32BE(test_level, 8)
   data = Buffer.concat([data, serializedPath]);
 
   return this.transport.send(CLA, LEGACY_INS.SETUP, 0, curve, data).then(response => {
