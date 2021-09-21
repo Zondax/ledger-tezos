@@ -238,7 +238,7 @@ mod tests {
         let mut buffer = [0; 260];
 
         let value = 42u32.to_be_bytes();
-        let path = BIP32Path::<10>::new([44, 1729, 0, 0].iter().map(|n| 0x8000_000 + n)).unwrap();
+        let path = BIP32Path::<10>::new([44, 1729, 0, 0].iter().map(|n| 0x8000_0000 + n)).unwrap();
         let path_v = path.serialize();
 
         //reset state (problematic with other tests)
@@ -287,7 +287,7 @@ mod tests {
     #[test]
     fn setup_ui() {
         let addr = Addr::from_hash(&[0; 20], Curve::Bip32Ed25519).unwrap();
-        let path = BIP32Path::<10>::new([44, 1729, 0, 0].iter().map(|n| 0x8000_000 + n)).unwrap();
+        let path = BIP32Path::<10>::new([44, 1729, 0, 0].iter().map(|n| 0x8000_0000 + n)).unwrap();
 
         let expected_ui = [
             ("Type".to_string(), "Setup Baking".to_string()),

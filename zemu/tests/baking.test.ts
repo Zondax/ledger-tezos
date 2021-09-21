@@ -395,7 +395,14 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await authReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
@@ -425,7 +432,14 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await authReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
@@ -456,7 +470,14 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const respReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await respReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
@@ -517,7 +538,13 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
-      const authResp = await app.authorizeBaking(APP_DERIVATION, curve)
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const authResp = await authReq
       expect(authResp.returnCode).toEqual(0x9000)
 
       const msg = Buffer.from(data.op.blob, 'hex')
@@ -572,7 +599,13 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
-      const authResp = await app.authorizeBaking(APP_DERIVATION, curve)
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const authResp = await authReq
       expect(authResp.returnCode).toEqual(0x9000)
 
       const msg = Buffer.from(data.op.blob, 'hex')
