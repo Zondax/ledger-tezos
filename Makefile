@@ -28,12 +28,26 @@ ifeq ($(BOLOS_SDK),)
 	# TODO: use earthly here
 	include $(CURDIR)/rust/app/refactor/dockerized_build.mk
 
-lint:
-	cd rust && cargo fmt
-
-both:
+build:
 	$(MAKE)
 	BAKING=tezos_baking $(MAKE)
+.PHONY: build
+
+build_legacy:
+	$(MAKE) clean_legacy
+	$(MAKE) legacy_baking
+	$(MAKE) clean_legacy
+	$(MAKE) legacy_wallet
+.PHONY: legacy legacy_wallet legacy_baking legacy_impl
+
+lint:
+	cd rust && cargo fmt
+.PHONY: lint
+
+clippy:
+	cd rust && cargo clippy --features "wallet","dev" --all-targets
+	cd rust && cargo clippy --features "baking","dev" --all-targets
+.PHONY: clippy
 
 test_vectors:
 	cd zemu && \
@@ -44,16 +58,10 @@ test_vectors:
 		yarn test-vectors-generate proposals && \
 		yarn test-vectors-generate endorsement && \
 		yarn test-vectors-generate seed && \
-    yarn test-vectors-generate activation && \
+    	yarn test-vectors-generate activation && \
 		yarn test-vectors-generate origination
 	$(MAKE) -C rust test_vectors
-
-.PHONY: legacy legacy_wallet legacy_baking legacy_impl
-legacy:
-	$(MAKE) clean_legacy
-	$(MAKE) legacy_baking
-	$(MAKE) clean_legacy
-	$(MAKE) legacy_wallet
+.PHONY: test_vectors
 
 legacy_impl:
 	$(call run_docker,$(DOCKER_BOLOS_SDKS),make -j $(NPROC) -C $(DOCKER_LEGACY_APP_SRC))
@@ -68,17 +76,16 @@ legacy_baking:
 	BAKING=tezos_baking $(MAKE) legacy_impl
 	mv legacy/bin/app.elf legacy/output/app_baking.elf
 
-.PHONY: clean_legacy
 clean_legacy:
 	$(call run_docker,$(DOCKER_BOLOS_SDKS), make -C $(DOCKER_LEGACY_APP_SRC) clean)
+.PHONY: clean_legacy
 
 test_all:
 	make rust_test
 	make zemu_install
 	make clean_build
-	BAKING=yes make
-	make
-	make legacy
+	make build
+	make build_legacy
 	make zemu_test
 
 else
@@ -88,12 +95,12 @@ default:
 generate:
 	$(MAKE) -C rust generate
 
-both:
+build:
 	$(MAKE)
 	BAKING=tezos_baking $(MAKE)
 
 .PHONY: legacy
-legacy:
+build_legacy:
 	- mkdir -p legacy/output || true
 	$(MAKE) -C legacy clean
 	APP=tezos_wallet $(MAKE) -C legacy

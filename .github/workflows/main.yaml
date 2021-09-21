@@ -129,7 +129,7 @@ jobs:
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
       - name: Build Nano S apps
         run: |
-          make legacy
+          make build_legacy
       - name: Cache legacy elf files
         uses: actions/cache@v1
         with:
