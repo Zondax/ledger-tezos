@@ -58,3 +58,7 @@ export interface ResponseLegacyHWM extends ResponseBase {
   test?: number;
   chain_id?: number;
 }
+
+export interface ResponseHMAC extends ResponseBase {
+  hmac: Buffer;
+}

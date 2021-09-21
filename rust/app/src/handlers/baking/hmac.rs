@@ -38,7 +38,39 @@ const KEY_SHA256: &'static [u8] = &[
 ];
 
 impl HMAC {
-    #[inline(always)]
+    #[inline(never)]
+    fn sig_and_hash_hmac_key(
+        curve: Curve,
+        path: BIP32Path<BIP32_MAX_LENGTH>,
+    ) -> Result<[u8; 64], Error> {
+        //sign the hmac key
+        let (sig_size, sig_hmac_key) = Sign::sign(curve, &path, KEY_SHA256)?;
+
+        //and hash the signature
+        Sha512::digest(&sig_hmac_key[..sig_size]).map_err(|_| Error::ExecutionError)
+    }
+
+    #[inline(never)]
+    fn do_hmac(key: [u8; 64], offset: usize, buffer: ApduBufferRead<'_>) -> Result<u32, Error> {
+        let mut hmac = {
+            let mut loc = core::mem::MaybeUninit::uninit();
+            Sha256HMAC::new_gce(&mut loc, &key[..]).map_err(|_| Error::ExecutionError)?;
+            unsafe { loc.assume_init() }
+        };
+
+        {
+            let input = &buffer.payload().map_err(|_| Error::DataInvalid)?[offset..];
+            hmac.update(input).map_err(|_| Error::ExecutionError)?;
+        }
+
+        let buffer = buffer.write();
+        hmac.finalize_hmac_into(arrayref::array_mut_ref!(buffer, 0, 32))
+            .map_err(|_| Error::ExecutionError)?;
+
+        Ok(32)
+    }
+
+    #[inline(never)]
     pub fn hmac<'apdu>(
         curve: Curve,
         path: BIP32Path<BIP32_MAX_LENGTH>,
@@ -46,25 +78,9 @@ impl HMAC {
         offset: usize,
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<u32, Error> {
-        sys::zemu_log_stack("HMAC::auth\x00");
+        let hash_hmac_key_sig = Self::sig_and_hash_hmac_key(curve, path)?;
 
-        //sign the hmac key
-        let (sig_size, sig_hmac_key) = Sign::sign(curve, &path, KEY_SHA256)?;
-
-        //and hash the signature
-        let hash_hmac_key_sig =
-            Sha512::digest(&sig_hmac_key[..sig_size]).map_err(|_| Error::ExecutionError)?;
-
-        let input = &buffer.payload().map_err(|_| Error::DataInvalid)?[offset..];
-
-        let hmac = Sha256HMAC::new(&hash_hmac_key_sig[..])
-            .and_then(|hmac| hmac.finalize_hmac(input))
-            .map_err(|_| Error::ExecutionError)?;
-
-        let buffer = buffer.write();
-        buffer[..hmac.len()].copy_from_slice(&hmac[..]);
-
-        Ok(hmac.len() as u32)
+        Self::do_hmac(hash_hmac_key_sig, offset, buffer)
     }
 }
 

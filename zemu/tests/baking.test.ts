@@ -246,10 +246,10 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
 
       const respReq = app.authorizeBaking(APP_DERIVATION, curve)
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-authorize-${curve}`, [3, 0])
 
-      const resp = await respReq;
+      const resp = await respReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
@@ -265,27 +265,27 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
       const app = new TezosApp(sim.getTransport())
 
       const respReq = app.authorizeBaking(APP_DERIVATION, curve)
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
-      await sim.clickRight();
-      await sim.clickRight();
-      await sim.clickRight();
-      await sim.clickBoth();
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
       const resp = await respReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
       const queryReq = app.queryAuthKeyWithCurve(true)
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-full-cycle-query-with-curve-${curve}`, [3, 0])
-      const query = await queryReq;
+      const query = await queryReq
 
       console.log(query, m.name)
       expect(query.returnCode).toEqual(0x9000)
       expect(query.curve).toEqual(curve)
 
       const query2Req = app.deauthorizeBaking()
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-full-cycle-deauthorize-${curve}`, [3, 0])
       const query2 = await query2Req
 
@@ -298,12 +298,12 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
       expect(query3.returnCode).not.toEqual(0x9000)
 
       const query4Req = app.authorizeBaking(APP_DERIVATION, curve)
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
-      await sim.clickRight();
-      await sim.clickRight();
-      await sim.clickRight();
-      await sim.clickBoth();
-      const query4 = await query4Req;
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const query4 = await query4Req
 
       console.log(query4, m.name)
       expect(query4.returnCode).toEqual(0x9000)
@@ -326,19 +326,19 @@ describe.each(models)('Standard baking [%s]; legacy - setup', function (m) {
       await sim.start({ ...defaultOptions, model: m.name, X11: true })
       const app = new TezosApp(sim.getTransport())
 
-      const respReq = app.legacySetup(APP_DERIVATION, curve, 42, 10, 0xDEADBEEF);
+      const respReq = app.legacySetup(APP_DERIVATION, curve, 42, 10, 0xdeadbeef)
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000);
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-setup-${curve}`, [6, 0])
 
-      const resp = await respReq;
+      const resp = await respReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp).toHaveProperty('publicKey')
       expect(resp).toHaveProperty('address')
 
-      const hwmCheck = await app.legacyGetAllWatermark();
+      const hwmCheck = await app.legacyGetAllWatermark()
 
       console.log(hwmCheck, m.name)
       expect(hwmCheck.returnCode).toEqual(0x9000)
@@ -347,8 +347,25 @@ describe.each(models)('Standard baking [%s]; legacy - setup', function (m) {
       expect(hwmCheck).toHaveProperty('test')
       expect(hwmCheck.test).toEqual(10)
       expect(hwmCheck).toHaveProperty('chain_id')
-      expect(hwmCheck.chain_id).toEqual(0xDEADBEEF)
+      expect(hwmCheck.chain_id).toEqual(0xdeadbeef)
+    } finally {
+      await sim.close()
+    }
+  })
+})
 
+describe.each(models)('Standard baking [%s]; legacy - hmac', function (m) {
+  test.each(curves)('HMAC %s', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+
+      const resp = await app.legacyHMAC(APP_DERIVATION, curve, Buffer.from('francesco@zondax.ch'))
+
+      console.log(resp, m.name)
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp).toHaveProperty('hmac')
     } finally {
       await sim.close()
     }
@@ -356,20 +373,20 @@ describe.each(models)('Standard baking [%s]; legacy - setup', function (m) {
 })
 
 function get_endorsement_info(chain_id: number, branch: Buffer, tag: number, level: number): Buffer {
-  const result = Buffer.alloc(41);
-  result.writeUInt32BE(chain_id, 0);
-  branch.copy(result, 4);
-  result.writeUInt8(tag, 36);
-  result.writeUInt32BE(level, 37);
-  return result;
+  const result = Buffer.alloc(41)
+  result.writeUInt32BE(chain_id, 0)
+  branch.copy(result, 4)
+  result.writeUInt8(tag, 36)
+  result.writeUInt32BE(level, 37)
+  return result
 }
 
 function get_blocklevel_info(chain_id: number, level: number, proto: number): Buffer {
-  const result = Buffer.alloc(9);
-  result.writeUInt32BE(chain_id, 0);
-  result.writeUInt32BE(level, 4);
-  result.writeUInt8(proto, 8);
-  return result;
+  const result = Buffer.alloc(9)
+  result.writeUInt32BE(chain_id, 0)
+  result.writeUInt32BE(level, 4)
+  result.writeUInt8(proto, 8)
+  return result
 }
 
 describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function (m) {

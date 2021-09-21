@@ -17,7 +17,7 @@
 import Transport from "@ledgerhq/hw-transport";
 import { serializePath, sha256x2 } from "./helper";
 import { ResponseBase, ResponseAddress, ResponseQueryAuthKey, ResponseAppInfo, ResponseSign, ResponseVersion,
-         ResponseLegacyVersion, ResponseLegacyGit, ResponseLegacyHWM } from "./types";
+         ResponseLegacyVersion, ResponseLegacyGit, ResponseLegacyHWM, ResponseHMAC } from "./types";
 import {
   CHUNK_SIZE,
   CLA,
@@ -522,6 +522,23 @@ export default class TezosApp {
   }, processErrorResponse)
 }
 
+  async legacyHMAC(path: string, curve: Curve, message: Buffer): Promise<ResponseHMAC> {
+    const serializedPath = serializePath(path);
+    return this.transport
+      .send(CLA, LEGACY_INS.HMAC, 0, curve, Buffer.concat([serializedPath, message]))
+      .then(response => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+
+      const hmac = response.slice(0, -2);
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        hmac
+      }
+    }, processErrorResponse)
+  }
 
   async legacyGetPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
     const serializedPath = serializePath(path);

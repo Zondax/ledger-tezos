@@ -28,13 +28,6 @@ pub struct Blake2b<const S: usize> {
 }
 
 impl<const S: usize> Blake2b<S> {
-    #[inline(always)]
-    pub fn new_gce(loc: &mut MaybeUninit<Self>) -> Result<(), Error> {
-        let state = unsafe { addr_of_mut!((*loc.as_mut_ptr()).state) };
-
-        Self::init_state(state)
-    }
-
     #[inline(never)]
     pub fn new() -> Result<Self, Error> {
         zemu_sys::zemu_log_stack("Blake2b::new\x00");
@@ -45,6 +38,12 @@ impl<const S: usize> Blake2b<S> {
         Self::init_state(&mut this.state)?;
 
         Ok(this)
+    }
+
+    pub fn new_gce(loc: &mut MaybeUninit<Self>) -> Result<(), Error> {
+        let state = unsafe { addr_of_mut!((*loc.as_mut_ptr()).state) };
+
+        Self::init_state(state)
     }
 
     fn init_state(state: *mut cx_blake2b_t) -> Result<(), Error> {
@@ -79,6 +78,10 @@ impl<const S: usize> Blake2b<S> {
 impl<const S: usize> CxHash<S> for Blake2b<S> {
     fn cx_init_hasher() -> Result<Self, Error> {
         Self::new()
+    }
+
+    fn cx_init_hasher_gce(loc: &mut MaybeUninit<Self>) -> Result<(), super::Error> {
+        Self::new_gce(loc)
     }
 
     fn cx_reset(&mut self) -> Result<(), Error> {

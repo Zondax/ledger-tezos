@@ -15,7 +15,7 @@
 ********************************************************************************/
 
 use crate::errors::{catch, Error};
-pub(self) use crate::raw::{cx_hmac_t, cx_md_t, CX_NO_REINIT};
+pub(self) use crate::raw::{cx_hmac_t, CX_NO_REINIT};
 
 pub mod sha256;
 pub use sha256::Sha256HMAC;

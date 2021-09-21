@@ -34,7 +34,7 @@ use super::Baking;
 pub struct AuthorizeBaking;
 
 impl AuthorizeBaking {
-    #[inline(always)]
+    #[inline(never)]
     pub fn authorize(
         curve: Curve,
         path: BIP32Path<BIP32_MAX_LENGTH>,
