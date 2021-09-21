@@ -14,14 +14,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-import Transport from "@ledgerhq/hw-transport";
-import { serializePath, sha256x2 } from "./helper";
-import { ResponseBase, ResponseAddress, ResponseQueryAuthKey, ResponseAppInfo, ResponseSign, ResponseVersion,
-         ResponseLegacyVersion, ResponseLegacyGit, ResponseLegacyHWM, ResponseHMAC } from "./types";
+import Transport from '@ledgerhq/hw-transport'
+import { serializePath, sha256x2 } from './helper'
 import {
   ResponseAddress,
   ResponseAppInfo,
   ResponseBase,
+  ResponseHMAC,
   ResponseLegacyGit,
   ResponseLegacyHWM,
   ResponseLegacyVersion,
@@ -507,11 +506,11 @@ export default class TezosApp {
   async legacySetup(path: string, curve: Curve, main_level: number, test_level: number, chain_id = 0x7a06a770): Promise<ResponseAddress> {
     const serializedPath = serializePath(path)
 
-  let data = Buffer.allocUnsafe(4 * 3)
-  data.writeUInt32BE(chain_id)
-  data.writeUInt32BE(main_level, 4)
-  data.writeUInt32BE(test_level, 8)
-  data = Buffer.concat([data, serializedPath]);
+    let data = Buffer.allocUnsafe(4 * 3)
+    data.writeUInt32BE(chain_id)
+    data.writeUInt32BE(main_level, 4)
+    data.writeUInt32BE(test_level, 8)
+    data = Buffer.concat([data, serializedPath])
 
     return this.transport.send(CLA, LEGACY_INS.SETUP, 0, curve, data).then(response => {
       const errorCodeData = response.slice(-2)
@@ -530,19 +529,17 @@ export default class TezosApp {
   }
 
   async legacyHMAC(path: string, curve: Curve, message: Buffer): Promise<ResponseHMAC> {
-    const serializedPath = serializePath(path);
-    return this.transport
-      .send(CLA, LEGACY_INS.HMAC, 0, curve, Buffer.concat([serializedPath, message]))
-      .then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+    const serializedPath = serializePath(path)
+    return this.transport.send(CLA, LEGACY_INS.HMAC, 0, curve, Buffer.concat([serializedPath, message])).then(response => {
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
-      const hmac = response.slice(0, -2);
+      const hmac = response.slice(0, -2)
 
       return {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
-        hmac
+        hmac,
       }
     }, processErrorResponse)
   }

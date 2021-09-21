@@ -58,5 +58,5 @@ export interface ResponseLegacyHWM extends ResponseBase {
 }
 
 export interface ResponseHMAC extends ResponseBase {
-  hmac: Buffer;
+  hmac: Buffer
 }
