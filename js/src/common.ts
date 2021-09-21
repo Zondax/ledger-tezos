@@ -1,18 +1,18 @@
-import Transport from "@ledgerhq/hw-transport";
+import Transport from '@ledgerhq/hw-transport'
 
-export const CLA = 0x80;
-export const CHUNK_SIZE = 250;
-export const APP_KEY = "XTZ";
+export const CLA = 0x80
+export const CHUNK_SIZE = 250
+export const APP_KEY = 'XTZ'
 
 export const INS = {
   GET_VERSION: 0x10,
   GET_ADDR: 0x11,
   SIGN: 0x12,
-  AUTHORIZE_BAKING: 0xA1,
-  DEAUTHORIZE_BAKING: 0xAC,
-  QUERY_AUTH_KEY_WITH_CURVE: 0xAD,
-  BAKER_SIGN: 0xAF,
-};
+  AUTHORIZE_BAKING: 0xa1,
+  DEAUTHORIZE_BAKING: 0xac,
+  QUERY_AUTH_KEY_WITH_CURVE: 0xad,
+  BAKER_SIGN: 0xaf,
+}
 
 export const LEGACY_INS = {
   VERSION: 0x00,
@@ -22,41 +22,41 @@ export const LEGACY_INS = {
   PROMPT_PUBLIC_KEY: 0x03,
 
   AUTHORIZE_BAKING: 0x01,
-  DEAUTHORIZE: 0x0C,
+  DEAUTHORIZE: 0x0c,
 
   RESET: 0x06,
   QUERY_MAIN_HWM: 0x08,
-  QUERY_ALL_HWM: 0x0B,
+  QUERY_ALL_HWM: 0x0b,
 
   QUERY_AUTH_KEY: 0x07,
-  QUERY_AUTH_KEY_WITH_CURVE: 0x0D,
+  QUERY_AUTH_KEY_WITH_CURVE: 0x0d,
 
-  SETUP: 0x0A,
+  SETUP: 0x0a,
 
-  HMAC: 0x0E,
+  HMAC: 0x0e,
 
   SIGN: 0x04,
-  SIGN_WITH_HASH: 0x0F,
+  SIGN_WITH_HASH: 0x0f,
   SIGN_UNSAFE: 0x05,
-};
+}
 
 export const PAYLOAD_TYPE = {
   INIT: 0x00,
   ADD: 0x01,
-  LAST: 0x02
-};
+  LAST: 0x02,
+}
 
 export const P1_VALUES = {
   ONLY_RETRIEVE: 0x00,
-  SHOW_ADDRESS_IN_DEVICE: 0x01
-};
+  SHOW_ADDRESS_IN_DEVICE: 0x01,
+}
 
 export const P2_CURVE = {
   ED25519_SLIP10: 0,
   SECP256K1: 1,
   SECP256R1: 2,
   ED25519: 3,
-};
+}
 
 export enum Curve {
   Ed25519_Slip10 = P2_CURVE.ED25519_SLIP10,
@@ -91,78 +91,74 @@ export enum LedgerError {
 }
 
 export const ERROR_DESCRIPTION = {
-  [LedgerError.U2FUnknown]: "U2F: Unknown",
-  [LedgerError.U2FBadRequest]: "U2F: Bad request",
-  [LedgerError.U2FConfigurationUnsupported]: "U2F: Configuration unsupported",
-  [LedgerError.U2FDeviceIneligible]: "U2F: Device Ineligible",
-  [LedgerError.U2FTimeout]: "U2F: Timeout",
-  [LedgerError.Timeout]: "Timeout",
-  [LedgerError.NoErrors]: "No errors",
-  [LedgerError.DeviceIsBusy]: "Device is busy",
-  [LedgerError.ErrorDerivingKeys]: "Error deriving keys",
-  [LedgerError.ExecutionError]: "Execution Error",
-  [LedgerError.WrongLength]: "Wrong Length",
-  [LedgerError.EmptyBuffer]: "Empty Buffer",
-  [LedgerError.OutputBufferTooSmall]: "Output buffer too small",
-  [LedgerError.DataIsInvalid]: "Data is invalid",
-  [LedgerError.ConditionsNotSatisfied]: "Conditions not satisfied",
-  [LedgerError.TransactionRejected]: "Transaction rejected",
-  [LedgerError.BadKeyHandle]: "Bad key handle",
-  [LedgerError.InvalidP1P2]: "Invalid P1/P2",
-  [LedgerError.InstructionNotSupported]: "Instruction not supported",
-  [LedgerError.AppDoesNotSeemToBeOpen]: "App does not seem to be open",
-  [LedgerError.UnknownError]: "Unknown error",
-  [LedgerError.SignVerifyError]: "Sign/verify error"
-};
+  [LedgerError.U2FUnknown]: 'U2F: Unknown',
+  [LedgerError.U2FBadRequest]: 'U2F: Bad request',
+  [LedgerError.U2FConfigurationUnsupported]: 'U2F: Configuration unsupported',
+  [LedgerError.U2FDeviceIneligible]: 'U2F: Device Ineligible',
+  [LedgerError.U2FTimeout]: 'U2F: Timeout',
+  [LedgerError.Timeout]: 'Timeout',
+  [LedgerError.NoErrors]: 'No errors',
+  [LedgerError.DeviceIsBusy]: 'Device is busy',
+  [LedgerError.ErrorDerivingKeys]: 'Error deriving keys',
+  [LedgerError.ExecutionError]: 'Execution Error',
+  [LedgerError.WrongLength]: 'Wrong Length',
+  [LedgerError.EmptyBuffer]: 'Empty Buffer',
+  [LedgerError.OutputBufferTooSmall]: 'Output buffer too small',
+  [LedgerError.DataIsInvalid]: 'Data is invalid',
+  [LedgerError.ConditionsNotSatisfied]: 'Conditions not satisfied',
+  [LedgerError.TransactionRejected]: 'Transaction rejected',
+  [LedgerError.BadKeyHandle]: 'Bad key handle',
+  [LedgerError.InvalidP1P2]: 'Invalid P1/P2',
+  [LedgerError.InstructionNotSupported]: 'Instruction not supported',
+  [LedgerError.AppDoesNotSeemToBeOpen]: 'App does not seem to be open',
+  [LedgerError.UnknownError]: 'Unknown error',
+  [LedgerError.SignVerifyError]: 'Sign/verify error',
+}
 
 export function errorCodeToString(statusCode: LedgerError) {
-  if (statusCode in ERROR_DESCRIPTION) return ERROR_DESCRIPTION[statusCode];
-  return `Unknown Status Code: ${statusCode}`;
+  if (statusCode in ERROR_DESCRIPTION) return ERROR_DESCRIPTION[statusCode]
+  return `Unknown Status Code: ${statusCode}`
 }
 
 function isDict(v: any) {
-  return typeof v === "object" && v !== null && !(v instanceof Array) && !(v instanceof Date);
+  return typeof v === 'object' && v !== null && !(v instanceof Array) && !(v instanceof Date)
 }
 
 export function processErrorResponse(response?: any) {
   if (response) {
     if (isDict(response)) {
-      if (Object.prototype.hasOwnProperty.call(response, "statusCode")) {
+      if (Object.prototype.hasOwnProperty.call(response, 'statusCode')) {
         return {
           returnCode: response.statusCode,
-          errorMessage: errorCodeToString(response.statusCode)
-        };
+          errorMessage: errorCodeToString(response.statusCode),
+        }
       }
 
-      if (
-        Object.prototype.hasOwnProperty.call(response, "returnCode") &&
-        Object.prototype.hasOwnProperty.call(response, "errorMessage")
-      ) {
-        return response;
+      if (Object.prototype.hasOwnProperty.call(response, 'returnCode') && Object.prototype.hasOwnProperty.call(response, 'errorMessage')) {
+        return response
       }
     }
     return {
       returnCode: 0xffff,
-      errorMessage: response.toString()
-    };
+      errorMessage: response.toString(),
+    }
   }
 
   return {
     returnCode: 0xffff,
-    errorMessage: response.toString()
-  };
+    errorMessage: response.toString(),
+  }
 }
 
 export async function getVersion(transport: Transport) {
   return transport.send(CLA, INS.GET_VERSION, 0, 0).then(response => {
-    const errorCodeData = response.slice(-2);
-    const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+    const errorCodeData = response.slice(-2)
+    const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
-    let targetId = 0;
+    let targetId = 0
     if (response.length >= 9) {
       /* eslint-disable no-bitwise */
-      targetId =
-        (response[5] << 24) + (response[6] << 16) + (response[7] << 8) + (response[8] << 0);
+      targetId = (response[5] << 24) + (response[6] << 16) + (response[7] << 8) + (response[8] << 0)
       /* eslint-enable no-bitwise */
     }
 
@@ -174,7 +170,7 @@ export async function getVersion(transport: Transport) {
       minor: response[2],
       patch: response[3],
       deviceLocked: response[4] === 1,
-      targetId: targetId.toString(16)
-    };
-  }, processErrorResponse);
+      targetId: targetId.toString(16),
+    }
+  }, processErrorResponse)
 }
