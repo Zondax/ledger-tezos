@@ -162,7 +162,7 @@ mod transfer;
 pub use activate_account::ActivateAccount;
 pub use ballot::Ballot;
 pub use delegation::Delegation;
-pub use endorsement::{Endorsement, EndorsementWithSlot};
+pub use endorsement::{DoubleEndorsementEvidence, Endorsement, EndorsementWithSlot};
 pub use failing_noop::FailingNoop;
 pub use origination::Origination;
 pub use proposals::Proposals;
@@ -176,6 +176,7 @@ pub enum OperationType<'b> {
     Delegation(Delegation<'b>),
     Endorsement(Endorsement),
     EndorsementWithSlot(EndorsementWithSlot<'b>),
+    DoubleEndorsementEvidence(DoubleEndorsementEvidence<'b>),
     SeedNonceRevelation(SeedNonceRevelation<'b>),
     Ballot(Ballot<'b>),
     Reveal(Reveal<'b>),
@@ -197,6 +198,10 @@ impl<'b> OperationType<'b> {
             0x01 => {
                 let (rem, data) = SeedNonceRevelation::from_bytes(rem)?;
                 (rem, Self::SeedNonceRevelation(data))
+            }
+            0x02 => {
+                let (rem, data) = DoubleEndorsementEvidence::from_bytes(rem)?;
+                (rem, Self::DoubleEndorsementEvidence(data))
             }
             0x04 => {
                 let (rem, data) = ActivateAccount::from_bytes(rem)?;
@@ -234,11 +239,8 @@ impl<'b> OperationType<'b> {
                 let (rem, data) = Delegation::from_bytes(rem)?;
                 (rem, Self::Delegation(data))
             }
-            //double endorsement evidence
             //double baking evidence
-            //activate account
-            //endorsement with slot
-            0x02 | 0x03 => return Err(ParserError::UnimplementedOperation.into()),
+            0x03 => return Err(ParserError::UnimplementedOperation.into()),
             _ => return Err(ParserError::UnknownOperation.into()),
         };
 
@@ -259,6 +261,7 @@ impl<'b> OperationType<'b> {
             Self::Delegation(del) => del.num_items(),
             Self::Endorsement(end) => end.num_items(),
             Self::EndorsementWithSlot(end) => end.num_items(),
+            Self::DoubleEndorsementEvidence(end) => end.num_items(),
             Self::SeedNonceRevelation(snr) => snr.num_items(),
             Self::Ballot(vote) => vote.num_items(),
             Self::Reveal(rev) => rev.num_items(),

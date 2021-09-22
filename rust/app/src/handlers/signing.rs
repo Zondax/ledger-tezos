@@ -237,6 +237,9 @@ impl Viewable for SignUI {
                         OperationType::EndorsementWithSlot(endorsement) => {
                             endorsement.render_item(item_n, title, message, page)
                         }
+                        OperationType::DoubleEndorsementEvidence(endorsement) => {
+                            endorsement.render_item(item_n, title, message, page)
+                        }
                         OperationType::SeedNonceRevelation(snr) => {
                             snr.render_item(item_n, title, message, page)
                         }

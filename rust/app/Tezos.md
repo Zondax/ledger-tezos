@@ -86,6 +86,19 @@ An endorsement is encoded as follows:
 
 #### Double endorsement evidence
 
+`tezos-codec describe alpha.operation.contents binary schema` (search `Double_endorsement_evidence` section)
+
+An double endorsement evidence is encoded as follows:
+
+| Name        | Size | Contents                      |
+|:------------|:-----|:------------------------------|
+| tag         | 1    | 0x02                          |
+| length\_op1 | 4    | length of the next field (BE) |
+| op1         |      | [Inlined endorsement]         |
+| length\_op2 | 4    | lenght of the next field (BE) |
+| op2         |      | [Inlined endorsement]         |
+| slot        | 2    | Unsigned 16-bit integer       |
+
 #### Double baking evidence
 
 #### Activate account

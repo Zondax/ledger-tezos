@@ -388,6 +388,9 @@ fn verify_operation<'b>(
         (OperationType::EndorsementWithSlot(endorsement), "endorsement_with_slot") => {
             endorsement.is(json)
         }
+        (OperationType::DoubleEndorsementEvidence(endorsement), "double_endorsement_evidence") => {
+            endorsement.is(json)
+        }
         (OperationType::SeedNonceRevelation(snr), "seed_nonce_revelation") => snr.is(json),
         (OperationType::Ballot(vote), "ballot") => vote.is(json),
         (OperationType::Reveal(rev), "reveal") => rev.is(json),
