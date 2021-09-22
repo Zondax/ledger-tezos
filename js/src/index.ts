@@ -14,169 +14,177 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-import Transport from "@ledgerhq/hw-transport";
-import { serializePath, sha256x2 } from "./helper";
-import { ResponseBase, ResponseAddress, ResponseQueryAuthKey, ResponseAppInfo, ResponseSign, ResponseVersion,
-         ResponseLegacyVersion, ResponseLegacyGit, ResponseLegacyHWM, ResponseHMAC } from "./types";
+import Transport from '@ledgerhq/hw-transport'
+import { serializePath, sha256x2 } from './helper'
+import {
+  ResponseAddress,
+  ResponseAppInfo,
+  ResponseBase,
+  ResponseHMAC,
+  ResponseLegacyGit,
+  ResponseLegacyHWM,
+  ResponseLegacyVersion,
+  ResponseQueryAuthKey,
+  ResponseSign,
+  ResponseVersion,
+} from './types'
 import {
   CHUNK_SIZE,
   CLA,
+  Curve,
   errorCodeToString,
   getVersion,
   INS,
-  LEGACY_INS,
   LedgerError,
+  LEGACY_INS,
   P1_VALUES,
-  P2_CURVE,
-  Curve,
   PAYLOAD_TYPE,
-  processErrorResponse
-} from "./common";
+  processErrorResponse,
+} from './common'
 
-export { LedgerError, Curve };
-export * from "./types";
+export { LedgerError, Curve }
+export * from './types'
 
 function processGetAddrResponse(response: Buffer) {
-  let partialResponse = response;
+  let partialResponse = response
 
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]);
+  const errorCodeData = partialResponse.slice(-2)
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
   //get public key len (variable)
-  const PKLEN = partialResponse[0];
-  const publicKey = Buffer.from(partialResponse.slice(1, 1 + PKLEN));
+  const PKLEN = partialResponse[0]
+  const publicKey = Buffer.from(partialResponse.slice(1, 1 + PKLEN))
 
   //"advance" buffer
-  partialResponse = partialResponse.slice(1 + PKLEN);
+  partialResponse = partialResponse.slice(1 + PKLEN)
 
-  const address = Buffer.from(partialResponse.slice(0, -2)).toString();
+  const address = Buffer.from(partialResponse.slice(0, -2)).toString()
 
   return {
     publicKey,
     address,
     returnCode,
-    errorMessage: errorCodeToString(returnCode)
-  };
+    errorMessage: errorCodeToString(returnCode),
+  }
 }
 
 function processAuthorizeBakingResponse(response: Buffer) {
-  let partialResponse = response;
+  let partialResponse = response
 
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]);
+  const errorCodeData = partialResponse.slice(-2)
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
   //get public key len (variable)
-  const PKLEN = partialResponse[0];
-  const publicKey = Buffer.from(partialResponse.slice(1, 1 + PKLEN));
+  const PKLEN = partialResponse[0]
+  const publicKey = Buffer.from(partialResponse.slice(1, 1 + PKLEN))
 
   return {
     publicKey,
     returnCode,
-    errorMessage: errorCodeToString(returnCode)
-  };
+    errorMessage: errorCodeToString(returnCode),
+  }
 }
 
 function processDeAuthorizeBakingResponse(response: Buffer) {
-  let partialResponse = response;
+  let partialResponse = response
 
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]);
+  const errorCodeData = partialResponse.slice(-2)
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
   return {
     returnCode,
-    errorMessage: errorCodeToString(returnCode)
-  };
+    errorMessage: errorCodeToString(returnCode),
+  }
 }
 
 function processQueryAuthKeyWithCurve(response: Buffer) {
-  let partialResponse = response;
+  let partialResponse = response
 
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]);
+  const errorCodeData = partialResponse.slice(-2)
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
   //get public key len (variable)
-  const curve = partialResponse[0];
-  const len_path = partialResponse[1];
-  const bip32 = partialResponse.slice(2, 2 + 4 *len_path)
+  const curve = partialResponse[0]
+  const len_path = partialResponse[1]
+  const bip32 = partialResponse.slice(2, 2 + 4 * len_path)
 
   return {
     curve,
     bip32,
     returnCode,
-    errorMessage: errorCodeToString(returnCode)
-  };
+    errorMessage: errorCodeToString(returnCode),
+  }
 }
 
-
 export default class TezosApp {
-    transport;
+  transport
 
   constructor(transport: Transport) {
-    this.transport = transport;
+    this.transport = transport
     if (!transport) {
-      throw new Error("Transport has not been defined");
+      throw new Error('Transport has not been defined')
     }
   }
 
   static prepareChunks(message: Buffer, serializedPathBuffer?: Buffer) {
-    const chunks = [];
+    const chunks = []
 
     // First chunk (only path)
     if (serializedPathBuffer !== undefined) {
       // First chunk (only path)
-      chunks.push(serializedPathBuffer!);
+      chunks.push(serializedPathBuffer!)
     }
 
-    const messageBuffer = Buffer.from(message);
+    const messageBuffer = Buffer.from(message)
 
-    const buffer = Buffer.concat([messageBuffer]);
+    const buffer = Buffer.concat([messageBuffer])
     for (let i = 0; i < buffer.length; i += CHUNK_SIZE) {
-      let end = i + CHUNK_SIZE;
+      let end = i + CHUNK_SIZE
       if (i > buffer.length) {
-        end = buffer.length;
+        end = buffer.length
       }
-      chunks.push(buffer.slice(i, end));
+      chunks.push(buffer.slice(i, end))
     }
 
-    return chunks;
+    return chunks
   }
 
   async signGetChunks(path: string, message: Buffer) {
-    return TezosApp.prepareChunks(message, serializePath(path));
+    return TezosApp.prepareChunks(message, serializePath(path))
   }
 
   async getVersion(): Promise<ResponseVersion> {
-    return getVersion(this.transport).catch(err => processErrorResponse(err));
+    return getVersion(this.transport).catch(err => processErrorResponse(err))
   }
 
   async getAppInfo(): Promise<ResponseAppInfo> {
     return this.transport.send(0xb0, 0x01, 0, 0).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+      const errorCodeData = response.slice(-2)
+      const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-      const result: { errorMessage?: string; returnCode?: LedgerError } = {};
+      const result: { errorMessage?: string; returnCode?: LedgerError } = {}
 
-      let appName = "err";
-      let appVersion = "err";
-      let flagLen = 0;
-      let flagsValue = 0;
+      let appName = 'err'
+      let appVersion = 'err'
+      let flagLen = 0
+      let flagsValue = 0
 
       if (response[0] !== 1) {
         // Ledger responds with format ID 1. There is no spec for any format != 1
-        result.errorMessage = "response format ID not recognized";
-        result.returnCode = LedgerError.DeviceIsBusy;
+        result.errorMessage = 'response format ID not recognized'
+        result.returnCode = LedgerError.DeviceIsBusy
       } else {
-        const appNameLen = response[1];
-        appName = response.slice(2, 2 + appNameLen).toString("ascii");
-        let idx = 2 + appNameLen;
-        const appVersionLen = response[idx];
-        idx += 1;
-        appVersion = response.slice(idx, idx + appVersionLen).toString("ascii");
-        idx += appVersionLen;
-        const appFlagsLen = response[idx];
-        idx += 1;
-        flagLen = appFlagsLen;
-        flagsValue = response[idx];
+        const appNameLen = response[1]
+        appName = response.slice(2, 2 + appNameLen).toString('ascii')
+        let idx = 2 + appNameLen
+        const appVersionLen = response[idx]
+        idx += 1
+        appVersion = response.slice(idx, idx + appVersionLen).toString('ascii')
+        idx += appVersionLen
+        const appFlagsLen = response[idx]
+        idx += 1
+        flagLen = appFlagsLen
+        flagsValue = response[idx]
       }
 
       return {
@@ -193,64 +201,70 @@ export default class TezosApp {
         // eslint-disable-next-line no-bitwise
         flagOnboarded: (flagsValue & 4) !== 0,
         // eslint-disable-next-line no-bitwise
-        flagPINValidated: (flagsValue & 128) !== 0
-      };
-    }, processErrorResponse);
+        flagPINValidated: (flagsValue & 128) !== 0,
+      }
+    }, processErrorResponse)
   }
 
   async getAddressAndPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
-    const serializedPath = serializePath(path);
+    const serializedPath = serializePath(path)
     return this.transport
       .send(CLA, INS.GET_ADDR, P1_VALUES.ONLY_RETRIEVE, curve, serializedPath, [LedgerError.NoErrors])
-      .then(processGetAddrResponse, processErrorResponse);
+      .then(processGetAddrResponse, processErrorResponse)
   }
 
   async showAddressAndPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
-    const serializedPath = serializePath(path);
+    const serializedPath = serializePath(path)
     return this.transport
-      .send(CLA, INS.GET_ADDR, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, curve, serializedPath, [
-        LedgerError.NoErrors
-      ])
-      .then(processGetAddrResponse, processErrorResponse);
+      .send(CLA, INS.GET_ADDR, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, curve, serializedPath, [LedgerError.NoErrors])
+      .then(processGetAddrResponse, processErrorResponse)
   }
 
   async authorizeBaking(path: string, curve: Curve): Promise<ResponseAddress> {
-    const serializedPath = serializePath(path);
+    const serializedPath = serializePath(path)
     return this.transport
-        .send(CLA, INS.AUTHORIZE_BAKING, 0x01, curve, serializedPath, [LedgerError.NoErrors])
-        .then(processAuthorizeBakingResponse, processErrorResponse);
+      .send(CLA, INS.AUTHORIZE_BAKING, 0x01, curve, serializedPath, [LedgerError.NoErrors])
+      .then(processAuthorizeBakingResponse, processErrorResponse)
   }
 
   async deauthorizeBaking(): Promise<ResponseBase> {
     return this.transport
-        .send(CLA, INS.DEAUTHORIZE_BAKING, 0x01, 0x00, Buffer.alloc(0), [LedgerError.NoErrors])
-        .then(processDeAuthorizeBakingResponse, processErrorResponse);
+      .send(CLA, INS.DEAUTHORIZE_BAKING, 0x01, 0x00, Buffer.alloc(0), [LedgerError.NoErrors])
+      .then(processDeAuthorizeBakingResponse, processErrorResponse)
   }
 
   async queryAuthKeyWithCurve(confirm = false): Promise<ResponseQueryAuthKey> {
-    const confirmation = confirm ? 1 : 0;
+    const confirmation = confirm ? 1 : 0
 
     return this.transport
-        .send(CLA, INS.QUERY_AUTH_KEY_WITH_CURVE, confirmation, 0x00, Buffer.alloc(0), [LedgerError.NoErrors])
-        .then(processQueryAuthKeyWithCurve, processErrorResponse);
+      .send(CLA, INS.QUERY_AUTH_KEY_WITH_CURVE, confirmation, 0x00, Buffer.alloc(0), [LedgerError.NoErrors])
+      .then(processQueryAuthKeyWithCurve, processErrorResponse)
   }
 
-  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, legacy = false, curve?: Curve, ins: number = INS.SIGN, with_hash = true): Promise<ResponseSign> {
-    let payloadType = PAYLOAD_TYPE.ADD;
-    let p2 = 0;
+  async signSendChunk(
+    chunkIdx: number,
+    chunkNum: number,
+    chunk: Buffer,
+    legacy = false,
+    curve?: Curve,
+    ins: number = INS.SIGN,
+    with_hash = true,
+  ): Promise<ResponseSign> {
+    let payloadType = PAYLOAD_TYPE.ADD
+    let p2 = 0
     if (chunkIdx === 1) {
-      payloadType = PAYLOAD_TYPE.INIT;
+      payloadType = PAYLOAD_TYPE.INIT
       if (curve === undefined) {
-        throw Error("curve type not given")
+        throw Error('curve type not given')
       }
-      p2 = curve;
+      p2 = curve
     }
     if (chunkIdx === chunkNum) {
       if (!legacy) {
-        payloadType = PAYLOAD_TYPE.LAST;
+        payloadType = PAYLOAD_TYPE.LAST
       } else {
         //when legacy, mark as last instead of setting last
-        payloadType |= 0x80;
+        payloadType |= 0x80
       }
     }
 
@@ -259,19 +273,19 @@ export default class TezosApp {
         LedgerError.NoErrors,
         LedgerError.DataIsInvalid,
         LedgerError.BadKeyHandle,
-        LedgerError.SignVerifyError
+        LedgerError.SignVerifyError,
       ])
       .then((response: Buffer) => {
-        const errorCodeData = response.slice(-2);
-        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-        let errorMessage = errorCodeToString(returnCode);
+        const errorCodeData = response.slice(-2)
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+        let errorMessage = errorCodeToString(returnCode)
 
-        if (returnCode === LedgerError.BadKeyHandle ||
+        if (
+          returnCode === LedgerError.BadKeyHandle ||
           returnCode === LedgerError.DataIsInvalid ||
-          returnCode === LedgerError.SignVerifyError) {
-          errorMessage = `${errorMessage} : ${response
-            .slice(0, response.length - 2)
-            .toString("ascii")}`;
+          returnCode === LedgerError.SignVerifyError
+        ) {
+          errorMessage = `${errorMessage} : ${response.slice(0, response.length - 2).toString('ascii')}`
         }
 
         if (returnCode === LedgerError.NoErrors && response.length > 2) {
@@ -280,45 +294,43 @@ export default class TezosApp {
               hash: response.slice(0, 32),
               signature: response.slice(32, -2),
               returnCode: returnCode,
-              errorMessage: errorMessage
-            };
+              errorMessage: errorMessage,
+            }
           } else {
             return {
               signature: response.slice(0, 32),
               hash: Buffer.alloc(32),
               returnCode: returnCode,
-              errorMessage: errorMessage
-            };
+              errorMessage: errorMessage,
+            }
           }
-
         }
 
         return {
           returnCode: returnCode,
-          errorMessage: errorMessage
-        };
-
-      }, processErrorResponse);
+          errorMessage: errorMessage,
+        }
+      }, processErrorResponse)
   }
 
   async signBaker(path: string, curve: Curve, message: Buffer, message_type: 'endorsement' | 'blocklevel' | 'delegation') {
     //we prepend the appropriate "magic byte"
     //based on the type of the content that we want to sign
-    let magic_byte;
+    let magic_byte
     switch (message_type) {
-        case 'blocklevel':
-          magic_byte = 1;
-          break;
-        case 'endorsement':
-          magic_byte = 2;
-          break;
-        case 'delegation':
-          magic_byte = 3;
-          break;
-        default:
-          throw "Invalid message type"
+      case 'blocklevel':
+        magic_byte = 1
+        break
+      case 'endorsement':
+        magic_byte = 2
+        break
+      case 'delegation':
+        magic_byte = 3
+        break
+      default:
+        throw 'Invalid message type'
     }
-    message = Buffer.concat([Buffer.from([magic_byte]), message]);
+    message = Buffer.concat([Buffer.from([magic_byte]), message])
 
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.BAKER_SIGN).then(async response => {
@@ -326,22 +338,22 @@ export default class TezosApp {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
           signature: null as null | Buffer,
-        };
+        }
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.BAKER_SIGN);
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.BAKER_SIGN)
           if (result.returnCode !== LedgerError.NoErrors) {
-            break;
+            break
           }
         }
-        return result;
-      }, processErrorResponse);
-    }, processErrorResponse);
+        return result
+      }, processErrorResponse)
+    }, processErrorResponse)
   }
 
   async signOperation(path: string, curve: Curve, message: Buffer) {
     //prepend 0x03 to signal an operation as the message
-    message = Buffer.concat([Buffer.from([3]), message]);
+    message = Buffer.concat([Buffer.from([3]), message])
 
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.SIGN).then(async response => {
@@ -349,22 +361,22 @@ export default class TezosApp {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
           signature: null as null | Buffer,
-        };
+        }
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.SIGN);
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.SIGN)
           if (result.returnCode !== LedgerError.NoErrors) {
-            break;
+            break
           }
         }
-        return result;
-      }, processErrorResponse);
-    }, processErrorResponse);
+        return result
+      }, processErrorResponse)
+    }, processErrorResponse)
   }
 
   async signMichelson(path: string, curve: Curve, message: Buffer) {
     //prepend 0x05 to signal some packed michelson data
-    message = Buffer.concat([Buffer.from([5]), message]);
+    message = Buffer.concat([Buffer.from([5]), message])
 
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.SIGN).then(async response => {
@@ -372,42 +384,42 @@ export default class TezosApp {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
           signature: null as null | Buffer,
-        };
+        }
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.SIGN);
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.SIGN)
           if (result.returnCode !== LedgerError.NoErrors) {
-            break;
+            break
           }
         }
-        return result;
-      }, processErrorResponse);
-    }, processErrorResponse);
+        return result
+      }, processErrorResponse)
+    }, processErrorResponse)
   }
 
   sig_hash(msg: Buffer, msg_type: 'blocklevel' | 'endorsement' | 'operation' | 'michelson'): Buffer {
-    const blake2 = require('blake2');
+    const blake2 = require('blake2')
 
-    let magic_byte;
+    let magic_byte
     switch (msg_type) {
-        case 'blocklevel':
-          magic_byte = 1;
-          break;
-        case 'endorsement':
-          magic_byte = 2;
-          break;
-        case 'operation':
-          magic_byte = 3;
-          break;
-        case 'michelson':
-          magic_byte = 5;
-          break;
-        default:
-          throw "Invalid message type"
+      case 'blocklevel':
+        magic_byte = 1
+        break
+      case 'endorsement':
+        magic_byte = 2
+        break
+      case 'operation':
+        magic_byte = 3
+        break
+      case 'michelson':
+        magic_byte = 5
+        break
+      default:
+        throw 'Invalid message type'
     }
-    msg = Buffer.concat([Buffer.from([magic_byte]), msg]);
+    msg = Buffer.concat([Buffer.from([magic_byte]), msg])
 
-    return blake2.createHash('blake2b', {digestLength: 32}).update(msg).digest();
+    return blake2.createHash('blake2b', { digestLength: 32 }).update(msg).digest()
   }
 
   //--------------------- LEGACY INSTRUCTIONS
@@ -429,8 +441,8 @@ export default class TezosApp {
 
   async legacyGetGit(): Promise<ResponseLegacyGit> {
     return this.transport.send(CLA, LEGACY_INS.GIT, 0, 0).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
       return {
         returnCode,
@@ -441,12 +453,12 @@ export default class TezosApp {
   }
 
   async legacyResetHighWatermark(level: number): Promise<ResponseBase> {
-    const data = Buffer.allocUnsafe(4);
-    data.writeInt32BE(level);
+    const data = Buffer.allocUnsafe(4)
+    data.writeInt32BE(level)
 
     return this.transport.send(CLA, LEGACY_INS.RESET, 0, 0, data).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
       return {
         returnCode,
@@ -457,197 +469,190 @@ export default class TezosApp {
 
   async legacyGetHighWatermark(): Promise<ResponseLegacyHWM> {
     return this.transport.send(CLA, LEGACY_INS.QUERY_MAIN_HWM, 0, 0).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
-      const main = response.slice(0, -2).readInt32BE();
+      const main = response.slice(0, -2).readInt32BE()
 
       return {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
         main,
         test: null,
-        chain_id: null
+        chain_id: null,
       }
     }, processErrorResponse)
   }
 
   async legacyGetAllWatermark(): Promise<ResponseLegacyHWM> {
     return this.transport.send(CLA, LEGACY_INS.QUERY_ALL_HWM, 0, 0).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
-      const main = response.slice(0, 4).readInt32BE();
-      const test = response.slice(4, 8).readInt32BE();
-      const chain_id = response.slice(8, -2).readInt32BE();
+      const main = response.slice(0, 4).readInt32BE()
+      const test = response.slice(4, 8).readInt32BE()
+      const chain_id = response.slice(8, -2).readInt32BE()
 
       return {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
         main,
         test,
-        chain_id
+        chain_id,
       }
     }, processErrorResponse)
   }
 
-  async legacySetup(
-  path: string,
-  curve: Curve,
-  main_level: number,
-  test_level: number,
-  chain_id = 0x7a06a770,
-): Promise<ResponseAddress> {
-  const serializedPath = serializePath(path);
+  async legacySetup(path: string, curve: Curve, main_level: number, test_level: number, chain_id = 0x7a06a770): Promise<ResponseAddress> {
+    const serializedPath = serializePath(path)
 
-  let data = Buffer.allocUnsafe(4 * 3)
-  data.writeUInt32BE(chain_id)
-  data.writeUInt32BE(main_level, 4)
-  data.writeUInt32BE(test_level, 8)
-  data = Buffer.concat([data, serializedPath]);
+    let data = Buffer.allocUnsafe(4 * 3)
+    data.writeUInt32BE(chain_id)
+    data.writeUInt32BE(main_level, 4)
+    data.writeUInt32BE(test_level, 8)
+    data = Buffer.concat([data, serializedPath])
 
-  return this.transport.send(CLA, LEGACY_INS.SETUP, 0, curve, data).then(response => {
-    const errorCodeData = response.slice(-2)
-    const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
+    return this.transport.send(CLA, LEGACY_INS.SETUP, 0, curve, data).then(response => {
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
-    const publicKey = response.slice(0, -2);
-    const address = this.publicKeyToAddress(publicKey, curve);
-
-    return {
-      returnCode,
-      errorMessage: errorCodeToString(returnCode),
-      publicKey,
-      address
-    }
-  }, processErrorResponse)
-}
-
-  async legacyHMAC(path: string, curve: Curve, message: Buffer): Promise<ResponseHMAC> {
-    const serializedPath = serializePath(path);
-    return this.transport
-      .send(CLA, LEGACY_INS.HMAC, 0, curve, Buffer.concat([serializedPath, message]))
-      .then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
-
-      const hmac = response.slice(0, -2);
+      const publicKey = response.slice(0, -2)
+      const address = this.publicKeyToAddress(publicKey, curve)
 
       return {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
-        hmac
+        publicKey,
+        address,
+      }
+    }, processErrorResponse)
+  }
+
+  async legacyHMAC(path: string, curve: Curve, message: Buffer): Promise<ResponseHMAC> {
+    const serializedPath = serializePath(path)
+    return this.transport.send(CLA, LEGACY_INS.HMAC, 0, curve, Buffer.concat([serializedPath, message])).then(response => {
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
+
+      const hmac = response.slice(0, -2)
+
+      return {
+        returnCode,
+        errorMessage: errorCodeToString(returnCode),
+        hmac,
       }
     }, processErrorResponse)
   }
 
   async legacyGetPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
-    const serializedPath = serializePath(path);
-    return this.transport
-      .send(CLA, LEGACY_INS.PUBLIC_KEY, P1_VALUES.ONLY_RETRIEVE, curve, serializedPath)
-      .then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+    const serializedPath = serializePath(path)
+    return this.transport.send(CLA, LEGACY_INS.PUBLIC_KEY, P1_VALUES.ONLY_RETRIEVE, curve, serializedPath).then(response => {
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
-      const publicKey = response.slice(0, -2);
-      const address = this.publicKeyToAddress(publicKey, curve);
+      const publicKey = response.slice(0, -2)
+      const address = this.publicKeyToAddress(publicKey, curve)
 
       return {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
         publicKey,
-        address
+        address,
       }
     }, processErrorResponse)
   }
 
   async legacyPromptPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
-    const serializedPath = serializePath(path);
-    return this.transport
-      .send(CLA, LEGACY_INS.PROMPT_PUBLIC_KEY, 0, curve, serializedPath)
-      .then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
+    const serializedPath = serializePath(path)
+    return this.transport.send(CLA, LEGACY_INS.PROMPT_PUBLIC_KEY, 0, curve, serializedPath).then(response => {
+      const errorCodeData = response.slice(-2)
+      const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
-      const publicKey = response.slice(0, -2);
-      const address = this.publicKeyToAddress(publicKey, curve);
+      const publicKey = response.slice(0, -2)
+      const address = this.publicKeyToAddress(publicKey, curve)
 
       return {
         returnCode,
         errorMessage: errorCodeToString(returnCode),
         publicKey,
-        address
+        address,
       }
     }, processErrorResponse)
   }
 
   publicKeyToAddress(key: Buffer, curve: Curve): string {
-    let prefix;
+    let prefix
 
     switch (curve) {
-        case Curve.Ed25519:
-        case Curve.Ed25519_Slip10:
-          prefix = [6, 161, 159]
-          break;
+      case Curve.Ed25519:
+      case Curve.Ed25519_Slip10:
+        prefix = [6, 161, 159]
+        break
 
-        case Curve.Secp256K1:
-          prefix = [6, 161, 161]
-          break;
+      case Curve.Secp256K1:
+        prefix = [6, 161, 161]
+        break
 
-        case Curve.Secp256R1:
-          prefix = [6, 161, 164]
-          break;
+      case Curve.Secp256R1:
+        prefix = [6, 161, 164]
+        break
 
-        default:
-          throw Error("not a valid curve type")
+      default:
+        throw Error('not a valid curve type')
     }
 
-    prefix = Buffer.from(prefix);
+    prefix = Buffer.from(prefix)
 
     switch (curve) {
-        case Curve.Ed25519:
-        case Curve.Ed25519_Slip10:
-          key = key.slice(1); //this skips the len byte
-        break;
+      case Curve.Ed25519:
+      case Curve.Ed25519_Slip10:
+        key = key.slice(1) //this skips the len byte
+        break
 
-        case Curve.Secp256K1:
-        case Curve.Secp256R1:
-          const last = key.readUInt8(64);
-          key = key.slice(0, 33); //we actually override [0] down below
-          key.writeUInt8(0x02 + (last & 0x01));
-        break;
+      case Curve.Secp256K1:
+      case Curve.Secp256R1:
+        const last = key.readUInt8(64)
+        key = key.slice(0, 33) //we actually override [0] down below
+        key.writeUInt8(0x02 + (last & 0x01))
+        break
     }
 
-    const blake2 = require('blake2');
-    const hash = blake2.createHash('blake2b', {digestLength: 20}).update(key).digest();
+    const blake2 = require('blake2')
+    const hash = blake2.createHash('blake2b', { digestLength: 20 }).update(key).digest()
 
-    const checksum = sha256x2(Buffer.concat([prefix, hash])).slice(0, 4);
+    const checksum = sha256x2(Buffer.concat([prefix, hash])).slice(0, 4)
 
-    const bs58 = require('bs58');
+    const bs58 = require('bs58')
 
-    return bs58.encode(Buffer.concat([prefix, hash, checksum]));
+    return bs58.encode(Buffer.concat([prefix, hash, checksum]))
   }
 
-  async legacySignWithHash(path: string, curve: Curve, message: Buffer, message_type: 'endorsement' | 'blocklevel' | 'operation' | 'michelson' = 'operation') {
+  async legacySignWithHash(
+    path: string,
+    curve: Curve,
+    message: Buffer,
+    message_type: 'endorsement' | 'blocklevel' | 'operation' | 'michelson' = 'operation',
+  ) {
     //we prepend the appropriate "magic byte"
     //based on the type of the content that we want to sign
-    let magic_byte;
+    let magic_byte
     switch (message_type) {
-        case 'blocklevel':
-          magic_byte = 1;
-          break;
-        case 'endorsement':
-          magic_byte = 2;
-          break;
-        case 'operation':
-          magic_byte = 3;
-          break;
-        case 'michelson':
-          magic_byte = 5;
-          break;
-        default:
-          throw "Invalid message type"
+      case 'blocklevel':
+        magic_byte = 1
+        break
+      case 'endorsement':
+        magic_byte = 2
+        break
+      case 'operation':
+        magic_byte = 3
+        break
+      case 'michelson':
+        magic_byte = 5
+        break
+      default:
+        throw 'Invalid message type'
     }
-    message = Buffer.concat([Buffer.from([magic_byte]), message]);
+    message = Buffer.concat([Buffer.from([magic_byte]), message])
 
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], true, curve, LEGACY_INS.SIGN_WITH_HASH).then(async response => {
@@ -655,40 +660,45 @@ export default class TezosApp {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
           signature: null as null | Buffer,
-        };
+        }
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], true, curve, LEGACY_INS.SIGN_WITH_HASH);
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], true, curve, LEGACY_INS.SIGN_WITH_HASH)
           if (result.returnCode !== LedgerError.NoErrors) {
-            break;
+            break
           }
         }
-        return result;
-      }, processErrorResponse);
-    }, processErrorResponse);
+        return result
+      }, processErrorResponse)
+    }, processErrorResponse)
   }
 
-  async legacySign(path: string, curve: Curve, message: Buffer, message_type: 'endorsement' | 'blocklevel' | 'operation' | 'michelson' = 'operation') {
+  async legacySign(
+    path: string,
+    curve: Curve,
+    message: Buffer,
+    message_type: 'endorsement' | 'blocklevel' | 'operation' | 'michelson' = 'operation',
+  ) {
     //we prepend the appropriate "magic byte"
     //based on the type of the content that we want to sign
-    let magic_byte;
+    let magic_byte
     switch (message_type) {
-        case 'blocklevel':
-          magic_byte = 1;
-          break;
-        case 'endorsement':
-          magic_byte = 2;
-          break;
-        case 'operation':
-          magic_byte = 3;
-          break;
-        case 'michelson':
-          magic_byte = 5;
-          break;
-        default:
-          throw "Invalid message type"
+      case 'blocklevel':
+        magic_byte = 1
+        break
+      case 'endorsement':
+        magic_byte = 2
+        break
+      case 'operation':
+        magic_byte = 3
+        break
+      case 'michelson':
+        magic_byte = 5
+        break
+      default:
+        throw 'Invalid message type'
     }
-    message = Buffer.concat([Buffer.from([magic_byte]), message]);
+    message = Buffer.concat([Buffer.from([magic_byte]), message])
 
     return this.signGetChunks(path, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], true, curve, LEGACY_INS.SIGN, false).then(async response => {
@@ -696,16 +706,16 @@ export default class TezosApp {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
           signature: null as null | Buffer,
-        };
+        }
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], true, curve, LEGACY_INS.SIGN, false);
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], true, curve, LEGACY_INS.SIGN, false)
           if (result.returnCode !== LedgerError.NoErrors) {
-            break;
+            break
           }
         }
-        return result;
-      }, processErrorResponse);
-    }, processErrorResponse);
+        return result
+      }, processErrorResponse)
+    }, processErrorResponse)
   }
 }
