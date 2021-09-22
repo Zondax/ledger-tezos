@@ -94,6 +94,7 @@ impl<const B: usize> SecretKey<B> {
         })
     }
 
+    #[inline(never)]
     pub fn sign<H>(&self, data: &[u8], out: &mut [u8]) -> Result<usize, Error>
     where
         H: HasherId,

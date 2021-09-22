@@ -19,7 +19,7 @@ use zemu_sys::ViewError;
 use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
-    parser::{boolean, public_key_hash, DisplayableOperation, Zarith},
+    parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, property::Property)]
@@ -60,7 +60,7 @@ impl<'b> Delegation<'b> {
     }
 }
 
-impl<'a> DisplayableOperation for Delegation<'a> {
+impl<'a> DisplayableItem for Delegation<'a> {
     fn num_items(&self) -> usize {
         1 + 6
     }
@@ -101,7 +101,7 @@ impl<'a> DisplayableOperation for Delegation<'a> {
 
                 let addr = Addr::from_hash(hash, *crv).map_err(|_| ViewError::Unknown)?;
 
-                let mex = addr.to_base58();
+                let mex = addr.base58();
                 handle_ui_message(&mex[..], message, page)
             }
             //delegation
@@ -112,7 +112,7 @@ impl<'a> DisplayableOperation for Delegation<'a> {
                 match self.delegate {
                     Some((crv, hash)) => {
                         let addr = Addr::from_hash(hash, crv).map_err(|_| ViewError::Unknown)?;
-                        let mex = addr.to_base58();
+                        let mex = addr.base58();
                         handle_ui_message(&mex[..], message, page)
                     }
                     None => handle_ui_message(&pic_str!(b"<REVOKED>")[..], message, page),
@@ -173,7 +173,7 @@ impl<'b> Delegation<'b> {
     fn addr_base58(&self, source: (Curve, &'b [u8; 20])) -> Result<[u8; 36], bolos::Error> {
         let addr = Addr::from_hash(source.1, source.0)?;
 
-        Ok(addr.to_base58())
+        Ok(addr.base58())
     }
 
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {

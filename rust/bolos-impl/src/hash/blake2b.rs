@@ -20,6 +20,8 @@ use crate::{errors::catch, Error};
 
 use super::CxHash;
 
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
+
 #[repr(transparent)]
 pub struct Blake2b<const S: usize> {
     state: cx_blake2b_t,
@@ -38,18 +40,24 @@ impl<const S: usize> Blake2b<S> {
         Ok(this)
     }
 
-    fn init_state(state: &mut cx_blake2b_t) -> Result<(), Error> {
+    pub fn new_gce(loc: &mut MaybeUninit<Self>) -> Result<(), Error> {
+        let state = unsafe { addr_of_mut!((*loc.as_mut_ptr()).state) };
+
+        Self::init_state(state)
+    }
+
+    fn init_state(state: *mut cx_blake2b_t) -> Result<(), Error> {
         cfg_if! {
             if #[cfg(nanox)] {
                 let might_throw = || unsafe {
-                    crate::raw::cx_blake2b_init(state as *mut _, (S * 8) as u32);
+                    crate::raw::cx_blake2b_init(state, (S * 8) as u32);
                 };
 
                 catch(might_throw)?;
             } else if #[cfg(nanos)] {
                 let r = unsafe {
                     crate::raw::cx_blake2b_init_no_throw(
-                        state as *mut _,
+                        state,
                         (S * 8) as u32
                     )
                 };
@@ -70,6 +78,10 @@ impl<const S: usize> Blake2b<S> {
 impl<const S: usize> CxHash<S> for Blake2b<S> {
     fn cx_init_hasher() -> Result<Self, Error> {
         Self::new()
+    }
+
+    fn cx_init_hasher_gce(loc: &mut MaybeUninit<Self>) -> Result<(), super::Error> {
+        Self::new_gce(loc)
     }
 
     fn cx_reset(&mut self) -> Result<(), Error> {

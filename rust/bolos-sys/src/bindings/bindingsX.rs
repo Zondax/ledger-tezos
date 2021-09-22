@@ -2008,6 +2008,7 @@ pub union APSR_Type {
     pub b: APSR_Type__bindgen_ty_1,
     #[doc = "< Type      used for word access"]
     pub w: u32,
+    _bindgen_union_align: u32,
 }
 #[repr(C)]
 #[repr(align(4))]
@@ -2179,6 +2180,7 @@ pub union IPSR_Type {
     pub b: IPSR_Type__bindgen_ty_1,
     #[doc = "< Type      used for word access"]
     pub w: u32,
+    _bindgen_union_align: u32,
 }
 #[repr(C)]
 #[repr(align(4))]
@@ -2283,6 +2285,7 @@ pub union xPSR_Type {
     pub b: xPSR_Type__bindgen_ty_1,
     #[doc = "< Type      used for word access"]
     pub w: u32,
+    _bindgen_union_align: u32,
 }
 #[repr(C)]
 #[repr(align(4))]
@@ -2502,6 +2505,7 @@ pub union CONTROL_Type {
     pub b: CONTROL_Type__bindgen_ty_1,
     #[doc = "< Type      used for word access"]
     pub w: u32,
+    _bindgen_union_align: u32,
 }
 #[repr(C)]
 #[repr(align(4))]
@@ -3255,6 +3259,7 @@ pub union ITM_Type__bindgen_ty_1 {
     pub u16_: u16,
     #[doc = "< Offset: 0x000 ( /W)  ITM Stimulus Port 32-bit"]
     pub u32_: u32,
+    _bindgen_union_align: u32,
 }
 #[test]
 fn bindgen_test_layout_ITM_Type__bindgen_ty_1() {
@@ -5604,6 +5609,7 @@ pub union cx_hash_for_hmac_ctx {
     pub sha256: cx_sha256_t,
     pub sha512: cx_sha512_t,
     pub ripemd160: cx_ripemd160_t,
+    _bindgen_union_align: [u32; 51usize],
 }
 #[test]
 fn bindgen_test_layout_cx_hash_for_hmac_ctx() {
@@ -9603,6 +9609,7 @@ pub union bolos_ux_params_s__bindgen_ty_1 {
     pub onboard: bolos_ux_params_s__bindgen_ty_1__bindgen_ty_17,
     pub boot_delay: bolos_ux_params_s__bindgen_ty_1__bindgen_ty_18,
     pub pairing_request: bolos_ux_params_s__bindgen_ty_1__bindgen_ty_19,
+    _bindgen_union_align: [u32; 36usize],
 }
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]

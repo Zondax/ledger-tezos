@@ -68,6 +68,8 @@ impl<V: Viewable, const T: usize, const M: usize> MockDriver<V, T, M> {
     /// that the inner `Viewable` has to offer
     ///
     /// It will also `drive` if there's no data to pass to the callback
+    ///
+    /// The callback is passed 4 arguments: the item id, the page number, the title and the message
     pub fn verify_with<F, E>(&mut self, mut callback: F) -> Result<(), Vec<E>>
     where
         F: FnMut(usize, usize, &[u8; T], &[u8; M]) -> Result<(), E>,

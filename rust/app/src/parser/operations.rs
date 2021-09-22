@@ -21,7 +21,7 @@ use crate::{
     handlers::{parser_common::ParserError, sha256x2},
 };
 
-use super::{public_key_hash, DisplayableOperation};
+use super::{public_key_hash, DisplayableItem};
 
 #[derive(Debug, Clone, Copy, property::Property)]
 #[property(get(public), mut(public), set(disable))]
@@ -35,6 +35,7 @@ pub struct Operation<'b> {
 impl<'b> Operation<'b> {
     pub const BASE58_BRANCH_LEN: usize = 51;
 
+    #[inline(never)]
     pub fn new(input: &'b [u8]) -> Result<Self, ParserError> {
         let (rem, branch) = take::<_, _, ParserError>(32usize)(input).finish()?;
         let branch = arrayref::array_ref!(branch, 0, 32);
@@ -46,15 +47,22 @@ impl<'b> Operation<'b> {
     }
 
     #[inline(never)]
-    pub fn base58_branch(&self) -> Result<[u8; Operation::BASE58_BRANCH_LEN], bolos::Error> {
+    pub fn get_base58_branch(&self) -> Result<[u8; Operation::BASE58_BRANCH_LEN], bolos::Error> {
+        Self::base58_branch(self.branch)
+    }
+
+    #[inline(never)]
+    pub fn base58_branch(
+        branch: &[u8; 32],
+    ) -> Result<[u8; Operation::BASE58_BRANCH_LEN], bolos::Error> {
         let mut checksum = [0; 4];
 
-        sha256x2(&[B, &self.branch[..]], &mut checksum)?;
+        sha256x2(&[B, &branch[..]], &mut checksum)?;
 
         let input = {
             let mut array = [0; 2 + 32 + 4];
             array[..2].copy_from_slice(B);
-            array[2..2 + 32].copy_from_slice(&self.branch[..]);
+            array[2..2 + 32].copy_from_slice(&branch[..]);
             array[2 + 32..].copy_from_slice(&checksum[..]);
             array
         };
@@ -79,6 +87,7 @@ impl<'b> EncodedOperations<'b> {
         Self { source, read: 0 }
     }
 
+    #[inline(never)]
     fn parse(&self) -> Result<Option<(OperationType<'b>, usize)>, nom::Err<ParserError>> {
         let input = &self.source[self.read..];
         let input_len = input.len();
@@ -368,7 +377,7 @@ mod tests {
         );
 
         let addr = Addr::from_hash(parsed.hash(), Curve::Bip32Ed25519).unwrap();
-        assert_eq!(&addr.to_base58()[..], PKH_BASE58.as_bytes());
+        assert_eq!(&addr.base58()[..], PKH_BASE58.as_bytes());
     }
 
     #[test]
@@ -402,7 +411,7 @@ mod tests {
         let mut parsed = Operation::new(&input).expect("couldn't parse branch");
 
         let branch = parsed
-            .base58_branch()
+            .get_base58_branch()
             .expect("couldn't encode branch to base58");
         assert_eq!(&branch[..], BRANCH_BASE58.as_bytes());
 
@@ -438,7 +447,7 @@ mod tests {
         let mut parsed = Operation::new(&input).expect("couldn't parse branch");
 
         let branch = parsed
-            .base58_branch()
+            .get_base58_branch()
             .expect("couldn't encode branch to base58");
         assert_eq!(&branch[..], BRANCH_BASE58.as_bytes());
 

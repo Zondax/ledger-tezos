@@ -102,7 +102,7 @@ jobs:
           BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
         run: |
           source $HOME/.cargo/env
-          make both
+          make build
       - name: Build Nano X apps
         shell: bash -l {0}
         env:
@@ -110,7 +110,7 @@ jobs:
         run: |
           source $HOME/.cargo/env
           make clean
-          make both
+          make build
 
       - name: Cache rust elf files
         uses: actions/cache@v1
@@ -129,7 +129,7 @@ jobs:
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
       - name: Build Nano S apps
         run: |
-          make legacy
+          make build_legacy
       - name: Cache legacy elf files
         uses: actions/cache@v1
         with:

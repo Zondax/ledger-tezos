@@ -22,6 +22,7 @@ use serde_json::{Map, Value};
 use zuit::MockDriver;
 
 use crate::parser::operations::Operation;
+use crate::utils::strlen;
 
 use super::operations::OperationType;
 
@@ -95,7 +96,7 @@ fn test_sample(
         verify_ui(name, parsed, ui)
     }
 
-    let branch_bs58 = parsed.base58_branch().unwrap_or_else(|e| {
+    let branch_bs58 = parsed.get_base58_branch().unwrap_or_else(|e| {
         panic!(
             "couldn't compute base 58 branch of sample {}; err: {:?}",
             name, e
@@ -458,17 +459,4 @@ fn verify_ui(sample_name: &str, op: Operation<'static>, ui: Vec<ExpectedPage>) {
             )
         }
     }
-}
-
-/// This function returns the index of the first null byte in the slice
-fn strlen(s: &[u8]) -> usize {
-    let mut count = 0;
-    while let Some(&c) = s.get(count) {
-        if c == 0 {
-            return count;
-        }
-        count += 1;
-    }
-
-    panic!("byte slice did not terminate with null byte, s: {:x?}", s)
 }

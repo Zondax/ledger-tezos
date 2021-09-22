@@ -303,3 +303,4 @@ mod bindings {
 }
 
 pub mod ecfp256;
+pub mod hmac;

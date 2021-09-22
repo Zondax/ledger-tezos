@@ -14,9 +14,11 @@
 *  limitations under the License.
 ********************************************************************************/
 use crate::{
-    constants::ApduError as Error,
+    constants::{tzprefix::NET, ApduError as Error},
     sys::{flash_slot::Wear, new_flash_slot},
 };
+
+use super::sha256x2;
 
 const N_PAGES: usize = 8;
 
@@ -36,6 +38,9 @@ static mut MAIN: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be co
 #[bolos::lazy_static]
 static mut TEST: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
 
+#[bolos::lazy_static]
+static mut CHAIN_ID: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
+
 pub struct HWM;
 
 impl HWM {
@@ -45,7 +50,19 @@ impl HWM {
         let data: [u8; 52] = wm.into();
 
         unsafe { MAIN.write(data) }.map_err(|_| Error::ExecutionError)?;
-        unsafe { TEST.write(data) }.map_err(|_| Error::ExecutionError)
+        unsafe { TEST.write(data) }.map_err(|_| Error::ExecutionError)?;
+
+        //only override the chain if it's unset
+        // so resetting the HWM level doesn't change the chain too
+        unsafe {
+            if let Err(bolos::flash_slot::WearError::Uninitialized) = CHAIN_ID.read() {
+                CHAIN_ID
+                    .write(ChainID::from(MAINNET_CHAIN_ID).into())
+                    .map_err(|_| Error::ExecutionError)?;
+            }
+        }
+
+        Ok(())
     }
 
     //apdu_baking.c:74,0
@@ -55,6 +72,21 @@ impl HWM {
             .into();
 
         Ok(wm.level.to_be_bytes())
+    }
+
+    pub fn set_chain_id(id: u32) -> Result<(), Error> {
+        let mut data = [0; 52];
+        data[..4].copy_from_slice(&id.to_be_bytes()[..]);
+
+        unsafe { CHAIN_ID.write(data) }.map_err(|_| Error::ExecutionError)
+    }
+
+    pub fn chain_id() -> Result<u32, Error> {
+        let data = unsafe { CHAIN_ID.read() }.map_err(|_| Error::ExecutionError)?;
+
+        let data = arrayref::array_ref!(data, 0, 4);
+
+        Ok(u32::from_be_bytes(*data))
     }
 
     //apdu_baking.c:66,0
@@ -69,10 +101,12 @@ impl HWM {
             .into();
         let test_wm = test_wm.level.to_be_bytes();
 
+        let chain_id = Self::chain_id()?;
+
         let mut out = [0; 12];
         out[..4].copy_from_slice(&main_wm[..]);
         out[4..8].copy_from_slice(&test_wm[..]);
-        out[8..].copy_from_slice(&MAINNET_CHAIN_ID.to_be_bytes()[..]);
+        out[8..].copy_from_slice(&chain_id.to_be_bytes()[..]);
 
         Ok(out)
     }
@@ -81,6 +115,7 @@ impl HWM {
     pub fn format() -> Result<(), Error> {
         unsafe { MAIN.format() }
             .and_then(|_| unsafe { TEST.format() })
+            .and_then(|_| unsafe { CHAIN_ID.format() })
             .map_err(|_| Error::ExecutionError)
     }
 
@@ -88,6 +123,12 @@ impl HWM {
         let data: [u8; 52] = wm.into();
 
         unsafe { MAIN.write(data) }.map_err(|_| Error::ExecutionError)
+    }
+
+    pub fn write_test(wm: WaterMark) -> Result<(), Error> {
+        let data: [u8; 52] = wm.into();
+
+        unsafe { TEST.write(data) }.map_err(|_| Error::ExecutionError)
     }
 
     pub fn read() -> Result<WaterMark, Error> {
@@ -142,5 +183,104 @@ impl WaterMark {
     #[inline(never)]
     pub fn is_valid_blocklevel(level: u32) -> bool {
         level.leading_zeros() > 0
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum ChainID {
+    Any,
+    Mainnet,
+    Custom(u32),
+}
+
+impl From<&[u8; 52]> for ChainID {
+    fn from(from: &[u8; 52]) -> Self {
+        let data = arrayref::array_ref!(from, 0, 4);
+        let from = u32::from_be_bytes(*data);
+
+        ChainID::from(from)
+    }
+}
+
+impl From<ChainID> for [u8; 52] {
+    fn from(from: ChainID) -> Self {
+        let mut out = [0; 52];
+
+        let chain_id: u32 = from.into();
+        out[0..4].copy_from_slice(&chain_id.to_be_bytes()[..]);
+
+        out
+    }
+}
+
+impl From<u32> for ChainID {
+    fn from(from: u32) -> Self {
+        match from {
+            0 => Self::Any,
+            MAINNET_CHAIN_ID => Self::Mainnet,
+            id => Self::Custom(id),
+        }
+    }
+}
+
+impl From<ChainID> for u32 {
+    fn from(from: ChainID) -> Self {
+        match from {
+            ChainID::Any => 0,
+            ChainID::Mainnet => MAINNET_CHAIN_ID,
+            ChainID::Custom(n) => n,
+        }
+    }
+}
+
+impl ChainID {
+    pub const BASE58_LEN: usize = 15;
+
+    #[inline(never)]
+    pub fn id_to_base58(chain_id: u32) -> Result<[u8; ChainID::BASE58_LEN], bolos::Error> {
+        let mut checksum = [0; 4];
+        let chain_id = chain_id.to_be_bytes();
+
+        sha256x2(&[NET, &chain_id[..]], &mut checksum)?;
+
+        let input = {
+            let mut array = [0; 3 + 4 + 4];
+            array[..3].copy_from_slice(NET);
+            array[3..3 + 4].copy_from_slice(&chain_id[..]);
+            array[3 + 4..].copy_from_slice(&checksum[..]);
+            array
+        };
+
+        let mut out = [0; Self::BASE58_LEN];
+        bs58::encode(input)
+            .into(&mut out[..])
+            .expect("encoded in base58 is not of the right lenght");
+
+        Ok(out)
+    }
+
+    pub fn to_alias(self, out: &mut [u8; ChainID::BASE58_LEN]) -> Result<usize, bolos::Error> {
+        use bolos::{pic_str, PIC};
+
+        match self {
+            Self::Any => {
+                let content = pic_str!(b"any");
+                out[..content.len()].copy_from_slice(&content[..]);
+
+                Ok(content.len())
+            }
+            Self::Mainnet => {
+                let content = pic_str!(b"mainnet");
+                out[..content.len()].copy_from_slice(&content[..]);
+
+                Ok(content.len())
+            }
+            Self::Custom(id) => {
+                let content = Self::id_to_base58(id)?;
+                out[..content.len()].copy_from_slice(&content[..]);
+
+                Ok(content.len())
+            }
+        }
     }
 }

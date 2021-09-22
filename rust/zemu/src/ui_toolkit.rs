@@ -313,7 +313,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
             let key_len = strlen(&key[..]).unwrap_or_else(|_| key.len());
 
             if key_len < KS {
-                let mut tmp = ArrayString::from_byte_string(&key).expect("key was not utf8");
+                let mut tmp = ArrayString::from_byte_string(key).expect("key was not utf8");
                 tmp.truncate(key_len); //ignore the remaining null bytes (or garbage)
 
                 //this is unrolled equivalent of

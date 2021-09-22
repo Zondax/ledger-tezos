@@ -19,7 +19,7 @@ use zemu_sys::ViewError;
 use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
-    parser::{boolean, public_key_hash, DisplayableOperation, Zarith},
+    parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
@@ -91,17 +91,17 @@ impl<'b> Origination<'b> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
-        Ok(addr.to_base58())
+        Ok(addr.base58())
     }
 
     fn delegate_base58(&self) -> Result<Option<[u8; 36]>, bolos::Error> {
         self.delegate
-            .map(|(crv, hash)| Addr::from_hash(hash, crv).map(|a| a.to_base58()))
+            .map(|(crv, hash)| Addr::from_hash(hash, crv).map(|a| a.base58()))
             .transpose()
     }
 }
 
-impl<'a> DisplayableOperation for Origination<'a> {
+impl<'a> DisplayableItem for Origination<'a> {
     fn num_items(&self) -> usize {
         1 + 9
     }

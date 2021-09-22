@@ -156,7 +156,7 @@ describe.each(models)('Standard [%s]; sign operation', function (m) {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
       const msg = Buffer.from(data.op.blob, 'hex')
-      const respReq = app.sign(APP_DERIVATION, curve, msg)
+      const respReq = app.signOperation(APP_DERIVATION, curve, msg)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
@@ -171,7 +171,7 @@ describe.each(models)('Standard [%s]; sign operation', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg))
+      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
@@ -225,7 +225,7 @@ describe.each(models)('Standard [%s]; legacy - sign op with hash', function (m) 
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg))
+      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 

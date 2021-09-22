@@ -24,7 +24,7 @@ use crate::{
     constants::tzprefix::P,
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr, sha256x2},
-    parser::{public_key_hash, DisplayableOperation},
+    parser::{public_key_hash, DisplayableItem},
 };
 
 const PROPOSAL_BYTES_LEN: usize = 32;
@@ -90,11 +90,11 @@ impl<'b> Proposals<'b> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
-        Ok(addr.to_base58())
+        Ok(addr.base58())
     }
 }
 
-impl<'b> DisplayableOperation for Proposals<'b> {
+impl<'b> DisplayableItem for Proposals<'b> {
     fn num_items(&self) -> usize {
         1 + 2 + self.proposals.len()
     }

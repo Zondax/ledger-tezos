@@ -38,7 +38,7 @@ describe.each(cartesianProduct(models, curves))('Test Vectors', function (m, cur
       const app = new TezosApp(sim.getTransport())
 
       const msg = Buffer.from(test_case.blob, 'hex')
-      const respReq = app.sign(APP_DERIVATION, curve, msg)
+      const respReq = app.signOperation(APP_DERIVATION, curve, msg)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 5000)
       //try to navigate to the end of the transaction
@@ -57,7 +57,7 @@ describe.each(cartesianProduct(models, curves))('Test Vectors', function (m, cur
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg))
+      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
@@ -99,7 +99,7 @@ describe.each(cartesianProduct(models, curves))('Sample Operations', function (m
       const app = new TezosApp(sim.getTransport())
 
       const msg = Buffer.from(sample.blob, 'hex')
-      const respReq = app.sign(APP_DERIVATION, curve, msg)
+      const respReq = app.signOperation(APP_DERIVATION, curve, msg)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 5000)
 
@@ -119,7 +119,7 @@ describe.each(cartesianProduct(models, curves))('Sample Operations', function (m
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg))
+      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 

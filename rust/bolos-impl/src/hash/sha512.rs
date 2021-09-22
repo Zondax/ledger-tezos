@@ -20,6 +20,8 @@ use crate::{errors::catch, Error};
 
 use super::CxHash;
 
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
+
 pub struct Sha512 {
     state: cx_sha512_t,
 }
@@ -35,7 +37,13 @@ impl Sha512 {
         Ok(this)
     }
 
-    fn init_state(state: &mut cx_sha512_t) -> Result<(), Error> {
+    pub fn new_gce(loc: &mut MaybeUninit<Self>) -> Result<(), Error> {
+        let state = unsafe { addr_of_mut!((*loc.as_mut_ptr()).state) };
+
+        Self::init_state(state)
+    }
+
+    fn init_state(state: *mut cx_sha512_t) -> Result<(), Error> {
         cfg_if! {
             if #[cfg(nanox)] {
                 let might_throw = || unsafe {
@@ -62,6 +70,10 @@ impl Sha512 {
 impl CxHash<64> for Sha512 {
     fn cx_init_hasher() -> Result<Self, Error> {
         Self::new()
+    }
+
+    fn cx_init_hasher_gce(loc: &mut MaybeUninit<Self>) -> Result<(), super::Error> {
+        Self::new_gce(loc)
     }
 
     fn cx_reset(&mut self) -> Result<(), Error> {

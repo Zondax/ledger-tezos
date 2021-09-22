@@ -19,7 +19,7 @@ use zemu_sys::ViewError;
 use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr, sha256x2},
-    parser::{public_key, public_key_hash, DisplayableOperation, Zarith},
+    parser::{public_key, public_key_hash, DisplayableItem, Zarith},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, property::Property)]
@@ -62,11 +62,11 @@ impl<'b> Reveal<'b> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
-        Ok(addr.to_base58())
+        Ok(addr.base58())
     }
 }
 
-impl<'b> DisplayableOperation for Reveal<'b> {
+impl<'b> DisplayableItem for Reveal<'b> {
     fn num_items(&self) -> usize {
         1 + 6
     }

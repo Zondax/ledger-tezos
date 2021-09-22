@@ -21,9 +21,12 @@ use crate::{crypto::Curve, handlers::parser_common::ParserError};
 
 pub mod operations;
 
+#[cfg(feature = "baking")]
+pub mod baking;
+
 ///This trait defines the interface useful in the UI context
-/// so that all the different OperationTypes handle their own UI
-pub trait DisplayableOperation {
+/// so that all the different OperationTypes or other items can handle their own UI
+pub trait DisplayableItem {
     /// Returns the number of items to display
     fn num_items(&self) -> usize;
 
@@ -217,6 +220,40 @@ fn boolean(input: &[u8]) -> IResult<&[u8], bool, ParserError> {
     Ok((rem, b == 255))
 }
 
+// Previously called magic byte
+#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum Preemble {
+    ///Data is expected to be a block
+    Block = 0x01,
+
+    ///Data is expected to be an endorsement
+    Endorsement = 0x02,
+
+    ///Data is expected to be an operation
+    Operation = 0x03,
+
+    ///Used in the past but current meaning/usage unknown
+    TBD = 0x04,
+
+    ///Data is expected to be encoded michelson
+    Michelson = 0x05,
+}
+
+impl Preemble {
+    pub fn from_bytes(input: &[u8]) -> IResult<&[u8], Self, ParserError> {
+        let (rem, preemble) = le_u8(input)?;
+        match preemble {
+            0x01 => Ok((rem, Self::Block)),
+            0x02 => Ok((rem, Self::Endorsement)),
+            0x03 => Ok((rem, Self::Operation)),
+            0x04 => Ok((rem, Self::TBD)),
+            0x05 => Ok((rem, Self::Michelson)),
+            _ => Err(ParserError::parser_unexpected_type.into()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -240,7 +277,7 @@ mod tests {
         assert_eq!(crv, Curve::Bip32Ed25519);
 
         let addr = Addr::from_hash(hash, crv).unwrap();
-        assert_eq!(&addr.to_base58()[..], PKH_BASE58.as_bytes());
+        assert_eq!(&addr.base58()[..], PKH_BASE58.as_bytes());
     }
 
     #[test]

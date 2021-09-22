@@ -27,7 +27,7 @@ impl LegacyGit {
     pub const COMMIT_HASH_LEN: usize = 8;
 
     pub const fn commit_hash() -> &'static [u8] {
-        &crate::utils::GIT_COMMIT_HASH.as_bytes()
+        crate::utils::GIT_COMMIT_HASH.as_bytes()
     }
 }
 
@@ -73,7 +73,7 @@ impl ApduHandler for LegacyGit {
         }
 
         // Reference: https://github.com/obsidiansystems/ledger-app-tezos/blob/58797b2f9606c5a30dd1ccc9e5b9962e45e10356/src/apdu.c#L30
-        apdu_buffer[..Self::COMMIT_HASH_LEN].copy_from_slice(&commit);
+        apdu_buffer[..Self::COMMIT_HASH_LEN].copy_from_slice(commit);
         apdu_buffer[Self::COMMIT_HASH_LEN] = 0; //null terminate the string
         *tx = 1 + Self::COMMIT_HASH_LEN as u32;
 

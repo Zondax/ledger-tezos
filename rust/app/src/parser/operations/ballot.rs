@@ -24,7 +24,7 @@ use crate::{
     constants::tzprefix::P,
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr, sha256x2},
-    parser::{public_key_hash, DisplayableOperation},
+    parser::{public_key_hash, DisplayableItem},
 };
 
 use core::convert::{TryFrom, TryInto};
@@ -112,7 +112,7 @@ impl<'b> Ballot<'b> {
     }
 }
 
-impl<'b> DisplayableOperation for Ballot<'b> {
+impl<'b> DisplayableItem for Ballot<'b> {
     fn num_items(&self) -> usize {
         1 + 4
     }
@@ -145,7 +145,7 @@ impl<'b> DisplayableOperation for Ballot<'b> {
 
                 let addr = Addr::from_hash(hash, *crv).map_err(|_| ViewError::Unknown)?;
 
-                let mex = addr.to_base58();
+                let mex = addr.base58();
                 handle_ui_message(&mex[..], message, page)
             }
             //Period
@@ -190,7 +190,7 @@ impl<'b> Ballot<'b> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
-        Ok(addr.to_base58())
+        Ok(addr.base58())
     }
 
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {

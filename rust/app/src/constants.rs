@@ -113,4 +113,6 @@ pub mod tzprefix {
 
     pub const B: &[u8] = &[1, 52];
     pub const P: &[u8] = &[2, 170];
+
+    pub const NET: &[u8] = &[87, 82, 0];
 }
