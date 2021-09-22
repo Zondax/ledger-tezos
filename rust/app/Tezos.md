@@ -135,11 +135,22 @@ A ballot `vote` is encoded as follows:
 
 #### Failing Noop
 
+`tezos-codec describe alpha.operation.contents binary schema` (search `Failing_noop` section)
+
+A failing noop is encoded as follows:
+
+| Name      | Size | Contents               |
+|:----------|:-----|:-----------------------|
+| tag       | 1    | 0x11                   |
+| length    | 4    | next field length (BE) |
+| arbitrary |      | [Bytes]                |
+
+
 #### Reveal
 
 `tezos-codec describe alpha.operation.contents binary schema` (search `Reveal` section)
 
-A transaction is encoded as follows:
+A reveal is encoded as follows:
 
 | Name           | Size | Contents          |
 |:---------------|:-----|:------------------|

@@ -249,6 +249,9 @@ impl Viewable for SignUI {
                         }
                         OperationType::ActivateAccount(act) => {
                             act.render_item(item_n, title, message, page)
+                        },
+                        OperationType::FailingNoop(fail) => {
+                            fail.render_item(item_n, title, message, page)
                         }
                     }
                 } else {

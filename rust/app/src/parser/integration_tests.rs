@@ -391,6 +391,7 @@ fn verify_operation<'b>(
         (OperationType::Proposals(prop), "proposals") => prop.is(json),
         (OperationType::Origination(orig), "origination") => orig.is(json),
         (OperationType::ActivateAccount(act), "activate_account") => act.is(json),
+        (OperationType::FailingNoop(fail), "failing_noop") => fail.is(json),
         (op, other) => panic!(
             "sample {}[{}]; expected op kind: {}, parsed as: {:?}",
             sample_name, op_n, other, op
