@@ -90,6 +90,18 @@ An endorsement is encoded as follows:
 
 #### Activate account
 
+`tezos-codec describe alpha.operation.contents binary schema` (search `Activate_account` section)
+
+An account activation is encoded as follows:
+
+| Name   | Size | Contents          |
+|:-------|:-----|:------------------|
+| tag    | 1    | 0x04              |
+| pkh    | 20   | [Public Key Hash] |
+| secret | 20   | [Bytes]           |
+
+The public key hash is not prefixed with a tag because it's always Ed25519
+
 #### Proposals 
 
 `tezos-codec describe alpha.operation.contents binary schema` (search `Proposals` section)
