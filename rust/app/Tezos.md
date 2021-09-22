@@ -149,17 +149,29 @@ A ballot `vote` is encoded as follows:
 
 An endorsement with slot is encoded as follows:
 
+| Name        | Size | Contents                     |
+|:------------|:-----|:-----------------------------|
+| tag         | 1    | 0x10                         |
+| length      | 4    | length of next field (BE)    |
+| endorsement |      | [Inlined endorsement]        |
+| slot        | 2    | Unsigned 16-bit integer (BE) |
+
+The length field is the total length in bytes of the operation, excluding the tag and slot
+
+##### Inlined endorsement
+
+`tezos-codec describe alpha.operation.contents binary schema` (search `alpha.inlined.endorsement` section)
+
+An inlined endorsement is encoded as follows:
+
 | Name            | Size | Contents                         |
 |:----------------|:-----|:---------------------------------|
-| tag             | 1    | 0x10                             |
-| length          | 4    | total length of next fields (BE) |
 | branch          | 32   | [Bytes]                          |
 | endorsement_tag | 1    | 0x00                             |
 | level           | 4    | Signed 32-bit integer            |
 | signature       |      | [Bytes]                          |
-| slot            | 2    | Unsigned 16-bit integer          |
 
-The length field is the total length in bytes of the operation, excluding the tag and slot
+An inlined endorsement is just a helper structure for endorsement with slots and double endorsement evidence
 
 #### Failing Noop
 
@@ -404,3 +416,4 @@ Note: unspecified value for padding
 [entrypoint]: (#entrypoint)
 [Vote]: (#vote)
 [Script]: (#script)
+[Inlined endorsement]: (#inlined-endorsement)
