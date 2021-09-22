@@ -82,7 +82,7 @@ An endorsement is encoded as follows:
 |:------|:-----|:----------------------|
 | tag   | 1    | 0x01                  |
 | level | 4    | Signed 32-bit integer |
-| nonce | 32   |                       |
+| nonce | 32   | [Bytes]               |
 
 #### Double endorsement evidence
 
@@ -117,7 +117,7 @@ An endorsement is encoded as follows:
 | tag      | 1    | 0x06                  |
 | source   | 21   | [Public Key Hash]     |
 | period   | 4    | Signed 32-bit integer |
-| proposal | 32   |                       |
+| proposal | 32   | [Bytes]               |
 | ballot   | 1    | [Vote]                |
 
 ##### Vote
@@ -132,6 +132,22 @@ A ballot `vote` is encoded as follows:
 
 
 #### Endorsement with slot
+
+`tezos-codec describe alpha.operation.contents binary schema` (search `Endorsement_with_slot` section)
+
+An endorsement with slot is encoded as follows:
+
+| Name            | Size | Contents                         |
+|:----------------|:-----|:---------------------------------|
+| tag             | 1    | 0x10                             |
+| length          | 4    | total length of next fields (BE) |
+| branch          | 32   | [Bytes]                          |
+| endorsement_tag | 1    | 0x00                             |
+| level           | 4    | Signed 32-bit integer            |
+| signature       |      | [Bytes]                          |
+| slot            | 2    | Unsigned 16-bit integer          |
+
+The length field is the total length in bytes of the operation, excluding the tag and slot
 
 #### Failing Noop
 

@@ -234,6 +234,9 @@ impl Viewable for SignUI {
                         OperationType::Endorsement(endorsement) => {
                             endorsement.render_item(item_n, title, message, page)
                         }
+                        OperationType::EndorsementWithSlot(endorsement) => {
+                            endorsement.render_item(item_n, title, message, page)
+                        }
                         OperationType::SeedNonceRevelation(snr) => {
                             snr.render_item(item_n, title, message, page)
                         }
@@ -249,7 +252,7 @@ impl Viewable for SignUI {
                         }
                         OperationType::ActivateAccount(act) => {
                             act.render_item(item_n, title, message, page)
-                        },
+                        }
                         OperationType::FailingNoop(fail) => {
                             fail.render_item(item_n, title, message, page)
                         }

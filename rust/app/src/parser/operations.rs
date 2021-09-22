@@ -162,7 +162,7 @@ mod transfer;
 pub use activate_account::ActivateAccount;
 pub use ballot::Ballot;
 pub use delegation::Delegation;
-pub use endorsement::Endorsement;
+pub use endorsement::{Endorsement, EndorsementWithSlot};
 pub use failing_noop::FailingNoop;
 pub use origination::Origination;
 pub use proposals::Proposals;
@@ -175,6 +175,7 @@ pub enum OperationType<'b> {
     Transfer(Transfer<'b>),
     Delegation(Delegation<'b>),
     Endorsement(Endorsement),
+    EndorsementWithSlot(EndorsementWithSlot<'b>),
     SeedNonceRevelation(SeedNonceRevelation<'b>),
     Ballot(Ballot<'b>),
     Reveal(Reveal<'b>),
@@ -209,6 +210,10 @@ impl<'b> OperationType<'b> {
                 let (rem, data) = Ballot::from_bytes(rem)?;
                 (rem, Self::Ballot(data))
             }
+            0x0A => {
+                let (rem, data) = EndorsementWithSlot::from_bytes(rem)?;
+                (rem, Self::EndorsementWithSlot(data))
+            }
             0x11 => {
                 let (rem, data) = FailingNoop::from_bytes(rem)?;
                 (rem, Self::FailingNoop(data))
@@ -233,7 +238,7 @@ impl<'b> OperationType<'b> {
             //double baking evidence
             //activate account
             //endorsement with slot
-            0x02 | 0x03 | 0x0A => return Err(ParserError::UnimplementedOperation.into()),
+            0x02 | 0x03 => return Err(ParserError::UnimplementedOperation.into()),
             _ => return Err(ParserError::UnknownOperation.into()),
         };
 
@@ -253,6 +258,7 @@ impl<'b> OperationType<'b> {
             Self::Transfer(tx) => tx.num_items(),
             Self::Delegation(del) => del.num_items(),
             Self::Endorsement(end) => end.num_items(),
+            Self::EndorsementWithSlot(end) => end.num_items(),
             Self::SeedNonceRevelation(snr) => snr.num_items(),
             Self::Ballot(vote) => vote.num_items(),
             Self::Reveal(rev) => rev.num_items(),

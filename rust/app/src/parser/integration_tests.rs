@@ -385,6 +385,9 @@ fn verify_operation<'b>(
         (OperationType::Transfer(tx), "transaction") => tx.is(json),
         (OperationType::Delegation(del), "delegation") => del.is(json),
         (OperationType::Endorsement(endorsement), "endorsement") => endorsement.is(json),
+        (OperationType::EndorsementWithSlot(endorsement), "endorsement_with_slot") => {
+            endorsement.is(json)
+        }
         (OperationType::SeedNonceRevelation(snr), "seed_nonce_revelation") => snr.is(json),
         (OperationType::Ballot(vote), "ballot") => vote.is(json),
         (OperationType::Reveal(rev), "reveal") => rev.is(json),
