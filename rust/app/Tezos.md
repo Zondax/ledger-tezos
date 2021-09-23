@@ -67,10 +67,10 @@ There are many operation content types, each prefixed with a tag and then the co
 
 An endorsement is encoded as follows:
 
-| Name           | Size | Contents                 |
-|:---------------|:-----|:-------------------------|
-| tag            | 1    | 0x00                     |
-| level          | 4    | Signed 32-bit integer    |
+| Name  | Size | Contents                   |
+|:------|:-----|:---------------------------|
+| tag   | 1    | 0x00                       |
+| level | 4    | Signed 32-bit integer (BE) |
 
 #### Seed nonce revelation
 
@@ -78,11 +78,11 @@ An endorsement is encoded as follows:
 
 An endorsement is encoded as follows:
 
-| Name  | Size | Contents              |
-|:------|:-----|:----------------------|
-| tag   | 1    | 0x01                  |
-| level | 4    | Signed 32-bit integer |
-| nonce | 32   | [Bytes]               |
+| Name  | Size | Contents                   |
+|:------|:-----|:---------------------------|
+| tag   | 1    | 0x01                       |
+| level | 4    | Signed 32-bit integer (BE) |
+| nonce | 32   | [Bytes]                    |
 
 #### Double endorsement evidence
 
@@ -97,9 +97,56 @@ An double endorsement evidence is encoded as follows:
 | op1         |      | [Inlined endorsement]         |
 | length\_op2 | 4    | lenght of the next field (BE) |
 | op2         |      | [Inlined endorsement]         |
-| slot        | 2    | Unsigned 16-bit integer       |
+| slot        | 2    | Unsigned 16-bit integer (BE)  |
 
 #### Double baking evidence
+
+`tezos-codec describe alpha.operation.contents binary schema` (search `Double_baking_evidence` section)
+
+An double baking evidence is encoded as follows:
+
+| Name        | Size | Contents                      |
+|:------------|:-----|:------------------------------|
+| tag         | 1    | 0x02                          |
+| length\_bh1 | 4    | length of the next field (BE) |
+| bh1         |      | [Inlined block header]        |
+| length\_bh2 | 4    | lenght of the next field (BE) |
+| bh2         |      | [Inlined block header]        |
+
+##### Inlined block header
+
+`tezos-codec describe alpha.operation.contents binary schema` (search `alpha.block_header.alpha.full_header` section)
+
+An inlined block header is encoded as follows:
+
+| Name                            | Size | Contents                     |
+|:--------------------------------|:-----|:-----------------------------|
+| level                           | 4    | Signed 32-bit integer (BE)   |
+| proto                           | 1    | Unsigned 8-bit integer       |
+| predecessor                     | 32   | [Bytes]                      |
+| timestamp                       | 8    | Signed 64-bit integer (BE)   |
+| validation\_pass                | 1    | Unsigned 8-bit integer       |
+| operation\_hash                 | 32   | [Bytes]                      |
+| fitness len                     | 4    | length of next field (BE)    |
+| fitness                         |      | Sequence of [fitness]        |
+| context                         | 32   | [Bytes]                      |
+| priority                        | 2    | Unsigned 16-bit integer (BE) |
+| proof\_of\_work\_nonce          | 8    | [Bytes]                      |
+| seed\_nonce\_hash?              | 1    | [bool]                       |
+| seed\_nonce\_hash               | 32   | [Bytes]                      |
+| liquidity\_baking\_escape\_vote | 1    | [bool]                       |
+| signature                       | 64   | [Bytes]                      |
+
+##### Fitness
+
+`tezos-codec describe alpha.operation.contents binary schema` (search `fitness.elem` section)
+
+A fitness elem is encoded as follows:
+
+| Name           | Size | Contents               |
+|:---------------|:-----|:-----------------------|
+| fitness length | 4    | Next field length (BE) |
+| fitness        |      | Fitness [bytes]        |
 
 #### Activate account
 
@@ -121,13 +168,13 @@ The public key hash is not prefixed with a tag because it's always Ed25519
 
 An endorsement is encoded as follows:
 
-| Name             | Size | Contents               |
-| :--------------- | :--- | :--------------------- |
-| tag              | 1    | 0x05                   |
-| source           | 21   | [Public Key Hash]      |
-| period           | 4    | Signed 32-bit integer  |
-| proposals length | 4    | Next field lenght (BE) |
-| proposals        |      | Proposals [bytes]      |
+| Name             | Size | Contents                   |
+|:-----------------|:-----|:---------------------------|
+| tag              | 1    | 0x05                       |
+| source           | 21   | [Public Key Hash]          |
+| period           | 4    | Signed 32-bit integer (BE) |
+| proposals length | 4    | Next field length (BE)     |
+| proposals        |      | Proposals [bytes]          |
 
 Proposals is a sequence of sequences of 32 bytes, each representing a different proposal
 
@@ -430,3 +477,5 @@ Note: unspecified value for padding
 [Vote]: (#vote)
 [Script]: (#script)
 [Inlined endorsement]: (#inlined-endorsement)
+[Inlined block header]: (#inlined-block-header)
+[fitness]: (#fitness)

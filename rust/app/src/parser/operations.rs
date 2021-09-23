@@ -14,6 +14,7 @@
 *  limitations under the License.
 ********************************************************************************/
 use nom::{bytes::complete::take, number::complete::le_u8, Finish, IResult};
+use zemu_sys::ViewError;
 
 use crate::{
     constants::tzprefix::{B, KT1, TZ1, TZ2, TZ3},
@@ -33,7 +34,7 @@ pub struct Operation<'b> {
 }
 
 impl<'b> Operation<'b> {
-    pub const BASE58_BRANCH_LEN: usize = 51;
+    pub const BASE58_BRANCH_LEN: usize = 52;
 
     #[inline(never)]
     pub fn new(input: &'b [u8]) -> Result<Self, ParserError> {
@@ -79,6 +80,7 @@ impl<'b> Operation<'b> {
 #[derive(Debug, Clone, Copy)]
 pub struct EncodedOperations<'b> {
     source: &'b [u8],
+    //number of bytes read
     read: usize,
 }
 
@@ -151,6 +153,7 @@ impl<'b> EncodedOperations<'b> {
 mod activate_account;
 mod ballot;
 mod delegation;
+mod double_baking_evidence;
 mod endorsement;
 mod failing_noop;
 mod origination;
@@ -162,6 +165,7 @@ mod transfer;
 pub use activate_account::ActivateAccount;
 pub use ballot::Ballot;
 pub use delegation::Delegation;
+pub use double_baking_evidence::DoubleBakingEvidence;
 pub use endorsement::{DoubleEndorsementEvidence, Endorsement, EndorsementWithSlot};
 pub use failing_noop::FailingNoop;
 pub use origination::Origination;
@@ -171,22 +175,53 @@ pub use seed_nonce_revelation::SeedNonceRevelation;
 pub use transfer::Transfer;
 
 #[derive(Debug, Clone, Copy)]
+pub enum AnonymousOp<'b> {
+    DoubleEndorsementEvidence(DoubleEndorsementEvidence<'b>),
+    SeedNonceRevelation(SeedNonceRevelation<'b>),
+    DoubleBakingEvidence(DoubleBakingEvidence<'b>),
+}
+
+impl<'b> AnonymousOp<'b> {
+    pub fn from_bytes(tag: u8, rem: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
+        let (rem, data) = match tag {
+            0x01 => {
+                let (rem, data) = SeedNonceRevelation::from_bytes(rem)?;
+                (rem, Self::SeedNonceRevelation(data))
+            }
+            0x02 => {
+                let (rem, data) = DoubleEndorsementEvidence::from_bytes(rem)?;
+                (rem, Self::DoubleEndorsementEvidence(data))
+            }
+            0x03 => {
+                let (rem, data) = DoubleBakingEvidence::from_bytes(rem)?;
+                (rem, Self::DoubleBakingEvidence(data))
+            }
+            _ => return Err(ParserError::UnknownOperation.into()),
+        };
+
+        Ok((rem, data))
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub enum OperationType<'b> {
     Transfer(Transfer<'b>),
     Delegation(Delegation<'b>),
     Endorsement(Endorsement),
     EndorsementWithSlot(EndorsementWithSlot<'b>),
-    DoubleEndorsementEvidence(DoubleEndorsementEvidence<'b>),
-    SeedNonceRevelation(SeedNonceRevelation<'b>),
     Ballot(Ballot<'b>),
     Reveal(Reveal<'b>),
     Proposals(Proposals<'b>),
     Origination(Origination<'b>),
     ActivateAccount(ActivateAccount<'b>),
     FailingNoop(FailingNoop<'b>),
+    AnonymousOp(AnonymousOp<'b>),
+    UnknownOp(&'b [u8]),
 }
 
 impl<'b> OperationType<'b> {
+    pub const UNKNOWN_OP_HASH_BASE58_LEN: usize = 50;
+
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, tag) = le_u8(input)?;
 
@@ -195,13 +230,9 @@ impl<'b> OperationType<'b> {
                 let (rem, data) = Endorsement::from_bytes(rem)?;
                 (rem, Self::Endorsement(data))
             }
-            0x01 => {
-                let (rem, data) = SeedNonceRevelation::from_bytes(rem)?;
-                (rem, Self::SeedNonceRevelation(data))
-            }
-            0x02 => {
-                let (rem, data) = DoubleEndorsementEvidence::from_bytes(rem)?;
-                (rem, Self::DoubleEndorsementEvidence(data))
+            anon @ 0x01 | anon @ 0x02 | anon @ 0x03 => {
+                let (rem, data) = AnonymousOp::from_bytes(anon, rem)?;
+                (rem, Self::AnonymousOp(data))
             }
             0x04 => {
                 let (rem, data) = ActivateAccount::from_bytes(rem)?;
@@ -239,9 +270,7 @@ impl<'b> OperationType<'b> {
                 let (rem, data) = Delegation::from_bytes(rem)?;
                 (rem, Self::Delegation(data))
             }
-            //double baking evidence
-            0x03 => return Err(ParserError::UnimplementedOperation.into()),
-            _ => return Err(ParserError::UnknownOperation.into()),
+            _ => (&[] as _, Self::UnknownOp(rem)),
         };
 
         Ok((rem, data))
@@ -261,14 +290,70 @@ impl<'b> OperationType<'b> {
             Self::Delegation(del) => del.num_items(),
             Self::Endorsement(end) => end.num_items(),
             Self::EndorsementWithSlot(end) => end.num_items(),
-            Self::DoubleEndorsementEvidence(end) => end.num_items(),
-            Self::SeedNonceRevelation(snr) => snr.num_items(),
             Self::Ballot(vote) => vote.num_items(),
             Self::Reveal(rev) => rev.num_items(),
             Self::Proposals(prop) => prop.num_items(),
             Self::Origination(orig) => orig.num_items(),
             Self::ActivateAccount(act) => act.num_items(),
             Self::FailingNoop(fail) => fail.num_items(),
+            Self::UnknownOp(_) => 2,
+            Self::AnonymousOp(_) => 0,
+        }
+    }
+
+    #[inline(never)]
+    fn hash_and_base58(
+        input: &[u8],
+    ) -> Result<[u8; OperationType::UNKNOWN_OP_HASH_BASE58_LEN], ViewError> {
+        use crate::sys::hash::{Blake2b, Hasher};
+
+        let digest: [u8; 32] = Blake2b::digest(input).map_err(|_| ViewError::Unknown)?;
+
+        let mut checksum = [0; 4];
+
+        sha256x2(&[&digest[..]], &mut checksum).map_err(|_| ViewError::Unknown)?;
+
+        let input = {
+            let mut array = [0; 32 + 4];
+            array[..32].copy_from_slice(&digest[..]);
+            array[32..].copy_from_slice(&checksum[..]);
+            array
+        };
+
+        let mut out = [0; Self::UNKNOWN_OP_HASH_BASE58_LEN];
+        bs58::encode(input)
+            .into(&mut out[..])
+            .expect("encoded in base58 is not of the right length");
+
+        Ok(out)
+    }
+
+    #[inline(never)]
+    pub fn render_unknown(
+        input: &'b [u8],
+        item_n: u8,
+        title: &mut [u8],
+        message: &mut [u8],
+        page: u8,
+    ) -> Result<u8, ViewError> {
+        use crate::handlers::handle_ui_message;
+        use bolos::{pic_str, PIC};
+
+        match item_n {
+            0 => {
+                let title_content = pic_str!(b"Type");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                handle_ui_message(&pic_str!(b"Unknown Operation")[..], message, page)
+            }
+            1 => {
+                let title_content = pic_str!(b"Hash");
+                title[..title_content.len()].copy_from_slice(title_content);
+
+                let base58 = Self::hash_and_base58(input)?;
+                handle_ui_message(&base58[..], message, page)
+            }
+            _ => Err(ViewError::NoData),
         }
     }
 }
@@ -280,7 +365,7 @@ pub enum ContractID<'b> {
 }
 
 impl<'b> ContractID<'b> {
-    pub const BASE58_LEN: usize = 36;
+    pub const BASE58_LEN: usize = 37;
 
     #[cfg(test)]
     fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {

@@ -38,7 +38,7 @@ pub struct Proposals<'b> {
 }
 
 impl<'b> Proposals<'b> {
-    pub const PROPOSAL_BASE58_LEN: usize = 51;
+    pub const PROPOSAL_BASE58_LEN: usize = 52;
 
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, (source, period, proposals)) = do_parse! {input,
@@ -86,7 +86,7 @@ impl<'b> Proposals<'b> {
         Ok(out)
     }
 
-    fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
+    fn source_base58(&self) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 

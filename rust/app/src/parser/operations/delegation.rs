@@ -170,7 +170,10 @@ impl<'a> DisplayableItem for Delegation<'a> {
 
 #[cfg(test)]
 impl<'b> Delegation<'b> {
-    fn addr_base58(&self, source: (Curve, &'b [u8; 20])) -> Result<[u8; 36], bolos::Error> {
+    fn addr_base58(
+        &self,
+        source: (Curve, &'b [u8; 20]),
+    ) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
         let addr = Addr::from_hash(source.1, source.0)?;
 
         Ok(addr.base58())

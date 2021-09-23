@@ -189,7 +189,7 @@ impl<'b> Transfer<'b> {
         ))
     }
 
-    fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
+    fn source_base58(&self) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
         let source = self.source();
         let addr = Addr::from_hash(source.1, source.0)?;
 

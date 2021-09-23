@@ -21,7 +21,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{Map, Value};
 use zuit::MockDriver;
 
-use crate::parser::operations::Operation;
+use crate::parser::operations::{AnonymousOp, Operation};
 use crate::utils::strlen;
 
 use super::operations::OperationType;
@@ -388,16 +388,24 @@ fn verify_operation<'b>(
         (OperationType::EndorsementWithSlot(endorsement), "endorsement_with_slot") => {
             endorsement.is(json)
         }
-        (OperationType::DoubleEndorsementEvidence(endorsement), "double_endorsement_evidence") => {
-            endorsement.is(json)
-        }
-        (OperationType::SeedNonceRevelation(snr), "seed_nonce_revelation") => snr.is(json),
         (OperationType::Ballot(vote), "ballot") => vote.is(json),
         (OperationType::Reveal(rev), "reveal") => rev.is(json),
         (OperationType::Proposals(prop), "proposals") => prop.is(json),
         (OperationType::Origination(orig), "origination") => orig.is(json),
         (OperationType::ActivateAccount(act), "activate_account") => act.is(json),
         (OperationType::FailingNoop(fail), "failing_noop") => fail.is(json),
+        (
+            OperationType::AnonymousOp(AnonymousOp::DoubleBakingEvidence(bak)),
+            "double_baking_evidence",
+        ) => bak.is(json),
+        (
+            OperationType::AnonymousOp(AnonymousOp::DoubleEndorsementEvidence(endorsement)),
+            "double_endorsement_evidence",
+        ) => endorsement.is(json),
+        (
+            OperationType::AnonymousOp(AnonymousOp::SeedNonceRevelation(snr)),
+            "seed_nonce_revelation",
+        ) => snr.is(json),
         (op, other) => panic!(
             "sample {}[{}]; expected op kind: {}, parsed as: {:?}",
             sample_name, op_n, other, op

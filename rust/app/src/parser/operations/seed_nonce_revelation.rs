@@ -14,12 +14,8 @@
 *  limitations under the License.
 ********************************************************************************/
 use nom::{bytes::complete::take, number::complete::be_i32, IResult};
-use zemu_sys::ViewError;
 
-use crate::{
-    handlers::{handle_ui_message, parser_common::ParserError},
-    parser::DisplayableItem,
-};
+use crate::handlers::parser_common::ParserError;
 
 const SEED_NONCE_BYTES_LEN: usize = 32;
 
@@ -37,55 +33,6 @@ impl<'b> SeedNonceRevelation<'b> {
         let nonce = arrayref::array_ref!(bytes, 0, SEED_NONCE_BYTES_LEN);
 
         Ok((rem, Self { level, nonce }))
-    }
-}
-
-impl<'b> DisplayableItem for SeedNonceRevelation<'b> {
-    fn num_items(&self) -> usize {
-        1 + 2
-    }
-
-    #[inline(never)]
-    fn render_item(
-        &self,
-        item_n: u8,
-        title: &mut [u8],
-        message: &mut [u8],
-        page: u8,
-    ) -> Result<u8, ViewError> {
-        use bolos::{pic_str, PIC};
-        use lexical_core::{write as itoa, Number};
-
-        match item_n {
-            //Homepage
-            0 => {
-                let title_content = pic_str!(b"Type");
-                title[..title_content.len()].copy_from_slice(title_content);
-
-                handle_ui_message(&pic_str!(b"Seed Nonce Revelation")[..], message, page)
-            }
-            //Level
-            1 => {
-                let title_content = pic_str!(b"Level");
-                title[..title_content.len()].copy_from_slice(title_content);
-
-                let mut itoa_buf = [0; i32::FORMATTED_SIZE_DECIMAL];
-
-                handle_ui_message(itoa(self.level, &mut itoa_buf), message, page)
-            }
-            //Nonce
-            2 => {
-                let title_content = pic_str!(b"Nonce");
-                title[..title_content.len()].copy_from_slice(title_content);
-
-                let mut hex_buf = [0; SEED_NONCE_BYTES_LEN * 2];
-                //this is impossible that will error since the sizes are all checked
-                hex::encode_to_slice(self.nonce, &mut hex_buf).unwrap();
-
-                handle_ui_message(&hex_buf[..], message, page)
-            }
-            _ => Err(ViewError::NoData),
-        }
     }
 }
 

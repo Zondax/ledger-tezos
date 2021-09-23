@@ -234,7 +234,7 @@ impl From<ChainID> for u32 {
 }
 
 impl ChainID {
-    pub const BASE58_LEN: usize = 15;
+    pub const BASE58_LEN: usize = 16;
 
     #[inline(never)]
     pub fn id_to_base58(chain_id: u32) -> Result<[u8; ChainID::BASE58_LEN], bolos::Error> {

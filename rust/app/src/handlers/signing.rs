@@ -237,12 +237,6 @@ impl Viewable for SignUI {
                         OperationType::EndorsementWithSlot(endorsement) => {
                             endorsement.render_item(item_n, title, message, page)
                         }
-                        OperationType::DoubleEndorsementEvidence(endorsement) => {
-                            endorsement.render_item(item_n, title, message, page)
-                        }
-                        OperationType::SeedNonceRevelation(snr) => {
-                            snr.render_item(item_n, title, message, page)
-                        }
                         OperationType::Ballot(vote) => {
                             vote.render_item(item_n, title, message, page)
                         }
@@ -259,6 +253,10 @@ impl Viewable for SignUI {
                         OperationType::FailingNoop(fail) => {
                             fail.render_item(item_n, title, message, page)
                         }
+                        OperationType::UnknownOp(unk) => {
+                            OperationType::render_unknown(unk, item_n, title, message, page)
+                        }
+                        OperationType::AnonymousOp(_) => Err(ViewError::Reject),
                     }
                 } else {
                     Err(ViewError::NoData)

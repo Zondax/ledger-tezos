@@ -43,7 +43,7 @@ static mut BUSY_BYTES: usize = 0;
 impl Into<bindings::zxerr_t> for ViewError {
     fn into(self) -> bindings::zxerr_t {
         match self {
-            Self::Unknown => bindings::zxerr_t_zxerr_unknown,
+            Self::Unknown | Self::Reject => bindings::zxerr_t_zxerr_unknown,
             Self::NoData => bindings::zxerr_t_zxerr_no_data,
         }
     }
@@ -139,6 +139,10 @@ unsafe extern "C" fn viewfunc_get_item(
                 core::slice::from_raw_parts_mut(out_val as *mut cty::c_uchar, out_val_len as usize);
 
             match obj.render_item(item_n as u8, out_key, out_val, page_idx) {
+                Err(e @ ViewError::Reject) => {
+                    viewfunc_reject();
+                    e.into()
+                }
                 Err(e) => e.into(),
                 Ok(count) => {
                     //asciify

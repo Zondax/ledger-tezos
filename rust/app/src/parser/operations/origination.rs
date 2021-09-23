@@ -87,14 +87,14 @@ impl<'b> Origination<'b> {
         ))
     }
 
-    fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
+    fn source_base58(&self) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
         Ok(addr.base58())
     }
 
-    fn delegate_base58(&self) -> Result<Option<[u8; 36]>, bolos::Error> {
+    fn delegate_base58(&self) -> Result<Option<[u8; Addr::BASE58_LEN]>, bolos::Error> {
         self.delegate
             .map(|(crv, hash)| Addr::from_hash(hash, crv).map(|a| a.base58()))
             .transpose()

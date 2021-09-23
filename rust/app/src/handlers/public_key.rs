@@ -91,6 +91,8 @@ pub struct Addr {
 }
 
 impl Addr {
+    pub const BASE58_LEN: usize = 37;
+
     #[inline(never)]
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         sys::zemu_log_stack("Addr::new\x00");
@@ -110,7 +112,7 @@ impl Addr {
 
     //[u8; PKH_STRING] without null byte
     // legacy/src/types.h:156
-    pub fn base58(&self) -> [u8; 36] {
+    pub fn base58(&self) -> [u8; Addr::BASE58_LEN] {
         let input = {
             let mut array = [0; 27];
             array[..3].copy_from_slice(&self.prefix[..]);
@@ -119,7 +121,7 @@ impl Addr {
             array
         };
 
-        let mut out = [0; 36];
+        let mut out = [0; Self::BASE58_LEN];
 
         //the expect is ok since we know all the sizes
         bs58::encode(input)

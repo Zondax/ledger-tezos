@@ -262,83 +262,6 @@ impl<'b> DoubleEndorsementEvidence<'b> {
     }
 }
 
-impl<'b> DisplayableItem for DoubleEndorsementEvidence<'b> {
-    fn num_items(&self) -> usize {
-        1 + 2 + self.first_endorsement.num_items() + 2 + self.second_endorsement.num_items()
-        //TODO: show signatures
-        // + 2
-    }
-
-    #[inline(never)]
-    fn render_item(
-        &self,
-        item_n: u8,
-        title: &mut [u8],
-        message: &mut [u8],
-        page: u8,
-    ) -> Result<u8, ViewError> {
-        use bolos::{pic_str, PIC};
-        use lexical_core::{write as itoa, Number};
-
-        let first_items_range = 3 + self.first_endorsement.num_items() as u8;
-        let second_items_range = first_items_range + 1 + self.second_endorsement.num_items() as u8;
-
-        match item_n {
-            //Homepage
-            0 => {
-                let title_content = pic_str!(b"Type");
-                title[..title_content.len()].copy_from_slice(title_content);
-
-                handle_ui_message(&pic_str!(b"Endorsement")[..], message, page)
-            }
-            //Slot
-            1 => {
-                let title_content = pic_str!(b"Slot");
-                title[..title_content.len()].copy_from_slice(title_content);
-
-                let mut mex = [0; u16::FORMATTED_SIZE_DECIMAL];
-
-                handle_ui_message(itoa(self.slot, &mut mex), message, page)
-            }
-            //Branch 1
-            2 => {
-                let title_content = pic_str!(b"First Branch");
-                title[..title_content.len()].copy_from_slice(title_content);
-
-                let branch = super::Operation::base58_branch(self.first_branch)
-                    .map_err(|_| ViewError::Unknown)?;
-
-                handle_ui_message(&branch[..], message, page)
-            }
-            //TODO: Signature
-            // 2 => {}
-            n if n < first_items_range => {
-                self.first_endorsement
-                    .render_item(n - 3, title, message, page)
-            }
-            //Branch 2
-            n if n >= first_items_range && n < first_items_range + 1 => {
-                let title_content = pic_str!(b"Second Branch");
-                title[..title_content.len()].copy_from_slice(title_content);
-
-                let branch = super::Operation::base58_branch(self.second_branch)
-                    .map_err(|_| ViewError::Unknown)?;
-
-                handle_ui_message(&branch[..], message, page)
-            }
-            n if n < second_items_range => self.second_endorsement.render_item(
-                n - (first_items_range + 1),
-                title,
-                message,
-                page,
-            ),
-            //TODO: Signature
-            // 2 => {}
-            _ => Err(ViewError::NoData),
-        }
-    }
-}
-
 #[cfg(test)]
 impl<'b> DoubleEndorsementEvidence<'b> {
     pub fn is(&self, _json: &serde_json::Map<std::string::String, serde_json::Value>) {
@@ -355,6 +278,7 @@ mod tests {
 
     #[test]
     fn endorsement_with_slot() {
+        //Note: this is madeup input based on the codec description
         const INPUT_HEX: &str = "00000027\
                                  a99b946c97ada0f42c1bdeae0383db7893351232a832d00d0cd716eb6f66e561\
                                  00\

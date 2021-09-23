@@ -58,7 +58,7 @@ impl<'b> Reveal<'b> {
         ))
     }
 
-    fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
+    fn source_base58(&self) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
@@ -161,10 +161,10 @@ impl<'b> DisplayableItem for Reveal<'b> {
     }
 }
 
+const MAX_PK_BASE58_LEN: usize = 56;
 /// Encodes a public key as base58 on the provided `out` buffer
 ///
 /// returns the number of bytes written
-const MAX_PK_BASE58_LEN: usize = 55;
 fn pk_to_base58(
     (crv, bytes): (Curve, &[u8]),
     out: &mut [u8; MAX_PK_BASE58_LEN],
@@ -223,7 +223,10 @@ impl<'b> Reveal<'b> {
 mod tests {
     use arrayref::array_ref;
 
-    use crate::{crypto::Curve, parser::Zarith};
+    use crate::{
+        crypto::Curve,
+        parser::{operations::reveal::MAX_PK_BASE58_LEN, Zarith},
+    };
 
     use super::{pk_to_base58, Reveal};
 
@@ -266,7 +269,7 @@ mod tests {
 
     #[test]
     fn public_key_base58() {
-        let mut base58 = [0; 55];
+        let mut base58 = [0; MAX_PK_BASE58_LEN];
 
         let len = pk_to_base58((Curve::Bip32Ed25519, &[0x00; 32]), &mut base58)
             .expect("couldn't encode Secp256K1 to base58");
