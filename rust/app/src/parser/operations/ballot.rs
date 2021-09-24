@@ -27,6 +27,9 @@ use crate::{
     parser::{public_key_hash, DisplayableItem},
 };
 
+#[cfg(test)]
+use crate::utils::MaybeNullTerminatedToString;
+
 use core::convert::{TryFrom, TryInto};
 
 const PROPOSAL_BYTES_LEN: usize = 32;
@@ -196,12 +199,14 @@ impl<'b> Ballot<'b> {
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
         let source_base58 = self
             .source_base58()
-            .expect("couldn't compute source base58");
+            .expect("couldn't compute source base58")
+            .to_string_with_check_null()
+            .expect("source base58 was not utf-8");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
 
-        assert_eq!(source_base58, expected_source_base58.as_bytes());
+        assert_eq!(source_base58.as_str(), expected_source_base58);
 
         let period = json["period"]
             .as_i64()
@@ -220,12 +225,14 @@ impl<'b> Ballot<'b> {
 
         let proposal_base58 = self
             .proposal_base58()
-            .expect("couldn't compute proposal base58");
+            .expect("couldn't compute proposal base58")
+            .to_string_with_check_null()
+            .expect("proposal base58 was not utf-8");
 
         let expected_proposal_base58 = json["proposal"]
             .as_str()
             .expect("given json .proposal is not a string");
-        assert_eq!(proposal_base58, expected_proposal_base58.as_bytes());
+        assert_eq!(proposal_base58.as_str(), expected_proposal_base58);
     }
 }
 

@@ -240,6 +240,7 @@ mod tests {
         assert_error_code,
         constants::ApduError,
         dispatcher::{handle_apdu, CLA, INS_LEGACY_GET_PUBLIC_KEY},
+        utils::MaybeNullTerminatedToString,
     };
 
     #[test]
@@ -255,10 +256,12 @@ mod tests {
         );
 
         let expected = "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ";
-        let output = addr.base58();
-        let output = std::str::from_utf8(&output[..]).unwrap();
+        let output = addr
+            .base58()
+            .to_string_with_check_null()
+            .expect("invalid utf-8 for addr base58");
 
-        assert_eq!(expected, output);
+        assert_eq!(expected, output.as_str());
     }
 
     fn prepare_buffer<const LEN: usize>(buffer: &mut [u8; 260], path: &[u32], curve: Curve) {

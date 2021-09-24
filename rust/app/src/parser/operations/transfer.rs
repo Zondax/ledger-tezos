@@ -26,6 +26,9 @@ use crate::{
     parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
 
+#[cfg(test)]
+use crate::utils::MaybeNullTerminatedToString;
+
 use super::ContractID;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -342,11 +345,13 @@ impl<'b> Transfer<'b> {
         //verify source address of the transfer
         let source_base58 = self
             .source_base58()
-            .expect("couldn't compute source base58");
+            .expect("couldn't compute source base58")
+            .to_string_with_check_null()
+            .expect("source base58 was not utf8");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
-        assert_eq!(source_base58, expected_source_base58.as_bytes());
+        assert_eq!(source_base58.as_str(), expected_source_base58);
 
         self.amount().is(&json["amount"]);
         self.counter().is(&json["counter"]);
@@ -358,12 +363,14 @@ impl<'b> Transfer<'b> {
         let destination_bs58 = self
             .destination()
             .base58()
-            .expect("couldn't compute destination base58");
+            .expect("couldn't compute destination base58")
+            .to_string_with_check_null()
+            .expect("destination base58 was not utf8");
 
         let expected_destination_base58 = json["destination"]
             .as_str()
             .expect("given json .destination is not a string");
-        assert_eq!(destination_bs58, expected_destination_base58.as_bytes());
+        assert_eq!(destination_bs58.as_str(), expected_destination_base58);
 
         //check parameters, either they are both in json and the parsed,
         // or they are missing in both

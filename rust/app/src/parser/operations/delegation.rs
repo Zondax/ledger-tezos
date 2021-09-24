@@ -22,6 +22,9 @@ use crate::{
     parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
 
+#[cfg(test)]
+use crate::utils::MaybeNullTerminatedToString;
+
 #[derive(Debug, Clone, Copy, PartialEq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Delegation<'b> {
@@ -183,11 +186,13 @@ impl<'b> Delegation<'b> {
         //verify source address of the transfer
         let source_base58 = self
             .addr_base58(*self.source())
-            .expect("couldn't compute source base58");
+            .expect("couldn't compute source base58")
+            .to_string_with_check_null()
+            .expect("addr base58 was not utf-8");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
-        assert_eq!(source_base58, expected_source_base58.as_bytes());
+        assert_eq!(source_base58.as_str(), expected_source_base58);
 
         self.counter().is(&json["counter"]);
         self.fee().is(&json["fee"]);
@@ -205,8 +210,10 @@ impl<'b> Delegation<'b> {
             (Some(parsed), Some(expected_delegate_base58)) => {
                 let delegate_base58 = self
                     .addr_base58(*parsed)
-                    .expect("couldn't compute delegate base58");
-                assert_eq!(delegate_base58, expected_delegate_base58.as_bytes())
+                    .expect("couldn't compute delegate base58")
+                    .to_string_with_check_null()
+                    .expect("delegate base58 was not utf-8");
+                assert_eq!(delegate_base58.as_str(), expected_delegate_base58)
             }
         }
     }

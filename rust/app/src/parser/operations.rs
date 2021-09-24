@@ -459,6 +459,7 @@ mod tests {
         crypto::Curve,
         handlers::public_key::Addr,
         parser::operations::{ContractID, Operation, OperationType},
+        utils::MaybeNullTerminatedToString,
     };
 
     #[test]
@@ -478,7 +479,11 @@ mod tests {
         );
 
         let addr = Addr::from_hash(parsed.hash(), Curve::Bip32Ed25519).unwrap();
-        assert_eq!(&addr.base58()[..], PKH_BASE58.as_bytes());
+        let addr = addr
+            .base58()
+            .to_string_with_check_null()
+            .expect("addr base58 was not utf-8");
+        assert_eq!(addr.as_str(), PKH_BASE58);
     }
 
     #[test]
@@ -499,8 +504,10 @@ mod tests {
 
         let cid = parsed
             .base58()
-            .expect("couldn't encode contract id to base 58");
-        assert_eq!(&cid[..], CONTRACT_BASE58.as_bytes());
+            .expect("couldn't encode contract id to base 58")
+            .to_string_with_check_null()
+            .expect("cid base58 was not utf-8");
+        assert_eq!(cid.as_str(), CONTRACT_BASE58);
     }
 
     #[test]
@@ -513,8 +520,10 @@ mod tests {
 
         let branch = parsed
             .get_base58_branch()
-            .expect("couldn't encode branch to base58");
-        assert_eq!(&branch[..], BRANCH_BASE58.as_bytes());
+            .expect("couldn't encode branch to base58")
+            .to_string_with_check_null()
+            .expect("branch base58 was not utf-8");
+        assert_eq!(branch.as_str(), BRANCH_BASE58);
 
         let ops = parsed.mut_ops();
         let op = ops
@@ -549,8 +558,10 @@ mod tests {
 
         let branch = parsed
             .get_base58_branch()
-            .expect("couldn't encode branch to base58");
-        assert_eq!(&branch[..], BRANCH_BASE58.as_bytes());
+            .expect("couldn't encode branch to base58")
+            .to_string_with_check_null()
+            .expect("branch base58 was not utf-8");
+        assert_eq!(branch.as_str(), BRANCH_BASE58);
 
         let ops = parsed.mut_ops();
         let op1 = ops

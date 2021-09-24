@@ -286,6 +286,8 @@ mod tests {
 
     #[test]
     fn setup_ui() {
+        use crate::utils::MaybeNullTerminatedToString;
+
         let addr = Addr::from_hash(&[0; 20], Curve::Bip32Ed25519).unwrap();
         let path = BIP32Path::<10>::new([44, 1729, 0, 0].iter().map(|n| 0x8000_0000 + n)).unwrap();
 
@@ -293,7 +295,9 @@ mod tests {
             ("Type".to_string(), "Setup Baking".to_string()),
             (
                 "Address".to_string(),
-                String::from_utf8(addr.base58().to_vec()).unwrap(),
+                addr.base58()
+                    .to_string_with_check_null()
+                    .expect("addr base58 was not utf8"),
             ),
             ("Chain".to_string(), "".to_string()),
             ("Main Chain HWM".to_string(), format!("{}", 42)),
@@ -307,7 +311,7 @@ mod tests {
             ChainID::Custom(420),
         ] {
             let (chain_id_alias, len) = {
-                let mut alias = [0; ChainID::BASE58_LEN + 1];
+                let mut alias = [0; ChainID::BASE58_LEN];
                 chain_id
                     .to_alias(array_mut_ref!(alias, 0, ChainID::BASE58_LEN))
                     .unwrap();

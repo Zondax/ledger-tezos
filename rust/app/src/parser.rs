@@ -260,6 +260,7 @@ mod tests {
         crypto::Curve,
         handlers::public_key::Addr,
         parser::{boolean, public_key, public_key_hash},
+        utils::MaybeNullTerminatedToString,
     };
 
     use super::Zarith;
@@ -277,7 +278,11 @@ mod tests {
         assert_eq!(crv, Curve::Bip32Ed25519);
 
         let addr = Addr::from_hash(hash, crv).unwrap();
-        assert_eq!(&addr.base58()[..], PKH_BASE58.as_bytes());
+        let addr = addr
+            .base58()
+            .to_string_with_check_null()
+            .expect("addr base58 was not utf-8");
+        assert_eq!(addr.as_str(), PKH_BASE58);
     }
 
     #[test]

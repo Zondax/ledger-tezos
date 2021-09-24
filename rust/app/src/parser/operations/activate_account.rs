@@ -24,6 +24,9 @@ use crate::{
     parser::DisplayableItem,
 };
 
+#[cfg(test)]
+use crate::utils::MaybeNullTerminatedToString;
+
 #[derive(Debug, Clone, Copy, PartialEq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
 pub struct ActivateAccount<'b> {
@@ -110,11 +113,15 @@ impl<'b> DisplayableItem for ActivateAccount<'b> {
 impl<'b> ActivateAccount<'b> {
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
         //verify source address of the transfer
-        let source_base58 = self.source_base58().expect("couldn't compute pkh base58");
+        let source_base58 = self
+            .source_base58()
+            .expect("couldn't compute pkh base58")
+            .to_string_with_check_null()
+            .expect("invalid utf-8 for source base58");
         let expected_source_base58 = json["pkh"]
             .as_str()
             .expect("given json .pkh is not a string");
-        assert_eq!(source_base58, expected_source_base58.as_bytes());
+        assert_eq!(source_base58.as_str(), expected_source_base58);
 
         let expected_secret = json["secret"]
             .as_str()

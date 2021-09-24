@@ -271,7 +271,7 @@ impl<'b> DoubleEndorsementEvidence<'b> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::operations::Operation;
+    use crate::{parser::operations::Operation, utils::MaybeNullTerminatedToString};
 
     use super::{Endorsement, EndorsementWithSlot};
     use arrayref::array_ref;
@@ -293,9 +293,11 @@ mod tests {
             EndorsementWithSlot::from_bytes(&input).expect("failed to parse endorsement");
         assert_eq!(rem.len(), 0);
 
-        let branch =
-            Operation::base58_branch(parsed.branch).expect("couldn't encode branch to base58");
-        assert_eq!(&branch[..], BRANCH_BASE58.as_bytes());
+        let branch = Operation::base58_branch(parsed.branch)
+            .expect("couldn't encode branch to base58")
+            .to_string_with_check_null()
+            .expect("branch base58 was not utf-8");
+        assert_eq!(branch.as_str(), BRANCH_BASE58);
 
         let expected = EndorsementWithSlot {
             branch: array_ref!(input, 4, 32),

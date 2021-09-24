@@ -22,6 +22,9 @@ use crate::{
     parser::{public_key, public_key_hash, DisplayableItem, Zarith},
 };
 
+#[cfg(test)]
+use crate::utils::MaybeNullTerminatedToString;
+
 #[derive(Debug, Clone, Copy, PartialEq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Reveal<'b> {
@@ -195,11 +198,13 @@ impl<'b> Reveal<'b> {
         //verify source address of the transfer
         let source_base58 = self
             .source_base58()
-            .expect("couldn't compute source base58");
+            .expect("couldn't compute source base58")
+            .to_string_with_check_null()
+            .expect("source base58 was not utf-8");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
-        assert_eq!(source_base58, expected_source_base58.as_bytes());
+        assert_eq!(source_base58.as_str(), expected_source_base58);
 
         self.counter.is(&json["counter"]);
         self.fee.is(&json["fee"]);

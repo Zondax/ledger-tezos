@@ -244,7 +244,7 @@ impl<'b> DoubleBakingEvidence<'b> {
 
 #[cfg(test)]
 impl<'b> DoubleBakingEvidence<'b> {
-    pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
+    pub fn is(&self, _json: &serde_json::Map<std::string::String, serde_json::Value>) {
         //TODO
     }
 }
