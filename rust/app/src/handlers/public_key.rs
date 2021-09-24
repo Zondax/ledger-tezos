@@ -195,10 +195,15 @@ impl Viewable for AddrUI {
 
         if self.with_addr {
             let addr = self.addr.base58();
+            let len = if *addr.last().unwrap() == 0 {
+                addr.len() - 1
+            } else {
+                addr.len()
+            };
 
-            out[tx..tx + addr.len()].copy_from_slice(&addr[..]);
+            out[tx..tx + len].copy_from_slice(&addr[..len]);
 
-            tx += addr.len();
+            tx += len;
         }
 
         (tx, Error::Success as _)
