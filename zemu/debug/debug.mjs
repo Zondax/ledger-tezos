@@ -4,12 +4,13 @@ import path from "path";
 
 const APP_PATH = path.resolve("../rust/app/output/app_s.elf");
 const CLA = 0x80;
+const APP_DERIVATION = "m/44'/1729'/0'/0'"
 
 const seed = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const SIM_OPTIONS = {
   logging: true,
   start_delay: 4000,
-//    X11: true,
+   X11: true,
   custom: `-s "${seed}" --color LAGOON_BLUE`,
   model: 'nanos'
 };
@@ -32,12 +33,10 @@ async function debugScenario1(sim, app) {
 }
 
 async function callTestFunction(sim, app) {
-  let input = 10;
 
-  let response = await sim.getTransport()
-    .send(CLA, 0, 0, 0);
+  let response = await app.sign(APP_DERIVATION, 3, Buffer.from("francesco@zondax.ch"));
 
-  console.log(response.toString("hex"));
+  console.log(response);
 }
 
 async function main() {

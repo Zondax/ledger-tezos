@@ -19,15 +19,9 @@ import TezosApp from '@zondax/ledger-tezos'
 import { APP_DERIVATION, curves, defaultOptions } from './common'
 
 const Resolve = require('path').resolve
-const APP_PATH_LEGACY_S = Resolve('../legacy/output/app.elf')
+const APP_PATH_LEGACY_S = Resolve('../legacy/output/app_s.elf')
 
 const models: DeviceModel[] = [{ name: 'nanos', prefix: 'LWS', path: APP_PATH_LEGACY_S }]
-
-jest.setTimeout(60000)
-
-beforeAll(async () => {
-  await Zemu.checkAndPullImage()
-})
 
 describe.each(models)('Legacy wallet [%s]', function (m) {
   test('can start and stop container', async function () {

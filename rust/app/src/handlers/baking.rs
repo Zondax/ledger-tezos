@@ -1,9 +1,19 @@
+/*******************************************************************************
+*   (c) 2021 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 use std::convert::TryFrom;
-
-use nom::{
-    bytes::complete::take,
-    number::complete::{be_u32, le_u8},
-};
 
 use zemu_sys::{Show, ViewError, Viewable};
 
@@ -12,259 +22,106 @@ use bolos::{
     hash::{Blake2b, Hasher},
 };
 
-use crate::handlers::parser_common::ParserError;
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
-    crypto::{self, Curve},
+    crypto::Curve,
     dispatcher::ApduHandler,
     handlers::hwm::{WaterMark, HWM},
-    handlers::public_key::GetAddress,
-    sys::{self, flash_slot::Wear, new_flash_slot},
+    parser::{
+        baking::{BlockData, EndorsementData},
+        operations::Delegation,
+        DisplayableItem, Preemble,
+    },
+    sys::{flash_slot::Wear, new_flash_slot},
     utils::{ApduBufferRead, Uploader},
 };
-use bolos::flash_slot::WearError;
 
 const N_PAGES_BAKINGPATH: usize = 1;
 
 type WearLeveller = Wear<'static, N_PAGES_BAKINGPATH>;
-
-//TODO: move this to other file??
-#[repr(u8)]
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub enum Preemble {
-    InvalidPreemble = 0x00, //FIXME: should we error when this is the Preemble?
-    BlockPreemble = 0x01,
-    EndorsementPreemble = 0x02,
-    GenericPreemble = 0x03,
-}
-
-impl From<Preemble> for u8 {
-    fn from(from: Preemble) -> Self {
-        from as u8
-    }
-}
-
-impl TryFrom<u8> for Preemble {
-    type Error = Error;
-    fn try_from(from: u8) -> Result<Self, Error> {
-        match from {
-            0x00 => Ok(Self::InvalidPreemble),
-            0x01 => Ok(Self::BlockPreemble),
-            0x02 => Ok(Self::EndorsementPreemble),
-            0x03 => Ok(Self::GenericPreemble),
-            _ => Err(Error::DataInvalid),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Branch(pub [u8; 32]);
-
-impl Branch {
-    pub const HEX_LEN: usize = 32 * 2;
-
-    #[inline(never)]
-    pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], Self, ParserError> {
-        let (raw, branchbytes) = take(32usize)(bytes)?;
-        let mut branch = [0u8; 32];
-        branch.copy_from_slice(branchbytes);
-        Ok((raw, Self(branch)))
-    }
-}
-
-pub const ENDORSEMENT_DATA_LENGTH: usize = 42;
-
-pub struct EndorsementData {
-    pub baker_preemble: Preemble,
-    pub chain_id: u32,
-    pub branch: Branch,
-    pub tag: u8, //TODO: what to do with this??
-    pub level: u32,
-}
-
-impl EndorsementData {
-    #[inline(never)]
-    pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], Self, ParserError> {
-        let (rem, preemble) = le_u8(bytes)?;
-        let baker_preemble: Preemble =
-            Preemble::try_from(preemble).map_err(|_| ParserError::parser_unexpected_error)?;
-        let (rem, chain_id) = be_u32(rem)?;
-        let (rem, branch) = Branch::from_bytes(rem)?;
-        let (rem, tag) = le_u8(rem)?;
-        let (rem, level) = be_u32(rem)?;
-        let result = EndorsementData {
-            baker_preemble,
-            chain_id,
-            branch,
-            tag,
-            level,
-        };
-        Ok((rem, result))
-    }
-
-    #[inline(never)]
-    pub fn to_bytes(&self) -> [u8; ENDORSEMENT_DATA_LENGTH] {
-        let mut result = [0u8; ENDORSEMENT_DATA_LENGTH];
-        result[0] = self.baker_preemble.into();
-        result[1..5].copy_from_slice(&self.chain_id.to_be_bytes());
-        result[5..37].copy_from_slice(&self.branch.0);
-        result[37..41].copy_from_slice(&self.level.to_be_bytes());
-        result[41] = self.tag;
-        result
-    }
-
-    #[inline(never)]
-    pub fn validate_with_watermark(&self, hw: &WaterMark) -> bool {
-        WaterMark::is_valid_blocklevel(self.level)
-            && (self.level > hw.level || (hw.level == self.level && !hw.endorsement))
-    }
-}
-
-pub const BLOCKDATA_LENGTH: usize = 10;
-
-pub struct BlockData {
-    pub baker_preemble: Preemble,
-    pub chain_id: u32,
-    pub level: u32,
-    pub proto: u8, //FIXME: what to do with this byte?
-}
-
-impl BlockData {
-    #[inline(never)]
-    pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], Self, ParserError> {
-        let (rem, preemble) = le_u8(bytes)?;
-        let baker_preemble =
-            Preemble::try_from(preemble).map_err(|_| ParserError::parser_context_invalid_chars)?;
-        let (rem, chain_id) = be_u32(rem)?;
-        let (rem, level) = be_u32(rem)?;
-        let (rem, proto) = le_u8(rem)?;
-        let result = BlockData {
-            baker_preemble,
-            chain_id,
-            level,
-            proto,
-        };
-        Ok((rem, result))
-    }
-
-    #[inline(never)]
-    pub fn to_bytes(&self) -> [u8; BLOCKDATA_LENGTH] {
-        let mut result = [0u8; BLOCKDATA_LENGTH];
-        result[0] = self.baker_preemble.into();
-        result[1..5].copy_from_slice(&self.chain_id.to_be_bytes());
-        result[5..9].copy_from_slice(&self.level.to_be_bytes());
-        result[9] = self.proto;
-        result
-    }
-
-    #[inline(never)]
-    pub fn validate_with_watermark(&self, hw: &WaterMark) -> bool {
-        WaterMark::is_valid_blocklevel(self.level) && (self.level > hw.level)
-    }
-}
 
 #[bolos::lazy_static]
 static mut BAKINGPATH: WearLeveller =
     new_flash_slot!(N_PAGES_BAKINGPATH).expect("NVM might be corrupted");
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Bip32PathAndCurve {
-    pub curve: crypto::Curve,
-    pub path: sys::crypto::bip32::BIP32Path<BIP32_MAX_LENGTH>,
+/// Utility struct to store and read BIP32Path and Curve from NVM slots
+///
+/// # Codec
+///
+/// [0] = 0x00 | 0x2A; 0x00 indicates that the data left blank
+///
+/// [1] = `Curve`; byte representation of (`Curve`)[crypto::Curve]
+///
+/// [2] = number of components in the path (i)
+///
+/// [3..3+i*4] = `BIP32Path`;
+/// byte representation of (`BIP32Path`)[sys::crypto::bip32::BIP32Path]
+struct Bip32PathAndCurve {
+    curve: Curve,
+    path: BIP32Path<BIP32_MAX_LENGTH>,
 }
 
 impl Bip32PathAndCurve {
-    pub fn new(
-        curve: crypto::Curve,
-        path: sys::crypto::bip32::BIP32Path<BIP32_MAX_LENGTH>,
-    ) -> Self {
+    pub fn new(curve: Curve, path: BIP32Path<BIP32_MAX_LENGTH>) -> Self {
         Self { curve, path }
     }
 
-    pub fn try_from_bytes(from: &[u8; 52]) -> Result<Self, Error> {
-        let curve = crypto::Curve::try_from(from[0]).map_err(|_| Error::DataInvalid)?;
-        let components_length = from[1];
+    /// Attempt to read a Bip32PathAndCurve from some bytes
+    pub fn try_from_bytes(from: &[u8; 52]) -> Result<Option<Self>, Error> {
+        //the slot could have been purposely emptied of data
+        // for example when we deauthorize
+        if from[0] == 0 {
+            return Ok(None);
+        }
+        let curve = Curve::try_from(from[1]).map_err(|_| Error::DataInvalid)?;
+        let components_length = from[2];
 
         if components_length > BIP32_MAX_LENGTH as u8 {
             return Err(Error::WrongLength);
         }
 
-        let path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(
-            &from[1..(2 + components_length * 4).into()],
-        )
-        .map_err(|_| Error::DataInvalid)?;
+        //we reread from 2 since `read` expectes
+        // the components prefixed with the number of components,
+        // so we also + 1 to get that prefix
+        let path =
+            BIP32Path::<BIP32_MAX_LENGTH>::read(&from[2..2 + 1 + 4 * components_length as usize])
+                .map_err(|_| Error::DataInvalid)?;
 
-        Ok(Self { curve, path })
+        Ok(Some(Self { curve, path }))
+    }
+
+    ///Used to set a slot as empty when writing to NVM
+    ///
+    /// Useful on deauthorization
+    pub fn empty() -> [u8; 52] {
+        [0; 52]
     }
 }
 
 impl From<Bip32PathAndCurve> for [u8; 52] {
     fn from(from: Bip32PathAndCurve) -> Self {
         let mut out = [0; 52];
+        out[0] = 42; //we write to indicate that we actually have data here
 
         let curve = from.curve.into();
-        out[0] = curve;
+        out[1] = curve;
+
         let components = from.path.components();
-        out[1] = components.len() as u8;
-        for i in 0..components.len() {
-            out[2 + i * 4..2 + (i + 1) * 4].copy_from_slice(&components[i].to_be_bytes()[..]);
-        }
+        out[2] = components.len() as u8;
+
+        out[3..]
+            .chunks_exact_mut(4)
+            .zip(components)
+            .for_each(|(chunk, comp)| chunk.copy_from_slice(&comp.to_be_bytes()[..]));
+
         out
     }
 }
 
-//TODO: Or grab this from signing.rs??
-#[bolos::lazy_static]
-static mut PATH: Option<(BIP32Path<BIP32_MAX_LENGTH>, Curve)> = None;
-
 pub struct Baking;
 
 impl Baking {
-    //FIXME: Ideally grab this function from public_key.rs?
-    #[inline(never)]
-    fn get_public(key: crypto::PublicKey, buffer: &mut [u8]) -> Result<u32, Error> {
-        let key = key.as_ref();
-        let len = key.len();
-        buffer[..len].copy_from_slice(&key);
-        Ok(len as u32)
-    }
-
-    //FIXME: make this part of impl Bip32PathAndCurve?
-    #[inline(never)]
-    fn check_and_store_path(path_and_curve: Bip32PathAndCurve) -> Result<(), Error> {
-        //Check if the current baking path in NVM is un-initialized
-        let current_path = unsafe { BAKINGPATH.read() };
-        if let Err(error_msg) = current_path {
-            if error_msg != WearError::Uninitialized {
-                //Something else went wrong
-                Err(Error::ExecutionError)
-            } else {
-                //store path and curve in NVM
-                let data: [u8; 52] = path_and_curve.into();
-                unsafe { BAKINGPATH.write(data) }.map_err(|_| Error::ExecutionError)?;
-                Ok(())
-            }
-        } else {
-            //path seems to be initialized
-            Err(Error::ApduCodeConditionsNotSatisfied)
-        }
-    }
-
-    //FIXME: make this part of impl Bip32PathAndCurve?
-    #[inline(never)]
-    fn check_and_delete_path() -> Result<(), Error> {
-        //Check if the current baking path in NVM is initialized
-        let current_path = unsafe { BAKINGPATH.read() };
-        if current_path.is_err() {
-            //There was no initial path
-            Err(Error::ApduCodeConditionsNotSatisfied)
-        } else {
-            //path seems to be initialized so we can remove it
-            unsafe { BAKINGPATH.format() }.map_err(|_| Error::ExecutionError)?;
-            Ok(())
-        }
-    }
-
     //FIXME: grab this from signing.rs
     #[inline(never)]
     fn blake2b_digest(buffer: &[u8]) -> Result<[u8; 32], Error> {
@@ -272,148 +129,179 @@ impl Baking {
     }
 
     #[inline(never)]
-    fn check_with_nvm_pathandcurve(
-        curve: &crypto::Curve,
-        path: &sys::crypto::bip32::BIP32Path<BIP32_MAX_LENGTH>,
-    ) -> Result<(), Error> {
+    fn check_with_stored(curve: Curve, path: &BIP32Path<BIP32_MAX_LENGTH>) -> Result<bool, Error> {
         //Check if the current baking path in NVM is initialized
-        let current_path = unsafe { BAKINGPATH.read() }.map_err(|_| Error::DataInvalid)?;
+        let current_path =
+            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
         //path seems to be initialized so we can return it
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        let nvm_bip = Bip32PathAndCurve::try_from_bytes(&current_path)?;
+        let nvm_bip = Bip32PathAndCurve::try_from_bytes(current_path)?
+            .ok_or(Error::ApduCodeConditionsNotSatisfied)?;
 
-        if nvm_bip.path != *path || nvm_bip.curve != *curve {
-            //TODO: show that bip32 paths don't match??
-            Err(Error::DataInvalid)
-        } else {
-            Ok(())
+        Ok(nvm_bip.path == *path && nvm_bip.curve == curve)
+    }
+
+    /// Will store a curve and path in NVM memory
+    pub fn store_baking_key(curve: Curve, path: BIP32Path<BIP32_MAX_LENGTH>) -> Result<(), Error> {
+        let path_and_curve = Bip32PathAndCurve::new(curve, path);
+
+        unsafe { BAKINGPATH.write(path_and_curve.into()) }.map_err(|_| Error::ExecutionError)
+    }
+
+    /// Will remove the stored baking key
+    pub fn remove_baking_key() -> Result<(), Error> {
+        unsafe { BAKINGPATH.write(Bip32PathAndCurve::empty()) }.map_err(|_| Error::ExecutionError)
+    }
+
+    /// Will attempt to read a curve and path stored in NVM memory
+    pub fn read_baking_key() -> Result<Option<(Curve, BIP32Path<BIP32_MAX_LENGTH>)>, Error> {
+        let current =
+            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
+
+        let path_and_curve = Bip32PathAndCurve::try_from_bytes(current)?;
+
+        Ok(path_and_curve.map(|both| (both.curve, both.path)))
+    }
+
+    #[inline(never)]
+    fn handle_endorsement(
+        input: &'static [u8],
+        send_hash: bool,
+        digest: [u8; 32],
+    ) -> Result<BakingSignUI, Error> {
+        let hw = HWM::read()?;
+
+        let (_, endorsement) =
+            EndorsementData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
+        if !endorsement.validate_with_watermark(&hw) {
+            return Err(Error::DataInvalid);
+            //TODO: show endorsement data on screen
+        }
+
+        Ok(BakingSignUI::Endorsement {
+            send_hash,
+            data: endorsement,
+            digest,
+        })
+    }
+
+    #[inline(never)]
+    fn handle_blockdata(
+        input: &'static [u8],
+        send_hash: bool,
+        digest: [u8; 32],
+    ) -> Result<BakingSignUI, Error> {
+        let hw = HWM::read()?;
+
+        let (_, blockdata) = BlockData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
+
+        if !blockdata.validate_with_watermark(&hw) {
+            return Err(Error::DataInvalid);
+        }
+
+        Ok(BakingSignUI::BlockLevel {
+            send_hash,
+            data: blockdata,
+            digest,
+        })
+    }
+
+    #[inline(never)]
+    fn handle_delegation(
+        input: &'static [u8],
+        send_hash: bool,
+        digest: [u8; 32],
+    ) -> Result<BakingSignUI, Error> {
+        use crate::parser::operations::{Operation, OperationType};
+
+        let operation = Operation::new(input).map_err(|_| Error::DataInvalid)?;
+
+        let op = operation
+            .ops()
+            .peek_next()
+            .map_err(|_| Error::DataInvalid)?
+            .ok_or(Error::DataInvalid)?;
+
+        match op {
+            OperationType::Delegation(deleg) => {
+                //verify that delegation.source == delegation.delegate
+                // and it matches the authorized key for baking
+                // (BAKINGPATH)
+
+                Ok(BakingSignUI::Delegation {
+                    send_hash,
+                    digest,
+                    branch: operation.branch(),
+                    data: deleg,
+                })
+            }
+            _ => Err(Error::CommandNotAllowed),
         }
     }
 
     #[inline(never)]
-    fn baker_sign(buffer: ApduBufferRead<'_>, flags: &mut u32) -> Result<u32, Error> {
-        if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
-            let curve = Curve::try_from(upload.p2).map_err(|_| Error::InvalidP1P2)?;
-            let path = BIP32Path::<BIP32_MAX_LENGTH>::read(upload.first)
-                .map_err(|_| Error::DataInvalid)?;
+    pub fn baker_sign(
+        send_hash: bool,
+        p2: u8,
+        init_data: &[u8],
+        cdata: &'static [u8],
+        flags: &mut u32,
+    ) -> Result<u32, Error> {
+        crate::sys::zemu_log_stack("Baking::baker_sign\x00");
 
-            Self::check_with_nvm_pathandcurve(&curve, &path)?;
+        let curve = Curve::try_from(p2).map_err(|_| Error::InvalidP1P2)?;
+        let path =
+            BIP32Path::<BIP32_MAX_LENGTH>::read(init_data).map_err(|_| Error::DataInvalid)?;
 
-            unsafe { PATH.replace((path, curve)) };
-            let hw = HWM::read()?;
-            //do watermarks checks
-
-            let cdata = upload.data;
-            let preemble = Preemble::try_from(cdata[0])?;
-
-            let baking_ui = match preemble {
-                Preemble::InvalidPreemble => {
-                    return Err(Error::DataInvalid);
-                }
-
-                Preemble::EndorsementPreemble => {
-                    let (_, endorsement) =
-                        EndorsementData::from_bytes(&cdata).map_err(|_| Error::DataInvalid)?;
-                    if !endorsement.validate_with_watermark(&hw) {
-                        return Err(Error::DataInvalid);
-                        //TODO: show endorsement data on screen
-                    }
-
-                    let digest = Self::blake2b_digest(&endorsement.to_bytes())?;
-
-                    BakingSignUI {
-                        endorsement: Some(endorsement),
-                        blocklevel: None,
-                        digest,
-                    }
-                }
-                Preemble::BlockPreemble => {
-                    let (_, blockdata) =
-                        BlockData::from_bytes(&cdata).map_err(|_| Error::DataInvalid)?;
-
-                    if !blockdata.validate_with_watermark(&hw) {
-                        return Err(Error::DataInvalid);
-                    }
-
-                    let digest = Self::blake2b_digest(&blockdata.to_bytes())?;
-                    //TODO: show blocklevel on screen
-                    BakingSignUI {
-                        endorsement: None,
-                        blocklevel: Some(blockdata),
-                        digest,
-                    }
-                }
-
-                Preemble::GenericPreemble => {
-                    /*
-                                    case MAGIC_BYTE_UNSAFE_OP: {
-                        if (!G.maybe_ops.is_valid) PARSE_ERROR();
-
-                        // Must be self-delegation signed by the *authorized* baking key
-                        if (bip32_path_with_curve_eq(&global.path_with_curve, &N_data.baking_key) &&
-
-                            // ops->signing is generated from G.bip32_path and G.curve
-                            COMPARE(&G.maybe_ops.v.operation.source, &G.maybe_ops.v.signing) == 0 &&
-                            COMPARE(&G.maybe_ops.v.operation.destination, &G.maybe_ops.v.signing) == 0) {
-                            ui_callback_t const ok_c = send_hash ? sign_with_hash_ok : sign_without_hash_ok;
-                            prompt_register_delegate(ok_c, sign_reject);
-                        }
-                        THROW(EXC_SECURITY);
-                        break;
-                    }
-                     */
-                    //not implemnted yet
-                    return Err(Error::DataInvalid);
-                }
-            };
-
-            unsafe { baking_ui.show(flags) }
-                .map_err(|_| Error::ExecutionError)
-                .map(|_| 0)
-        } else {
-            Ok(0)
+        if !Self::check_with_stored(curve, &path)? {
+            return Err(Error::DataInvalid);
         }
+
+        let digest = Self::blake2b_digest(cdata)?;
+        let (rem, preemble) = Preemble::from_bytes(cdata).map_err(|_| Error::DataInvalid)?;
+
+        let baking_ui = match preemble {
+            Preemble::Endorsement => Self::handle_endorsement(rem, send_hash, digest)?,
+            Preemble::Block => Self::handle_blockdata(rem, send_hash, digest)?,
+            Preemble::Operation => Self::handle_delegation(rem, send_hash, digest)?,
+            _ => return Err(Error::CommandNotAllowed),
+        };
+
+        unsafe { baking_ui.show(flags) }
+            .map_err(|_| Error::ExecutionError)
+            .map(|_| 0)
     }
 }
 
-struct BakingSignUI {
-    pub endorsement: Option<EndorsementData>,
-    pub blocklevel: Option<BlockData>,
-    pub digest: [u8; 32],
+enum BakingSignUI {
+    Endorsement {
+        send_hash: bool,
+        digest: [u8; 32],
+        data: EndorsementData<'static>,
+    },
+    BlockLevel {
+        send_hash: bool,
+        digest: [u8; 32],
+        data: BlockData,
+    },
+    Delegation {
+        send_hash: bool,
+        digest: [u8; 32],
+        branch: &'static [u8; 32],
+        data: Delegation<'static>,
+    },
 }
 
-fn write_u32_to_ui_buffer(num: u32, buffer: &mut [u8]) -> Result<usize, Error> {
-    //TODO: use a zxlib function for this
-    let mut num_size: usize = 0;
-    if num == 0 {
-        buffer[0] = 48;
-        num_size = 1;
-    } else {
-        let mut digits = num;
-        while digits > 0 {
-            buffer[num_size] = (48 + digits % 10) as u8; //0x30 + digit
-            digits /= 10;
-            num_size += 1;
-            if num_size >= buffer.len() {
-                return Err(Error::OutputBufferTooSmall);
-            }
-        }
-    }
-    buffer.reverse();
-    Ok(num_size)
-}
-
-//FIXME: split the below code for endorsements and blocklevel signing
 impl Viewable for BakingSignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
-        if self.endorsement.is_some() {
-            Ok(4)
-        } else if self.blocklevel.is_some() {
-            Ok(3)
-        } else {
-            Err(ViewError::NoData)
-        }
+        let n = match self {
+            BakingSignUI::Endorsement { data, .. } => data.num_items(),
+            BakingSignUI::BlockLevel { data, .. } => data.num_items(),
+            BakingSignUI::Delegation { data, .. } => 1 + data.num_items(),
+        };
+
+        Ok(n as u8)
     }
 
     fn render_item(
@@ -423,332 +311,130 @@ impl Viewable for BakingSignUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
-        if let Some(endorsement) = &self.endorsement {
-            const BRANCH_HEX_LEN: usize = Branch::HEX_LEN;
-
-            match item_n {
-                0 => {
-                    let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let message_content = bolos::PIC::new(b"Endorsement\x00").into_inner();
-                    message[..message_content.len()].copy_from_slice(message_content);
-
-                    Ok(1)
-                }
-                1 => {
-                    let title_content = bolos::PIC::new(b"Branch\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let m_len = message.len() - 1; //null byte terminator
-                    if m_len <= BRANCH_HEX_LEN {
-                        let chunk = endorsement
-                            .branch
-                            .0
-                            .chunks(m_len / 2) //divide in non-overlapping chunks
-                            .nth(page as usize) //get the nth chunk
-                            .ok_or(ViewError::Unknown)?;
-
-                        hex::encode_to_slice(chunk, &mut message[..chunk.len() * 2])
-                            .map_err(|_| ViewError::Unknown)?;
-                        message[chunk.len() * 2] = 0; //null terminate
-
-                        let n_pages = BRANCH_HEX_LEN / m_len;
-
-                        Ok(1 + n_pages as u8)
-                    } else {
-                        hex::encode_to_slice(
-                            &endorsement.branch.0[..],
-                            &mut message[..BRANCH_HEX_LEN],
-                        )
-                        .map_err(|_| ViewError::Unknown)?;
-                        message[BRANCH_HEX_LEN] = 0; //null terminate
-
-                        Ok(1)
-                    }
-                }
-                2 => {
-                    let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let mut buffer = [0u8; 100];
-                    let num_digits = write_u32_to_ui_buffer(endorsement.level, &mut buffer)
-                        .map_err(|_| ViewError::Unknown)?;
-                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                    message[num_digits] = 0;
-
-                    Ok(1)
-                }
-                3 => {
-                    let title_content = bolos::PIC::new(b"ChainID\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let mut buffer = [0u8; 100];
-                    let num_digits = write_u32_to_ui_buffer(endorsement.chain_id, &mut buffer)
-                        .map_err(|_| ViewError::Unknown)?;
-                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                    message[num_digits] = 0;
-
-                    Ok(1)
-                }
-                _ => Err(ViewError::NoData),
+        match self {
+            BakingSignUI::Endorsement { data, .. } => {
+                data.render_item(item_n, title, message, page)
             }
-        } else if let Some(block) = &self.blocklevel {
-            match item_n {
-                0 => {
-                    let title_content = bolos::PIC::new(b"Baking Sign\x00").into_inner();
+            BakingSignUI::BlockLevel { data, .. } => data.render_item(item_n, title, message, page),
+            BakingSignUI::Delegation { data, branch, .. } => {
+                if let 0 = item_n {
+                    use bolos::{pic_str, PIC};
+
+                    let title_content = pic_str!(b"Operation");
                     title[..title_content.len()].copy_from_slice(title_content);
 
-                    let message_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
-                    message[..message_content.len()].copy_from_slice(message_content);
-
-                    Ok(1)
-                }
-                1 => {
-                    let title_content = bolos::PIC::new(b"Chain_ID\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let mut buffer = [0u8; 100];
-                    let num_digits = write_u32_to_ui_buffer(block.chain_id, &mut buffer)
+                    let mex = crate::parser::operations::Operation::base58_branch(branch)
                         .map_err(|_| ViewError::Unknown)?;
-                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                    message[num_digits] = 0;
 
-                    Ok(1)
+                    crate::handlers::handle_ui_message(&mex[..], message, page)
+                } else {
+                    data.render_item(item_n - 1, title, message, page)
                 }
-                2 => {
-                    let title_content = bolos::PIC::new(b"Blocklevel\x00").into_inner();
-                    title[..title_content.len()].copy_from_slice(title_content);
-
-                    let mut buffer = [0u8; 100];
-                    let num_digits = write_u32_to_ui_buffer(block.level, &mut buffer)
-                        .map_err(|_| ViewError::Unknown)?;
-                    message[0..num_digits].copy_from_slice(&buffer[100 - num_digits..]);
-                    message[num_digits] = 0;
-
-                    Ok(1)
-                }
-                _ => Err(ViewError::NoData),
             }
-        } else {
-            Err(ViewError::NoData)
         }
     }
 
     fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
-        let blocklevel: u32;
-        let is_endorsement: bool;
-        if let Some(endorsement) = &self.endorsement {
-            blocklevel = endorsement.level;
-            is_endorsement = true;
-        } else if let Some(block) = &self.blocklevel {
-            blocklevel = block.level;
-            is_endorsement = false;
-        } else {
-            return (0, Error::DataInvalid as u16);
-        }
-        let new_hw = WaterMark {
-            level: blocklevel,
-            endorsement: is_endorsement,
-        };
-        match HWM::write(new_hw) {
-            Err(_) => return (0, Error::ExecutionError as _),
-            Ok(()) => (),
-        }
+        let (digest, send_hash) = match self {
+            BakingSignUI::Endorsement {
+                digest,
+                data,
+                send_hash,
+            } => {
+                if HWM::write(WaterMark {
+                    level: data.level,
+                    endorsement: true,
+                })
+                .is_err()
+                {
+                    return (0, Error::ExecutionError as _);
+                }
 
-        //TODO: we need a macro for this
-        let current_path = match unsafe { BAKINGPATH.read() } {
-            Err(_) => return (0, Error::ExecutionError as _),
-            Ok(k) => k,
+                (digest, send_hash)
+            }
+            BakingSignUI::BlockLevel {
+                digest,
+                data,
+                send_hash,
+            } => {
+                if HWM::write(WaterMark {
+                    level: data.level,
+                    endorsement: false,
+                })
+                .is_err()
+                {
+                    return (0, Error::ExecutionError as _);
+                }
+
+                (digest, send_hash)
+            }
+            BakingSignUI::Delegation {
+                digest, send_hash, ..
+            } => (digest, send_hash),
         };
+
+        let current_path = match unsafe { BAKINGPATH.read() } {
+            Ok(path) => path,
+            Err(_) => return (0, Error::ExecutionError as _),
+        };
+
         //path seems to be initialized so we can return it
         //check if it is a good path
         //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        let bip32_nvm = match Bip32PathAndCurve::try_from_bytes(&current_path) {
+        let bip32_nvm = match Bip32PathAndCurve::try_from_bytes(current_path) {
+            Ok(Some(bip)) => bip,
+            //should never reach here since we had checked it earlier
+            Ok(None) => return (0, Error::ApduCodeConditionsNotSatisfied as _),
             Err(e) => return (0, e as _),
-            Ok(k) => k,
         };
 
         let secret = bip32_nvm.curve.to_secret(&bip32_nvm.path);
 
         let mut sig = [0; 100];
-
-        let sz = secret.sign(&self.digest, &mut sig[..]).unwrap_or(0);
-        if sz == 0 {
-            return (0, Error::ExecutionError as _);
-        }
+        let sz = match secret.sign(digest, &mut sig[..]) {
+            Ok(sz) => sz,
+            Err(_) => return (0, Error::ExecutionError as _),
+        };
 
         let mut tx = 0;
 
-        //reset globals to avoid skipping `Init`
-        if let Err(e) = cleanup_globals() {
-            return (0, e as _);
+        if *send_hash {
+            //write unsigned_hash to buffer
+            out[tx..tx + 32].copy_from_slice(digest);
+            tx += 32;
         }
 
-        //write unsigned_hash to buffer
-        tx += 32;
-        out[..32].copy_from_slice(&self.digest);
-
         //wrte signature to buffer
+        out[tx..tx + sz].copy_from_slice(&sig[..sz]);
         tx += sz;
-        out[32..32 + sz].copy_from_slice(&sig[..sz]);
 
         (tx, Error::Success as _)
     }
 
     fn reject(&mut self, _: &mut [u8]) -> (usize, u16) {
-        let _ = cleanup_globals();
         (0, Error::CommandNotAllowed as _)
     }
 }
 
-fn cleanup_globals() -> Result<(), Error> {
-    unsafe { PATH.take() };
+mod authorization;
+pub use authorization::{AuthorizeBaking, DeAuthorizeBaking};
 
-    Ok(())
-}
+mod queryauth;
+pub use queryauth::{QueryAuthKey, QueryAuthKeyWithCurve};
 
-pub struct AuthorizeBaking;
-pub struct DeAuthorizeBaking;
-pub struct QueryAuthKey;
-pub struct QueryAuthKeyWithCurve;
-pub struct BakerSign;
+mod hmac;
+pub use hmac::HMAC;
 
-impl ApduHandler for AuthorizeBaking {
-    #[inline(never)]
-    fn handle<'apdu>(
-        _: &mut u32,
-        tx: &mut u32,
-        buffer: ApduBufferRead<'apdu>,
-    ) -> Result<(), Error> {
-        *tx = 0;
-
-        let req_confirmation = buffer.p1() >= 1;
-
-        if !req_confirmation {
-            return Err(Error::ApduCodeConditionsNotSatisfied);
-        }
-
-        let curve = crypto::Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
-
-        let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
-        let bip32_path = sys::crypto::bip32::BIP32Path::<BIP32_MAX_LENGTH>::read(cdata)
-            .map_err(|_| Error::DataInvalid)?;
-
-        let key = GetAddress::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
-        let path_and_data = Bip32PathAndCurve::new(curve, bip32_path);
-        Baking::check_and_store_path(path_and_data)?;
-
-        let buffer = buffer.write();
-        let pk_len = Baking::get_public(key, &mut buffer[1..])?;
-        buffer[0] = pk_len as u8;
-
-        HWM::reset(0).map_err(|_| Error::Busy)?;
-
-        *tx = pk_len + 1;
-
-        Ok(())
-    }
-}
-
-impl ApduHandler for DeAuthorizeBaking {
-    #[inline(never)]
-    fn handle<'apdu>(
-        _: &mut u32,
-        tx: &mut u32,
-        buffer: ApduBufferRead<'apdu>,
-    ) -> Result<(), Error> {
-        *tx = 0;
-
-        let req_confirmation = buffer.p1() >= 1;
-
-        if !req_confirmation {
-            return Err(Error::ApduCodeConditionsNotSatisfied);
-        }
-
-        //TODO: show confirmation of deletion on screen
-        //FIXME: check if we need to format the HWM??
-        HWM::format()?;
-        Baking::check_and_delete_path()?;
-
-        Ok(())
-    }
-}
-
-impl ApduHandler for QueryAuthKey {
-    #[inline(never)]
-    fn handle<'apdu>(
-        _: &mut u32,
-        tx: &mut u32,
-        buffer: ApduBufferRead<'apdu>,
-    ) -> Result<(), Error> {
-        *tx = 0;
-
-        let req_confirmation = buffer.p1() >= 1;
-
-        if req_confirmation {
-            //TODO show confirmation on screen??
-        }
-        //Check if the current baking path in NVM is initialized
-        let current_path =
-            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
-        //path seems to be initialized so we can return it
-        //check if it is a good path
-        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        Bip32PathAndCurve::try_from_bytes(&current_path)?;
-
-        let bip32_pathsize = current_path[1] as usize;
-
-        let buffer = buffer.write();
-        buffer[0..1 + 4 * bip32_pathsize].copy_from_slice(&current_path[1..2 + 4 * bip32_pathsize]);
-
-        *tx = 1 + 4 * bip32_pathsize as u32;
-        Ok(())
-    }
-}
-
-impl ApduHandler for QueryAuthKeyWithCurve {
-    #[inline(never)]
-    fn handle<'apdu>(
-        _: &mut u32,
-        tx: &mut u32,
-        buffer: ApduBufferRead<'apdu>,
-    ) -> Result<(), Error> {
-        *tx = 0;
-
-        let req_confirmation = buffer.p1() >= 1;
-
-        if req_confirmation {
-            //TODO show confirmation on screen??
-        }
-        //Check if the current baking path in NVM is initialized
-        let current_path =
-            unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
-        //path seems to be initialized so we can return it
-        //check if it is a good path
-        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        Bip32PathAndCurve::try_from_bytes(&current_path)?;
-
-        let bip32_pathsize = current_path[1] as usize;
-
-        let buffer = buffer.write();
-        buffer[0..2 + 4 * bip32_pathsize].copy_from_slice(&current_path[0..2 + 4 * bip32_pathsize]);
-        *tx = 2 + 4 * bip32_pathsize as u32;
-
-        Ok(())
-    }
-}
-
-impl ApduHandler for BakerSign {
+impl ApduHandler for Baking {
     #[inline(never)]
     fn handle<'apdu>(
         flags: &mut u32,
         tx: &mut u32,
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), Error> {
-        *tx = 0;
-
-        *tx = Baking::baker_sign(buffer, flags)?;
+        if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
+            *tx = Self::baker_sign(true, upload.p2, upload.first, upload.data, flags)?;
+        }
 
         Ok(())
     }
@@ -774,22 +460,21 @@ mod tests {
         let derived = Bip32PathAndCurve::try_from_bytes(&data);
 
         assert!(derived.is_ok());
-        assert_eq!(derived.unwrap(), path_and_curve);
+        assert_eq!(derived.unwrap().unwrap(), path_and_curve);
     }
 
     #[test]
     fn test_endorsement_data() {
         let mut v = std::vec::Vec::with_capacity(1 + 4 + 32);
-        v.push(0x00);
+        v.push(0x00); //invalid preemble
         v.extend_from_slice(&1_u32.to_be_bytes());
         v.extend_from_slice(&[0u8; 32]);
         v.push(0x05);
         v.extend_from_slice(&15_u32.to_be_bytes());
-        assert_eq!(v.len(), 1 + 4 + 32 + 1 + 4);
-        let (_, endorsement) = EndorsementData::from_bytes(&v).unwrap();
-        assert_eq!(endorsement.baker_preemble, Preemble::InvalidPreemble);
+
+        let (_, endorsement) = EndorsementData::from_bytes(&v[1..]).unwrap();
         assert_eq!(endorsement.chain_id, 1);
-        assert_eq!(endorsement.branch, Branch([0u8; 32]));
+        assert_eq!(endorsement.branch, &[0u8; 32]);
         assert_eq!(endorsement.tag, 5);
         assert_eq!(endorsement.level, 15);
     }

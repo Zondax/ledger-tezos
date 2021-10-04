@@ -48,9 +48,13 @@ impl ApduHandler for LegacyGetPublic {
 
         let key = key.as_ref();
         let len = key.len();
-        buffer.write()[..len].copy_from_slice(key);
 
-        *tx = len as u32;
+        let out = buffer.write();
+        out[0] = len as u8;
+        *tx += 1;
+
+        out[1..1 + len].copy_from_slice(key);
+        *tx += len as u32;
 
         Ok(())
     }

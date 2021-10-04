@@ -19,6 +19,8 @@ import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import { APP_DERIVATION, cartesianProduct, curves, defaultOptions } from './common'
 import * as secp256k1 from 'noble-secp256k1'
 
+import { SAMPLE_DELEGATION } from './tezos'
+
 const ed25519 = require('ed25519-supercop')
 
 const Resolve = require('path').resolve
@@ -29,12 +31,6 @@ const models: DeviceModel[] = [
   { name: 'nanos', prefix: 'BS', path: APP_PATH_S },
   { name: 'nanox', prefix: 'BX', path: APP_PATH_X },
 ]
-
-jest.setTimeout(60000)
-
-beforeAll(async () => {
-  await Zemu.checkAndPullImage()
-})
 
 describe.each(models)('Standard baking [%s]', function (m) {
   test('can start and stop container', async function () {
@@ -247,7 +243,13 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const respReq = app.authorizeBaking(APP_DERIVATION, curve)
+
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-authorize-${curve}`, [3, 0])
+
+      const resp = await respReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
@@ -261,18 +263,31 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const respReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await respReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const query = await app.queryAuthKeyWithCurve()
+      const queryReq = app.queryAuthKeyWithCurve(true)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-full-cycle-query-with-curve-${curve}`, [3, 0])
+      const query = await queryReq
 
       console.log(query, m.name)
       expect(query.returnCode).toEqual(0x9000)
       expect(query.curve).toEqual(curve)
 
-      const query2 = await app.deauthorizeBaking()
+      const query2Req = app.deauthorizeBaking()
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-full-cycle-deauthorize-${curve}`, [3, 0])
+      const query2 = await query2Req
 
       console.log(query2, m.name)
       expect(query2.returnCode).toEqual(0x9000)
@@ -282,7 +297,13 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
       console.log(query3, m.name)
       expect(query3.returnCode).not.toEqual(0x9000)
 
-      const query4 = await app.authorizeBaking(APP_DERIVATION, curve)
+      const query4Req = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const query4 = await query4Req
 
       console.log(query4, m.name)
       expect(query4.returnCode).toEqual(0x9000)
@@ -298,20 +319,96 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
   })
 })
 
+describe.each(models)('Standard baking [%s]; legacy - setup', function (m) {
+  test.each(curves)('Setup baking %s', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+
+      const respReq = app.legacySetup(APP_DERIVATION, curve, 42, 10, 0xbeef)
+
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-setup-${curve}`, [6, 0])
+
+      const resp = await respReq
+
+      console.log(resp, m.name)
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp).toHaveProperty('publicKey')
+      expect(resp).toHaveProperty('address')
+
+      const hwmCheck = await app.legacyGetAllWatermark()
+
+      console.log(hwmCheck, m.name)
+      expect(hwmCheck.returnCode).toEqual(0x9000)
+
+      expect(hwmCheck.main).toEqual(42)
+      expect(hwmCheck).toHaveProperty('test')
+      expect(hwmCheck.test).toEqual(10)
+      expect(hwmCheck).toHaveProperty('chain_id')
+      expect(hwmCheck.chain_id).toEqual(0xbeef)
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
+describe.each(models)('Standard baking [%s]; legacy - hmac', function (m) {
+  test.each(curves)('HMAC %s', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+
+      const resp = await app.legacyHMAC(APP_DERIVATION, curve, Buffer.from('francesco@zondax.ch'))
+
+      console.log(resp, m.name)
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp).toHaveProperty('hmac')
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
+function get_endorsement_info(chain_id: number, branch: Buffer, tag: number, level: number): Buffer {
+  const result = Buffer.alloc(41)
+  result.writeUInt32BE(chain_id, 0)
+  branch.copy(result, 4)
+  result.writeUInt8(tag, 36)
+  result.writeUInt32BE(level, 37)
+  return result
+}
+
+function get_blocklevel_info(chain_id: number, level: number, proto: number): Buffer {
+  const result = Buffer.alloc(9)
+  result.writeUInt32BE(chain_id, 0)
+  result.writeUInt32BE(level, 4)
+  result.writeUInt8(proto, 8)
+  return result
+}
+
 describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function (m) {
   test.each(curves)('Sign endorsement [%s]', async function (curve) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await authReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const baker_blob = app.get_endorsement_info(2, 0, Buffer.alloc(32), 5, 2)
-
-      const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob)
+      const baker_blob = get_endorsement_info(0, Buffer.alloc(32), 5, 2)
+      const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob, 'endorsement')
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       if (m.name == 'nanox') {
@@ -335,14 +432,21 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await authReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const baker_blob = app.get_blocklevel_info(1, 0, 123456, 1)
+      const baker_blob = get_blocklevel_info(0, 123456, 1)
 
-      const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob)
+      const respReq = app.signBaker(APP_DERIVATION, curve, baker_blob, 'blocklevel')
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       if (m.name == 'nanox') {
@@ -366,14 +470,21 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
-      const resp = await app.authorizeBaking(APP_DERIVATION, curve)
+
+      const respReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await respReq
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const baker_blob = app.get_blocklevel_info(1, 0, 5, 1)
+      const baker_blob = get_blocklevel_info(0, 5, 1)
 
-      const sigreq = app.signBaker(APP_DERIVATION, curve, baker_blob)
+      const sigreq = app.signBaker(APP_DERIVATION, curve, baker_blob, 'blocklevel')
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       if (m.name == 'nanox') {
         await sim.clickRight()
@@ -387,16 +498,16 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       expect(sig.returnCode).toEqual(0x9000)
 
       //this should fail as the level is equal to previously signed!!
-      const baker_blob2 = app.get_blocklevel_info(1, 0, 5, 1)
+      const baker_blob2 = get_blocklevel_info(0, 5, 1)
 
-      const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2)
+      const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2, 'blocklevel')
       console.log(sig2, m.name)
       expect(sig2.returnCode).not.toEqual(0x9000)
 
       //this should success as the level is equal to previously signed but is endorsement!!
-      const baker_blob3 = app.get_endorsement_info(2, 0, Buffer.alloc(32), 5, 5)
+      const baker_blob3 = get_endorsement_info(0, Buffer.alloc(32), 5, 5)
 
-      const sigreq3 = app.signBaker(APP_DERIVATION, curve, baker_blob3)
+      const sigreq3 = app.signBaker(APP_DERIVATION, curve, baker_blob3, 'endorsement')
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
       if (m.name == 'nanox') {
@@ -418,115 +529,129 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
   })
 })
 
-describe.each(models)('Standard baking [%s] - sign', function (m) {
-  test.each(cartesianProduct(curves, [Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)]))(
-    'sign message',
-    async function (curve, msg) {
-      const sim = new Zemu(m.path)
-      try {
-        await sim.start({ ...defaultOptions, model: m.name })
-        const app = new TezosApp(sim.getTransport())
+const SIGN_TEST_DATA = cartesianProduct(curves, [{ name: 'delegation', nav: { s: [11, 0], x: [9, 0] }, op: SAMPLE_DELEGATION }])
 
-        const respReq = app.sign(APP_DERIVATION, curve, msg)
+describe.each(models)('Standard baking [%s] - sign operation', function (m) {
+  test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
 
-        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
-        if (m.name == 'nanox') {
-          sim.clickRight()
-        }
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-sign-${msg.length}-${curve}`, 2)
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const authResp = await authReq
+      expect(authResp.returnCode).toEqual(0x9000)
 
-        const resp = await respReq
+      const msg = Buffer.from(data.op.blob, 'hex')
+      const respReq = app.signBaker(APP_DERIVATION, curve, msg, 'delegation')
 
-        console.log(resp, m.name)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 200000)
 
-        expect(resp.returnCode).toEqual(0x9000)
-        expect(resp.errorMessage).toEqual('No errors')
-        expect(resp).toHaveProperty('hash')
-        expect(resp).toHaveProperty('signature')
-        expect(resp.hash).toEqual(app.sig_hash(msg))
+      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${data.name}-${curve}`, navigation)
 
-        const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
+      const resp = await respReq
 
-        let signatureOK = true
-        switch (curve) {
-          case Curve.Ed25519:
-          case Curve.Ed25519_Slip10:
-            signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1, 33))
-            break
+      console.log(resp, m.name)
 
-          case Curve.Secp256K1:
-            resp.signature[0] = 0x30
-            signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey)
-            break
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('hash')
+      expect(resp).toHaveProperty('signature')
+      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
 
-          case Curve.Secp256R1:
-            break
+      const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
-          default:
-            throw Error('not a valid curve type')
-        }
-        expect(signatureOK).toEqual(true)
-      } finally {
-        await sim.close()
+      let signatureOK = true
+      switch (curve) {
+        case Curve.Ed25519:
+        case Curve.Ed25519_Slip10:
+          signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1, 33))
+          break
+
+        case Curve.Secp256K1:
+          resp.signature[0] = 0x30
+          signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey)
+          break
+
+        case Curve.Secp256R1:
+          break
+
+        default:
+          throw Error('not a valid curve type')
       }
-    },
-  )
+      expect(signatureOK).toEqual(true)
+    } finally {
+      await sim.close()
+    }
+  })
 })
 
-describe.each(models)('Standard baking [%s]; legacy - sign with hash', function (m) {
-  test.each(cartesianProduct(curves, [Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)]))(
-    'sign message',
-    async function (curve, msg) {
-      const sim = new Zemu(m.path)
-      try {
-        await sim.start({ ...defaultOptions, model: m.name })
-        const app = new TezosApp(sim.getTransport())
+describe.each(models)('Standard baking [%s]; legacy - sign op with hash', function (m) {
+  test.each(SIGN_TEST_DATA)('sign $1.name', async function (curve, data) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
 
-        const respReq = app.legacySignWithHash(APP_DERIVATION, curve, msg)
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const authResp = await authReq
+      expect(authResp.returnCode).toEqual(0x9000)
 
-        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
-        if (m.name == 'nanox') {
-          sim.clickRight()
-        }
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${msg.length}-${curve}`, 2)
+      const msg = Buffer.from(data.op.blob, 'hex')
+      const respReq = app.legacySignWithHash(APP_DERIVATION, curve, msg)
 
-        const resp = await respReq
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-        console.log(resp, m.name)
+      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${data.name}-${curve}`, navigation)
 
-        expect(resp.returnCode).toEqual(0x9000)
-        expect(resp.errorMessage).toEqual('No errors')
-        expect(resp).toHaveProperty('hash')
-        expect(resp).toHaveProperty('signature')
-        expect(resp.hash).toEqual(app.sig_hash(msg))
+      const resp = await respReq
 
-        const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
+      console.log(resp, m.name)
 
-        let signatureOK = true
-        switch (curve) {
-          case Curve.Ed25519:
-          case Curve.Ed25519_Slip10:
-            signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1, 33))
-            break
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('hash')
+      expect(resp).toHaveProperty('signature')
+      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
 
-          case Curve.Secp256K1:
-            resp.signature[0] = 0x30
-            signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey)
-            break
+      const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
-          case Curve.Secp256R1:
-            // FIXME: add later
-            // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
-            // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
-            break
+      let signatureOK = true
+      switch (curve) {
+        case Curve.Ed25519:
+        case Curve.Ed25519_Slip10:
+          signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1, 33))
+          break
 
-          default:
-            throw Error('not a valid curve type')
-        }
-        expect(signatureOK).toEqual(true)
-      } finally {
-        await sim.close()
+        case Curve.Secp256K1:
+          resp.signature[0] = 0x30
+          signatureOK = secp256k1.verify(resp.signature, resp.hash, resp_addr.publicKey)
+          break
+
+        case Curve.Secp256R1:
+          // FIXME: add later
+          // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
+          // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
+          break
+
+        default:
+          throw Error('not a valid curve type')
       }
-    },
-  )
+      expect(signatureOK).toEqual(true)
+    } finally {
+      await sim.close()
+    }
+  })
 })

@@ -18,6 +18,7 @@ use std::convert::TryFrom;
 use bolos::{
     crypto::bip32::BIP32Path,
     hash::{Blake2b, Hasher},
+    pic_str, PIC,
 };
 use zemu_sys::{Show, ViewError, Viewable};
 
@@ -25,6 +26,11 @@ use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
     dispatcher::ApduHandler,
+    handlers::handle_ui_message,
+    parser::{
+        operations::{Operation, OperationType},
+        DisplayableItem, Preemble,
+    },
     sys,
     utils::{ApduBufferRead, Uploader},
 };
@@ -46,7 +52,7 @@ impl Sign {
 
     //(actual_size, [u8; MAX_SIGNATURE_SIZE])
     #[inline(never)]
-    fn sign<const LEN: usize>(
+    pub fn sign<const LEN: usize>(
         curve: Curve,
         path: &BIP32Path<LEN>,
         data: &[u8],
@@ -67,11 +73,11 @@ impl Sign {
     }
 
     #[inline(never)]
-    pub fn blind_sign(
+    pub fn start_sign(
         send_hash: bool,
         p2: u8,
         init_data: &[u8],
-        data: &[u8],
+        data: &'static [u8],
         flags: &mut u32,
     ) -> Result<u32, Error> {
         let curve = Curve::try_from(p2).map_err(|_| Error::InvalidP1P2)?;
@@ -83,10 +89,20 @@ impl Sign {
         }
 
         let unsigned_hash = Self::blake2b_digest(data)?;
+        let (rem, preemble) = Preemble::from_bytes(data).map_err(|_| Error::DataInvalid)?;
 
-        let ui = BlindSignUi {
-            hash: unsigned_hash,
-            send_hash,
+        let ui = match preemble {
+            Preemble::Operation => SignUI {
+                hash: unsigned_hash,
+                send_hash,
+                parsed: Some(Operation::new(rem).map_err(|_| Error::DataInvalid)?),
+            },
+            Preemble::Michelson => SignUI {
+                hash: unsigned_hash,
+                send_hash,
+                parsed: None,
+            },
+            _ => return Err(Error::CommandNotAllowed),
         };
 
         unsafe { ui.show(flags) }
@@ -107,23 +123,79 @@ impl ApduHandler for Sign {
         *tx = 0;
 
         if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
-            *tx = Self::blind_sign(true, upload.p2, upload.first, upload.data, flags)?;
+            *tx = Self::start_sign(true, upload.p2, upload.first, upload.data, flags)?;
         }
 
         Ok(())
     }
 }
 
-struct BlindSignUi {
+pub(crate) struct SignUI {
     hash: [u8; Sign::SIGN_HASH_SIZE],
     send_hash: bool,
+    parsed: Option<Operation<'static>>,
 }
 
-impl Viewable for BlindSignUi {
+#[cfg(test)]
+impl Operation<'static> {
+    pub(crate) fn to_sign_ui(self) -> SignUI {
+        SignUI {
+            hash: [0; Sign::SIGN_HASH_SIZE],
+            send_hash: false,
+            parsed: Some(self),
+        }
+    }
+}
+
+impl SignUI {
+    // Will find the operation that contains said item, as well as
+    // return the index of the item in the operation
+    fn find_op_with_item(
+        &self,
+        mut item_idx: u8,
+    ) -> Result<Option<(u8, OperationType<'static>)>, ViewError> {
+        item_idx -= 1; //remove branch idx
+
+        //we shouldn't be here if parsed is None
+        let mut parsed = self.parsed.ok_or(ViewError::Unknown)?;
+        let ops = parsed.mut_ops();
+
+        //we don't call this if we haven't verified all info first
+        while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
+            let n = op.ui_items() as u8;
+
+            if n > item_idx {
+                //we return the remaining item_idx so we can navigate to it
+                return Ok(Some((item_idx, op)));
+            } else {
+                //decrease item_idx by n items and check next operation
+                item_idx -= n;
+            }
+        }
+
+        Ok(None)
+    }
+}
+
+impl Viewable for SignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
-        Ok(1)
+        match self.parsed {
+            None => Ok(1),
+            Some(mut parsed) => {
+                let ops = parsed.mut_ops();
+
+                let mut items_counter = 1; //start with branch
+
+                while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
+                    items_counter += op.ui_items();
+                }
+
+                Ok(items_counter as u8)
+            }
+        }
     }
 
+    #[inline(never)]
     fn render_item(
         &mut self,
         item_n: u8,
@@ -131,33 +203,58 @@ impl Viewable for BlindSignUi {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
-        if let 0 = item_n {
-            let title_content = bolos::PIC::new(b"Blind Sign\x00").into_inner();
+        match self.parsed {
+            None => match item_n {
+                0 => {
+                    let title_content = pic_str!(b"Sign Michelson Hash");
+                    title[..title_content.len()].copy_from_slice(title_content);
 
-            title[..title_content.len()].copy_from_slice(title_content);
+                    let mut hex_buf = [0; Sign::SIGN_HASH_SIZE * 2];
+                    //this is impossible that will error since the sizes are all checked
+                    hex::encode_to_slice(self.hash, &mut hex_buf).unwrap();
 
-            let m_len = message.len() - 1; //null byte terminator
-            if m_len <= Sign::SIGN_HASH_SIZE * 2 {
-                let chunk = self
-                    .hash
-                    .chunks(m_len / 2) //divide in non-overlapping chunks
-                    .nth(page as usize) //get the nth chunk
-                    .ok_or(ViewError::Unknown)?;
+                    handle_ui_message(&hex_buf[..], message, page)
+                }
+                _ => Err(ViewError::NoData),
+            },
+            Some(parsed) => {
+                if let 0 = item_n {
+                    let title_content = pic_str!(b"Operation");
+                    title[..title_content.len()].copy_from_slice(title_content);
 
-                hex::encode_to_slice(chunk, &mut message[..chunk.len() * 2])
-                    .map_err(|_| ViewError::Unknown)?;
-                message[chunk.len() * 2] = 0; //null terminate
+                    let mex = parsed.get_base58_branch().map_err(|_| ViewError::Unknown)?;
 
-                let n_pages = (Sign::SIGN_HASH_SIZE * 2) / m_len;
-                Ok(1 + n_pages as u8)
-            } else {
-                hex::encode_to_slice(&self.hash[..], &mut message[..Sign::SIGN_HASH_SIZE * 2])
-                    .map_err(|_| ViewError::Unknown)?;
-                message[Sign::SIGN_HASH_SIZE * 2] = 0; //null terminate
-                Ok(1)
+                    handle_ui_message(&mex[..], message, page)
+                } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
+                    match op {
+                        OperationType::Transfer(tx) => tx.render_item(item_n, title, message, page),
+                        OperationType::Delegation(delegation) => {
+                            delegation.render_item(item_n, title, message, page)
+                        }
+                        OperationType::Endorsement(endorsement) => {
+                            endorsement.render_item(item_n, title, message, page)
+                        }
+                        OperationType::SeedNonceRevelation(snr) => {
+                            snr.render_item(item_n, title, message, page)
+                        }
+                        OperationType::Ballot(vote) => {
+                            vote.render_item(item_n, title, message, page)
+                        }
+                        OperationType::Reveal(rev) => rev.render_item(item_n, title, message, page),
+                        OperationType::Proposals(props) => {
+                            props.render_item(item_n, title, message, page)
+                        }
+                        OperationType::Origination(orig) => {
+                            orig.render_item(item_n, title, message, page)
+                        }
+                        OperationType::ActivateAccount(act) => {
+                            act.render_item(item_n, title, message, page)
+                        }
+                    }
+                } else {
+                    Err(ViewError::NoData)
+                }
             }
-        } else {
-            Err(ViewError::NoData)
         }
     }
 
@@ -181,14 +278,13 @@ impl Viewable for BlindSignUi {
 
         //write unsigned_hash to buffer
         if self.send_hash {
+            out[tx..tx + Sign::SIGN_HASH_SIZE].copy_from_slice(&self.hash[..]);
             tx += Sign::SIGN_HASH_SIZE;
-            out[..Sign::SIGN_HASH_SIZE].copy_from_slice(&self.hash[..]);
         }
 
         //wrte signature to buffer
+        out[tx..tx + sig_size].copy_from_slice(&sig[..sig_size]);
         tx += sig_size;
-        out[Sign::SIGN_HASH_SIZE..Sign::SIGN_HASH_SIZE + sig_size]
-            .copy_from_slice(&sig[..sig_size]);
 
         (tx, Error::Success as _)
     }

@@ -13,11 +13,14 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ViewError {
     Unknown,
     NoData,
 }
 
+/// This trait describes the interface that is needed for the UI toolkit to
+/// show on screen something
 pub trait Viewable {
     /// Return the number of items to render
     fn num_items(&mut self) -> Result<u8, ViewError>;

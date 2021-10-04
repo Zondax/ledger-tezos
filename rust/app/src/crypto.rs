@@ -1,3 +1,4 @@
+use core::mem::MaybeUninit;
 /*******************************************************************************
 *   (c) 2021 Zondax GmbH
 *
@@ -34,7 +35,12 @@ impl PublicKey {
     pub fn hash(&self, out: &mut [u8; 20]) -> Result<(), Error> {
         sys::zemu_log_stack("PublicKey::hash\x00");
 
-        let mut hasher = Blake2b::new()?;
+        let mut hasher = {
+            let mut loc = MaybeUninit::<Blake2b<20>>::uninit();
+            Blake2b::new_gce(&mut loc)?;
+
+            unsafe { loc.assume_init() }
+        };
 
         match self.curve() {
             Curve::Bip32Ed25519 | Curve::Ed25519 => {
@@ -75,7 +81,7 @@ impl AsRef<[u8]> for PublicKey {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Curve {
     Ed25519,
     Secp256K1,
@@ -189,5 +195,27 @@ impl<const B: usize> SecretKey<B> {
 impl Curve {
     pub fn to_secret<const B: usize>(self, path: &BIP32Path<B>) -> SecretKey<B> {
         SecretKey::new(self, *path)
+    }
+
+    pub fn to_hash_prefix(self) -> &'static [u8] {
+        use crate::constants::tzprefix;
+
+        sys::PIC::new(match self {
+            Curve::Ed25519 | Curve::Bip32Ed25519 => tzprefix::TZ1,
+            Curve::Secp256K1 => tzprefix::TZ2,
+            Curve::Secp256R1 => tzprefix::TZ3,
+        })
+        .into_inner()
+    }
+
+    pub fn to_prefix(self) -> &'static [u8] {
+        use crate::constants::tzprefix;
+
+        sys::PIC::new(match self {
+            Curve::Ed25519 | Curve::Bip32Ed25519 => tzprefix::EDPK,
+            Curve::Secp256K1 => tzprefix::SPPK,
+            Curve::Secp256R1 => tzprefix::P2PK,
+        })
+        .into_inner()
     }
 }

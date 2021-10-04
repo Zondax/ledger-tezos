@@ -1,0 +1,1291 @@
+[
+    {
+        "name": "Simple Origination #0",
+        "blob": "db7104c07ab0c87538a0769a2def30e4f7643bb5ef34b38da644ad3a534198596d009a6090844356d979899622d85ba1602740fcaa84904ea4f50e0a0a00ff02792d0b9d857f711e03998bd0a2f219c053704bae00000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BMNvg2T5mGQgRiP7sYamuJJCNvnjanmm9gS9PmSdKDTxxnVGo8b",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "delegate": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
+                    "balance": "0",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244388",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMNvg2T5mGQgRiP7sYamuJJCNvnjanmm9gS9PmSdKDTxxnVGo8b"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "0"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244388"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Origination #1",
+        "blob": "db7104c07ab0c87538a0769a2def30e4f7643bb5ef34b38da644ad3a534198596d009a6090844356d979899622d85ba1602740fcaa84904ea5f50e0a0a01ff00c860be673ae47ec549f9b5a01a8ccb657be75b6a00000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BMNvg2T5mGQgRiP7sYamuJJCNvnjanmm9gS9PmSdKDTxxnVGo8b",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "delegate": "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ",
+                    "balance": "1",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244389",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMNvg2T5mGQgRiP7sYamuJJCNvnjanmm9gS9PmSdKDTxxnVGo8b"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "1"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244389"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Origination #2",
+        "blob": "8aba235dd7672bc0cec3b84faa10e63a7a529561452662397e52d09e73c4e2e66d009a6090844356d979899622d85ba1602740fcaa84904ea6f50e0a0a02ff01011b2295c8d30e31f5d231f26e551a63a81fd2b700000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "balance": "2",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244390",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "2"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244390"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Origination #3",
+        "blob": "8aba235dd7672bc0cec3b84faa10e63a7a529561452662397e52d09e73c4e2e66d009a6090844356d979899622d85ba1602740fcaa84904ea7f50e0a0a03ff02792d0b9d857f711e03998bd0a2f219c053704bae00000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "delegate": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
+                    "balance": "3",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244391",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "3"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244391"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Origination #4",
+        "blob": "8aba235dd7672bc0cec3b84faa10e63a7a529561452662397e52d09e73c4e2e66d009a6090844356d979899622d85ba1602740fcaa84904ea8f50e0a0a04ff01011b2295c8d30e31f5d231f26e551a63a81fd2b700000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "balance": "4",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244392",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "4"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244392"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Origination #5",
+        "blob": "8aba235dd7672bc0cec3b84faa10e63a7a529561452662397e52d09e73c4e2e66d009a6090844356d979899622d85ba1602740fcaa84904ea9f50e0a0a050000000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "balance": "5",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244393",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "5"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "no delegate"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244393"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Origination #6",
+        "blob": "8aba235dd7672bc0cec3b84faa10e63a7a529561452662397e52d09e73c4e2e66d009a6090844356d979899622d85ba1602740fcaa84904eaaf50e0a0a06ff02792d0b9d857f711e03998bd0a2f219c053704bae00000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "delegate": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
+                    "balance": "6",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244394",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "6"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244394"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Origination #7",
+        "blob": "8aba235dd7672bc0cec3b84faa10e63a7a529561452662397e52d09e73c4e2e66d009a6090844356d979899622d85ba1602740fcaa84904eabf50e0a0a07ff00c860be673ae47ec549f9b5a01a8ccb657be75b6a00000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "delegate": "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ",
+                    "balance": "7",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244395",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BLmNw5gCjmxTUvU4a4RTLNQz5n5CGgKUZB8EY3oznWepyQSV7pR"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "7"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244395"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Origination #8",
+        "blob": "d537a5332c2a0301d6e579b997fcf28125f8cb5a286e817b6b3923e2475abb5e6d009a6090844356d979899622d85ba1602740fcaa84904eacf50e0a0a08ff01011b2295c8d30e31f5d231f26e551a63a81fd2b700000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BMLBgoNnraFRemz2zd8hcSXndKcQcweUq7LDersvXL4qBYMiYW4",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "delegate": "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J",
+                    "balance": "8",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244396",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMLBgoNnraFRemz2zd8hcSXndKcQcweUq7LDersvXL4qBYMiYW4"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "8"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "tz28R5qucJUYPE3oo1gk2Qtd16EVXz9YKu8J"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244396"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Simple Origination #9",
+        "blob": "d537a5332c2a0301d6e579b997fcf28125f8cb5a286e817b6b3923e2475abb5e6d009a6090844356d979899622d85ba1602740fcaa84904eadf50e0a0a09ff02792d0b9d857f711e03998bd0a2f219c053704bae00000011020000000c0500036c0501036c0502030200000002030b",
+        "operation": {
+            "branch": "BMLBgoNnraFRemz2zd8hcSXndKcQcweUq7LDersvXL4qBYMiYW4",
+            "contents": [
+                {
+                    "kind": "origination",
+                    "delegate": "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u",
+                    "balance": "9",
+                    "fee": "10000",
+                    "gas_limit": "10",
+                    "storage_limit": "10",
+                    "source": "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH",
+                    "counter": "244397",
+                    "script": {
+                        "code": [
+                            {
+                                "prim": "parameter",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "storage",
+                                "args": [
+                                    {
+                                        "prim": "unit"
+                                    }
+                                ]
+                            },
+                            {
+                                "prim": "code",
+                                "args": [
+                                    {
+                                        "prim": "code"
+                                    }
+                                ]
+                            }
+                        ],
+                        "storage": {
+                            "prim": "Unit"
+                        }
+                    }
+                }
+            ]
+        },
+        "output": [
+            {
+                "idx": 0,
+                "key": "Operation",
+                "val": [
+                    "BMLBgoNnraFRemz2zd8hcSXndKcQcweUq7LDersvXL4qBYMiYW4"
+                ]
+            },
+            {
+                "idx": 1,
+                "key": "Type",
+                "val": [
+                    "Origination"
+                ]
+            },
+            {
+                "idx": 2,
+                "key": "Source",
+                "val": [
+                    "tz1ZiJS5gAXD5nrBtUd2YW3BaELJAPou1fmH"
+                ]
+            },
+            {
+                "idx": 3,
+                "key": "Balance",
+                "val": [
+                    "9"
+                ]
+            },
+            {
+                "idx": 4,
+                "key": "Delegate",
+                "val": [
+                    "tz3XNmLgSyBTNH2mKWM71fCmLU5umMiBod3u"
+                ]
+            },
+            {
+                "idx": 5,
+                "key": "Fee",
+                "val": [
+                    "10000"
+                ]
+            },
+            {
+                "idx": 6,
+                "key": "Code",
+                "val": [
+                    "14aa2dc4debdb8dea6698a89d77f47ea3bced7af498ace553477012860db0c46"
+                ]
+            },
+            {
+                "idx": 7,
+                "key": "Storage",
+                "val": [
+                    "ab2491c3b754d3ba49e93fb08892f7c6ac126efab9c7a77638009b7fe275af36"
+                ]
+            },
+            {
+                "idx": 8,
+                "key": "Gas Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 9,
+                "key": "Storage Limit",
+                "val": [
+                    "10"
+                ]
+            },
+            {
+                "idx": 10,
+                "key": "Counter",
+                "val": [
+                    "244397"
+                ]
+            }
+        ]
+    }
+]

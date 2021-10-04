@@ -1,10 +1,11 @@
-import TezosApp, { LedgerError, ResponseBase } from '@zondax/ledger-tezos'
+import TezosApp, { Curve, LedgerError, ResponseBase } from '@zondax/ledger-tezos'
 import { CLA, errorCodeToString, processErrorResponse } from '@zondax/ledger-tezos/dist/common'
 
 const INS = {
   HASH: 0xf0,
   EXCEPT: 0xf1,
   ECHO: 0xf2,
+  SIGN: 0xf3
 }
 
 interface ResponseHash extends ResponseBase {
@@ -88,5 +89,29 @@ export default class TezosAppDev extends TezosApp {
         errorMessage: errorCodeToString(returnCode),
       }
     }, processErrorResponse)
+  }
+
+  async blind_sign(path: string, curve: Curve, message: Buffer) {
+    //prepend 0x05 to signal a michelson packed struct
+    // which is signed blindly based on the hash only
+    message = Buffer.concat([Buffer.from([5]), message])
+
+    return this.signGetChunks(path, message).then(chunks => {
+      return this.signSendChunk(1, chunks.length, chunks[0], false, curve, INS.SIGN).then(async response => {
+        let result = {
+          returnCode: response.returnCode,
+          errorMessage: response.errorMessage,
+          signature: null as null | Buffer,
+        };
+        for (let i = 1; i < chunks.length; i += 1) {
+          // eslint-disable-next-line no-await-in-loop
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], false, curve, INS.SIGN);
+          if (result.returnCode !== LedgerError.NoErrors) {
+            break;
+          }
+        }
+        return result;
+      }, processErrorResponse);
+    }, processErrorResponse);
   }
 }

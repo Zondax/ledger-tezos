@@ -55,10 +55,13 @@ cfg_if! {
         use crate::handlers::legacy::hwm::{LegacyResetHWM, LegacyQueryMainHWM,
                                            LegacyQueryAllHWM};
         use crate::handlers::legacy::baking::{LegacyAuthorize, LegacyDeAuthorize,
-                                              LegacyQueryAuthKey, LegacyQueryAuthKeyWithCurve};
+                                              LegacyQueryAuthKey, LegacyQueryAuthKeyWithCurve,
+                                              LegacySetup};
+        use crate::handlers::legacy::hmac::LegacyHMAC;
+
         //baking-only new instructions
         use crate::handlers::baking::{AuthorizeBaking, DeAuthorizeBaking, QueryAuthKey,
-                                      QueryAuthKeyWithCurve, BakerSign};
+                                      QueryAuthKeyWithCurve, Baking};
     } else if #[cfg(feature = "wallet")] {
         //wallet-only legacy instructions
         pub const INS_LEGACY_SIGN_UNSAFE: u8 = 0x5;
@@ -86,11 +89,12 @@ pub const INS_SIGN: u8 = 0x12;
 //dev-only
 cfg_if! {
     if #[cfg(feature = "dev")] {
-        use crate::handlers::dev::{Except, Sha256, Echo};
+        use crate::handlers::dev::{Except, Sha256, Echo, BlindSign};
 
         pub const INS_DEV_HASH: u8 = 0xF0;
         pub const INS_DEV_EXCEPT: u8 = 0xF1;
         pub const INS_DEV_ECHO_UI: u8 = 0xF2;
+        pub const INS_BLIND_SIGN: u8 = 0xF3;
     }
 }
 
@@ -102,11 +106,13 @@ pub trait ApduHandler {
     ) -> Result<(), ApduError>;
 }
 
+#[inline(never)]
 pub fn apdu_dispatch<'apdu>(
     flags: &mut u32,
     tx: &mut u32,
     apdu_buffer: ApduBufferRead<'apdu>,
 ) -> Result<(), ApduError> {
+    crate::sys::zemu_log_stack("apdu_dispatch\x00");
     *flags = 0;
     *tx = 0;
 
@@ -125,6 +131,7 @@ pub fn apdu_dispatch<'apdu>(
                 INS_DEV_HASH => return Sha256::handle(flags, tx, apdu_buffer),
                 INS_DEV_EXCEPT => return Except::handle(flags, tx, apdu_buffer),
                 INS_DEV_ECHO_UI => return Echo::handle(flags, tx, apdu_buffer),
+                INS_BLIND_SIGN => return BlindSign::handle(flags, tx, apdu_buffer),
                 _ => {},
             }
         }
@@ -143,15 +150,15 @@ pub fn apdu_dispatch<'apdu>(
                 INS_DEAUTHORIZE_BAKING => return DeAuthorizeBaking::handle(flags, tx, apdu_buffer),
                 INS_QUERY_AUTH_KEY => return QueryAuthKey::handle(flags, tx, apdu_buffer),
                 INS_QUERY_AUTH_KEY_WITH_CURVE => return QueryAuthKeyWithCurve::handle(flags, tx, apdu_buffer),
-                INS_BAKER_SIGN => return BakerSign::handle(flags, tx, apdu_buffer),
+                INS_BAKER_SIGN => return Baking::handle(flags, tx, apdu_buffer),
 
                 INS_LEGACY_AUTHORIZE_BAKING => return LegacyAuthorize::handle(flags, tx, apdu_buffer),
                 INS_LEGACY_DEAUTHORIZE => return LegacyDeAuthorize::handle(flags, tx, apdu_buffer),
                 INS_LEGACY_QUERY_AUTH_KEY => return LegacyQueryAuthKey::handle(flags, tx, apdu_buffer),
                 INS_LEGACY_QUERY_AUTH_KEY_WITH_CURVE => return LegacyQueryAuthKeyWithCurve::handle(flags, tx, apdu_buffer),
 
-                INS_LEGACY_SETUP |
-                INS_LEGACY_HMAC => return Err(CommandNotAllowed),
+                INS_LEGACY_SETUP => return LegacySetup::handle(flags, tx, apdu_buffer),
+                INS_LEGACY_HMAC => return LegacyHMAC::handle(flags, tx, apdu_buffer),
                 _ => {}
             }
         } else if #[cfg(feature = "wallet")] {
@@ -188,12 +195,13 @@ pub fn handle_apdu(flags: &mut u32, tx: &mut u32, rx: u32, apdu_buffer: &mut [u8
     crate::sys::zemu_log_stack("handle_apdu\x00");
 
     //construct reader
-    let status_word = ApduBufferRead::new(apdu_buffer, rx)
-        .map_err(|_| ApduError::WrongLength) //if ther's an error constructing the wrapper, error
-        .and_then(|read| apdu_dispatch(flags, tx, read)) //dispatch
-        .and(Err::<(), _>(ApduError::Success)) //if we were successfull in dispatch, then it's success
-        .map_err(|e| e as u16) //convert to u16
-        .unwrap_err(); //get the status
+    let status_word = match ApduBufferRead::new(apdu_buffer, rx) {
+        Ok(reader) => apdu_dispatch(flags, tx, reader)
+            .and(Err::<(), _>(ApduError::Success))
+            .map_err(|e| e as u16)
+            .unwrap_err(),
+        Err(_) => ApduError::WrongLength as u16,
+    };
 
     let txu = *tx as usize;
     apdu_buffer[txu..txu + 2].copy_from_slice(&status_word.to_be_bytes()[..]);

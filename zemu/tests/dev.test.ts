@@ -32,12 +32,6 @@ const models: DeviceModel[] = [
   { name: 'nanox', prefix: 'BX', path: APP_PATH_BX },
 ]
 
-jest.setTimeout(60000)
-
-beforeAll(async () => {
-  await Zemu.checkAndPullImage()
-})
-
 function warn_dev(code: LedgerError) {
   if (code === LedgerError.TransactionRejected) {
     console.log('APP might not be built with `dev` feature!')

@@ -20,7 +20,8 @@
         "set backtrace limit 5",
         "handle SIGILL nostop pass noprint",
         "add-symbol-file ${workspaceFolder}/rust/app/output/app_s_baking.elf 0x40000000",
-        "b rs_handle_apdu"
+        "b rs_handle_apdu",
+        "b rslib::__panic_handler::panic"
       ]
     },
     {
@@ -42,7 +43,8 @@
         "set backtrace limit 5",
         "handle SIGILL nostop pass noprint",
         "add-symbol-file ${workspaceFolder}/rust/app/output/app_s.elf 0x40000000",
-        "b rs_handle_apdu"
+        "b rs_handle_apdu",
+        "b rslib::__panic_handler::panic"
       ]
     },
     {

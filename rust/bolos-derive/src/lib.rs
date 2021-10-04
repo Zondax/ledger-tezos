@@ -13,12 +13,14 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-//! This crate exports 3 macros that are useful if not essential for correct
+
+//! This crate exports 4 macros that are useful if not essential for correct
 //! and ergonomic rust in a ledger app
 //!
-//! The currently exported macros are 3:
+//! The currently exported macros are:
 //! * [macro@nvm]
 //! * [macro@pic]
+//! * [macro@pic_str]
 //! * [macro@lazy_static]
 
 use proc_macro::TokenStream;
@@ -92,6 +94,17 @@ pub fn pic(_: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     output.into()
+}
+
+mod pic_str;
+#[proc_macro]
+/// This macro is to be used when a str literal is needed.
+/// The macro will automatically use `PIC` to guarantee proper access at runtime
+/// as well as null terminate the string (if not already).
+///
+/// It's possible to avoid null termination by appending a `!` at the end of the string
+pub fn pic_str(input: TokenStream) -> TokenStream {
+    pic_str::pic_str(input)
 }
 
 // #[bolos::static]

@@ -13,6 +13,8 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+#![allow(dead_code)]
+
 use std::ops::{Deref, DerefMut};
 
 ///This struct provides a way to "fake" a lifetime for an owned item

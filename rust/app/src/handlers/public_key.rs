@@ -22,6 +22,7 @@ use crate::{
     constants::ApduError as Error,
     crypto,
     dispatcher::ApduHandler,
+    handlers::handle_ui_message,
     sys::{self, Error as SysError},
     utils::ApduBufferRead,
 };
@@ -72,7 +73,7 @@ impl ApduHandler for GetAddress {
             // this way the "formatting" to `buffer` is all in the ui code
             let (sz, code) = ui.accept(buffer.write());
 
-            if code != Error::Success as _ {
+            if code != Error::Success as u16 {
                 Err(Error::try_from(code).map_err(|_| Error::ExecutionError)?)
             } else {
                 *tx = sz as u32;
@@ -82,7 +83,7 @@ impl ApduHandler for GetAddress {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy, Debug)]
 pub struct Addr {
     prefix: [u8; 3],
     hash: [u8; 20],
@@ -90,9 +91,8 @@ pub struct Addr {
 }
 
 impl Addr {
+    #[inline(never)]
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
-        use crypto::Curve;
-        use sys::hash::{Hasher, Sha256};
         sys::zemu_log_stack("Addr::new\x00");
 
         let mut this: Self = Default::default();
@@ -101,42 +101,16 @@ impl Addr {
         sys::zemu_log_stack("Addr::new after hash\x00");
 
         //legacy/src/to_string.c:135
-        this.prefix.copy_from_slice(
-            &sys::PIC::new(match pubkey.curve() {
-                Curve::Ed25519 | Curve::Bip32Ed25519 => [6, 161, 159],
-                Curve::Secp256K1 => [6, 161, 161],
-                Curve::Secp256R1 => [6, 161, 164],
-            })
-            .into_inner()[..],
-        );
+        this.prefix.copy_from_slice(pubkey.curve().to_hash_prefix());
 
-        #[inline(never)]
-        fn sha256x2(pieces: &[&[u8]], out: &mut [u8; 4]) -> Result<(), SysError> {
-            sys::zemu_log_stack("Addr::new::sha256x2\x00");
-            let mut digest = Sha256::new()?;
-            for p in pieces {
-                digest.update(p)?;
-            }
-
-            let x1 = digest.finalize_dirty()?;
-            digest.reset()?;
-            digest.update(&x1[..])?;
-
-            let complete_digest = digest.finalize()?;
-
-            out.copy_from_slice(&complete_digest[..4]);
-
-            Ok(())
-        }
-
-        sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
+        super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
 
         Ok(this)
     }
 
     //[u8; PKH_STRING] without null byte
     // legacy/src/types.h:156
-    pub fn to_base58(&self) -> [u8; 36] {
+    pub fn base58(&self) -> [u8; 36] {
         let input = {
             let mut array = [0; 27];
             array[..3].copy_from_slice(&self.prefix[..]);
@@ -162,6 +136,17 @@ impl Addr {
             with_addr,
         }
     }
+
+    pub fn from_hash(hash: &[u8; 20], crv: crypto::Curve) -> Result<Self, SysError> {
+        let mut this: Self = Default::default();
+
+        this.hash.copy_from_slice(&hash[..]);
+        this.prefix.copy_from_slice(crv.to_hash_prefix());
+
+        super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
+
+        Ok(this)
+    }
 }
 
 pub struct AddrUI {
@@ -184,30 +169,14 @@ impl Viewable for AddrUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
-        if let 0 = item_n {
-            let title_content = bolos::PIC::new(b"Address\x00").into_inner();
+        use bolos::{pic_str, PIC};
 
+        if let 0 = item_n {
+            let title_content = pic_str!(b"Address");
             title[..title_content.len()].copy_from_slice(title_content);
 
-            let addr_bytes = self.addr.to_base58();
-            let m_len = message.len() - 1;
-            if addr_bytes.len() > m_len {
-                let chunk = addr_bytes
-                    .chunks(m_len)
-                    .nth(page as usize)
-                    .ok_or(ViewError::Unknown)?;
-
-                let len = std::cmp::min(chunk.len(), m_len);
-                message[..len].copy_from_slice(chunk);
-
-                message[len] = 0;
-                let n_pages = addr_bytes.len() / m_len;
-                Ok(1 + n_pages as u8)
-            } else {
-                message[..addr_bytes.len()].copy_from_slice(&addr_bytes[..]);
-                message[addr_bytes.len()] = 0;
-                Ok(1)
-            }
+            let addr_bytes = self.addr.base58();
+            handle_ui_message(&addr_bytes[..], message, page)
         } else {
             Err(ViewError::NoData)
         }
@@ -223,7 +192,7 @@ impl Viewable for AddrUI {
         tx += pkey.len();
 
         if self.with_addr {
-            let addr = self.addr.to_base58();
+            let addr = self.addr.base58();
 
             out[tx..tx + addr.len()].copy_from_slice(&addr[..]);
 
@@ -284,7 +253,7 @@ mod tests {
         );
 
         let expected = "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ";
-        let output = addr.to_base58();
+        let output = addr.base58();
         let output = std::str::from_utf8(&output[..]).unwrap();
 
         assert_eq!(expected, output);

@@ -79,6 +79,8 @@ mod sealed {
     pub trait CxHash<const S: usize>: Sized {
         fn cx_init_hasher() -> Result<Self, super::Error>;
 
+        fn cx_init_hasher_gce(loc: &mut core::mem::MaybeUninit<Self>) -> Result<(), super::Error>;
+
         fn cx_reset(&mut self) -> Result<(), super::Error>;
 
         fn cx_header(&mut self) -> &mut super::cx_hash_t;
@@ -128,7 +130,13 @@ macro_rules! impl_hasher {
         #[inline(never)]
         fn digest(input: &[u8]) -> Result<[u8; $s], Self::Error> {
             zemu_sys::zemu_log_stack("Hasher::digest\x00");
-            let mut hasher = Self::cx_init_hasher()?;
+
+            let mut hasher = {
+                let mut loc = core::mem::MaybeUninit::<Self>::uninit();
+                Self::new_gce(&mut loc)?;
+
+                unsafe { loc.assume_init() }
+            };
 
             let mut out = [0; $s];
             cx_hash(hasher.cx_header(), input, Some(&mut out[..]))?;

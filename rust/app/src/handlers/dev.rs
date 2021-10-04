@@ -21,3 +21,6 @@ pub use exception::Except;
 
 mod echo;
 pub use echo::Echo;
+
+mod blind_sign;
+pub use blind_sign::BlindSign;

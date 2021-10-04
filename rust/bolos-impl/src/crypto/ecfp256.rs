@@ -16,12 +16,7 @@
 use zeroize::{Zeroize, Zeroizing};
 
 use super::{bip32::BIP32Path, Curve, Mode};
-use crate::{
-    errors::{catch, Error},
-    hash::HasherId,
-    misc::FakeLifetimeMut,
-    raw::cx_ecfp_private_key_t,
-};
+use crate::{errors::Error, hash::HasherId, raw::cx_ecfp_private_key_t};
 
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey {
@@ -88,9 +83,6 @@ impl<const B: usize> SecretKey<B> {
     }
 
     pub fn public(&self) -> Result<PublicKey, Error> {
-        //Get secret key
-        let sk = self.generate()?;
-
         //get keypair with the generated secret key
         // discard secret key as it's not necessary anymore
         let (_, pk) = cx_ecfp_generate_pair(Some(self), self.curve)?;
@@ -102,6 +94,7 @@ impl<const B: usize> SecretKey<B> {
         })
     }
 
+    #[inline(never)]
     pub fn sign<H>(&self, data: &[u8], out: &mut [u8]) -> Result<usize, Error>
     where
         H: HasherId,
@@ -127,8 +120,11 @@ impl<const B: usize> SecretKey<B> {
 }
 
 mod bindings {
-    use super::{catch, Curve, Error, HasherId, SecretKey};
-    use crate::raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t};
+    use super::{Curve, Error, HasherId, SecretKey};
+    use crate::{
+        errors::catch,
+        raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t},
+    };
     use zeroize::{Zeroize, Zeroizing};
 
     pub fn cx_edward_compress_point(curve: Curve, p: &mut [u8]) -> Result<usize, Error> {

@@ -24,7 +24,7 @@ use core::ops::{Deref, DerefMut};
 ///
 /// # Example
 /// ```
-/// # use bolos::PIC;
+/// # use bolos::pic::PIC;
 /// //BUFFER is a `static` so we need to wrap it with PIC so it would
 /// //be accessible when running under BOLOS
 /// #[bolos::pic]
@@ -33,6 +33,16 @@ use core::ops::{Deref, DerefMut};
 /// let _: &PIC<[u8; 1024]> = &BUFFER;
 /// assert_eq!(&[0; 1024], &*BUFFER);
 /// ```
+///
+/// # Notes on ?Sized types
+/// Currently, for every ?Sized type that we need, a separate implementation *has* to be made
+///
+/// This is because by passing the pointer to C we lose some "fattiness" (for example the length of the item)
+/// of the pointer, and we can't manually reconstruct it.
+/// If `pic` were ever to be moved to pure rust this limitation could be circumvented.
+///
+/// An API exists for putting the "fettiness" back, see [Pointee](core::ptr::Pointee),
+/// but it's currently unstable
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct PIC<T> {
@@ -56,6 +66,9 @@ impl<T> PIC<T> {
     }
 
     /// Warning: this should be used only in conjunction with `nvm_write`
+    ///
+    /// That's because if you need PIC it means you are accessing
+    /// something in the `.text` section, thus you can't write to it normally
     pub fn get_mut(&mut self) -> &mut T {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {
@@ -67,18 +80,68 @@ impl<T> PIC<T> {
             }
         }
     }
+}
 
-    pub fn into_inner(self) -> T {
+impl<'a, T> PIC<&'a T> {
+    pub fn into_inner(self) -> &'a T {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {
-                //no difference afaik from &mut and & in this case, since we consume self
-                let ptr = unsafe { super::raw::pic(&self.data as *const T as _) as *const T };
+                let ptr = unsafe { super::raw::pic(self.data as *const T as _) as *const T };
 
-                //we don't want to drop the old location
-                //if the location is unchanged then it will be dropped later anyways
-                core::mem::forget(self);
+                unsafe { ptr.as_ref().unwrap() } //we know it can't be null
+            } else {
+                self.data
+            }
+        }
+    }
+}
 
-                unsafe { ptr.read() }
+impl<'a, T> PIC<&'a mut T> {
+    pub fn into_inner(self) -> &'a mut T {
+        cfg_if::cfg_if! {
+            if #[cfg(bolos_sdk)] {
+                let ptr = unsafe { super::raw::pic(self.data as *const T as _) as *mut T };
+
+                unsafe { ptr.as_mut().unwrap() } //we know it can't be null
+            } else {
+                self.data
+            }
+        }
+    }
+}
+
+impl<'a> PIC<&'a str> {
+    pub fn into_inner(self) -> &'a str {
+        cfg_if::cfg_if! {
+            if #[cfg(bolos_sdk)] {
+                //make use of impl for PIC<&'a [u8]>
+                let data = PIC::new(self.data.as_bytes()).into_inner();
+
+                //if this is not utf8 then it's invalid memory
+                let s = core::str::from_utf8(data).expect("picced string was garbage");
+
+                s
+            } else {
+                self.data
+            }
+        }
+    }
+}
+
+impl<'a> PIC<&'a [u8]> {
+    pub fn into_inner(self) -> &'a [u8] {
+        cfg_if::cfg_if! {
+            if #[cfg(bolos_sdk)] {
+                let data = self.data;
+                let data_len = data.len();
+
+                let ptr = unsafe { super::raw::pic(data.as_ptr() as _) as *const u8 };
+
+                let data = unsafe {
+                    core::slice::from_raw_parts(ptr, data_len)
+                };
+
+                data
             } else {
                 self.data
             }
@@ -87,7 +150,11 @@ impl<T> PIC<T> {
 }
 
 impl PIC<()> {
-    //Apply pic manually, interpreting `ptr` as the actual pointer to an _unknwon_ type
+    /// Apply pic manually, interpreting `ptr` as the actual pointer to an _unknwon_ type
+    ///
+    /// # Safety
+    ///
+    /// This function is always safe to use, is the output that is dangerous to interpret!
     pub unsafe fn manual(ptr: usize) -> usize {
         cfg_if::cfg_if! {
             if #[cfg(bolos_sdk)] {
