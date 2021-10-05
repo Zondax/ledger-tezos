@@ -172,13 +172,13 @@ describe.each(models)('Standard baking [%s] - pubkey', function (m) {
 
         await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-        let steps = 2
+        let steps = [2, 0]
         if (m.name == 'nanox') {
-          sim.clickRight()
-          steps = 1
+          await sim.clickRight()
+          steps = [1, 0]
         }
 
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-pubkey-${curve}`, steps)
+        await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-pubkey-${curve}`, steps)
         resp = await respReq
       } else {
         resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
@@ -211,13 +211,13 @@ describe.each(models)('Standard baking [%s]; legacy - pubkey', function (m) {
 
         await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-        let steps = 2
+        let steps = [2, 0]
         if (m.name == 'nanox') {
-          sim.clickRight()
-          steps = 1
+          await sim.clickRight()
+          steps = [1, 0]
         }
 
-        await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-legacy-pubkey-${curve}`, steps)
+        await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-legacy-pubkey-${curve}`, steps)
         resp = await respReq
       } else {
         resp = await app.legacyGetPubKey(APP_DERIVATION, curve)
