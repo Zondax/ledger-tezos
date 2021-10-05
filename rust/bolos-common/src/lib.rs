@@ -21,17 +21,26 @@ extern crate no_std_compat as std;
 pub mod bip32;
 
 pub mod hash {
-    pub trait Hasher<const S: usize> {
+    pub trait Hasher<const S: usize>: Sized {
         type Error;
 
         /// Add data to hasher
         fn update(&mut self, input: &[u8]) -> Result<(), Self::Error>;
 
         /// Retrieve digest output without resetting or consuming
-        fn finalize_dirty(&mut self) -> Result<[u8; S], Self::Error>;
+        fn finalize_dirty(&mut self) -> Result<[u8; S], Self::Error> {
+            let mut out = [0; S];
+            self.finalize_dirty_into(&mut out).map(|_| out)
+        }
+
+        /// Retrieve digest output by writing it into a preallocated buffer
+        fn finalize_dirty_into(&mut self, out: &mut [u8; S]) -> Result<(), Self::Error>;
 
         /// Consume hasher and retrieve output
-        fn finalize(self) -> Result<[u8; S], Self::Error>;
+        fn finalize(self) -> Result<[u8; S], Self::Error> {
+            let mut out = [0; S];
+            self.finalize_into(&mut out).map(|_| out)
+        }
 
         /// Consume hasher and write output to given location
         fn finalize_into(self, out: &mut [u8; S]) -> Result<(), Self::Error>;
@@ -39,8 +48,14 @@ pub mod hash {
         /// Reset the state of the hasher
         fn reset(&mut self) -> Result<(), Self::Error>;
 
-        /// One-short digest
-        fn digest(input: &[u8]) -> Result<[u8; S], Self::Error>;
+        /// One-shot digest
+        fn digest(input: &[u8]) -> Result<[u8; S], Self::Error> {
+            let mut out = [0; S];
+            Self::digest_into(input, &mut out).map(|_| out)
+        }
+
+        /// One-shot digest into preallocated buffer
+        fn digest_into(input: &[u8], out: &mut [u8; S]) -> Result<(), Self::Error>;
     }
 
     pub trait HasherId {

@@ -237,7 +237,7 @@ impl ChainID {
     pub const BASE58_LEN: usize = 16;
 
     #[inline(never)]
-    pub fn id_to_base58(chain_id: u32) -> Result<[u8; ChainID::BASE58_LEN], bolos::Error> {
+    pub fn id_to_base58(chain_id: u32) -> Result<(usize, [u8; ChainID::BASE58_LEN]), bolos::Error> {
         let mut checksum = [0; 4];
         let chain_id = chain_id.to_be_bytes();
 
@@ -252,11 +252,11 @@ impl ChainID {
         };
 
         let mut out = [0; Self::BASE58_LEN];
-        bs58::encode(input)
+        let len = bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right lenght");
 
-        Ok(out)
+        Ok((len, out))
     }
 
     pub fn to_alias(self, out: &mut [u8; ChainID::BASE58_LEN]) -> Result<usize, bolos::Error> {
@@ -276,10 +276,10 @@ impl ChainID {
                 Ok(content.len())
             }
             Self::Custom(id) => {
-                let content = Self::id_to_base58(id)?;
-                out[..content.len()].copy_from_slice(&content[..]);
+                let (len, content) = Self::id_to_base58(id)?;
+                out[..len].copy_from_slice(&content[..len]);
 
-                Ok(content.len())
+                Ok(len)
             }
         }
     }

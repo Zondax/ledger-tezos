@@ -166,24 +166,38 @@ pub fn sha256x2(pieces: &[&[u8]], out: &mut [u8; 4]) -> Result<(), bolos::Error>
 
     sys::zemu_log_stack("sha256x2\x00");
 
-    let mut digest = Sha256::new()?;
+    let mut hasher = {
+        let mut loc = core::mem::MaybeUninit::<Sha256>::uninit();
+        Sha256::new_gce(&mut loc)?;
+
+        //Safety: we just initialized it above
+        unsafe { loc.assume_init() }
+    };
+
     for p in pieces {
-        digest.update(p)?;
+        hasher.update(p)?;
     }
 
-    let x1 = digest.finalize_dirty()?;
-    digest.reset()?;
-    digest.update(&x1[..])?;
+    let mut digest = [0; 32];
+    //write first sha256
+    hasher.finalize_dirty_into(&mut digest)?;
 
-    let complete_digest = digest.finalize()?;
+    //reset and feed the computed hash
+    hasher.reset()?;
+    hasher.update(&digest[..])?;
 
-    out.copy_from_slice(&complete_digest[..4]);
+    //finalize the hash of the hash
+    hasher.finalize_into(&mut digest)?;
+
+    //copy only the first 4 bytes
+    out.copy_from_slice(&digest[..4]);
 
     Ok(())
 }
 
 #[inline(never)]
 pub fn handle_ui_message(item: &[u8], out: &mut [u8], page: u8) -> Result<u8, ViewError> {
+    crate::sys::zemu_log_stack("handle_ui_message\x00");
     let m_len = out.len() - 1; //null byte terminator
     if m_len <= item.len() {
         let chunk = item

@@ -15,6 +15,7 @@
 ********************************************************************************/
 use nom::{do_parse, number::complete::be_u32, take, IResult};
 use zemu_sys::ViewError;
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 use crate::{
     handlers::{handle_ui_message, parser_common::ParserError},
@@ -28,11 +29,27 @@ pub struct FailingNoop<'b> {
 }
 
 impl<'b> FailingNoop<'b> {
+    #[inline(never)]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, arbitrary) =
             do_parse!(input, len: be_u32 >> arbitrary: take!(len) >> (arbitrary))?;
 
         Ok((rem, Self { arbitrary }))
+    }
+
+    #[inline(never)]
+    pub fn from_bytes_into(
+        input: &'b [u8],
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        let (rem, arbitrary) =
+            do_parse!(input, len: be_u32 >> arbitrary: take!(len) >> (arbitrary))?;
+
+        let out = out.as_mut_ptr();
+        //unsafe ptr valid and no uninit data read
+        unsafe { addr_of_mut!((*out).arbitrary).write(arbitrary) }
+
+        Ok(rem)
     }
 }
 

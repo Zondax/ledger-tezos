@@ -19,15 +19,13 @@ use nom::{
     take, IResult,
 };
 use zemu_sys::ViewError;
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
     parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
-
-#[cfg(test)]
-use crate::utils::MaybeNullTerminatedToString;
 
 use super::ContractID;
 
@@ -123,7 +121,10 @@ pub struct Transfer<'b> {
 
 impl<'b> Transfer<'b> {
     #[cfg(not(test))]
+    #[inline(never)]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
+        crate::sys::zemu_log_stack("Transfer::from_bytes\x00");
+
         let (
             rem,
             (source, fee, counter, gas_limit, storage_limit, amount, destination, parameters),
@@ -153,6 +154,46 @@ impl<'b> Transfer<'b> {
                 parameters,
             },
         ))
+    }
+
+    #[inline(never)]
+    pub fn from_bytes_into(
+        input: &'b [u8],
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        crate::sys::zemu_log_stack("Transfer::from_bytes\x00");
+
+        let (
+            rem,
+            (source, fee, counter, gas_limit, storage_limit, amount, destination, parameters),
+        ) = do_parse! {input,
+            source: public_key_hash >>
+            fee: call!(Zarith::from_bytes, false) >>
+            counter: call!(Zarith::from_bytes, false) >>
+            gas_limit: call!(Zarith::from_bytes, false) >>
+            storage_limit: call!(Zarith::from_bytes, false) >>
+            amount: call!(Zarith::from_bytes, false) >>
+            destination: call!(ContractID::from_bytes) >>
+            has_params: boolean >>
+            params: cond!(has_params, Parameters::from_bytes) >>
+            (source, fee, counter, gas_limit, storage_limit, amount, destination, params)
+        }?;
+
+        let out = out.as_mut_ptr();
+        //pointer is guaranteed to be valid
+        // we only override the contents so we avoid reading uinitialized memory
+        unsafe {
+            addr_of_mut!((*out).source).write(source);
+            addr_of_mut!((*out).fee).write(fee);
+            addr_of_mut!((*out).counter).write(counter);
+            addr_of_mut!((*out).gas_limit).write(gas_limit);
+            addr_of_mut!((*out).storage_limit).write(storage_limit);
+            addr_of_mut!((*out).amount).write(amount);
+            addr_of_mut!((*out).destination).write(destination);
+            addr_of_mut!((*out).parameters).write(parameters);
+        }
+
+        Ok(rem)
     }
 
     #[cfg(test)]
@@ -192,7 +233,7 @@ impl<'b> Transfer<'b> {
         ))
     }
 
-    fn source_base58(&self) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
+    fn source_base58(&self) -> Result<(usize, [u8; Addr::BASE58_LEN]), bolos::Error> {
         let source = self.source();
         let addr = Addr::from_hash(source.1, source.0)?;
 
@@ -238,8 +279,8 @@ impl<'a> DisplayableItem for Transfer<'a> {
                 let title_content = pic_str!(b"Source");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let mex = self.source_base58().map_err(|_| ViewError::Unknown)?;
-                handle_ui_message(&mex[..], message, page)
+                let (len, mex) = self.source_base58().map_err(|_| ViewError::Unknown)?;
+                handle_ui_message(&mex[..len], message, page)
             }
             //destination
             2 => {
@@ -250,12 +291,12 @@ impl<'a> DisplayableItem for Transfer<'a> {
                 };
                 title[..title_content.len()].copy_from_slice(title_content.as_bytes());
 
-                let cid = self
+                let (len, cid) = self
                     .destination()
                     .base58()
                     .map_err(|_| ViewError::Unknown)?;
 
-                handle_ui_message(&cid[..], message, page)
+                handle_ui_message(&cid[..len], message, page)
             }
             //amount
             3 => {
@@ -343,15 +384,13 @@ impl<'a> DisplayableItem for Transfer<'a> {
 impl<'b> Transfer<'b> {
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
         //verify source address of the transfer
-        let source_base58 = self
+        let (len, source_base58) = self
             .source_base58()
-            .expect("couldn't compute source base58")
-            .to_string_with_check_null()
-            .expect("source base58 was not utf8");
+            .expect("couldn't compute source base58");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
-        assert_eq!(source_base58.as_str(), expected_source_base58);
+        assert_eq!(&source_base58[..len], expected_source_base58.as_bytes());
 
         self.amount().is(&json["amount"]);
         self.counter().is(&json["counter"]);
@@ -360,17 +399,18 @@ impl<'b> Transfer<'b> {
         self.storage_limit().is(&json["storage_limit"]);
 
         //verify the destination
-        let destination_bs58 = self
+        let (len, destination_bs58) = self
             .destination()
             .base58()
-            .expect("couldn't compute destination base58")
-            .to_string_with_check_null()
-            .expect("destination base58 was not utf8");
+            .expect("couldn't compute destination base58");
 
         let expected_destination_base58 = json["destination"]
             .as_str()
             .expect("given json .destination is not a string");
-        assert_eq!(destination_bs58.as_str(), expected_destination_base58);
+        assert_eq!(
+            &destination_bs58[..len],
+            expected_destination_base58.as_bytes()
+        );
 
         //check parameters, either they are both in json and the parsed,
         // or they are missing in both

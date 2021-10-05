@@ -13,6 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 use nom::{do_parse, take, IResult};
 use zemu_sys::ViewError;
 
@@ -24,9 +25,6 @@ use crate::{
     parser::DisplayableItem,
 };
 
-#[cfg(test)]
-use crate::utils::MaybeNullTerminatedToString;
-
 #[derive(Debug, Clone, Copy, PartialEq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
 pub struct ActivateAccount<'b> {
@@ -35,6 +33,7 @@ pub struct ActivateAccount<'b> {
 }
 
 impl<'b> ActivateAccount<'b> {
+    #[inline(never)]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, (public_key_hash, secret)) = do_parse! {input,
             public_key_hash: take!(20) >>
@@ -54,7 +53,33 @@ impl<'b> ActivateAccount<'b> {
         ))
     }
 
-    fn source_base58(&self) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
+    #[inline(never)]
+    pub fn from_bytes_into(
+        input: &'b [u8],
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        let (rem, (public_key_hash, secret)) = do_parse! {input,
+            public_key_hash: take!(20) >>
+            secret: take!(20) >>
+            (public_key_hash, secret)
+        }?;
+
+        let public_key_hash = array_ref!(public_key_hash, 0, 20);
+        let secret = array_ref!(secret, 0, 20);
+
+        let out = out.as_mut_ptr();
+        //pointers from references are always non-null and aligned
+        // we write only and avoid reading the potentially uninitialized contents
+        unsafe {
+            //only Ed25519 keys are allowed here
+            addr_of_mut!((*out).public_key_hash).write((Curve::Bip32Ed25519, public_key_hash));
+            addr_of_mut!((*out).secret).write(secret);
+        }
+
+        Ok(rem)
+    }
+
+    fn source_base58(&self) -> Result<(usize, [u8; Addr::BASE58_LEN]), bolos::Error> {
         let source = self.public_key_hash;
         let addr = Addr::from_hash(source.1, source.0)?;
 
@@ -90,8 +115,8 @@ impl<'b> DisplayableItem for ActivateAccount<'b> {
                 let title_content = pic_str!(b"Public Key Hash");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let mex = self.source_base58().map_err(|_| ViewError::Unknown)?;
-                handle_ui_message(&mex[..], message, page)
+                let (len, mex) = self.source_base58().map_err(|_| ViewError::Unknown)?;
+                handle_ui_message(&mex[..len], message, page)
             }
             //secret
             2 => {
@@ -113,15 +138,11 @@ impl<'b> DisplayableItem for ActivateAccount<'b> {
 impl<'b> ActivateAccount<'b> {
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
         //verify source address of the transfer
-        let source_base58 = self
-            .source_base58()
-            .expect("couldn't compute pkh base58")
-            .to_string_with_check_null()
-            .expect("invalid utf-8 for source base58");
+        let (len, source_base58) = self.source_base58().expect("couldn't compute pkh base58");
         let expected_source_base58 = json["pkh"]
             .as_str()
             .expect("given json .pkh is not a string");
-        assert_eq!(source_base58.as_str(), expected_source_base58);
+        assert_eq!(&source_base58[..len], expected_source_base58.as_bytes());
 
         let expected_secret = json["secret"]
             .as_str()

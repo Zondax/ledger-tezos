@@ -22,7 +22,7 @@ use serde_json::{Map, Value};
 use zuit::MockDriver;
 
 use crate::parser::operations::{AnonymousOp, Operation};
-use crate::utils::{strlen, MaybeNullTerminatedToString};
+use crate::utils::strlen;
 
 use super::operations::OperationType;
 
@@ -96,18 +96,14 @@ fn test_sample(
         verify_ui(name, parsed, ui)
     }
 
-    let branch_bs58 = parsed
-        .get_base58_branch()
-        .unwrap_or_else(|e| {
-            panic!(
-                "couldn't compute base 58 branch of sample {}; err: {:?}",
-                name, e
-            )
-        })
-        .to_string_with_check_null()
-        .expect("invalid utf-8 for branch base58");
+    let (len, branch_bs58) = parsed.get_base58_branch().unwrap_or_else(|e| {
+        panic!(
+            "couldn't compute base 58 branch of sample {}; err: {:?}",
+            name, e
+        )
+    });
 
-    assert_eq!(branch_bs58.as_str(), branch);
+    assert_eq!(&branch_bs58[..len], branch.as_bytes());
 
     //retrieve ops from parsed and also ops in the operation
     let ops = parsed.mut_ops();

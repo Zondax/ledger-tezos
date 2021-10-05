@@ -15,15 +15,13 @@
 ********************************************************************************/
 use nom::{call, cond, do_parse, number::complete::be_u32, take, IResult};
 use zemu_sys::ViewError;
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
     parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
-
-#[cfg(test)]
-use crate::utils::MaybeNullTerminatedToString;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
@@ -61,6 +59,7 @@ pub struct Origination<'b> {
 }
 
 impl<'b> Origination<'b> {
+    #[inline(never)]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, (source, fee, counter, gas_limit, storage_limit, balance, delegate, script)) = do_parse! {input,
             source: public_key_hash >>
@@ -90,14 +89,48 @@ impl<'b> Origination<'b> {
         ))
     }
 
-    fn source_base58(&self) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
+    #[inline(never)]
+    pub fn from_bytes_into(
+        input: &'b [u8],
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        let (rem, (source, fee, counter, gas_limit, storage_limit, balance, delegate, script)) = do_parse! {input,
+            source: public_key_hash >>
+            fee: call!(Zarith::from_bytes, false) >>
+            counter: call!(Zarith::from_bytes, false) >>
+            gas_limit: call!(Zarith::from_bytes, false) >>
+            storage_limit: call!(Zarith::from_bytes, false) >>
+            balance: call!(Zarith::from_bytes, false) >>
+            has_delegate: boolean >>
+            delegate: cond!(has_delegate, public_key_hash) >>
+            script: call!(Script::from_bytes) >>
+            (source, fee, counter, gas_limit, storage_limit, balance, delegate, script)
+        }?;
+
+        let out = out.as_mut_ptr();
+        //good ptr and no uninit reads
+        unsafe {
+            addr_of_mut!((*out).source).write(source);
+            addr_of_mut!((*out).fee).write(fee);
+            addr_of_mut!((*out).counter).write(counter);
+            addr_of_mut!((*out).gas_limit).write(gas_limit);
+            addr_of_mut!((*out).storage_limit).write(storage_limit);
+            addr_of_mut!((*out).balance).write(balance);
+            addr_of_mut!((*out).delegate).write(delegate);
+            addr_of_mut!((*out).script).write(script);
+        }
+
+        Ok(rem)
+    }
+
+    fn source_base58(&self) -> Result<(usize, [u8; Addr::BASE58_LEN]), bolos::Error> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
         Ok(addr.base58())
     }
 
-    fn delegate_base58(&self) -> Result<Option<[u8; Addr::BASE58_LEN]>, bolos::Error> {
+    fn delegate_base58(&self) -> Result<Option<(usize, [u8; Addr::BASE58_LEN])>, bolos::Error> {
         self.delegate
             .map(|(crv, hash)| Addr::from_hash(hash, crv).map(|a| a.base58()))
             .transpose()
@@ -140,8 +173,8 @@ impl<'a> DisplayableItem for Origination<'a> {
                 let title_content = pic_str!(b"Source");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let mex = self.source_base58().map_err(|_| ViewError::Unknown)?;
-                handle_ui_message(&mex[..], message, page)
+                let (len, mex) = self.source_base58().map_err(|_| ViewError::Unknown)?;
+                handle_ui_message(&mex[..len], message, page)
             }
             //balance
             2 => {
@@ -158,7 +191,7 @@ impl<'a> DisplayableItem for Origination<'a> {
                 title[..title_content.len()].copy_from_slice(title_content);
 
                 match self.delegate_base58().map_err(|_| ViewError::Unknown)? {
-                    Some(delegate) => handle_ui_message(&delegate[..], message, page),
+                    Some((len, delegate)) => handle_ui_message(&delegate[..len], message, page),
                     None => handle_ui_message(&pic_str!(b"no delegate")[..], message, page),
                 }
             }
@@ -240,15 +273,13 @@ impl<'a> DisplayableItem for Origination<'a> {
 impl<'b> Origination<'b> {
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
         //verify source address of the transfer
-        let source_base58 = self
+        let (len, source_base58) = self
             .source_base58()
-            .expect("couldn't compute source base58")
-            .to_string_with_check_null()
-            .expect("source base58 was not utf-8");
+            .expect("couldn't compute source base58");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
-        assert_eq!(source_base58.as_str(), expected_source_base58);
+        assert_eq!(&source_base58[..len], expected_source_base58.as_bytes());
 
         self.fee.is(&json["fee"]);
         self.counter.is(&json["counter"]);
@@ -265,11 +296,8 @@ impl<'b> Origination<'b> {
             (None, Some(_)) => panic!("delegate was not parsed were it was present"),
             (Some(_), None) => panic!("delegate was parsed where it wasn't present"),
             (None, None) => {}
-            (Some(parsed), Some(expected)) => {
-                let parsed = parsed
-                    .to_string_with_check_null()
-                    .expect("delegate base58 was not utf-8");
-                assert_eq!(parsed.as_str(), expected)
+            (Some((len, parsed)), Some(expected)) => {
+                assert_eq!(&parsed[..len], expected.as_bytes())
             }
         }
 

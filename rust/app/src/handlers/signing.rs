@@ -13,7 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use std::convert::TryFrom;
+use {std::convert::TryFrom, std::mem::MaybeUninit};
 
 use bolos::{
     crypto::bip32::BIP32Path,
@@ -91,17 +91,17 @@ impl Sign {
         let unsigned_hash = Self::blake2b_digest(data)?;
         let (rem, preemble) = Preemble::from_bytes(data).map_err(|_| Error::DataInvalid)?;
 
-        let ui = match preemble {
-            Preemble::Operation => SignUI {
-                hash: unsigned_hash,
-                send_hash,
-                parsed: Some(Operation::new(rem).map_err(|_| Error::DataInvalid)?),
-            },
-            Preemble::Michelson => SignUI {
-                hash: unsigned_hash,
-                send_hash,
-                parsed: None,
-            },
+        let mut ui = SignUI {
+            hash: unsigned_hash,
+            send_hash,
+            parsed: None,
+        };
+
+        match preemble {
+            Preemble::Operation => {
+                ui.parsed = Some(Operation::new(rem).map_err(|_| Error::DataInvalid)?)
+            }
+            Preemble::Michelson => {}
             _ => return Err(Error::CommandNotAllowed),
         };
 
@@ -153,7 +153,8 @@ impl SignUI {
     fn find_op_with_item(
         &self,
         mut item_idx: u8,
-    ) -> Result<Option<(u8, OperationType<'static>)>, ViewError> {
+        op: &mut MaybeUninit<OperationType<'static>>,
+    ) -> Result<Option<u8>, ViewError> {
         item_idx -= 1; //remove branch idx
 
         //we shouldn't be here if parsed is None
@@ -161,16 +162,27 @@ impl SignUI {
         let ops = parsed.mut_ops();
 
         //we don't call this if we haven't verified all info first
-        while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
-            let n = op.ui_items() as u8;
+        while let Some(_) = ops.parse_next_into(op).map_err(|_| ViewError::Unknown)? {
+            let op = op.as_mut_ptr();
+            //safe because the pointer is valid and we have initialized this
+            // also, we are the only ones with access at this point
+            let op_ref = unsafe { op.as_mut().unwrap() };
+            let n = op_ref.ui_items() as u8;
 
             if n > item_idx {
                 //we return the remaining item_idx so we can navigate to it
-                return Ok(Some((item_idx, op)));
+                // we don't want to drop `op` here so it can be used by the caller!!!
+                return Ok(Some(item_idx));
             } else {
                 //decrease item_idx by n items and check next operation
                 item_idx -= n;
             }
+
+            //pointer is valid, aligned
+            // and initialized
+            // we only drop if we are looping again
+            // since it's not what we are looking for
+            unsafe { op.drop_in_place() }
         }
 
         Ok(None)
@@ -185,9 +197,32 @@ impl Viewable for SignUI {
                 let ops = parsed.mut_ops();
 
                 let mut items_counter = 1; //start with branch
+                let mut op = MaybeUninit::uninit();
 
-                while let Some(op) = ops.parse_next().map_err(|_| ViewError::Unknown)? {
-                    items_counter += op.ui_items();
+                while let Some(_) = ops
+                    .parse_next_into(&mut op)
+                    .map_err(|_| ViewError::Unknown)?
+                {
+                    let op = op.as_mut_ptr();
+                    //safe because the pointer is valid and we have initialized this
+                    // also, we are the only ones with access at this point
+                    let op_ref = unsafe { op.as_mut().unwrap() };
+                    items_counter += op_ref.ui_items();
+
+                    //this is safe to drop because
+                    // pointer is valid, aligned
+                    // and initialized
+                    //we will be writing to this location before reading again
+                    unsafe { op.drop_in_place() }
+                }
+
+                if items_counter > 1 {
+                    //this means we have parsed at least once and have reached the end
+                    // so we need to drop this manually
+                    //This IS initialized (from the last loop)
+                    // the pointer is valid and aligned
+                    // it also won't be used anymore
+                    unsafe { op.as_mut_ptr().drop_in_place() }
                 }
 
                 Ok(items_counter as u8)
@@ -203,6 +238,8 @@ impl Viewable for SignUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
+        let mut op = MaybeUninit::uninit();
+
         match self.parsed {
             None => match item_n {
                 0 => {
@@ -222,10 +259,11 @@ impl Viewable for SignUI {
                     let title_content = pic_str!(b"Operation");
                     title[..title_content.len()].copy_from_slice(title_content);
 
-                    let mex = parsed.get_base58_branch().map_err(|_| ViewError::Unknown)?;
-
-                    handle_ui_message(&mex[..], message, page)
-                } else if let Some((item_n, op)) = self.find_op_with_item(item_n)? {
+                    let (len, mex) = parsed.get_base58_branch().map_err(|_| ViewError::Unknown)?;
+                    handle_ui_message(&mex[..len], message, page)
+                } else if let Some(item_n) = self.find_op_with_item(item_n, &mut op)? {
+                    //this is safe as we have initialized `op` in `self.find_op_with_item`
+                    let op = unsafe { op.assume_init() };
                     match op {
                         OperationType::Transfer(tx) => tx.render_item(item_n, title, message, page),
                         OperationType::Delegation(delegation) => {

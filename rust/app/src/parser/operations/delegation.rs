@@ -15,15 +15,13 @@
 ********************************************************************************/
 use nom::{call, cond, do_parse, IResult};
 use zemu_sys::ViewError;
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
     parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
-
-#[cfg(test)]
-use crate::utils::MaybeNullTerminatedToString;
 
 #[derive(Debug, Clone, Copy, PartialEq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
@@ -37,7 +35,10 @@ pub struct Delegation<'b> {
 }
 
 impl<'b> Delegation<'b> {
+    #[inline(never)]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
+        crate::sys::zemu_log_stack("Delegation::from_bytes\x00");
+
         let (rem, (source, fee, counter, gas_limit, storage_limit, delegate)) = do_parse! {input,
             source: public_key_hash >>
             fee: call!(Zarith::from_bytes, false) >>
@@ -60,6 +61,38 @@ impl<'b> Delegation<'b> {
                 delegate,
             },
         ))
+    }
+
+    #[inline(never)]
+    pub fn from_bytes_into(
+        input: &'b [u8],
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        crate::sys::zemu_log_stack("Delegation::from_bytes\x00");
+
+        let (rem, (source, fee, counter, gas_limit, storage_limit, delegate)) = do_parse! {input,
+            source: public_key_hash >>
+            fee: call!(Zarith::from_bytes, false) >>
+            counter: call!(Zarith::from_bytes, false) >>
+            gas_limit: call!(Zarith::from_bytes, false) >>
+            storage_limit: call!(Zarith::from_bytes, false) >>
+            has_delegate: boolean >>
+            delegate: cond!(has_delegate, public_key_hash) >>
+            (source, fee, counter, gas_limit, storage_limit, delegate)
+        }?;
+
+        let out = out.as_mut_ptr();
+        //good ptr and no uninit reads
+        unsafe {
+            addr_of_mut!((*out).source).write(source);
+            addr_of_mut!((*out).fee).write(fee);
+            addr_of_mut!((*out).counter).write(counter);
+            addr_of_mut!((*out).gas_limit).write(gas_limit);
+            addr_of_mut!((*out).storage_limit).write(storage_limit);
+            addr_of_mut!((*out).delegate).write(delegate);
+        }
+
+        Ok(rem)
     }
 }
 
@@ -104,8 +137,8 @@ impl<'a> DisplayableItem for Delegation<'a> {
 
                 let addr = Addr::from_hash(hash, *crv).map_err(|_| ViewError::Unknown)?;
 
-                let mex = addr.base58();
-                handle_ui_message(&mex[..], message, page)
+                let (len, mex) = addr.base58();
+                handle_ui_message(&mex[..len], message, page)
             }
             //delegation
             2 => {
@@ -115,8 +148,8 @@ impl<'a> DisplayableItem for Delegation<'a> {
                 match self.delegate {
                     Some((crv, hash)) => {
                         let addr = Addr::from_hash(hash, crv).map_err(|_| ViewError::Unknown)?;
-                        let mex = addr.base58();
-                        handle_ui_message(&mex[..], message, page)
+                        let (len, mex) = addr.base58();
+                        handle_ui_message(&mex[..len], message, page)
                     }
                     None => handle_ui_message(&pic_str!(b"<REVOKED>")[..], message, page),
                 }
@@ -176,7 +209,7 @@ impl<'b> Delegation<'b> {
     fn addr_base58(
         &self,
         source: (Curve, &'b [u8; 20]),
-    ) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
+    ) -> Result<(usize, [u8; Addr::BASE58_LEN]), bolos::Error> {
         let addr = Addr::from_hash(source.1, source.0)?;
 
         Ok(addr.base58())
@@ -184,15 +217,13 @@ impl<'b> Delegation<'b> {
 
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
         //verify source address of the transfer
-        let source_base58 = self
+        let (len, source_base58) = self
             .addr_base58(*self.source())
-            .expect("couldn't compute source base58")
-            .to_string_with_check_null()
-            .expect("addr base58 was not utf-8");
+            .expect("couldn't compute source base58");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
-        assert_eq!(source_base58.as_str(), expected_source_base58);
+        assert_eq!(&source_base58[..len], expected_source_base58.as_bytes());
 
         self.counter().is(&json["counter"]);
         self.fee().is(&json["fee"]);
@@ -208,12 +239,10 @@ impl<'b> Delegation<'b> {
             (Some(_), None) => panic!("parsed delegate where none were given"),
             (None, Some(_)) => panic!("delegate was not parsed where one was given"),
             (Some(parsed), Some(expected_delegate_base58)) => {
-                let delegate_base58 = self
+                let (len, delegate_base58) = self
                     .addr_base58(*parsed)
-                    .expect("couldn't compute delegate base58")
-                    .to_string_with_check_null()
-                    .expect("delegate base58 was not utf-8");
-                assert_eq!(delegate_base58.as_str(), expected_delegate_base58)
+                    .expect("couldn't compute delegate base58");
+                assert_eq!(&delegate_base58[..len], expected_delegate_base58.as_bytes())
             }
         }
     }

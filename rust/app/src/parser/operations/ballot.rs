@@ -27,10 +27,11 @@ use crate::{
     parser::{public_key_hash, DisplayableItem},
 };
 
-#[cfg(test)]
-use crate::utils::MaybeNullTerminatedToString;
-
-use core::convert::{TryFrom, TryInto};
+use core::{
+    convert::{TryFrom, TryInto},
+    mem::MaybeUninit,
+    ptr::addr_of_mut,
+};
 
 const PROPOSAL_BYTES_LEN: usize = 32;
 
@@ -67,6 +68,7 @@ pub struct Ballot<'b> {
 impl<'b> Ballot<'b> {
     pub const PROPOSAL_BASE58_LEN: usize = 52;
 
+    #[inline(never)]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, (source, period, proposal, ballot)) = do_parse! {input,
             source: public_key_hash >>
@@ -93,7 +95,40 @@ impl<'b> Ballot<'b> {
     }
 
     #[inline(never)]
-    pub fn proposal_base58(&self) -> Result<[u8; Ballot::PROPOSAL_BASE58_LEN], bolos::Error> {
+    pub fn from_bytes_into(
+        input: &'b [u8],
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        let (rem, (source, period, proposal, ballot)) = do_parse! {input,
+            source: public_key_hash >>
+            period: be_i32 >>
+            proposal: take!(PROPOSAL_BYTES_LEN) >>
+            vote: be_u8 >>
+            (source, period, proposal, vote)
+        }?;
+
+        let proposal = arrayref::array_ref!(proposal, 0, PROPOSAL_BYTES_LEN);
+        let vote = ballot
+            .try_into()
+            .map_err(|_| ParserError::InvalidBallotVote)?;
+
+        let out = out.as_mut_ptr();
+        //pointer is valid and aligned
+        // we are only writing to uninit memory, not ready
+        unsafe {
+            addr_of_mut!((*out).source).write(source);
+            addr_of_mut!((*out).period).write(period);
+            addr_of_mut!((*out).proposal).write(proposal);
+            addr_of_mut!((*out).vote).write(vote);
+        }
+
+        Ok(rem)
+    }
+
+    #[inline(never)]
+    pub fn proposal_base58(
+        &self,
+    ) -> Result<(usize, [u8; Ballot::PROPOSAL_BASE58_LEN]), bolos::Error> {
         let mut checksum = [0; 4];
 
         sha256x2(&[P, &self.proposal[..]], &mut checksum)?;
@@ -107,11 +142,11 @@ impl<'b> Ballot<'b> {
         };
 
         let mut out = [0; Self::PROPOSAL_BASE58_LEN];
-        bs58::encode(input)
+        let len = bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right length");
 
-        Ok(out)
+        Ok((len, out))
     }
 }
 
@@ -148,8 +183,8 @@ impl<'b> DisplayableItem for Ballot<'b> {
 
                 let addr = Addr::from_hash(hash, *crv).map_err(|_| ViewError::Unknown)?;
 
-                let mex = addr.base58();
-                handle_ui_message(&mex[..], message, page)
+                let (len, mex) = addr.base58();
+                handle_ui_message(&mex[..len], message, page)
             }
             //Period
             2 => {
@@ -165,9 +200,9 @@ impl<'b> DisplayableItem for Ballot<'b> {
                 let title_content = pic_str!(b"Proposal");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let mex = self.proposal_base58().map_err(|_| ViewError::Unknown)?;
+                let (len, mex) = self.proposal_base58().map_err(|_| ViewError::Unknown)?;
 
-                handle_ui_message(&mex[..], message, page)
+                handle_ui_message(&mex[..len], message, page)
             }
             //Vote
             4 => {
@@ -189,7 +224,7 @@ impl<'b> DisplayableItem for Ballot<'b> {
 
 #[cfg(test)]
 impl<'b> Ballot<'b> {
-    fn source_base58(&self) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
+    fn source_base58(&self) -> Result<(usize, [u8; Addr::BASE58_LEN]), bolos::Error> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
@@ -197,16 +232,14 @@ impl<'b> Ballot<'b> {
     }
 
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
-        let source_base58 = self
+        let (len, source_base58) = self
             .source_base58()
-            .expect("couldn't compute source base58")
-            .to_string_with_check_null()
-            .expect("source base58 was not utf-8");
+            .expect("couldn't compute source base58");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
 
-        assert_eq!(source_base58.as_str(), expected_source_base58);
+        assert_eq!(&source_base58[..len], expected_source_base58.as_bytes());
 
         let period = json["period"]
             .as_i64()
@@ -223,16 +256,14 @@ impl<'b> Ballot<'b> {
             (parsed, got) => panic!("parsed ballot was {:?}; expected {}", parsed, got),
         }
 
-        let proposal_base58 = self
+        let (len, proposal_base58) = self
             .proposal_base58()
-            .expect("couldn't compute proposal base58")
-            .to_string_with_check_null()
-            .expect("proposal base58 was not utf-8");
+            .expect("couldn't compute proposal base58");
 
         let expected_proposal_base58 = json["proposal"]
             .as_str()
             .expect("given json .proposal is not a string");
-        assert_eq!(proposal_base58.as_str(), expected_proposal_base58);
+        assert_eq!(&proposal_base58[..len], expected_proposal_base58.as_bytes());
     }
 }
 

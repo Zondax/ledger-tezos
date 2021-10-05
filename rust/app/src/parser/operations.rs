@@ -22,12 +22,14 @@ use crate::{
     handlers::{parser_common::ParserError, sha256x2},
 };
 
+use core::mem::MaybeUninit;
+
 use super::{public_key_hash, DisplayableItem};
 
 #[derive(Debug, Clone, Copy, property::Property)]
 #[property(get(public), mut(public), set(disable))]
 pub struct Operation<'b> {
-    #[property(mut(disable))]
+    #[property(get(disable), mut(disable))]
     branch: &'b [u8; 32],
 
     ops: EncodedOperations<'b>,
@@ -38,6 +40,7 @@ impl<'b> Operation<'b> {
 
     #[inline(never)]
     pub fn new(input: &'b [u8]) -> Result<Self, ParserError> {
+        crate::sys::zemu_log_stack("Operation::new\x00");
         let (rem, branch) = take::<_, _, ParserError>(32usize)(input).finish()?;
         let branch = arrayref::array_ref!(branch, 0, 32);
 
@@ -47,33 +50,44 @@ impl<'b> Operation<'b> {
         })
     }
 
-    #[inline(never)]
-    pub fn get_base58_branch(&self) -> Result<[u8; Operation::BASE58_BRANCH_LEN], bolos::Error> {
-        Self::base58_branch(self.branch)
+    pub fn branch(&self) -> &'b [u8; 32] {
+        self.branch
     }
 
     #[inline(never)]
+    pub fn get_base58_branch(
+        &self,
+    ) -> Result<(usize, [u8; Operation::BASE58_BRANCH_LEN]), bolos::Error> {
+        Self::base58_branch(self.branch)
+    }
+
     pub fn base58_branch(
         branch: &[u8; 32],
-    ) -> Result<[u8; Operation::BASE58_BRANCH_LEN], bolos::Error> {
+    ) -> Result<(usize, [u8; Operation::BASE58_BRANCH_LEN]), bolos::Error> {
+        let mut out = [0; Self::BASE58_BRANCH_LEN];
+
+        Self::base58_branch_into(branch, &mut out).map(|n| (n, out))
+    }
+
+    #[inline(never)]
+    pub fn base58_branch_into(
+        branch: &[u8; 32],
+        out: &mut [u8; Operation::BASE58_BRANCH_LEN],
+    ) -> Result<usize, bolos::Error> {
         let mut checksum = [0; 4];
 
         sha256x2(&[B, &branch[..]], &mut checksum)?;
 
-        let input = {
-            let mut array = [0; 2 + 32 + 4];
-            array[..2].copy_from_slice(B);
-            array[2..2 + 32].copy_from_slice(&branch[..]);
-            array[2 + 32..].copy_from_slice(&checksum[..]);
-            array
-        };
+        let mut array = [0; 2 + 32 + 4];
+        array[..2].copy_from_slice(B);
+        array[2..2 + 32].copy_from_slice(&branch[..]);
+        array[2 + 32..].copy_from_slice(&checksum[..]);
 
-        let mut out = [0; Self::BASE58_BRANCH_LEN];
-        bs58::encode(input)
+        let len = bs58::encode(array)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right length");
 
-        Ok(out)
+        Ok(len)
     }
 }
 
@@ -90,7 +104,11 @@ impl<'b> EncodedOperations<'b> {
     }
 
     #[inline(never)]
-    fn parse(&self) -> Result<Option<(OperationType<'b>, usize)>, nom::Err<ParserError>> {
+    fn parse_into(
+        &self,
+        loc: &mut MaybeUninit<OperationType<'b>>,
+    ) -> Result<Option<usize>, nom::Err<ParserError>> {
+        crate::sys::zemu_log_stack("EncodedOperation::parse\x00");
         let input = &self.source[self.read..];
         let input_len = input.len();
 
@@ -98,7 +116,7 @@ impl<'b> EncodedOperations<'b> {
             return Ok(None);
         }
 
-        let (rem, data) = match OperationType::from_bytes(input) {
+        let rem = match OperationType::from_bytes_into(input, loc) {
             Ok(ok) => ok,
             //there was some remaing data but it's probably the signature
             // since we don't recognize the operation tag
@@ -114,24 +132,42 @@ impl<'b> EncodedOperations<'b> {
         // to skip already read bytes
         let read = self.source.len() - rem.len();
 
-        Ok(Some((data, read)))
+        Ok(Some(read))
     }
 
     pub fn peek_next(&self) -> Result<Option<OperationType<'b>>, nom::Err<ParserError>> {
-        match self.parse() {
-            Ok(Some((data, _))) => Ok(Some(data)),
+        let mut out = MaybeUninit::uninit();
+
+        match self.parse_into(&mut out) {
+            Ok(Some(_)) => Ok(Some(unsafe { out.assume_init() })),
             Ok(None) => Ok(None),
             Err(err) => Err(err),
         }
     }
 
     pub fn parse_next(&mut self) -> Result<Option<OperationType<'b>>, nom::Err<ParserError>> {
-        match self.parse() {
+        let mut out = MaybeUninit::uninit();
+
+        match self.parse_into(&mut out) {
             Ok(None) => Ok(None),
             Err(err) => Err(err),
-            Ok(Some((data, read))) => {
+            Ok(Some(read)) => {
                 self.read = read;
-                Ok(Some(data))
+                Ok(Some(unsafe { out.assume_init() }))
+            }
+        }
+    }
+
+    pub fn parse_next_into(
+        &mut self,
+        out: &mut MaybeUninit<OperationType<'b>>,
+    ) -> Result<Option<()>, nom::Err<ParserError>> {
+        match self.parse_into(out) {
+            Ok(None) => Ok(None),
+            Err(err) => Err(err),
+            Ok(Some(read)) => {
+                self.read = read;
+                Ok(Some(()))
             }
         }
     }
@@ -149,6 +185,9 @@ impl<'b> EncodedOperations<'b> {
         self.read = read;
     }
 }
+
+mod operation_type;
+pub use operation_type::OperationType;
 
 mod activate_account;
 mod ballot;
@@ -182,7 +221,33 @@ pub enum AnonymousOp<'b> {
 }
 
 impl<'b> AnonymousOp<'b> {
-    pub fn from_bytes(tag: u8, rem: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
+    #[inline(never)]
+    #[cfg(not(test))]
+    pub fn from_bytes(tag: u8, rem: &'b [u8]) -> Result<(&'b [u8], ()), nom::Err<ParserError>> {
+        crate::sys::zemu_log_stack("AnonymousOp::from_bytes\x00");
+        let rem = match tag {
+            0x01 => {
+                let (rem, _) = SeedNonceRevelation::from_bytes(rem)?;
+                rem
+            }
+            0x02 => {
+                let (rem, _) = DoubleEndorsementEvidence::from_bytes(rem)?;
+                rem
+            }
+            0x03 => {
+                let (rem, _) = DoubleBakingEvidence::from_bytes(rem)?;
+                rem
+            }
+            _ => return Err(ParserError::UnknownOperation.into()),
+        };
+
+        Ok((rem, ()))
+    }
+
+    #[inline(never)]
+    #[cfg(test)]
+    pub fn from_bytes(tag: u8, rem: &'b [u8]) -> Result<(&'b [u8], Self), nom::Err<ParserError>> {
+        crate::sys::zemu_log_stack("AnonymousOp::from_bytes\x00");
         let (rem, data) = match tag {
             0x01 => {
                 let (rem, data) = SeedNonceRevelation::from_bytes(rem)?;
@@ -200,161 +265,6 @@ impl<'b> AnonymousOp<'b> {
         };
 
         Ok((rem, data))
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum OperationType<'b> {
-    Transfer(Transfer<'b>),
-    Delegation(Delegation<'b>),
-    Endorsement(Endorsement),
-    EndorsementWithSlot(EndorsementWithSlot<'b>),
-    Ballot(Ballot<'b>),
-    Reveal(Reveal<'b>),
-    Proposals(Proposals<'b>),
-    Origination(Origination<'b>),
-    ActivateAccount(ActivateAccount<'b>),
-    FailingNoop(FailingNoop<'b>),
-    AnonymousOp(AnonymousOp<'b>),
-    UnknownOp(&'b [u8]),
-}
-
-impl<'b> OperationType<'b> {
-    pub const UNKNOWN_OP_HASH_BASE58_LEN: usize = 50;
-
-    pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
-        let (rem, tag) = le_u8(input)?;
-
-        let (rem, data) = match tag {
-            0x00 => {
-                let (rem, data) = Endorsement::from_bytes(rem)?;
-                (rem, Self::Endorsement(data))
-            }
-            anon @ 0x01 | anon @ 0x02 | anon @ 0x03 => {
-                let (rem, data) = AnonymousOp::from_bytes(anon, rem)?;
-                (rem, Self::AnonymousOp(data))
-            }
-            0x04 => {
-                let (rem, data) = ActivateAccount::from_bytes(rem)?;
-                (rem, Self::ActivateAccount(data))
-            }
-            0x05 => {
-                let (rem, data) = Proposals::from_bytes(rem)?;
-                (rem, Self::Proposals(data))
-            }
-            0x06 => {
-                let (rem, data) = Ballot::from_bytes(rem)?;
-                (rem, Self::Ballot(data))
-            }
-            0x0A => {
-                let (rem, data) = EndorsementWithSlot::from_bytes(rem)?;
-                (rem, Self::EndorsementWithSlot(data))
-            }
-            0x11 => {
-                let (rem, data) = FailingNoop::from_bytes(rem)?;
-                (rem, Self::FailingNoop(data))
-            }
-            0x6B => {
-                let (rem, data) = Reveal::from_bytes(rem)?;
-                (rem, Self::Reveal(data))
-            }
-            0x6C => {
-                let (rem, data) = Transfer::from_bytes(rem)?;
-                (rem, Self::Transfer(data))
-            }
-            0x6D => {
-                let (rem, data) = Origination::from_bytes(rem)?;
-                (rem, Self::Origination(data))
-            }
-            0x6E => {
-                let (rem, data) = Delegation::from_bytes(rem)?;
-                (rem, Self::Delegation(data))
-            }
-            _ => (&[] as _, Self::UnknownOp(rem)),
-        };
-
-        Ok((rem, data))
-    }
-
-    pub fn is_transfer(&self) -> bool {
-        matches!(self, OperationType::Transfer(_))
-    }
-
-    /// Returns the number of different items
-    /// in a given `OperationType`
-    ///
-    /// Usually, the number of fields of an operaton
-    pub fn ui_items(&self) -> usize {
-        match self {
-            Self::Transfer(tx) => tx.num_items(),
-            Self::Delegation(del) => del.num_items(),
-            Self::Endorsement(end) => end.num_items(),
-            Self::EndorsementWithSlot(end) => end.num_items(),
-            Self::Ballot(vote) => vote.num_items(),
-            Self::Reveal(rev) => rev.num_items(),
-            Self::Proposals(prop) => prop.num_items(),
-            Self::Origination(orig) => orig.num_items(),
-            Self::ActivateAccount(act) => act.num_items(),
-            Self::FailingNoop(fail) => fail.num_items(),
-            Self::UnknownOp(_) => 2,
-            Self::AnonymousOp(_) => 0,
-        }
-    }
-
-    #[inline(never)]
-    fn hash_and_base58(
-        input: &[u8],
-    ) -> Result<[u8; OperationType::UNKNOWN_OP_HASH_BASE58_LEN], ViewError> {
-        use crate::sys::hash::{Blake2b, Hasher};
-
-        let digest: [u8; 32] = Blake2b::digest(input).map_err(|_| ViewError::Unknown)?;
-
-        let mut checksum = [0; 4];
-
-        sha256x2(&[&digest[..]], &mut checksum).map_err(|_| ViewError::Unknown)?;
-
-        let input = {
-            let mut array = [0; 32 + 4];
-            array[..32].copy_from_slice(&digest[..]);
-            array[32..].copy_from_slice(&checksum[..]);
-            array
-        };
-
-        let mut out = [0; Self::UNKNOWN_OP_HASH_BASE58_LEN];
-        bs58::encode(input)
-            .into(&mut out[..])
-            .expect("encoded in base58 is not of the right length");
-
-        Ok(out)
-    }
-
-    #[inline(never)]
-    pub fn render_unknown(
-        input: &'b [u8],
-        item_n: u8,
-        title: &mut [u8],
-        message: &mut [u8],
-        page: u8,
-    ) -> Result<u8, ViewError> {
-        use crate::handlers::handle_ui_message;
-        use bolos::{pic_str, PIC};
-
-        match item_n {
-            0 => {
-                let title_content = pic_str!(b"Type");
-                title[..title_content.len()].copy_from_slice(title_content);
-
-                handle_ui_message(&pic_str!(b"Unknown Operation")[..], message, page)
-            }
-            1 => {
-                let title_content = pic_str!(b"Hash");
-                title[..title_content.len()].copy_from_slice(title_content);
-
-                let base58 = Self::hash_and_base58(input)?;
-                handle_ui_message(&base58[..], message, page)
-            }
-            _ => Err(ViewError::NoData),
-        }
     }
 }
 
@@ -421,7 +331,7 @@ impl<'b> ContractID<'b> {
     }
 
     #[inline(never)]
-    pub fn base58(&self) -> Result<[u8; ContractID::BASE58_LEN], bolos::Error> {
+    pub fn base58(&self) -> Result<(usize, [u8; ContractID::BASE58_LEN]), bolos::Error> {
         let (prefix, hash) = match *self {
             Self::Originated(h) => (KT1, h),
             Self::Implicit(Curve::Bip32Ed25519 | Curve::Ed25519, h) => (TZ1, h),
@@ -441,11 +351,11 @@ impl<'b> ContractID<'b> {
         };
 
         let mut out = [0; Self::BASE58_LEN];
-        bs58::encode(input)
+        let len = bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not the right length");
 
-        Ok(out)
+        Ok((len, out))
     }
 
     pub fn is_implicit(&self) -> bool {
@@ -459,7 +369,6 @@ mod tests {
         crypto::Curve,
         handlers::public_key::Addr,
         parser::operations::{ContractID, Operation, OperationType},
-        utils::MaybeNullTerminatedToString,
     };
 
     #[test]
@@ -479,11 +388,8 @@ mod tests {
         );
 
         let addr = Addr::from_hash(parsed.hash(), Curve::Bip32Ed25519).unwrap();
-        let addr = addr
-            .base58()
-            .to_string_with_check_null()
-            .expect("addr base58 was not utf-8");
-        assert_eq!(addr.as_str(), PKH_BASE58);
+        let (len, addr) = addr.base58();
+        assert_eq!(&addr[..len], PKH_BASE58.as_bytes());
     }
 
     #[test]
@@ -502,12 +408,10 @@ mod tests {
             ContractID::Originated(arrayref::array_ref!(input, 1, 20))
         );
 
-        let cid = parsed
+        let (len, cid) = parsed
             .base58()
-            .expect("couldn't encode contract id to base 58")
-            .to_string_with_check_null()
-            .expect("cid base58 was not utf-8");
-        assert_eq!(cid.as_str(), CONTRACT_BASE58);
+            .expect("couldn't encode contract id to base 58");
+        assert_eq!(&cid[..len], CONTRACT_BASE58.as_bytes());
     }
 
     #[test]
@@ -518,12 +422,10 @@ mod tests {
         let input = hex::decode(INPUT_HEX).expect("invalid input hex");
         let mut parsed = Operation::new(&input).expect("couldn't parse branch");
 
-        let branch = parsed
+        let (len, branch) = parsed
             .get_base58_branch()
-            .expect("couldn't encode branch to base58")
-            .to_string_with_check_null()
-            .expect("branch base58 was not utf-8");
-        assert_eq!(branch.as_str(), BRANCH_BASE58);
+            .expect("couldn't encode branch to base58");
+        assert_eq!(&branch[..len], BRANCH_BASE58.as_bytes());
 
         let ops = parsed.mut_ops();
         let op = ops
@@ -556,12 +458,10 @@ mod tests {
         let input = hex::decode(INPUT_HEX).expect("invalid input hex");
         let mut parsed = Operation::new(&input).expect("couldn't parse branch");
 
-        let branch = parsed
+        let (len, branch) = parsed
             .get_base58_branch()
-            .expect("couldn't encode branch to base58")
-            .to_string_with_check_null()
-            .expect("branch base58 was not utf-8");
-        assert_eq!(branch.as_str(), BRANCH_BASE58);
+            .expect("couldn't encode branch to base58");
+        assert_eq!(&branch[..len], BRANCH_BASE58.as_bytes());
 
         let ops = parsed.mut_ops();
         let op1 = ops

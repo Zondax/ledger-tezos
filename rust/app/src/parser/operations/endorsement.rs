@@ -20,6 +20,7 @@ use nom::{
     IResult,
 };
 use zemu_sys::ViewError;
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 use crate::{
     handlers::{handle_ui_message, parser_common::ParserError},
@@ -33,10 +34,26 @@ pub struct Endorsement {
 }
 
 impl Endorsement {
+    #[inline(never)]
     pub fn from_bytes(input: &[u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, level) = be_i32(input)?;
 
         Ok((rem, Self { level }))
+    }
+
+    #[inline(never)]
+    pub fn from_bytes_into<'b>(
+        input: &'b [u8],
+        out: &mut core::mem::MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        let (rem, level) = be_i32(input)?;
+
+        let out = out.as_mut_ptr();
+        unsafe {
+            addr_of_mut!((*out).level).write(level);
+        }
+
+        Ok(rem)
     }
 }
 
@@ -99,6 +116,7 @@ pub struct EndorsementWithSlot<'b> {
 }
 
 impl<'b> EndorsementWithSlot<'b> {
+    #[inline(never)]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, length) = be_u32(input)?;
         let (rem, branch) = {
@@ -124,6 +142,38 @@ impl<'b> EndorsementWithSlot<'b> {
                 slot,
             },
         ))
+    }
+
+    #[inline(never)]
+    pub fn from_bytes_into(
+        input: &'b [u8],
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        let (rem, length) = be_u32(input)?;
+        let (rem, branch) = {
+            let (rem, branch) = take(32usize)(rem)?;
+            (rem, array_ref!(branch, 0, 32))
+        };
+        let (rem, endorsement_tag) = be_u8(rem)?;
+        if endorsement_tag != 0x00 {
+            return Err(ParserError::parser_invalid_transaction_payload.into());
+        }
+
+        let (rem2, endorsement) = Endorsement::from_bytes(rem)?;
+        let length = (length as usize) - 32 - 1 - (rem.len() - rem2.len());
+        let (rem, sig) = take(length)(rem2)?;
+        let (rem, slot) = be_u16(rem)?;
+
+        let out = out.as_mut_ptr();
+        //pointer is valid and we are only writing
+        unsafe {
+            addr_of_mut!((*out).branch).write(branch);
+            addr_of_mut!((*out).endorsement).write(endorsement);
+            addr_of_mut!((*out).signature).write(sig);
+            addr_of_mut!((*out).slot).write(slot);
+        }
+
+        Ok(rem)
     }
 }
 
@@ -158,10 +208,10 @@ impl<'b> DisplayableItem for EndorsementWithSlot<'b> {
                 let title_content = pic_str!(b"Branch");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let branch =
+                let (len, branch) =
                     super::Operation::base58_branch(self.branch).map_err(|_| ViewError::Unknown)?;
 
-                handle_ui_message(&branch[..], message, page)
+                handle_ui_message(&branch[..len], message, page)
             }
             //Slot
             2 => {
@@ -182,12 +232,12 @@ impl<'b> DisplayableItem for EndorsementWithSlot<'b> {
 #[cfg(test)]
 impl<'b> EndorsementWithSlot<'b> {
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
-        let branch_base58 =
+        let (len, branch_base58) =
             super::Operation::base58_branch(self.branch).expect("couldn't compute branch base58");
         let expected_branch_base58 = json["branch"]
             .as_str()
             .expect("given json .branch is not a string");
-        assert_eq!(branch_base58, expected_branch_base58.as_bytes());
+        assert_eq!(&branch_base58[..len], expected_branch_base58.as_bytes());
 
         let expected = json["slot"]
             .as_i64()
@@ -271,7 +321,7 @@ impl<'b> DoubleEndorsementEvidence<'b> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{parser::operations::Operation, utils::MaybeNullTerminatedToString};
+    use crate::parser::operations::Operation;
 
     use super::{Endorsement, EndorsementWithSlot};
     use arrayref::array_ref;
@@ -293,11 +343,9 @@ mod tests {
             EndorsementWithSlot::from_bytes(&input).expect("failed to parse endorsement");
         assert_eq!(rem.len(), 0);
 
-        let branch = Operation::base58_branch(parsed.branch)
-            .expect("couldn't encode branch to base58")
-            .to_string_with_check_null()
-            .expect("branch base58 was not utf-8");
-        assert_eq!(branch.as_str(), BRANCH_BASE58);
+        let (len, branch) =
+            Operation::base58_branch(parsed.branch).expect("couldn't encode branch to base58");
+        assert_eq!(&branch[..len], BRANCH_BASE58.as_bytes());
 
         let expected = EndorsementWithSlot {
             branch: array_ref!(input, 4, 32),

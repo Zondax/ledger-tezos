@@ -112,7 +112,9 @@ impl Addr {
 
     //[u8; PKH_STRING] without null byte
     // legacy/src/types.h:156
-    pub fn base58(&self) -> [u8; Addr::BASE58_LEN] {
+    //
+    /// Returns the address encoded with base58 and also the actual number of bytes written in the buffer
+    pub fn base58(&self) -> (usize, [u8; Addr::BASE58_LEN]) {
         let input = {
             let mut array = [0; 27];
             array[..3].copy_from_slice(&self.prefix[..]);
@@ -124,11 +126,11 @@ impl Addr {
         let mut out = [0; Self::BASE58_LEN];
 
         //the expect is ok since we know all the sizes
-        bs58::encode(input)
+        let len = bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right length");
 
-        out
+        (len, out)
     }
 
     pub fn into_ui(self, pkey: crypto::PublicKey, with_addr: bool) -> AddrUI {
@@ -177,8 +179,8 @@ impl Viewable for AddrUI {
             let title_content = pic_str!(b"Address");
             title[..title_content.len()].copy_from_slice(title_content);
 
-            let addr_bytes = self.addr.base58();
-            handle_ui_message(&addr_bytes[..], message, page)
+            let (len, mex) = self.addr.base58();
+            handle_ui_message(&mex[..len], message, page)
         } else {
             Err(ViewError::NoData)
         }
@@ -194,13 +196,7 @@ impl Viewable for AddrUI {
         tx += pkey.len();
 
         if self.with_addr {
-            let addr = self.addr.base58();
-            let len = if *addr.last().unwrap() == 0 {
-                addr.len() - 1
-            } else {
-                addr.len()
-            };
-
+            let (len, addr) = self.addr.base58();
             out[tx..tx + len].copy_from_slice(&addr[..len]);
 
             tx += len;
@@ -245,7 +241,6 @@ mod tests {
         assert_error_code,
         constants::ApduError,
         dispatcher::{handle_apdu, CLA, INS_LEGACY_GET_PUBLIC_KEY},
-        utils::MaybeNullTerminatedToString,
     };
 
     #[test]
@@ -261,12 +256,9 @@ mod tests {
         );
 
         let expected = "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ";
-        let output = addr
-            .base58()
-            .to_string_with_check_null()
-            .expect("invalid utf-8 for addr base58");
+        let (len, output) = addr.base58();
 
-        assert_eq!(expected, output.as_str());
+        assert_eq!(expected.as_bytes(), &output[..len]);
     }
 
     fn prepare_buffer<const LEN: usize>(buffer: &mut [u8; 260], path: &[u32], curve: Curve) {

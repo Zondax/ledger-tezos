@@ -19,6 +19,7 @@ use nom::{
     take, IResult,
 };
 use zemu_sys::ViewError;
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 use crate::{
     constants::tzprefix::P,
@@ -26,9 +27,6 @@ use crate::{
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr, sha256x2},
     parser::{public_key_hash, DisplayableItem},
 };
-
-#[cfg(test)]
-use crate::utils::MaybeNullTerminatedToString;
 
 const PROPOSAL_BYTES_LEN: usize = 32;
 
@@ -43,6 +41,7 @@ pub struct Proposals<'b> {
 impl<'b> Proposals<'b> {
     pub const PROPOSAL_BASE58_LEN: usize = 52;
 
+    #[inline(never)]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, (source, period, proposals)) = do_parse! {input,
             source: public_key_hash >>
@@ -66,9 +65,37 @@ impl<'b> Proposals<'b> {
     }
 
     #[inline(never)]
+    pub fn from_bytes_into(
+        input: &'b [u8],
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        let (rem, (source, period, proposals)) = do_parse! {input,
+            source: public_key_hash >>
+            period: be_i32 >>
+            proposals_len: be_u32 >>
+            proposals: take!(proposals_len) >>
+            (source, period, proposals)
+        }?;
+
+        let proposals =
+            bytemuck::try_cast_slice(proposals).map_err(|_| ParserError::ProposalsLengthInvalid)?;
+
+        let out = out.as_mut_ptr();
+        //dereferencing pointer from references is okay
+        // also we are never reading this "uninitialized" memory
+        unsafe {
+            addr_of_mut!((*out).source).write(source);
+            addr_of_mut!((*out).period).write(period);
+            addr_of_mut!((*out).proposals).write(proposals);
+        }
+
+        Ok(rem)
+    }
+
+    #[inline(never)]
     pub fn proposal_base58(
         proposal: &[u8; PROPOSAL_BYTES_LEN],
-    ) -> Result<[u8; Proposals::PROPOSAL_BASE58_LEN], bolos::Error> {
+    ) -> Result<(usize, [u8; Proposals::PROPOSAL_BASE58_LEN]), bolos::Error> {
         let mut checksum = [0; 4];
 
         sha256x2(&[P, &proposal[..]], &mut checksum)?;
@@ -82,14 +109,14 @@ impl<'b> Proposals<'b> {
         };
 
         let mut out = [0; Self::PROPOSAL_BASE58_LEN];
-        bs58::encode(input)
+        let len = bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right length");
 
-        Ok(out)
+        Ok((len, out))
     }
 
-    fn source_base58(&self) -> Result<[u8; Addr::BASE58_LEN], bolos::Error> {
+    fn source_base58(&self) -> Result<(usize, [u8; Addr::BASE58_LEN]), bolos::Error> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
@@ -126,8 +153,8 @@ impl<'b> DisplayableItem for Proposals<'b> {
                 let title_content = pic_str!(b"Source");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let mex = self.source_base58().map_err(|_| ViewError::Unknown)?;
-                handle_ui_message(&mex[..], message, page)
+                let (len, mex) = self.source_base58().map_err(|_| ViewError::Unknown)?;
+                handle_ui_message(&mex[..len], message, page)
             }
             //Period
             2 => {
@@ -167,10 +194,10 @@ impl<'b> DisplayableItem for Proposals<'b> {
                 }
 
                 //get base58 of the proposal data
-                let mex = Self::proposal_base58(&self.proposals[n as usize])
+                let (len, mex) = Self::proposal_base58(&self.proposals[n as usize])
                     .map_err(|_| ViewError::Unknown)?;
 
-                handle_ui_message(&mex[..], message, page)
+                handle_ui_message(&mex[..len], message, page)
             }
             _ => Err(ViewError::NoData),
         }
@@ -180,16 +207,14 @@ impl<'b> DisplayableItem for Proposals<'b> {
 #[cfg(test)]
 impl<'b> Proposals<'b> {
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
-        let source_base58 = self
+        let (len, source_base58) = self
             .source_base58()
-            .expect("couldn't compute source base58")
-            .to_string_with_check_null()
-            .expect("source base58 was not utf-8");
+            .expect("couldn't compute source base58");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
 
-        assert_eq!(source_base58.as_str(), expected_source_base58);
+        assert_eq!(&source_base58[..len], expected_source_base58.as_bytes());
 
         let period = json["period"]
             .as_i64()
@@ -201,16 +226,14 @@ impl<'b> Proposals<'b> {
             .as_array()
             .expect("given json .proposals is not an array");
         for (i, prop) in self.proposals.iter().enumerate() {
-            let prop_base58 = Self::proposal_base58(prop)
-                .unwrap_or_else(|_| panic!("couldn't encode proposal #{} as base58", i))
-                .to_string_with_check_null()
-                .expect("proposal base58 was not utf-8");
+            let (len, prop_base58) = Self::proposal_base58(prop)
+                .unwrap_or_else(|_| panic!("couldn't encode proposal #{} as base58", i));
 
             let expected_prop_base58 = expected_props_base58[i]
                 .as_str()
                 .unwrap_or_else(|| panic!("given json .proposals[{}] was not a string", i));
 
-            assert_eq!(prop_base58.as_str(), expected_prop_base58);
+            assert_eq!(&prop_base58[..len], expected_prop_base58.as_bytes());
         }
     }
 }

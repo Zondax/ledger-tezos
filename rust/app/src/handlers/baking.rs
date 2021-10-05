@@ -26,10 +26,13 @@ use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
     dispatcher::ApduHandler,
-    handlers::hwm::{WaterMark, HWM},
+    handlers::{
+        hwm::{WaterMark, HWM},
+        signing::Sign,
+    },
     parser::{
         baking::{BlockData, EndorsementData},
-        operations::Delegation,
+        operations::{self, Delegation, Reveal},
         DisplayableItem, Preemble,
     },
     sys::{flash_slot::Wear, new_flash_slot},
@@ -122,10 +125,12 @@ impl From<Bip32PathAndCurve> for [u8; 52] {
 pub struct Baking;
 
 impl Baking {
-    //FIXME: grab this from signing.rs
     #[inline(never)]
-    fn blake2b_digest(buffer: &[u8]) -> Result<[u8; 32], Error> {
-        Blake2b::digest(buffer).map_err(|_| Error::ExecutionError)
+    fn blake2b_digest_into(
+        buffer: &[u8],
+        out: &mut [u8; Sign::SIGN_HASH_SIZE],
+    ) -> Result<(), Error> {
+        Blake2b::digest_into(buffer, out).map_err(|_| Error::ExecutionError)
     }
 
     #[inline(never)]
@@ -268,32 +273,41 @@ impl Baking {
         input: &'static [u8],
         send_hash: bool,
         digest: [u8; 32],
-    ) -> Result<BakingSignUI, Error> {
+        flags: &mut u32,
+    ) -> Result<u32, Error> {
+        crate::sys::zemu_log_stack("Baking::handle_delegation\x00");
         use crate::parser::operations::{Operation, OperationType};
 
-        let operation = Operation::new(input).map_err(|_| Error::DataInvalid)?;
-
-        let op = operation
-            .ops()
-            .peek_next()
+        let mut op = core::mem::MaybeUninit::uninit();
+        let mut operation = Operation::new(input).map_err(|_| Error::DataInvalid)?;
+        operation
+            .mut_ops()
+            .parse_next_into(&mut op)
             .map_err(|_| Error::DataInvalid)?
             .ok_or(Error::DataInvalid)?;
 
-        match op {
+        let (data, branch) = match unsafe { op.assume_init() } {
             OperationType::Delegation(deleg) => {
                 //verify that delegation.source == delegation.delegate
                 // and it matches the authorized key for baking
                 // (BAKINGPATH)
-
-                Ok(BakingSignUI {
-                    send_hash,
-                    digest,
-                    branch: operation.branch(),
-                    data: deleg,
-                })
+                Ok((BakingTransactionType::Delegation(deleg), operation.branch()))
+            }
+            OperationType::Reveal(reveal) => {
+                //TODO: what checks do we need here?
+                Ok((BakingTransactionType::Reveal(reveal), operation.branch()))
             }
             _ => Err(Error::CommandNotAllowed),
-        }
+        }?;
+
+        let ui = BakingSignUI {
+            send_hash,
+            digest,
+            branch,
+            data,
+        };
+
+        unsafe { ui.show(flags).map(|_| 0).map_err(|_| Error::ExecutionError) }
     }
 
     #[inline(never)]
@@ -315,7 +329,9 @@ impl Baking {
             return Err(Error::DataInvalid);
         }
 
-        let digest = Self::blake2b_digest(cdata)?;
+        let mut digest = [0; Sign::SIGN_HASH_SIZE];
+        Self::blake2b_digest_into(cdata, &mut digest)?;
+
         let (rem, preemble) = Preemble::from_bytes(cdata).map_err(|_| Error::DataInvalid)?;
 
         //endorses and bakes are automatically signed without any review
@@ -326,32 +342,35 @@ impl Baking {
             Preemble::Block => {
                 Self::handle_blockdata(rem, send_hash, digest, out).map(|n| n as u32)
             }
-            Preemble::Operation => {
-                let baking_ui = Self::handle_delegation(rem, send_hash, digest)?;
-
-                unsafe { baking_ui.show(flags) }
-                    .map_err(|_| Error::ExecutionError)
-                    .map(|_| 0)
-            }
+            Preemble::Operation => Self::handle_delegation(rem, send_hash, digest, flags),
             _ => Err(Error::CommandNotAllowed),
         }
     }
+}
+
+enum BakingTransactionType<'b> {
+    Delegation(Delegation<'b>),
+    Reveal(Reveal<'b>),
 }
 
 struct BakingSignUI {
     send_hash: bool,
     digest: [u8; 32],
     branch: &'static [u8; 32],
-    data: Delegation<'static>,
+    data: BakingTransactionType<'static>,
 }
 
 impl Viewable for BakingSignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
-        let n = self.data.num_items() + 1;
+        let n = match self.data {
+            BakingTransactionType::Delegation(data) => data.num_items(),
+            BakingTransactionType::Reveal(data) => data.num_items(),
+        } + 1;
 
         Ok(n as u8)
     }
 
+    #[inline(never)]
     fn render_item(
         &mut self,
         item_n: u8,
@@ -359,18 +378,28 @@ impl Viewable for BakingSignUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
+        crate::sys::zemu_log_stack("Baking::render_item\x00");
         if let 0 = item_n {
+            use crate::parser::operations::Operation;
             use bolos::{pic_str, PIC};
 
             let title_content = pic_str!(b"Operation");
             title[..title_content.len()].copy_from_slice(title_content);
 
-            let mex = crate::parser::operations::Operation::base58_branch(self.branch)
+            let mut mex = [0; Operation::BASE58_BRANCH_LEN];
+            let len = Operation::base58_branch_into(self.branch, &mut mex)
                 .map_err(|_| ViewError::Unknown)?;
 
-            crate::handlers::handle_ui_message(&mex[..], message, page)
+            crate::handlers::handle_ui_message(&mex[..len], message, page)
         } else {
-            self.data.render_item(item_n - 1, title, message, page)
+            match self.data {
+                BakingTransactionType::Delegation(data) => {
+                    data.render_item(item_n - 1, title, message, page)
+                }
+                BakingTransactionType::Reveal(data) => {
+                    data.render_item(item_n - 1, title, message, page)
+                }
+            }
         }
     }
 
@@ -417,6 +446,8 @@ impl ApduHandler for Baking {
         tx: &mut u32,
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), Error> {
+        crate::sys::zemu_log_stack("Baking::handle\x00");
+
         if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
             *tx = Self::baker_sign(
                 true,
