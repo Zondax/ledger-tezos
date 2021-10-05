@@ -13,13 +13,13 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 use nom::{
     do_parse,
     number::complete::{be_i32, be_u32},
     take, IResult,
 };
 use zemu_sys::ViewError;
-use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 use crate::{
     constants::tzprefix::P,

@@ -162,7 +162,11 @@ impl SignUI {
         let ops = parsed.mut_ops();
 
         //we don't call this if we haven't verified all info first
-        while let Some(_) = ops.parse_next_into(op).map_err(|_| ViewError::Unknown)? {
+        while ops
+            .parse_next_into(op)
+            .map_err(|_| ViewError::Unknown)?
+            .is_some()
+        {
             let op = op.as_mut_ptr();
             //safe because the pointer is valid and we have initialized this
             // also, we are the only ones with access at this point
@@ -199,9 +203,10 @@ impl Viewable for SignUI {
                 let mut items_counter = 1; //start with branch
                 let mut op = MaybeUninit::uninit();
 
-                while let Some(_) = ops
+                while ops
                     .parse_next_into(&mut op)
                     .map_err(|_| ViewError::Unknown)?
+                    .is_some()
                 {
                     let op = op.as_mut_ptr();
                     //safe because the pointer is valid and we have initialized this

@@ -32,7 +32,7 @@ use crate::{
     },
     parser::{
         baking::{BlockData, EndorsementData},
-        operations::{self, Delegation, Reveal},
+        operations::{Delegation, Reveal},
         DisplayableItem, Preemble,
     },
     sys::{flash_slot::Wear, new_flash_slot},

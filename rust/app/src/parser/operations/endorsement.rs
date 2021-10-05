@@ -14,13 +14,13 @@
 *  limitations under the License.
 ********************************************************************************/
 use arrayref::array_ref;
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 use nom::{
     bytes::complete::take,
     number::complete::{be_i32, be_u16, be_u32, be_u8},
     IResult,
 };
 use zemu_sys::ViewError;
-use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 use crate::{
     handlers::{handle_ui_message, parser_common::ParserError},
