@@ -91,6 +91,8 @@ pub struct Addr {
 }
 
 impl Addr {
+    pub const BASE58_LEN: usize = 37;
+
     #[inline(never)]
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         sys::zemu_log_stack("Addr::new\x00");
@@ -110,7 +112,9 @@ impl Addr {
 
     //[u8; PKH_STRING] without null byte
     // legacy/src/types.h:156
-    pub fn base58(&self) -> [u8; 36] {
+    //
+    /// Returns the address encoded with base58 and also the actual number of bytes written in the buffer
+    pub fn base58(&self) -> (usize, [u8; Addr::BASE58_LEN]) {
         let input = {
             let mut array = [0; 27];
             array[..3].copy_from_slice(&self.prefix[..]);
@@ -119,14 +123,14 @@ impl Addr {
             array
         };
 
-        let mut out = [0; 36];
+        let mut out = [0; Self::BASE58_LEN];
 
         //the expect is ok since we know all the sizes
-        bs58::encode(input)
+        let len = bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right length");
 
-        out
+        (len, out)
     }
 
     pub fn into_ui(self, pkey: crypto::PublicKey, with_addr: bool) -> AddrUI {
@@ -175,8 +179,8 @@ impl Viewable for AddrUI {
             let title_content = pic_str!(b"Address");
             title[..title_content.len()].copy_from_slice(title_content);
 
-            let addr_bytes = self.addr.base58();
-            handle_ui_message(&addr_bytes[..], message, page)
+            let (len, mex) = self.addr.base58();
+            handle_ui_message(&mex[..len], message, page)
         } else {
             Err(ViewError::NoData)
         }
@@ -192,11 +196,10 @@ impl Viewable for AddrUI {
         tx += pkey.len();
 
         if self.with_addr {
-            let addr = self.addr.base58();
+            let (len, addr) = self.addr.base58();
+            out[tx..tx + len].copy_from_slice(&addr[..len]);
 
-            out[tx..tx + addr.len()].copy_from_slice(&addr[..]);
-
-            tx += addr.len();
+            tx += len;
         }
 
         (tx, Error::Success as _)
@@ -253,10 +256,9 @@ mod tests {
         );
 
         let expected = "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ";
-        let output = addr.base58();
-        let output = std::str::from_utf8(&output[..]).unwrap();
+        let (len, output) = addr.base58();
 
-        assert_eq!(expected, output);
+        assert_eq!(expected.as_bytes(), &output[..len]);
     }
 
     fn prepare_buffer<const LEN: usize>(buffer: &mut [u8; 260], path: &[u32], curve: Curve) {

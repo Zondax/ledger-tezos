@@ -17,6 +17,7 @@
 pub enum ViewError {
     Unknown,
     NoData,
+    Reject,
 }
 
 /// This trait describes the interface that is needed for the UI toolkit to

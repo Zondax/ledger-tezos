@@ -228,7 +228,14 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
             });
 
         //update page count (or return error)
-        self.page_count = render_item_result? as usize;
+        self.page_count = match render_item_result {
+            Ok(n) => n as usize,
+            Err(ViewError::Reject) => {
+                self.reject();
+                return Err(ViewError::Reject);
+            }
+            Err(e) => return Err(e),
+        };
 
         //let backend split
         self.backend.split_value_field(message);

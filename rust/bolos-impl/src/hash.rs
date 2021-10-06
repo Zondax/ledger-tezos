@@ -31,6 +31,7 @@ pub use sha512::Sha512;
 /// if write_out is true then `out` must be of the necessary size
 ///
 /// Abstracts away nanos or nanox implementations
+#[inline(never)]
 pub(self) fn cx_hash(
     hash: &mut cx_hash_t,
     input: &[u8],
@@ -103,16 +104,10 @@ macro_rules! impl_hasher {
         }
 
         #[inline(never)]
-        fn finalize_dirty(&mut self) -> Result<[u8; $s], Self::Error> {
-            let mut out = [0; $s];
-
+        fn finalize_dirty_into(&mut self, out: &mut [u8; $s]) -> Result<(), Self::Error> {
             cx_hash(self.cx_header(), &[], Some(&mut out[..]))?;
-            Ok(out)
-        }
 
-        #[inline(never)]
-        fn finalize(mut self) -> Result<[u8; $s], Self::Error> {
-            self.finalize_dirty()
+            Ok(())
         }
 
         #[inline(never)]
@@ -128,20 +123,18 @@ macro_rules! impl_hasher {
         }
 
         #[inline(never)]
-        fn digest(input: &[u8]) -> Result<[u8; $s], Self::Error> {
-            zemu_sys::zemu_log_stack("Hasher::digest\x00");
+        fn digest_into(input: &[u8], out: &mut [u8; $s]) -> Result<(), Self::Error> {
+            zemu_sys::zemu_log_stack("Hasher::digest_into\x00");
 
-            let mut hasher = {
-                let mut loc = core::mem::MaybeUninit::<Self>::uninit();
-                Self::new_gce(&mut loc)?;
+            let mut hasher = core::mem::MaybeUninit::<Self>::uninit();
+            Self::new_gce(&mut hasher)?;
 
-                unsafe { loc.assume_init() }
-            };
+            //Safety: this has just been initialized
+            let mut hasher = unsafe { hasher.assume_init() };
 
-            let mut out = [0; $s];
             cx_hash(hasher.cx_header(), input, Some(&mut out[..]))?;
 
-            Ok(out)
+            Ok(())
         }
     };
     (@__IMPLID $ty:ty, $s:tt) => {

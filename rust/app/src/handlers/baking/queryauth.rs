@@ -155,7 +155,8 @@ impl Viewable for QueryAuthUI {
                 let title_content = pic_str!(b"Address");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                handle_ui_message(&self.addr.base58()[..], message, page)
+                let (len, mex) = self.addr.base58();
+                handle_ui_message(&mex[..len], message, page)
             }
             _ => Err(ViewError::NoData),
         }

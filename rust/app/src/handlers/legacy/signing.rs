@@ -57,7 +57,14 @@ impl ApduHandler for LegacySign {
         use crate::handlers::baking::Baking;
 
         if let Some(upload) = Uploader::new(Baking).upload(&buffer)? {
-            *tx = Baking::baker_sign(false, upload.p2, upload.first, upload.data, flags)?;
+            *tx = Baking::baker_sign(
+                false,
+                upload.p2,
+                upload.first,
+                upload.data,
+                buffer.write(),
+                flags,
+            )?;
         }
 
         Ok(())
@@ -95,7 +102,14 @@ impl ApduHandler for LegacySignWithHash {
         use crate::handlers::baking::Baking;
 
         if let Some(upload) = Uploader::new(Baking).upload(&buffer)? {
-            *tx = Baking::baker_sign(true, upload.p2, upload.first, upload.data, flags)?;
+            *tx = Baking::baker_sign(
+                true,
+                upload.p2,
+                upload.first,
+                upload.data,
+                buffer.write(),
+                flags,
+            )?;
         }
 
         Ok(())

@@ -41,13 +41,11 @@ impl<const S: usize> super::Hasher<S> for Blake2b<S> {
         Ok(())
     }
 
-    fn finalize_dirty(&mut self) -> Result<[u8; S], Self::Error> {
-        let mut out = [0; S];
-
+    fn finalize_dirty_into(&mut self, out: &mut [u8; S]) -> Result<(), Self::Error> {
         self.0
             .finalize_variable_dirty(|digest| out.copy_from_slice(digest));
 
-        Ok(out)
+        Ok(())
     }
 
     fn finalize_into(mut self, out: &mut [u8; S]) -> Result<(), Self::Error> {
@@ -62,14 +60,10 @@ impl<const S: usize> super::Hasher<S> for Blake2b<S> {
         Ok(())
     }
 
-    fn finalize(mut self) -> Result<[u8; S], Self::Error> {
-        self.finalize_dirty()
-    }
-
-    fn digest(input: &[u8]) -> Result<[u8; S], Self::Error> {
+    fn digest_into(input: &[u8], out: &mut [u8; S]) -> Result<(), Self::Error> {
         let mut hasher = Self::new()?;
         hasher.update(input)?;
-        hasher.finalize()
+        hasher.finalize_into(out)
     }
 }
 
