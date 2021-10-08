@@ -118,7 +118,7 @@ describe.each(models)('Echo', function (m) {
         sim.clickRight() //move out of "please review"
       }
 
-      await sim.compareSnapshotsAndAccept('.', `${m.prefix.toLowerCase()}-echo`, 1)
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-echo`, [1, 0])
 
       const resp = await respRequest
 
