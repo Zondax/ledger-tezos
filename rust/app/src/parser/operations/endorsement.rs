@@ -160,7 +160,11 @@ impl<'b> EndorsementWithSlot<'b> {
         }
 
         let (rem2, endorsement) = Endorsement::from_bytes(rem)?;
-        let length = (length as usize) - 32 - 1 - (rem.len() - rem2.len());
+        let length = (length as usize).checked_sub(32 + 1);
+        let rem_len = rem.len() - rem2.len();
+        let length = length
+            .and_then(|len| len.checked_sub(rem_len))
+            .ok_or(ParserError::parser_value_out_of_range)?;
         let (rem, sig) = take(length)(rem2)?;
         let (rem, slot) = be_u16(rem)?;
 
@@ -276,7 +280,11 @@ impl<'b> DoubleEndorsementEvidence<'b> {
         }
 
         let (rem2, first_endorsement) = Endorsement::from_bytes(rem)?;
-        let length = (length as usize) - 32 - 1 - (rem.len() - rem2.len());
+        let length = (length as usize).checked_sub(32 + 1);
+        let rem_len = rem.len() - rem2.len();
+        let length = length
+            .and_then(|len| len.checked_sub(rem_len))
+            .ok_or(ParserError::parser_value_out_of_range)?;
         let (rem, first_signature) = take(length)(rem2)?;
 
         // --------- Second endorsement
@@ -292,7 +300,11 @@ impl<'b> DoubleEndorsementEvidence<'b> {
         }
 
         let (rem2, second_endorsement) = Endorsement::from_bytes(rem)?;
-        let length = (length as usize) - 32 - 1 - (rem.len() - rem2.len());
+        let length = (length as usize).checked_sub(32 + 1);
+        let rem_len = rem.len() - rem2.len();
+        let length = length
+            .and_then(|len| len.checked_sub(rem_len))
+            .ok_or(ParserError::parser_value_out_of_range)?;
         let (rem, second_signature) = take(length)(rem2)?;
 
         let (rem, slot) = be_u16(rem)?;
