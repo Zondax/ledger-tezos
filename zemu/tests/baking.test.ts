@@ -261,7 +261,7 @@ describe.each(models)('Standard baking [%s] - authorize', function (m) {
   test.each(curves)('Authorize/Deauthorize full-cycle %s', async function (curve) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({ ...defaultOptions, model: m.name, startDelay: 4500 })
       const app = new TezosApp(sim.getTransport())
 
       const respReq = app.authorizeBaking(APP_DERIVATION, curve)
