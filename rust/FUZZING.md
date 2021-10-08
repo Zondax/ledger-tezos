@@ -18,7 +18,7 @@ cargo install honggfuzz
 
 ### Running
 
-There are two main steps: Fuzzing and Debug. Start fuzzing a desirable target:
+Start fuzzing a desirable target:
 
 ```bash
 make fuzz_parser
@@ -26,10 +26,13 @@ make fuzz_parser
 
 ### Debugging
 
-If there are crashes reported, debug the application with the generated input to figure out where the problem is, for doing so You can choose any debugger, the supported debuggers are: *lldb*, *rust-gdb*, *gdb*, *rust-lldb*. By default *rust-lldb* is used  but, this can be changed using the __HFUZZ_DEBUGGER__ env variable:
+If there are crashes reported, debug the application with the generated input to figure out where the problem is.
+The supported debuggers are: *lldb*, *rust-gdb*, *gdb*, *rust-lldb*. By default *rust-lldb* is used  but,
+this can be changed using the __HFUZZ_DEBUGGER__ env variable:
 
 ```bash
 export HFUZZ_DEBUGGER="rust-gdb"
+cd hfuzz-parser
 HFUZZ_BUILD_ARGS="--features baking" cargo hfuzz run-debug operations hfuzz_workspace/operations/*.fuzz
 ```
 
