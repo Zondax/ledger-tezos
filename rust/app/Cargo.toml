@@ -7,7 +7,7 @@ readme = "README.md"
 
 [lib]
 name = "rslib"
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "rslib"]
 
 [features]
 baking = ["bolos/flash-slot"]
