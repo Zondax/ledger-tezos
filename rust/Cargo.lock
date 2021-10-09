@@ -435,6 +435,7 @@ dependencies = [
  "cfg-if",
  "git-testament",
  "hex",
+ "ledger-tezos-derive",
  "lexical-core",
  "no-std-compat",
  "nom",
