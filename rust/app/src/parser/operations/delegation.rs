@@ -147,9 +147,16 @@ impl<'a> DisplayableItem for Delegation<'a> {
 
                 match self.delegate {
                     Some((crv, hash)) => {
-                        let addr = Addr::from_hash(hash, crv).map_err(|_| ViewError::Unknown)?;
-                        let (len, mex) = addr.base58();
-                        handle_ui_message(&mex[..len], message, page)
+                        match baker_lookup(arrayref::array_ref!(crv.to_hash_prefix(), 0, 3), &hash)
+                        {
+                            Ok(name) => handle_ui_message(name.as_bytes(), message, page),
+                            Err(_) => {
+                                let addr =
+                                    Addr::from_hash(hash, crv).map_err(|_| ViewError::Unknown)?;
+                                let (len, mex) = addr.base58();
+                                handle_ui_message(&mex[..len], message, page)
+                            }
+                        }
                     }
                     None => handle_ui_message(&pic_str!(b"<REVOKED>")[..], message, page),
                 }
@@ -298,3 +305,10 @@ mod tests {
         assert_eq!(parsed, expected);
     }
 }
+
+mod known_bakers {
+    use bolos::PIC;
+
+    ledger_tezos_derive::unroll!("app/vendor/BakersRegistryCoreUnfilteredData.json");
+}
+use known_bakers::baker_lookup;

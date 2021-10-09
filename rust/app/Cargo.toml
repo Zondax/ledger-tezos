@@ -18,6 +18,7 @@ default = []
 [dependencies]
 bolos = { path = "../bolos" }
 zemu-sys = { path = "../zemu" }
+ledger-tezos-derive = { path = "../app-derive" }
 
 no-std-compat = { version = "0.4" }
 cfg-if = "1.0.0"

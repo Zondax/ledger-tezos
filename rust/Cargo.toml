@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "app",
+    "app", "app-derive",
     "bolos", "bolos-sys", "bolos-impl", "bolos-mock", "bolos-common", "bolos-derive",
     "zemu", "zuit",
 ]

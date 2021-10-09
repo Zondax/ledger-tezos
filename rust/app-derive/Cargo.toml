@@ -1,0 +1,22 @@
+[package]
+name = "ledger-tezos-derive"
+version = "0.1.0"
+authors = ["becominginsane <francesco@zondax.ch>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = { version = "1.0.29" }
+
+serde_json = "1.0.68"
+serde = { version = "1.0.130", features = ["derive"] }
+bs58 = "0.4.0"
+arrayref = "0.3.6"
+
+[dev-dependencies]
+bolos = { path = "../bolos" }
