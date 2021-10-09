@@ -465,8 +465,11 @@ impl ApduHandler for Baking {
 
 #[cfg(test)]
 mod tests {
-    use crate::crypto;
+    use crate::{crypto, utils::MaybeNullTerminatedToString};
     use bolos::crypto::bip32::BIP32Path;
+
+    use arrayref::array_ref;
+    use zuit::{MockDriver, Page};
 
     use super::*;
 
@@ -500,5 +503,57 @@ mod tests {
         assert_eq!(endorsement.branch, &[0u8; 32]);
         assert_eq!(endorsement.tag, 5);
         assert_eq!(endorsement.level, 15);
+    }
+
+    #[test]
+    fn known_delegation() {
+        const PARTIAL_INPUT_HEX: &str = "0035e993d8c7aaa42b5e3ccd86a33390ececc73abd\
+                                 904e\
+                                 01\
+                                 0a\
+                                 0a\
+                                 ff\
+                                 00";
+
+        const KNOWN_BAKER_ADDR: &str = "tz1RV1MBbZMR68tacosb7Mwj6LkbPSUS1er1";
+        const KNOWN_BAKER_NAME: &str = "Baking Tacos";
+
+        let addr = bs58::decode(KNOWN_BAKER_ADDR)
+            .into_vec()
+            .expect("unable to decode known baker addr base58");
+        let hash = array_ref!(&addr[3..], 0, 20);
+
+        let mut input = hex::decode(PARTIAL_INPUT_HEX).expect("invalid input hex");
+        input.extend_from_slice(hash); //add the known baker hash data to the input
+        let input = &*input.leak();
+
+        let (_, delegation) = Delegation::from_bytes(input).expect("couldn't parse delegation");
+
+        let ui = BakingSignUI {
+            send_hash: false,
+            digest: [0; 32],
+            branch: &[0; 32],
+            data: BakingTransactionType::Delegation(delegation),
+        };
+        let mut driver = MockDriver::<_, 18, 4096>::new(ui);
+        driver.drive();
+
+        let produced_ui = driver.out_ui();
+        let delegation_item = produced_ui
+            .into_iter()
+            .find(|item_pages| {
+                item_pages
+                    .iter()
+                    .all(|Page { title, .. }| title.starts_with("Delegation".as_bytes()))
+            })
+            .expect("Couldn't find delegation item in UI");
+
+        let title = delegation_item[0]
+            .message
+            .to_string_with_check_null()
+            .expect("message was invalid UTF8");
+
+        //verify that the message is the same as the name we expect in the test
+        assert_eq!(title, KNOWN_BAKER_NAME);
     }
 }

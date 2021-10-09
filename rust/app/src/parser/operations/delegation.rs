@@ -275,7 +275,7 @@ mod tests {
         let mut input = hex::decode(INPUT_HEX).expect("invalid input hex");
         input.extend_from_slice(&[0xDE, 0xEA, 0xBE, 0xEF]);
 
-        let (rem, parsed) = Delegation::from_bytes(&input).expect("couldn't parse transfer");
+        let (rem, parsed) = Delegation::from_bytes(&input).expect("couldn't parse delegation");
         assert_eq!(rem.len(), 4);
 
         let expected = Delegation {
