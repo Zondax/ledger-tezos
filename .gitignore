@@ -67,6 +67,7 @@ rust/app/target
 rust/**/target
 .vscode/*.log
 \zemu/snapshots-tmp
+rust/hfuzz-parser/hfuzz_*
 
 
 .DS_Store
