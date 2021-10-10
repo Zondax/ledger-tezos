@@ -88,6 +88,12 @@ test_all:
 	make build_legacy
 	make zemu_test
 
+fuzz:
+	$(MAKE) -C rust fuzz
+
+clean_fuzz:
+	$(MAKE) -C rust clean_fuzz
+
 else
 default:
 	$(MAKE) -C rust/app

@@ -18,7 +18,7 @@ test:
 test_vectors:
 	cargo test $(RUST_FEATURES),"dev" vectors -- --nocapture
 
-fuzz_parser:
+fuzz:
 	cd hfuzz-parser && HFUZZ_BUILD_ARGS=$(RUST_FEATURES) cargo hfuzz run operations
 
 clean_fuzz:
