@@ -309,6 +309,6 @@ mod tests {
 mod known_bakers {
     use bolos::PIC;
 
-    ledger_tezos_derive::unroll!("app/vendor/BakersRegistryCoreUnfilteredData.json");
+    ledger_tezos_derive::unroll!("vendor/BakersRegistryCoreUnfilteredData.json");
 }
 use known_bakers::baker_lookup;

@@ -27,6 +27,12 @@ mod unroll;
 /// The expected contents of the file is a JSON array of [unroll::KnownBaker],
 /// these will be read and the addresses will be compacted slightly before
 /// being all put in a function that will convert a given address to a static string
+///
+/// # Note
+///
+/// The provided path will be made relative to the `CARGO_MANIFEST_DIR` of the invoking crate.
+///
+/// In other words, the provided input path will have the current crate's root directory prepended
 pub fn unroll(input: TokenStream) -> TokenStream {
     unroll::unroll(input)
 }

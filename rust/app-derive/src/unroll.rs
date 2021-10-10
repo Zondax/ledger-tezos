@@ -20,7 +20,7 @@ use syn::{parse_macro_input, Error, Expr, ExprArray, ExprLit, LitByte, LitStr};
 
 use std::{
     convert::{TryFrom, TryInto},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use arrayref::{array_ref, array_refs};
@@ -121,14 +121,21 @@ pub fn unroll(input: TokenStream) -> TokenStream {
 }
 
 fn retrieve_data(path: impl AsRef<Path>, path_span: Span) -> Result<Vec<ReducedBaker>, Error> {
-    let data_path = match std::fs::canonicalize(path.as_ref()) {
+    let base_path: PathBuf = ::std::env::var_os("CARGO_MANIFEST_DIR")
+        .expect("Missing `CARGO_MANIFEST_DIR` env var")
+        .into();
+
+    let mut data_path = base_path.clone();
+    data_path.push(path.as_ref());
+
+    let data_path = match data_path.canonicalize() {
         Ok(path) => path,
         Err(err) => {
             return Err(Error::new(
                 path_span,
                 format!(
-                    "Invalid path provided. Detected path: {:?}; err={:?}",
-                    path.as_ref(),
+                    "Invalid path provided. Input path: {}; err={:?}",
+                    data_path.display(),
                     err
                 ),
             ));

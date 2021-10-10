@@ -23,7 +23,7 @@ use ledger_tezos_derive::unroll;
 
 use serde::{Deserialize, Serialize};
 
-unroll!("app/vendor/BakersRegistryCoreUnfilteredData.json");
+unroll!("../app/vendor/BakersRegistryCoreUnfilteredData.json");
 
 /// This structs represents the expected schematic of the baker dat
 ///
