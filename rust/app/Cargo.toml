@@ -6,7 +6,7 @@ edition = "2018"
 readme = "README.md"
 
 [lib]
-name = "rslib"
+name = "tezos_app"
 crate-type = ["staticlib", "rlib"]
 
 [features]
