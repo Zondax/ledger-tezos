@@ -308,6 +308,7 @@ mod tests {
 
 mod known_bakers {
     use bolos::PIC;
+    use zemu_sys::zemu_log_stack;
 
     ledger_tezos_derive::unroll!("vendor/BakersRegistryCoreUnfilteredData.json");
 }

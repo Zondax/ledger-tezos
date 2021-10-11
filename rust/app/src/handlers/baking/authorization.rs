@@ -61,10 +61,16 @@ impl AuthorizeUI {
     #[inline(never)]
     pub fn new(curve: Curve, path: BIP32Path<BIP32_MAX_LENGTH>) -> Result<Self, Error> {
         sys::zemu_log_stack("AuthorizeUI::new\x00");
-        let addr = GetAddress::new_key(curve, &path)
-            .and_then(|k| Addr::new(&k))
-            .map_err(|_| Error::ExecutionError)?;
-        Ok(Self { curve, path, addr })
+
+        let mut addr = core::mem::MaybeUninit::uninit();
+        GetAddress::new_addr_into(curve, &path, &mut addr).map_err(|_| Error::ExecutionError)?;
+
+        Ok(Self {
+            curve,
+            path,
+            //safe because we have initialized this above with `Addr::new_into`
+            addr: unsafe { addr.assume_init() },
+        })
     }
 }
 
@@ -100,6 +106,7 @@ impl Viewable for AuthorizeUI {
         Ok(2)
     }
 
+    #[inline(never)]
     fn render_item(
         &mut self,
         item_n: u8,
@@ -107,6 +114,7 @@ impl Viewable for AuthorizeUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
+        sys::zemu_log_stack("AuthorizeUI::render_item\x00");
         match item_n {
             0 => {
                 let title_content = pic_str!(b"Type");
@@ -125,7 +133,10 @@ impl Viewable for AuthorizeUI {
         }
     }
 
+    #[inline(never)]
     fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
+        sys::zemu_log_stack("AuthorizeUI::render_item\x00");
+
         //get public key
         let pk = match GetAddress::new_key(self.curve, &self.path) {
             Ok(pk) => pk,
@@ -164,11 +175,13 @@ impl DeAuthorizeBaking {
         let (curve, path) =
             Baking::read_baking_key()?.ok_or(Error::ApduCodeConditionsNotSatisfied)?;
 
-        let addr = GetAddress::new_key(curve, &path)
-            .and_then(|key| Addr::new(&key))
-            .map_err(|_| Error::ExecutionError)?;
+        let mut addr = core::mem::MaybeUninit::uninit();
+        GetAddress::new_addr_into(curve, &path, &mut addr).map_err(|_| Error::ExecutionError)?;
 
-        let ui = DeAuthorizeUI { addr };
+        let ui = DeAuthorizeUI {
+            //this is safe because it was initialized earlier
+            addr: unsafe { addr.assume_init() },
+        };
 
         unsafe { ui.show(flags) }
             .map_err(|_| Error::ExecutionError)

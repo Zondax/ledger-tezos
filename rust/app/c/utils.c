@@ -18,9 +18,9 @@
 
 void handle_stack_overflow() {
     zemu_log("!!!!!! CANARY TRIGGERED!!! STACK OVERFLOW DETECTED\n");
-#if defined (TARGET_NANOS) || defined(TARGET_NANOX)
+/* #if defined (TARGET_NANOS) || defined(TARGET_NANOX) */
     io_seproxyhal_se_reset();
-#endif
+/* #endif */
     while (1);
 }
 
@@ -28,28 +28,28 @@ extern unsigned int app_stack_canary;
 #define APP_STACK_CANARY_MAGIC 0xDEAD0031
 
 void check_canary() {
-#if defined (TARGET_NANOS) || defined(TARGET_NANOX)
+/* #if defined (TARGET_NANOS) || defined(TARGET_NANOX) */
     if (app_stack_canary != APP_STACK_CANARY_MAGIC) handle_stack_overflow();
-#endif
+/* #endif */
 }
 
 void zemu_log(const char *buf) {
-#if defined(ZEMU_LOGGING)
-#if defined (TARGET_NANOS) || defined(TARGET_NANOX)
+/* #if defined(ZEMU_LOGGING) */
+/* #if defined (TARGET_NANOS) || defined(TARGET_NANOX) */
     asm volatile (
     "movs r0, #0x04\n"
     "movs r1, %0\n"
     "svc      0xab\n"
     :: "r"(buf) : "r0", "r1"
     );
-#endif
-#endif
+/* #endif */
+/* #endif */
 }
 
 
 void zemu_log_stack(char *ctx) {
-#if defined(ZEMU_LOGGING)
-#if defined (TARGET_NANOS) || defined(TARGET_NANOX)
+/* #if defined(ZEMU_LOGGING) */
+/* #if defined (TARGET_NANOS) || defined(TARGET_NANOX) */
 #define STACK_SHIFT 20
 
     void* p = 0x0;
@@ -60,6 +60,6 @@ void zemu_log_stack(char *ctx) {
             (uint32_t)((void*)&p)+STACK_SHIFT - (uint32_t)&app_stack_canary,
             ctx);
     zemu_log(buf);
-#endif
-#endif
+/* #endif */
+/* #endif */
 }

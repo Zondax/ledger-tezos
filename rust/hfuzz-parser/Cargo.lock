@@ -235,7 +235,7 @@ name = "hfuzz-parser"
 version = "0.0.1"
 dependencies = [
  "honggfuzz",
- "rslib",
+ "tezos-app",
 ]
 
 [[package]]
@@ -260,6 +260,19 @@ name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+
+[[package]]
+name = "ledger-tezos-derive"
+version = "0.1.0"
+dependencies = [
+ "arrayref",
+ "bs58",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn",
+]
 
 [[package]]
 name = "lexical-core"
@@ -380,23 +393,40 @@ dependencies = [
 ]
 
 [[package]]
-name = "rslib"
-version = "0.1.0"
+name = "ryu"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
+
+[[package]]
+name = "serde"
+version = "1.0.130"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f12d06de37cf59146fbdecab66aa99f9fe4f78722e3607577a5375d66bd0c913"
 dependencies = [
- "arrayref",
- "arrayvec",
- "bolos",
- "bs58",
- "bytemuck",
- "cfg-if",
- "git-testament",
- "hex",
- "lexical-core",
- "no-std-compat",
- "nom",
- "property",
- "zemu-sys",
- "zeroize",
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.130"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7bc1a1ab1961464eae040d96713baa5a724a8152c1222492465b54322ec508b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "serde_json"
+version = "1.0.68"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f690853975602e1bfe1ccbf50504d67174e3bcf340f23b5ea9992e0587a52d8"
+dependencies = [
+ "itoa",
+ "ryu",
+ "serde",
 ]
 
 [[package]]
@@ -427,6 +457,27 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
+]
+
+[[package]]
+name = "tezos-app"
+version = "0.1.0"
+dependencies = [
+ "arrayref",
+ "arrayvec",
+ "bolos",
+ "bs58",
+ "bytemuck",
+ "cfg-if",
+ "git-testament",
+ "hex",
+ "ledger-tezos-derive",
+ "lexical-core",
+ "no-std-compat",
+ "nom",
+ "property",
+ "zemu-sys",
+ "zeroize",
 ]
 
 [[package]]

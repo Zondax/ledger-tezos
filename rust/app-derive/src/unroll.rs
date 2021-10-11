@@ -106,7 +106,10 @@ pub fn unroll(input: TokenStream) -> TokenStream {
         #[derive(Debug)]
         pub struct BakerNotFound;
 
+        #[inline(never)]
         pub fn baker_lookup(prefix: &[u8; 3], hash: &[u8; 20]) -> Result<&'static str, BakerNotFound> {
+            zemu_log_stack("baker_lookup\x00");
+
             let out = match (prefix, hash) {
                 #(#arms ,)*
                 _ => return Err(BakerNotFound),
@@ -125,7 +128,7 @@ fn retrieve_data(path: impl AsRef<Path>, path_span: Span) -> Result<Vec<ReducedB
         .expect("Missing `CARGO_MANIFEST_DIR` env var")
         .into();
 
-    let mut data_path = base_path.clone();
+    let mut data_path = base_path;
     data_path.push(path.as_ref());
 
     let data_path = match data_path.canonicalize() {

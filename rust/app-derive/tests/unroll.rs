@@ -18,7 +18,10 @@
 use std::path::PathBuf;
 
 use arrayref::array_ref;
+
 use bolos::PIC;
+use zemu_sys::zemu_log_stack;
+
 use ledger_tezos_derive::unroll;
 
 use serde::{Deserialize, Serialize};

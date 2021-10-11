@@ -92,14 +92,14 @@ impl SetupUI {
         test_hwm: u32,
         chain_id: u32,
     ) -> Result<Self, Error> {
-        let addr = GetAddress::new_key(curve, &path)
-            .and_then(|k| Addr::new(&k))
-            .map_err(|_| Error::ExecutionError)?;
+        let mut addr = core::mem::MaybeUninit::uninit();
+        GetAddress::new_addr_into(curve, &path, &mut addr).map_err(|_| Error::ExecutionError)?;
 
         Ok(Self {
             curve,
             path,
-            addr,
+            //this is safe because it's initialized above
+            addr: unsafe { addr.assume_init() },
             main_hwm,
             test_hwm,
             chain_id: chain_id.into(),

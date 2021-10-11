@@ -13,7 +13,10 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use core::u8;
+use core::{
+    mem::MaybeUninit,
+    ptr::{addr_of, addr_of_mut},
+};
 use std::convert::TryFrom;
 
 use zemu_sys::{Show, ViewError, Viewable};
@@ -39,6 +42,20 @@ impl GetAddress {
         sys::zemu_log_stack("GetAddres::new_key\x00");
         let mut pkey = curve.to_secret(path).into_public()?;
         pkey.compress().map(|_| pkey)
+    }
+
+    /// Retrieve the addr with the given curve and bip32 path
+    #[inline(never)]
+    pub fn new_addr_into<const B: usize>(
+        curve: crypto::Curve,
+        path: &sys::crypto::bip32::BIP32Path<B>,
+        out: &mut MaybeUninit<Addr>,
+    ) -> Result<(), SysError> {
+        sys::zemu_log_stack("GetAddres::new_addr_into\x00");
+        let mut pkey = curve.to_secret(path).into_public()?;
+        pkey.compress()?;
+
+        Addr::new_into(&pkey, out)
     }
 }
 
@@ -97,17 +114,55 @@ impl Addr {
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         sys::zemu_log_stack("Addr::new\x00");
 
-        let mut this: Self = Default::default();
+        let mut this = MaybeUninit::uninit();
+        Self::new_into(pubkey, &mut this)?;
 
-        pubkey.hash(&mut this.hash)?;
+        Ok(unsafe { this.assume_init() })
+    }
+
+    #[inline(never)]
+    pub fn new_into(
+        pubkey: &crypto::PublicKey,
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<(), SysError> {
+        sys::zemu_log_stack("Addr::new_into\x00");
+
+        let out = out.as_mut_ptr();
+
+        unsafe {
+            //this is okay because while out is unitialized
+            // the "hash" is just an array of bytes, and all configurations are valid
+            // but we don't read anyways
+            let hash = addr_of_mut!((*out).hash).as_mut().unwrap();
+            pubkey.hash(hash)?;
+        }
         sys::zemu_log_stack("Addr::new after hash\x00");
 
         //legacy/src/to_string.c:135
-        this.prefix.copy_from_slice(pubkey.curve().to_hash_prefix());
+        unsafe {
+            //same as above, the pointer is valid and "initialized"
+            // in a sense that no matter the value of `prefix` it's valid
+            addr_of_mut!((*out).prefix)
+                .as_mut()
+                .unwrap()
+                .copy_from_slice(pubkey.curve().to_hash_prefix());
+        }
 
-        super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
+        //safe because all pointers here are valid
+        unsafe {
+            super::sha256x2(
+                &[
+                    &addr_of!((*out).prefix).as_ref().unwrap()[..], //this has been initialized
+                    &addr_of!((*out).hash).as_ref().unwrap()[..],   //this has also been initialized
+                ],
+                //same as when we wrote into prefix and hash
+                // the data is always valid, even when uninitialized
+                // and the pointer comes from a proper reference
+                addr_of_mut!((*out).checksum).as_mut().unwrap(),
+            )?;
+        }
 
-        Ok(this)
+        Ok(())
     }
 
     //[u8; PKH_STRING] without null byte
@@ -154,6 +209,8 @@ impl Addr {
 }
 
 pub struct AddrUI {
+    //this is here to faciliate the UI,
+    // it would otherwise be redundant with the pkey
     addr: Addr,
     pkey: crypto::PublicKey,
 
