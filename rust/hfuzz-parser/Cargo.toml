@@ -16,3 +16,7 @@ wallet = ["rslib/wallet"]
 [[bin]]
 name = "operations"
 path = "operations.rs"
+
+[[bin]]
+name = "apdu"
+path = "apdu.rs"

@@ -58,14 +58,21 @@ impl ApduHandler for LegacySetup {
         let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
 
         let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
+        if cdata.len() < 13 {
+            return Err(Error::WrongLength);
+        }
 
         let chain = u32::from_be_bytes(*array_ref!(cdata, 0, 4));
         let main = u32::from_be_bytes(*array_ref!(cdata, 4, 4));
         let test = u32::from_be_bytes(*array_ref!(cdata, 8, 4));
 
         let path_len = cdata[12] as usize;
-        let path = BIP32Path::<BIP32_MAX_LENGTH>::read(&cdata[12..1 + 12 + path_len * 4])
-            .map_err(|_| Error::DataInvalid)?;
+        let path = BIP32Path::<BIP32_MAX_LENGTH>::read(
+            cdata
+                .get(12..1 + 12 + path_len * 4)
+                .ok_or(Error::WrongLength)?,
+        )
+        .map_err(|_| Error::DataInvalid)?;
 
         *tx = Self::setup(curve, path, main, test, chain, flags)?;
 
