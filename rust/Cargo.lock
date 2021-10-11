@@ -425,6 +425,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "rslib"
+version = "0.1.0"
+dependencies = [
+ "arrayref",
+ "arrayvec",
+ "bolos",
+ "bs58",
+ "bytemuck",
+ "cfg-if",
+ "git-testament",
+ "hex",
+ "ledger-tezos-derive",
+ "lexical-core",
+ "no-std-compat",
+ "nom",
+ "panic-halt",
+ "property",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "sha2",
+ "zemu-sys",
+ "zeroize",
+ "zuit",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -523,33 +550,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
-]
-
-[[package]]
-name = "tezos-app"
-version = "0.1.0"
-dependencies = [
- "arrayref",
- "arrayvec",
- "bolos",
- "bs58",
- "bytemuck",
- "cfg-if",
- "git-testament",
- "hex",
- "ledger-tezos-derive",
- "lexical-core",
- "no-std-compat",
- "nom",
- "panic-halt",
- "property",
- "serde",
- "serde_json",
- "serial_test",
- "sha2",
- "zemu-sys",
- "zeroize",
- "zuit",
 ]
 
 [[package]]

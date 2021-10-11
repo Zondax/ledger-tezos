@@ -1,4 +1,4 @@
-use tezos_app::parser::operations::Operation;
+use rslib::parser::operations::Operation;
 
 fn main() {
     loop {

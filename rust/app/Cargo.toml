@@ -1,12 +1,12 @@
 [package]
 authors = ["Zondax GmbH <hello@zondax.ch>"]
-name = "tezos-app"
+name = "rslib"
 version = "0.1.0"
 edition = "2018"
 readme = "README.md"
 
 [lib]
-name = "tezos_app"
+name = "rslib"
 crate-type = ["staticlib", "rlib"]
 
 [features]
