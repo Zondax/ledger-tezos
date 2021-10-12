@@ -5,6 +5,8 @@ members = [
     "zemu", "zuit",
 ]
 
+exclude = ["hfuzz-parser"]
+
 resolver = "2"
 
 [profile.dev]

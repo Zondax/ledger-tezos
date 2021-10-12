@@ -36,11 +36,15 @@ impl ApduHandler for LegacyResetHWM {
     ) -> Result<(), Error> {
         *tx = 0;
 
-        let payload = buffer.payload().map_err(|_| Error::DataInvalid)?;
+        let payload = buffer
+            .payload()
+            .map_err(|_| Error::DataInvalid)?
+            .get(..4)
+            .ok_or(Error::WrongLength)?;
 
         let level = {
             let mut array = [0; 4];
-            array.copy_from_slice(&payload[..4]);
+            array.copy_from_slice(payload);
             u32::from_be_bytes(array)
         };
 

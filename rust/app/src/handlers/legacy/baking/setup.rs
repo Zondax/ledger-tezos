@@ -58,14 +58,21 @@ impl ApduHandler for LegacySetup {
         let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
 
         let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
+        if cdata.len() < 13 {
+            return Err(Error::WrongLength);
+        }
 
         let chain = u32::from_be_bytes(*array_ref!(cdata, 0, 4));
         let main = u32::from_be_bytes(*array_ref!(cdata, 4, 4));
         let test = u32::from_be_bytes(*array_ref!(cdata, 8, 4));
 
         let path_len = cdata[12] as usize;
-        let path = BIP32Path::<BIP32_MAX_LENGTH>::read(&cdata[12..1 + 12 + path_len * 4])
-            .map_err(|_| Error::DataInvalid)?;
+        let path = BIP32Path::<BIP32_MAX_LENGTH>::read(
+            cdata
+                .get(12..1 + 12 + path_len * 4)
+                .ok_or(Error::WrongLength)?,
+        )
+        .map_err(|_| Error::DataInvalid)?;
 
         *tx = Self::setup(curve, path, main, test, chain, flags)?;
 
@@ -92,14 +99,14 @@ impl SetupUI {
         test_hwm: u32,
         chain_id: u32,
     ) -> Result<Self, Error> {
-        let addr = GetAddress::new_key(curve, &path)
-            .and_then(|k| Addr::new(&k))
-            .map_err(|_| Error::ExecutionError)?;
+        let mut addr = core::mem::MaybeUninit::uninit();
+        GetAddress::new_addr_into(curve, &path, &mut addr).map_err(|_| Error::ExecutionError)?;
 
         Ok(Self {
             curve,
             path,
-            addr,
+            //this is safe because it's initialized above
+            addr: unsafe { addr.assume_init() },
             main_hwm,
             test_hwm,
             chain_id: chain_id.into(),

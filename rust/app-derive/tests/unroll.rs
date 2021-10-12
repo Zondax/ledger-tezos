@@ -18,12 +18,15 @@
 use std::path::PathBuf;
 
 use arrayref::array_ref;
+
 use bolos::PIC;
+use zemu_sys::zemu_log_stack;
+
 use ledger_tezos_derive::unroll;
 
 use serde::{Deserialize, Serialize};
 
-unroll!("app/vendor/BakersRegistryCoreUnfilteredData.json");
+unroll!("../app/vendor/BakersRegistryCoreUnfilteredData.json");
 
 /// This structs represents the expected schematic of the baker dat
 ///

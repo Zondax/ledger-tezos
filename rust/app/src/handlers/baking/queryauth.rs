@@ -119,14 +119,15 @@ struct QueryAuthUI {
 impl QueryAuthUI {
     #[inline(never)]
     pub fn new(data: Bip32PathAndCurve, with_curve: bool) -> Result<Self, Error> {
-        let addr = GetAddress::new_key(data.curve, &data.path)
-            .and_then(|k| Addr::new(&k))
+        let mut addr = core::mem::MaybeUninit::uninit();
+        GetAddress::new_addr_into(data.curve, &data.path, &mut addr)
             .map_err(|_| Error::ExecutionError)?;
 
         Ok(Self {
             curve: data.curve,
             path: data.path,
-            addr,
+            //this is safe becuase we initialized it earlier
+            addr: unsafe { addr.assume_init() },
             with_curve,
         })
     }

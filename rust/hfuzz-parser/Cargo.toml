@@ -1,0 +1,22 @@
+[package]
+authors = ["Zondax <info@zondax.ch>"]
+edition = "2018"
+name = "hfuzz-parser"
+publish = false
+version = "0.0.1"
+
+[dependencies]
+honggfuzz = "0.5"
+rslib = { default-features = false, path = "../app" }
+
+[features]
+baking = ["rslib/baking"]
+wallet = ["rslib/wallet"]
+
+[[bin]]
+name = "operations"
+path = "operations.rs"
+
+[[bin]]
+name = "apdu"
+path = "apdu.rs"

@@ -13,7 +13,6 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-// FIXME: Refactor so zemu and bolos-FFI are clearly separated as xxx-sys crates
 #![allow(dead_code)]
 
 pub use bolos::*;

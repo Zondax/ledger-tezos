@@ -37,10 +37,15 @@ impl ApduHandler for LegacyHMAC {
         let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
 
         let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
+        if cdata.len() < 1 {
+            return Err(Error::WrongLength);
+        }
 
         let path_len = cdata[0] as usize;
-        let bip32_path = BIP32Path::<BIP32_MAX_LENGTH>::read(&cdata[..1 + 4 * path_len])
-            .map_err(|_| Error::DataInvalid)?;
+        let bip32_path = BIP32Path::<BIP32_MAX_LENGTH>::read(
+            cdata.get(..1 + 4 * path_len).ok_or(Error::WrongLength)?,
+        )
+        .map_err(|_| Error::DataInvalid)?;
 
         *tx = HMAC::hmac(curve, bip32_path, 1 + 4 * path_len, buffer)?;
 
