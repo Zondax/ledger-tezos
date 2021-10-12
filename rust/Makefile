@@ -19,6 +19,8 @@ test_vectors:
 	cargo test $(RUST_FEATURES),"dev" vectors -- --nocapture
 
 fuzz:
+	@ cd hfuzz-parser && node scripts/gen_operations_corpus.js ../../zemu/test-vectors
+	@ cd hfuzz-parser && node scripts/gen_operations_corpus.js ../../zemu/tests/data
 	cd hfuzz-parser && HFUZZ_BUILD_ARGS=$(RUST_FEATURES) cargo hfuzz run operations
 
 clean_fuzz:
