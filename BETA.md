@@ -1,58 +1,81 @@
 # Beta Testing
 
-
 This document describes the procedure required to install and use this application on a ledger Nano S device.
 
 # DISCLAIMER
 
-*THIS IS AN UNVETTED DEVELOPMENT RELEASE*
+_THIS IS AN UNVETTED DEVELOPMENT RELEASE_
 
 > # This app is still work in progress!
+>
 > # DO NOT USE YET!
 >
-> -------------------
+> ---
 >
 > ![zondax](docs/zondax.jpg)
 >
->_Please visit our website at [zondax.ch](zondax.ch)_
+> _Please visit our website at [zondax.ch](zondax.ch)_
 
 > # PROCEED AT YOUR OWN RISK!
+>
 > # THESE ARE UNVETTED DEVELOPMENT RELEASES
 
 # Prerequisites
 
 This is the only configuration tested during development, any variation is completely new and may cause unexpected things to happen.
+
 No warranty is provided, we do not assume any responsibility for the use or misuse of the project.
+
 You may [spontaneously combust](https://en.wikipedia.org/wiki/Spontaneous_human_combustion), without us taking any responsibility.
 
-* A linux machine
-* python 3
-* ledgerblue pip package
-* A ledger Nano S device
+- A linux machine
+- python 3
+- A ledger Nano S device
+
+We also require a python package, the `ledgerblue` package.
+
+To install, run the following:
+
+```sh
+pip install ledgerblue
+```
 
 Note: Nano X device is not currently supported for _development_ & _testing_, an official app will be released for Nano X devices by Ledger.
 
 # Preparation
 
-Download the [latest release](https://github.com/Zondax/ledger-tezos/releases)'s `installer_s.sh` or `installer_baking_s.sh`, depending if you'd like to use the "wallet" or "baking" app.
+Download the [latest release](https://github.com/Zondax/ledger-tezos/releases).
 
-Once downloaded, mark the file as executable with
+Depending if you'd like to use the "wallet" or "baking" app, you might choose to download either of:
+
+- `installer_s.sh`
+- `installer_baking_s.sh`
+
+From here on out when you see `installer.sh` (or installer) it means the installer you chose to download.
+
+Once downloaded, mark the installer as executable with
+
 ```sh
-chmod +x ./installer_s.sh
+chmod +x ./installer.sh
 ```
 
 # Installation
 
-*MAKE SURE YOUR NANO S DEVICE IS CONNECTED TO YOUR MACHINE*
+_MAKE SURE YOUR NANO S DEVICE IS CONNECTED TO YOUR MACHINE_
 
 You can now run the installation script with the `load` argument to install the app on your device:
+
 ```sh
-./installer_sh.sh load
+./installer.sh load
 ```
 
 # Feedback
 
-You can reach out to us on Slack or you can open issues on the [official GitHub repository](https://github.com/Zondax/ledger-tezos/), for any feedback or further questions.
+To reach out to us, please use one of the following methods:
+
+- via Slack
+- via email [support.tezos@zondax.ch](mailto:support.tezos@zondax.ch)
+- via opening issues on the [official GitHub repository](https://github.com/Zondax/ledger-tezos/)
 
 ## Request for testing
 
@@ -60,16 +83,20 @@ We'd like to hear all feedback you have, but there's a few points we need testin
 
 ### UI
 
-How can the new UI be improved? 
-Is something missing? 
+How can the new UI be improved?
+
+Is something missing?
+
 Is something too much and should be hidden, perhaps behind an expert mode?
 
 ### Legacy API
 
 Is there any incompatibilities with the old API from the legacy app?
+
 What are these?
 
 ### Missing features
 
 Is there any feature that is missing?
+
 What could be improved?
