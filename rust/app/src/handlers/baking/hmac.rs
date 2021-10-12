@@ -96,13 +96,67 @@ impl ApduHandler for HMAC {
         let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
 
         let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
+        if cdata.len() < 1 {
+            return Err(Error::WrongLength);
+        }
 
         let path_len = cdata[0] as usize;
-        let bip32_path = BIP32Path::<BIP32_MAX_LENGTH>::read(&cdata[..1 + 4 * path_len])
-            .map_err(|_| Error::DataInvalid)?;
+        let bip32_path = BIP32Path::<BIP32_MAX_LENGTH>::read(
+            cdata.get(..1 + 4 * path_len).ok_or(Error::WrongLength)?,
+        )
+        .map_err(|_| Error::DataInvalid)?;
 
         *tx = Self::hmac(curve, bip32_path, 1 + 4 * path_len, buffer)?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use bolos::crypto::{bip32::BIP32Path, Curve};
+    use std::convert::TryInto;
+
+    use crate::{
+        assert_error_code,
+        constants::ApduError,
+        dispatcher::{handle_apdu, CLA, INS_LEGACY_HMAC},
+    };
+
+    fn prepare_buffer<const LEN: usize>(
+        buffer: &mut [u8; 260],
+        path: &[u32],
+        curve: Curve,
+    ) -> usize {
+        let crv: u8 = curve.into();
+        let path = BIP32Path::<LEN>::new(path.iter().map(|n| 0x8000_0000 + n))
+            .unwrap()
+            .serialize();
+
+        buffer[3] = crv;
+        buffer[4] = path.len() as u8;
+        buffer[5..5 + path.len()].copy_from_slice(path.as_slice());
+
+        5 + path.len()
+    }
+
+    #[test]
+    pub fn apdu_hmac() {
+        let mut flags = 0u32;
+        let mut tx = 0u32;
+        let rx = 5;
+        let mut buffer = [0u8; 260];
+
+        const HMAC_MSG: &[u8] = b"zondax.ch";
+
+        buffer[..3].copy_from_slice(&[CLA, INS_LEGACY_HMAC, 0]);
+        let offset = prepare_buffer::<4>(&mut buffer, &[44, 1729, 0, 0], Curve::Ed25519);
+
+        buffer[offset..offset + HMAC_MSG.len()].copy_from_slice(&HMAC_MSG[..]);
+
+        handle_apdu(&mut flags, &mut tx, rx, &mut buffer);
+
+        assert_error_code!(tx, buffer, ApduError::Success);
+        assert_eq!(tx as usize, 32 + 2);
     }
 }
