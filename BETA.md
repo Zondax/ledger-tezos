@@ -46,10 +46,10 @@ Note: Nano X device is not currently supported for _development_ & _testing_, an
 
 Download the [latest release](https://github.com/Zondax/ledger-tezos/releases).
 
-Depending if you'd like to use the "wallet" or "baking" app, you might choose to download either of:
+Depending if you'd like to use either the "wallet" or "baking" app, you might choose to download, respectively, either of:
 
-- `installer_s.sh`
-- `installer_baking_s.sh`
+- `installer_s.sh` (wallet app)
+- `installer_baking_s.sh` (baking app)
 
 From here on out when you see `installer.sh` (or installer) it means the installer you chose to download.
 
