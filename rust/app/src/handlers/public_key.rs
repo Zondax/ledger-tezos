@@ -330,7 +330,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn apdu_legacy_get_public_key() {
         let mut flags = 0u32;
         let mut tx = 0u32;
@@ -343,7 +342,7 @@ mod tests {
         handle_apdu(&mut flags, &mut tx, rx, &mut buffer);
 
         assert_error_code!(tx, buffer, ApduError::Success);
-        assert_eq!(tx as usize, 1 + 33 + 2);
+        assert_eq!(tx as usize, 1 + 32 + 2); //32 bytes for ed25519
 
         // FIXME: Complete the test
     }
