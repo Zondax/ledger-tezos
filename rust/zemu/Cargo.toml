@@ -1,7 +1,7 @@
 [package]
 name = "zemu-sys"
 version = "0.1.0"
-authors = ["becominginsane <francesco@zondax.ch>"]
+authors = ["Zondax <support.tezos@zondax.ch>"]
 edition = "2018"
 
 [features]

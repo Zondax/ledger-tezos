@@ -135,7 +135,7 @@ mod tests {
     #[test]
     #[serial(dev_hash)]
     fn apdu_dev_hash_short() {
-        const MSG: &[u8] = b"francesco@zondax.ch";
+        const MSG: &[u8] = b"support.tezos@zondax.ch";
         let len = MSG.len();
 
         let mut flags = 0;

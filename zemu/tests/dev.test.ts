@@ -86,7 +86,7 @@ describe.each(models)('Unknown exceptions', function (m) {
 })
 
 describe.each(models)('SHA256', function (m) {
-  test.each([Buffer.from('francesco@zondax.ch'), Buffer.alloc(300, 0)])('get hash', async function (input) {
+  test.each([Buffer.from('support.tezos@zondax.ch'), Buffer.alloc(300, 0)])('get hash', async function (input) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -106,7 +106,7 @@ describe.each(models)('SHA256', function (m) {
 })
 
 describe.each(models)('Echo', function (m) {
-  test.each([Buffer.from('francesco@zondax.ch')])('display', async function (msg) {
+  test.each([Buffer.from('support.tezos@zondax.ch')])('display', async function (msg) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name, X11: true })
