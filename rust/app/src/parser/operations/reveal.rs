@@ -13,6 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 use nom::{call, do_parse, IResult};
 use zemu_sys::ViewError;
 
@@ -34,6 +35,7 @@ pub struct Reveal<'b> {
 }
 
 impl<'b> Reveal<'b> {
+    #[inline(never)]
     pub fn from_bytes(input: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
         let (rem, (source, fee, counter, gas_limit, storage_limit, public_key)) = do_parse! {input,
             source: public_key_hash >>
@@ -58,7 +60,36 @@ impl<'b> Reveal<'b> {
         ))
     }
 
-    fn source_base58(&self) -> Result<[u8; 36], bolos::Error> {
+    #[inline(never)]
+    pub fn from_bytes_into(
+        input: &'b [u8],
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<&'b [u8], nom::Err<ParserError>> {
+        let (rem, (source, fee, counter, gas_limit, storage_limit, public_key)) = do_parse! {input,
+            source: public_key_hash >>
+            fee: call!(Zarith::from_bytes, false) >>
+            counter: call!(Zarith::from_bytes, false) >>
+            gas_limit: call!(Zarith::from_bytes, false) >>
+            storage_limit: call!(Zarith::from_bytes, false) >>
+            public_key: public_key >>
+            (source, fee, counter, gas_limit, storage_limit, public_key)
+        }?;
+
+        let out = out.as_mut_ptr();
+        //good ptr, no uninit reads
+        unsafe {
+            addr_of_mut!((*out).source).write(source);
+            addr_of_mut!((*out).fee).write(fee);
+            addr_of_mut!((*out).counter).write(counter);
+            addr_of_mut!((*out).gas_limit).write(gas_limit);
+            addr_of_mut!((*out).storage_limit).write(storage_limit);
+            addr_of_mut!((*out).public_key).write(public_key);
+        }
+
+        Ok(rem)
+    }
+
+    fn source_base58(&self) -> Result<(usize, [u8; Addr::BASE58_LEN]), bolos::Error> {
         let source = self.source;
         let addr = Addr::from_hash(source.1, source.0)?;
 
@@ -97,8 +128,8 @@ impl<'b> DisplayableItem for Reveal<'b> {
                 let title_content = pic_str!(b"Source");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                let mex = self.source_base58().map_err(|_| ViewError::Unknown)?;
-                handle_ui_message(&mex[..], message, page)
+                let (len, mex) = self.source_base58().map_err(|_| ViewError::Unknown)?;
+                handle_ui_message(&mex[..len], message, page)
             }
             //public key
             2 => {
@@ -161,10 +192,10 @@ impl<'b> DisplayableItem for Reveal<'b> {
     }
 }
 
+const MAX_PK_BASE58_LEN: usize = 56;
 /// Encodes a public key as base58 on the provided `out` buffer
 ///
 /// returns the number of bytes written
-const MAX_PK_BASE58_LEN: usize = 55;
 fn pk_to_base58(
     (crv, bytes): (Curve, &[u8]),
     out: &mut [u8; MAX_PK_BASE58_LEN],
@@ -193,13 +224,13 @@ fn pk_to_base58(
 impl<'b> Reveal<'b> {
     pub fn is(&self, json: &serde_json::Map<std::string::String, serde_json::Value>) {
         //verify source address of the transfer
-        let source_base58 = self
+        let (len, source_base58) = self
             .source_base58()
             .expect("couldn't compute source base58");
         let expected_source_base58 = json["source"]
             .as_str()
             .expect("given json .source is not a string");
-        assert_eq!(source_base58, expected_source_base58.as_bytes());
+        assert_eq!(&source_base58[..len], expected_source_base58.as_bytes());
 
         self.counter.is(&json["counter"]);
         self.fee.is(&json["fee"]);
@@ -223,7 +254,10 @@ impl<'b> Reveal<'b> {
 mod tests {
     use arrayref::array_ref;
 
-    use crate::{crypto::Curve, parser::Zarith};
+    use crate::{
+        crypto::Curve,
+        parser::{operations::reveal::MAX_PK_BASE58_LEN, Zarith},
+    };
 
     use super::{pk_to_base58, Reveal};
 
@@ -266,7 +300,7 @@ mod tests {
 
     #[test]
     fn public_key_base58() {
-        let mut base58 = [0; 55];
+        let mut base58 = [0; MAX_PK_BASE58_LEN];
 
         let len = pk_to_base58((Curve::Bip32Ed25519, &[0x00; 32]), &mut base58)
             .expect("couldn't encode Secp256K1 to base58");

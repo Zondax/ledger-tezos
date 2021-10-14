@@ -13,7 +13,10 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use core::u8;
+use core::{
+    mem::MaybeUninit,
+    ptr::{addr_of, addr_of_mut},
+};
 use std::convert::TryFrom;
 
 use zemu_sys::{Show, ViewError, Viewable};
@@ -39,6 +42,20 @@ impl GetAddress {
         sys::zemu_log_stack("GetAddres::new_key\x00");
         let mut pkey = curve.to_secret(path).into_public()?;
         pkey.compress().map(|_| pkey)
+    }
+
+    /// Retrieve the addr with the given curve and bip32 path
+    #[inline(never)]
+    pub fn new_addr_into<const B: usize>(
+        curve: crypto::Curve,
+        path: &sys::crypto::bip32::BIP32Path<B>,
+        out: &mut MaybeUninit<Addr>,
+    ) -> Result<(), SysError> {
+        sys::zemu_log_stack("GetAddres::new_addr_into\x00");
+        let mut pkey = curve.to_secret(path).into_public()?;
+        pkey.compress()?;
+
+        Addr::new_into(&pkey, out)
     }
 }
 
@@ -91,26 +108,68 @@ pub struct Addr {
 }
 
 impl Addr {
+    pub const BASE58_LEN: usize = 37;
+
     #[inline(never)]
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         sys::zemu_log_stack("Addr::new\x00");
 
-        let mut this: Self = Default::default();
+        let mut this = MaybeUninit::uninit();
+        Self::new_into(pubkey, &mut this)?;
 
-        pubkey.hash(&mut this.hash)?;
+        Ok(unsafe { this.assume_init() })
+    }
+
+    #[inline(never)]
+    pub fn new_into(
+        pubkey: &crypto::PublicKey,
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<(), SysError> {
+        sys::zemu_log_stack("Addr::new_into\x00");
+
+        let out = out.as_mut_ptr();
+
+        unsafe {
+            //this is okay because while out is unitialized
+            // the "hash" is just an array of bytes, and all configurations are valid
+            // but we don't read anyways
+            let hash = addr_of_mut!((*out).hash).as_mut().unwrap();
+            pubkey.hash(hash)?;
+        }
         sys::zemu_log_stack("Addr::new after hash\x00");
 
         //legacy/src/to_string.c:135
-        this.prefix.copy_from_slice(pubkey.curve().to_hash_prefix());
+        unsafe {
+            //same as above, the pointer is valid and "initialized"
+            // in a sense that no matter the value of `prefix` it's valid
+            addr_of_mut!((*out).prefix)
+                .as_mut()
+                .unwrap()
+                .copy_from_slice(pubkey.curve().to_hash_prefix());
+        }
 
-        super::sha256x2(&[&this.prefix[..], &this.hash[..]], &mut this.checksum)?;
+        //safe because all pointers here are valid
+        unsafe {
+            super::sha256x2(
+                &[
+                    &addr_of!((*out).prefix).as_ref().unwrap()[..], //this has been initialized
+                    &addr_of!((*out).hash).as_ref().unwrap()[..],   //this has also been initialized
+                ],
+                //same as when we wrote into prefix and hash
+                // the data is always valid, even when uninitialized
+                // and the pointer comes from a proper reference
+                addr_of_mut!((*out).checksum).as_mut().unwrap(),
+            )?;
+        }
 
-        Ok(this)
+        Ok(())
     }
 
     //[u8; PKH_STRING] without null byte
     // legacy/src/types.h:156
-    pub fn base58(&self) -> [u8; 36] {
+    //
+    /// Returns the address encoded with base58 and also the actual number of bytes written in the buffer
+    pub fn base58(&self) -> (usize, [u8; Addr::BASE58_LEN]) {
         let input = {
             let mut array = [0; 27];
             array[..3].copy_from_slice(&self.prefix[..]);
@@ -119,14 +178,14 @@ impl Addr {
             array
         };
 
-        let mut out = [0; 36];
+        let mut out = [0; Self::BASE58_LEN];
 
         //the expect is ok since we know all the sizes
-        bs58::encode(input)
+        let len = bs58::encode(input)
             .into(&mut out[..])
             .expect("encoded in base58 is not of the right length");
 
-        out
+        (len, out)
     }
 
     pub fn into_ui(self, pkey: crypto::PublicKey, with_addr: bool) -> AddrUI {
@@ -150,6 +209,8 @@ impl Addr {
 }
 
 pub struct AddrUI {
+    //this is here to faciliate the UI,
+    // it would otherwise be redundant with the pkey
     addr: Addr,
     pkey: crypto::PublicKey,
 
@@ -175,8 +236,8 @@ impl Viewable for AddrUI {
             let title_content = pic_str!(b"Address");
             title[..title_content.len()].copy_from_slice(title_content);
 
-            let addr_bytes = self.addr.base58();
-            handle_ui_message(&addr_bytes[..], message, page)
+            let (len, mex) = self.addr.base58();
+            handle_ui_message(&mex[..len], message, page)
         } else {
             Err(ViewError::NoData)
         }
@@ -192,11 +253,10 @@ impl Viewable for AddrUI {
         tx += pkey.len();
 
         if self.with_addr {
-            let addr = self.addr.base58();
+            let (len, addr) = self.addr.base58();
+            out[tx..tx + len].copy_from_slice(&addr[..len]);
 
-            out[tx..tx + addr.len()].copy_from_slice(&addr[..]);
-
-            tx += addr.len();
+            tx += len;
         }
 
         (tx, Error::Success as _)
@@ -253,10 +313,9 @@ mod tests {
         );
 
         let expected = "tz1duXjMpT43K7F1nQajzH5oJLTytLUNxoTZ";
-        let output = addr.base58();
-        let output = std::str::from_utf8(&output[..]).unwrap();
+        let (len, output) = addr.base58();
 
-        assert_eq!(expected, output);
+        assert_eq!(expected.as_bytes(), &output[..len]);
     }
 
     fn prepare_buffer<const LEN: usize>(buffer: &mut [u8; 260], path: &[u32], curve: Curve) {
@@ -271,7 +330,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn apdu_legacy_get_public_key() {
         let mut flags = 0u32;
         let mut tx = 0u32;
@@ -284,7 +342,7 @@ mod tests {
         handle_apdu(&mut flags, &mut tx, rx, &mut buffer);
 
         assert_error_code!(tx, buffer, ApduError::Success);
-        assert_eq!(tx as usize, 1 + 33 + 2);
+        assert_eq!(tx as usize, 1 + 32 + 2); //32 bytes for ed25519
 
         // FIXME: Complete the test
     }

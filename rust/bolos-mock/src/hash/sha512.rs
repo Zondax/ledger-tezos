@@ -45,17 +45,11 @@ impl super::Hasher<64> for Sha512 {
         Ok(())
     }
 
-    fn finalize_dirty(&mut self) -> Result<[u8; 64], Self::Error> {
-        let mut out = [0; 64];
-
+    fn finalize_dirty_into(&mut self, out: &mut [u8; 64]) -> Result<(), Self::Error> {
         let tmp = self.0.finalize_fixed_reset();
         out.copy_from_slice(tmp.as_ref());
 
-        Ok(out)
-    }
-
-    fn finalize(mut self) -> Result<[u8; 64], Self::Error> {
-        self.finalize_dirty()
+        Ok(())
     }
 
     fn finalize_into(mut self, out: &mut [u8; 64]) -> Result<(), Self::Error> {
@@ -69,10 +63,10 @@ impl super::Hasher<64> for Sha512 {
         Ok(())
     }
 
-    fn digest(input: &[u8]) -> Result<[u8; 64], Self::Error> {
+    fn digest_into(input: &[u8], out: &mut [u8; 64]) -> Result<(), Self::Error> {
         let mut hasher = Self::new()?;
         hasher.update(input)?;
-        hasher.finalize()
+        hasher.finalize_into(out)
     }
 }
 

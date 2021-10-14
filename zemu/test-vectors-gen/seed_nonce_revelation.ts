@@ -31,12 +31,9 @@ export async function run(n: number): Promise<TestVector[]> {
   return vectors
 }
 
-export type ExpectedPage = { idx: number; key: string; val: string[] }
-
 export type TestVector = {
   name: string
   blob: string
-  output: Array<ExpectedPage>
   operation: ForgeOperationsParams
 }
 
@@ -103,12 +100,6 @@ async function generate_vector(n: number): Promise<TestVector> {
       name: `Simple Seed Nonce Revelation #${n}`,
       blob: forgedOp,
       operation: op,
-      output: [
-        { idx: 0, key: 'Operation', val: ledger_fmt(hash) }, //page 0
-        { idx: 1, key: 'Type', val: ledger_fmt('Seed Nonce Revelation') }, //page 0
-        { idx: 2, key: 'Level', val: ledger_fmt(n.toString()) },
-        { idx: 3, key: 'Nonce', val: ledger_fmt(randomBytes) },
-      ],
     }
 
     return test_vector

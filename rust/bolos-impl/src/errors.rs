@@ -28,6 +28,7 @@ mod exceptions {
     ///
     /// As you can see the error type is just a `u32`
     /// the user of `catch` is expected to interptret this value
+    #[inline(never)]
     pub(crate) fn catch_raw<T, F>(syscall: F) -> Result<T, u32>
     where
         F: FnOnce() -> T,

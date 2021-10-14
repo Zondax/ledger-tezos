@@ -16,7 +16,6 @@
 
 use crate::{
     errors::catch,
-    hash::Sha256,
     raw::{cx_hmac_sha256_t, cx_hmac_t},
     Error,
 };

@@ -18,6 +18,14 @@ test:
 test_vectors:
 	cargo test $(RUST_FEATURES),"dev" vectors -- --nocapture
 
+fuzz:
+	@ cd hfuzz-parser && node scripts/gen_operations_corpus.js ../../zemu/test-vectors
+	@ cd hfuzz-parser && node scripts/gen_operations_corpus.js ../../zemu/tests/data
+	cd hfuzz-parser && HFUZZ_BUILD_ARGS=$(RUST_FEATURES) cargo hfuzz run operations
+
+clean_fuzz:
+	cd hfuzz-parser && cargo hfuzz clean
+
 .PHONY: zui
 zui:
 	cd zemu && cbindgen --config cbindgen.toml --crate zemu-sys --output include/zemu_ui.h --lang c

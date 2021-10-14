@@ -26,10 +26,13 @@ use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
     dispatcher::ApduHandler,
-    handlers::hwm::{WaterMark, HWM},
+    handlers::{
+        hwm::{WaterMark, HWM},
+        signing::Sign,
+    },
     parser::{
         baking::{BlockData, EndorsementData},
-        operations::Delegation,
+        operations::{Delegation, Reveal},
         DisplayableItem, Preemble,
     },
     sys::{flash_slot::Wear, new_flash_slot},
@@ -122,10 +125,12 @@ impl From<Bip32PathAndCurve> for [u8; 52] {
 pub struct Baking;
 
 impl Baking {
-    //FIXME: grab this from signing.rs
     #[inline(never)]
-    fn blake2b_digest(buffer: &[u8]) -> Result<[u8; 32], Error> {
-        Blake2b::digest(buffer).map_err(|_| Error::ExecutionError)
+    fn blake2b_digest_into(
+        buffer: &[u8],
+        out: &mut [u8; Sign::SIGN_HASH_SIZE],
+    ) -> Result<(), Error> {
+        Blake2b::digest_into(buffer, out).map_err(|_| Error::ExecutionError)
     }
 
     #[inline(never)]
@@ -165,11 +170,34 @@ impl Baking {
     }
 
     #[inline(never)]
+    fn sign(digest: &[u8; 32]) -> Result<(usize, [u8; 100]), Error> {
+        let current_path = unsafe { BAKINGPATH.read() }.map_err(|_| Error::ExecutionError)?;
+
+        //path seems to be initialized so we can return it
+        //check if it is a good path
+        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
+        let bip32_nvm = match Bip32PathAndCurve::try_from_bytes(current_path) {
+            Ok(Some(bip)) => bip,
+            Ok(None) => return Err(Error::ApduCodeConditionsNotSatisfied as _),
+            Err(e) => return Err(e),
+        };
+
+        let secret = bip32_nvm.curve.to_secret(&bip32_nvm.path);
+
+        let mut sig = [0; 100];
+        secret
+            .sign(digest, &mut sig[..])
+            .map_err(|_| Error::ExecutionError)
+            .map(|sz| (sz, sig))
+    }
+
+    #[inline(never)]
     fn handle_endorsement(
         input: &'static [u8],
         send_hash: bool,
         digest: [u8; 32],
-    ) -> Result<BakingSignUI, Error> {
+        out: &mut [u8],
+    ) -> Result<usize, Error> {
         let hw = HWM::read()?;
 
         let (_, endorsement) =
@@ -179,11 +207,27 @@ impl Baking {
             //TODO: show endorsement data on screen
         }
 
-        Ok(BakingSignUI::Endorsement {
-            send_hash,
-            data: endorsement,
-            digest,
+        HWM::write(WaterMark {
+            level: endorsement.level,
+            endorsement: true,
         })
+        .map_err(|_| Error::ExecutionError)?;
+
+        let (sz, sig) = Self::sign(&digest)?;
+
+        let mut tx = 0;
+
+        if send_hash {
+            //write unsigned_hash to buffer
+            out[tx..tx + 32].copy_from_slice(&digest[..]);
+            tx += 32;
+        }
+
+        //wrte signature to buffer
+        out[tx..tx + sz].copy_from_slice(&sig[..sz]);
+        tx += sz;
+
+        Ok(tx)
     }
 
     #[inline(never)]
@@ -191,7 +235,8 @@ impl Baking {
         input: &'static [u8],
         send_hash: bool,
         digest: [u8; 32],
-    ) -> Result<BakingSignUI, Error> {
+        out: &mut [u8],
+    ) -> Result<usize, Error> {
         let hw = HWM::read()?;
 
         let (_, blockdata) = BlockData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
@@ -200,11 +245,27 @@ impl Baking {
             return Err(Error::DataInvalid);
         }
 
-        Ok(BakingSignUI::BlockLevel {
-            send_hash,
-            data: blockdata,
-            digest,
+        HWM::write(WaterMark {
+            level: blockdata.level,
+            endorsement: false,
         })
+        .map_err(|_| Error::ExecutionError)?;
+
+        let (sz, sig) = Self::sign(&digest)?;
+
+        let mut tx = 0;
+
+        if send_hash {
+            //write unsigned_hash to buffer
+            out[tx..tx + 32].copy_from_slice(&digest[..]);
+            tx += 32;
+        }
+
+        //wrte signature to buffer
+        out[tx..tx + sz].copy_from_slice(&sig[..sz]);
+        tx += sz;
+
+        Ok(tx)
     }
 
     #[inline(never)]
@@ -212,32 +273,41 @@ impl Baking {
         input: &'static [u8],
         send_hash: bool,
         digest: [u8; 32],
-    ) -> Result<BakingSignUI, Error> {
+        flags: &mut u32,
+    ) -> Result<u32, Error> {
+        crate::sys::zemu_log_stack("Baking::handle_delegation\x00");
         use crate::parser::operations::{Operation, OperationType};
 
-        let operation = Operation::new(input).map_err(|_| Error::DataInvalid)?;
-
-        let op = operation
-            .ops()
-            .peek_next()
+        let mut op = core::mem::MaybeUninit::uninit();
+        let mut operation = Operation::new(input).map_err(|_| Error::DataInvalid)?;
+        operation
+            .mut_ops()
+            .parse_next_into(&mut op)
             .map_err(|_| Error::DataInvalid)?
             .ok_or(Error::DataInvalid)?;
 
-        match op {
+        let (data, branch) = match unsafe { op.assume_init() } {
             OperationType::Delegation(deleg) => {
                 //verify that delegation.source == delegation.delegate
                 // and it matches the authorized key for baking
                 // (BAKINGPATH)
-
-                Ok(BakingSignUI::Delegation {
-                    send_hash,
-                    digest,
-                    branch: operation.branch(),
-                    data: deleg,
-                })
+                Ok((BakingTransactionType::Delegation(deleg), operation.branch()))
+            }
+            OperationType::Reveal(reveal) => {
+                //TODO: what checks do we need here?
+                Ok((BakingTransactionType::Reveal(reveal), operation.branch()))
             }
             _ => Err(Error::CommandNotAllowed),
-        }
+        }?;
+
+        let ui = BakingSignUI {
+            send_hash,
+            digest,
+            branch,
+            data,
+        };
+
+        unsafe { ui.show(flags).map(|_| 0).map_err(|_| Error::ExecutionError) }
     }
 
     #[inline(never)]
@@ -246,6 +316,7 @@ impl Baking {
         p2: u8,
         init_data: &[u8],
         cdata: &'static [u8],
+        out: &mut [u8],
         flags: &mut u32,
     ) -> Result<u32, Error> {
         crate::sys::zemu_log_stack("Baking::baker_sign\x00");
@@ -258,52 +329,48 @@ impl Baking {
             return Err(Error::DataInvalid);
         }
 
-        let digest = Self::blake2b_digest(cdata)?;
+        let mut digest = [0; Sign::SIGN_HASH_SIZE];
+        Self::blake2b_digest_into(cdata, &mut digest)?;
+
         let (rem, preemble) = Preemble::from_bytes(cdata).map_err(|_| Error::DataInvalid)?;
 
-        let baking_ui = match preemble {
-            Preemble::Endorsement => Self::handle_endorsement(rem, send_hash, digest)?,
-            Preemble::Block => Self::handle_blockdata(rem, send_hash, digest)?,
-            Preemble::Operation => Self::handle_delegation(rem, send_hash, digest)?,
-            _ => return Err(Error::CommandNotAllowed),
-        };
-
-        unsafe { baking_ui.show(flags) }
-            .map_err(|_| Error::ExecutionError)
-            .map(|_| 0)
+        //endorses and bakes are automatically signed without any review
+        match preemble {
+            Preemble::Endorsement => {
+                Self::handle_endorsement(rem, send_hash, digest, out).map(|n| n as u32)
+            }
+            Preemble::Block => {
+                Self::handle_blockdata(rem, send_hash, digest, out).map(|n| n as u32)
+            }
+            Preemble::Operation => Self::handle_delegation(rem, send_hash, digest, flags),
+            _ => Err(Error::CommandNotAllowed),
+        }
     }
 }
 
-enum BakingSignUI {
-    Endorsement {
-        send_hash: bool,
-        digest: [u8; 32],
-        data: EndorsementData<'static>,
-    },
-    BlockLevel {
-        send_hash: bool,
-        digest: [u8; 32],
-        data: BlockData,
-    },
-    Delegation {
-        send_hash: bool,
-        digest: [u8; 32],
-        branch: &'static [u8; 32],
-        data: Delegation<'static>,
-    },
+enum BakingTransactionType<'b> {
+    Delegation(Delegation<'b>),
+    Reveal(Reveal<'b>),
+}
+
+struct BakingSignUI {
+    send_hash: bool,
+    digest: [u8; 32],
+    branch: &'static [u8; 32],
+    data: BakingTransactionType<'static>,
 }
 
 impl Viewable for BakingSignUI {
     fn num_items(&mut self) -> Result<u8, ViewError> {
-        let n = match self {
-            BakingSignUI::Endorsement { data, .. } => data.num_items(),
-            BakingSignUI::BlockLevel { data, .. } => data.num_items(),
-            BakingSignUI::Delegation { data, .. } => 1 + data.num_items(),
-        };
+        let n = match self.data {
+            BakingTransactionType::Delegation(data) => data.num_items(),
+            BakingTransactionType::Reveal(data) => data.num_items(),
+        } + 1;
 
         Ok(n as u8)
     }
 
+    #[inline(never)]
     fn render_item(
         &mut self,
         item_n: u8,
@@ -311,96 +378,43 @@ impl Viewable for BakingSignUI {
         message: &mut [u8],
         page: u8,
     ) -> Result<u8, ViewError> {
-        match self {
-            BakingSignUI::Endorsement { data, .. } => {
-                data.render_item(item_n, title, message, page)
-            }
-            BakingSignUI::BlockLevel { data, .. } => data.render_item(item_n, title, message, page),
-            BakingSignUI::Delegation { data, branch, .. } => {
-                if let 0 = item_n {
-                    use bolos::{pic_str, PIC};
+        crate::sys::zemu_log_stack("Baking::render_item\x00");
+        if let 0 = item_n {
+            use crate::parser::operations::Operation;
+            use bolos::{pic_str, PIC};
 
-                    let title_content = pic_str!(b"Operation");
-                    title[..title_content.len()].copy_from_slice(title_content);
+            let title_content = pic_str!(b"Operation");
+            title[..title_content.len()].copy_from_slice(title_content);
 
-                    let mex = crate::parser::operations::Operation::base58_branch(branch)
-                        .map_err(|_| ViewError::Unknown)?;
+            let mut mex = [0; Operation::BASE58_BRANCH_LEN];
+            let len = Operation::base58_branch_into(self.branch, &mut mex)
+                .map_err(|_| ViewError::Unknown)?;
 
-                    crate::handlers::handle_ui_message(&mex[..], message, page)
-                } else {
+            crate::handlers::handle_ui_message(&mex[..len], message, page)
+        } else {
+            match self.data {
+                BakingTransactionType::Delegation(data) => {
+                    data.render_item(item_n - 1, title, message, page)
+                }
+                BakingTransactionType::Reveal(data) => {
                     data.render_item(item_n - 1, title, message, page)
                 }
             }
         }
     }
 
+    #[inline(never)]
     fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
-        let (digest, send_hash) = match self {
-            BakingSignUI::Endorsement {
-                digest,
-                data,
-                send_hash,
-            } => {
-                if HWM::write(WaterMark {
-                    level: data.level,
-                    endorsement: true,
-                })
-                .is_err()
-                {
-                    return (0, Error::ExecutionError as _);
-                }
-
-                (digest, send_hash)
-            }
-            BakingSignUI::BlockLevel {
-                digest,
-                data,
-                send_hash,
-            } => {
-                if HWM::write(WaterMark {
-                    level: data.level,
-                    endorsement: false,
-                })
-                .is_err()
-                {
-                    return (0, Error::ExecutionError as _);
-                }
-
-                (digest, send_hash)
-            }
-            BakingSignUI::Delegation {
-                digest, send_hash, ..
-            } => (digest, send_hash),
-        };
-
-        let current_path = match unsafe { BAKINGPATH.read() } {
-            Ok(path) => path,
-            Err(_) => return (0, Error::ExecutionError as _),
-        };
-
-        //path seems to be initialized so we can return it
-        //check if it is a good path
-        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
-        let bip32_nvm = match Bip32PathAndCurve::try_from_bytes(current_path) {
-            Ok(Some(bip)) => bip,
-            //should never reach here since we had checked it earlier
-            Ok(None) => return (0, Error::ApduCodeConditionsNotSatisfied as _),
+        let (sz, sig) = match Baking::sign(&self.digest) {
+            Ok(ok) => ok,
             Err(e) => return (0, e as _),
-        };
-
-        let secret = bip32_nvm.curve.to_secret(&bip32_nvm.path);
-
-        let mut sig = [0; 100];
-        let sz = match secret.sign(digest, &mut sig[..]) {
-            Ok(sz) => sz,
-            Err(_) => return (0, Error::ExecutionError as _),
         };
 
         let mut tx = 0;
 
-        if *send_hash {
+        if self.send_hash {
             //write unsigned_hash to buffer
-            out[tx..tx + 32].copy_from_slice(digest);
+            out[tx..tx + 32].copy_from_slice(&self.digest[..]);
             tx += 32;
         }
 
@@ -432,8 +446,17 @@ impl ApduHandler for Baking {
         tx: &mut u32,
         buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), Error> {
+        crate::sys::zemu_log_stack("Baking::handle\x00");
+
         if let Some(upload) = Uploader::new(Self).upload(&buffer)? {
-            *tx = Self::baker_sign(true, upload.p2, upload.first, upload.data, flags)?;
+            *tx = Self::baker_sign(
+                true,
+                upload.p2,
+                upload.first,
+                upload.data,
+                buffer.write(),
+                flags,
+            )?;
         }
 
         Ok(())
@@ -442,8 +465,11 @@ impl ApduHandler for Baking {
 
 #[cfg(test)]
 mod tests {
-    use crate::crypto;
+    use crate::{crypto, utils::MaybeNullTerminatedToString};
     use bolos::crypto::bip32::BIP32Path;
+
+    use arrayref::array_ref;
+    use zuit::{MockDriver, Page};
 
     use super::*;
 
@@ -477,5 +503,57 @@ mod tests {
         assert_eq!(endorsement.branch, &[0u8; 32]);
         assert_eq!(endorsement.tag, 5);
         assert_eq!(endorsement.level, 15);
+    }
+
+    #[test]
+    fn known_delegation() {
+        const PARTIAL_INPUT_HEX: &str = "0035e993d8c7aaa42b5e3ccd86a33390ececc73abd\
+                                 904e\
+                                 01\
+                                 0a\
+                                 0a\
+                                 ff\
+                                 00";
+
+        const KNOWN_BAKER_ADDR: &str = "tz1RV1MBbZMR68tacosb7Mwj6LkbPSUS1er1";
+        const KNOWN_BAKER_NAME: &str = "Baking Tacos";
+
+        let addr = bs58::decode(KNOWN_BAKER_ADDR)
+            .into_vec()
+            .expect("unable to decode known baker addr base58");
+        let hash = array_ref!(&addr[3..], 0, 20);
+
+        let mut input = hex::decode(PARTIAL_INPUT_HEX).expect("invalid input hex");
+        input.extend_from_slice(hash); //add the known baker hash data to the input
+        let input = &*input.leak();
+
+        let (_, delegation) = Delegation::from_bytes(input).expect("couldn't parse delegation");
+
+        let ui = BakingSignUI {
+            send_hash: false,
+            digest: [0; 32],
+            branch: &[0; 32],
+            data: BakingTransactionType::Delegation(delegation),
+        };
+        let mut driver = MockDriver::<_, 18, 4096>::new(ui);
+        driver.drive();
+
+        let produced_ui = driver.out_ui();
+        let delegation_item = produced_ui
+            .into_iter()
+            .find(|item_pages| {
+                item_pages
+                    .iter()
+                    .all(|Page { title, .. }| title.starts_with("Delegation".as_bytes()))
+            })
+            .expect("Couldn't find delegation item in UI");
+
+        let title = delegation_item[0]
+            .message
+            .to_string_with_check_null()
+            .expect("message was invalid UTF8");
+
+        //verify that the message is the same as the name we expect in the test
+        assert_eq!(title, KNOWN_BAKER_NAME);
     }
 }

@@ -13,13 +13,21 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use core::mem::MaybeUninit;
 use sha2::digest::{Digest, FixedOutput};
+use std::convert::Infallible;
 
 pub struct Sha256(sha2::Sha256);
 
 impl Sha256 {
-    pub fn new() -> Result<Self, std::convert::Infallible> {
+    pub fn new() -> Result<Self, Infallible> {
         Ok(Self(sha2::Sha256::new()))
+    }
+
+    pub fn new_gce(loc: &mut MaybeUninit<Self>) -> Result<(), Infallible> {
+        *loc = MaybeUninit::new(Self::new()?);
+
+        Ok(())
     }
 }
 
@@ -38,23 +46,23 @@ impl Sha256 {
     }
 */
 impl super::Hasher<32> for Sha256 {
-    type Error = std::convert::Infallible;
+    type Error = Infallible;
 
     fn update(&mut self, input: &[u8]) -> Result<(), Self::Error> {
         self.0.update(input);
         Ok(())
     }
 
-    fn finalize_dirty(&mut self) -> Result<[u8; 32], Self::Error> {
-        Ok(*self.0.finalize_fixed_reset().as_ref())
-    }
+    fn finalize_dirty_into(&mut self, out: &mut [u8; 32]) -> Result<(), Self::Error> {
+        let digest = self.0.finalize_fixed_reset();
+        out.copy_from_slice(digest.as_ref());
 
-    fn finalize(self) -> Result<[u8; 32], Self::Error> {
-        Ok(*self.0.finalize().as_ref())
+        Ok(())
     }
 
     fn finalize_into(self, out: &mut [u8; 32]) -> Result<(), Self::Error> {
-        out.copy_from_slice(self.0.finalize().as_ref());
+        let digest = self.0.finalize();
+        out.copy_from_slice(digest.as_ref());
 
         Ok(())
     }
@@ -64,10 +72,10 @@ impl super::Hasher<32> for Sha256 {
         Ok(())
     }
 
-    fn digest(input: &[u8]) -> Result<[u8; 32], Self::Error> {
+    fn digest_into(input: &[u8], out: &mut [u8; 32]) -> Result<(), Self::Error> {
         let mut hasher = Self::new()?;
         hasher.update(input)?;
-        hasher.finalize()
+        hasher.finalize_into(out)
     }
 }
 

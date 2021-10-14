@@ -58,14 +58,21 @@ impl ApduHandler for LegacySetup {
         let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
 
         let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
+        if cdata.len() < 13 {
+            return Err(Error::WrongLength);
+        }
 
         let chain = u32::from_be_bytes(*array_ref!(cdata, 0, 4));
         let main = u32::from_be_bytes(*array_ref!(cdata, 4, 4));
         let test = u32::from_be_bytes(*array_ref!(cdata, 8, 4));
 
         let path_len = cdata[12] as usize;
-        let path = BIP32Path::<BIP32_MAX_LENGTH>::read(&cdata[12..1 + 12 + path_len * 4])
-            .map_err(|_| Error::DataInvalid)?;
+        let path = BIP32Path::<BIP32_MAX_LENGTH>::read(
+            cdata
+                .get(12..1 + 12 + path_len * 4)
+                .ok_or(Error::WrongLength)?,
+        )
+        .map_err(|_| Error::DataInvalid)?;
 
         *tx = Self::setup(curve, path, main, test, chain, flags)?;
 
@@ -92,14 +99,14 @@ impl SetupUI {
         test_hwm: u32,
         chain_id: u32,
     ) -> Result<Self, Error> {
-        let addr = GetAddress::new_key(curve, &path)
-            .and_then(|k| Addr::new(&k))
-            .map_err(|_| Error::ExecutionError)?;
+        let mut addr = core::mem::MaybeUninit::uninit();
+        GetAddress::new_addr_into(curve, &path, &mut addr).map_err(|_| Error::ExecutionError)?;
 
         Ok(Self {
             curve,
             path,
-            addr,
+            //this is safe because it's initialized above
+            addr: unsafe { addr.assume_init() },
             main_hwm,
             test_hwm,
             chain_id: chain_id.into(),
@@ -136,7 +143,8 @@ impl Viewable for SetupUI {
                 let title_content = pic_str!(b"Address");
                 title[..title_content.len()].copy_from_slice(title_content);
 
-                handle_ui_message(&self.addr.base58()[..], message, page)
+                let (len, mex) = self.addr.base58();
+                handle_ui_message(&mex[..len], message, page)
             }
             2 => {
                 let title_content = pic_str!(b"Chain");
@@ -215,13 +223,10 @@ mod tests {
         assert_error_code,
         dispatcher::{handle_apdu, CLA, INS_LEGACY_SETUP},
         sys::set_out,
-        utils::strlen,
+        utils::MaybeNullTerminatedToString,
     };
 
-    use std::{
-        format,
-        string::{String, ToString},
-    };
+    use std::{format, string::ToString};
 
     use arrayref::array_mut_ref;
     use serial_test::serial;
@@ -287,13 +292,16 @@ mod tests {
     #[test]
     fn setup_ui() {
         let addr = Addr::from_hash(&[0; 20], Curve::Bip32Ed25519).unwrap();
+        let (len, addr_base58) = addr.base58();
+
         let path = BIP32Path::<10>::new([44, 1729, 0, 0].iter().map(|n| 0x8000_0000 + n)).unwrap();
 
         let expected_ui = [
             ("Type".to_string(), "Setup Baking".to_string()),
             (
                 "Address".to_string(),
-                String::from_utf8(addr.base58().to_vec()).unwrap(),
+                std::string::String::from_utf8(addr_base58[..len].to_vec())
+                    .expect("addr base58 was not utf8"),
             ),
             ("Chain".to_string(), "".to_string()),
             ("Main Chain HWM".to_string(), format!("{}", 42)),
@@ -306,16 +314,18 @@ mod tests {
             ChainID::Custom(1234),
             ChainID::Custom(420),
         ] {
-            let (chain_id_alias, len) = {
-                let mut alias = [0; ChainID::BASE58_LEN + 1];
+            let chain_id_alias = {
+                let mut alias = [0; ChainID::BASE58_LEN];
                 chain_id
                     .to_alias(array_mut_ref!(alias, 0, ChainID::BASE58_LEN))
                     .unwrap();
-                (alias, strlen(&alias[..]))
+                alias
+                    .to_string_with_check_null()
+                    .expect("Chain ID was not UTF8")
             };
 
             let mut expected_ui = expected_ui.clone();
-            expected_ui[2].1 = String::from_utf8(chain_id_alias[..len].to_vec()).unwrap();
+            expected_ui[2].1 = chain_id_alias;
 
             let ui = SetupUI {
                 curve: Curve::Bip32Ed25519,
@@ -334,11 +344,9 @@ mod tests {
             for (item_n, (expected_title, expected_message)) in expected_ui.iter().enumerate() {
                 let Page { title, message } = produced_ui[item_n][0]; //we only have 1 page
 
-                let title = {
-                    let len = strlen(&title[..]);
-
-                    std::str::from_utf8(&title[..len]).unwrap()
-                };
+                let title = title.to_string_with_check_null().unwrap_or_else(|err| {
+                    panic!("title from item #{} was not utf8: {:?}", item_n, err)
+                });
 
                 //we just check if if starts with since we ignore the paging at the end
                 if !title.starts_with(expected_title.as_str()) {
@@ -348,14 +356,12 @@ mod tests {
                     );
                 }
 
-                let message = {
-                    let len = strlen(&message[..]);
-
-                    std::str::from_utf8(&message[..len]).unwrap()
-                };
+                let message = message.to_string_with_check_null().unwrap_or_else(|err| {
+                    panic!("message from item #{} was not utf8: {:?}", item_n, err)
+                });
 
                 assert_eq!(
-                    message, expected_message,
+                    &message, expected_message,
                     "message for item #{} did not match with expected!",
                     item_n
                 )

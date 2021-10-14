@@ -26,6 +26,7 @@ mod sys;
 
 pub mod parser;
 
+#[cfg(not(fuzzing))]
 sys::panic_handler! {}
 
 #[macro_use]
@@ -33,7 +34,14 @@ mod utils;
 
 mod crypto;
 
-use dispatcher::handle_apdu;
+cfg_if::cfg_if! {
+    if #[cfg(fuzzing)] {
+        pub use dispatcher::handle_apdu;
+    } else {
+        use dispatcher::handle_apdu;
+    }
+}
+
 use sys::{check_canary, zemu_log};
 
 cfg_if::cfg_if! {

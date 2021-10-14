@@ -21,8 +21,8 @@ use crate::{errors::Error, hash::HasherId, raw::cx_ecfp_private_key_t};
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey {
     curve: Curve,
-    pub len: usize,
-    pub w: [u8; 65],
+    len: usize,
+    w: [u8; 65],
 }
 
 impl PublicKey {
