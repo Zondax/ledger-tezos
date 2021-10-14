@@ -361,7 +361,7 @@ describe.each(models)('Standard baking [%s]; legacy - hmac', function (m) {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
-      const resp = await app.legacyHMAC(APP_DERIVATION, curve, Buffer.from('francesco@zondax.ch'))
+      const resp = await app.legacyHMAC(APP_DERIVATION, curve, Buffer.from('support.tezos@zondax.ch'))
 
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
