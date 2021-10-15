@@ -1,0 +1,39 @@
+name: "Verify PRs to main"
+
+on: pull_request
+  branches:
+    - main
+
+jobs:
+  check_app_version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install python dependencies
+        run: pip install ledgerblue
+
+      - name: Download installers
+        #we use this since it allows us to get artifacts from other workflows
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: main.yaml
+          workflow_conclusion: success
+          pr: ${{ github.event.pull_request.number }}
+          name: app-installers
+          path: rust/app/pkg
+
+      - name: Retrieve version
+        id: vars
+        run: echo ::set-output name=version::$(bash ./rust/app/pkg/installer_s.sh version)
+
+      - id: checkTag
+        uses: mukunku/tag-exists-action@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag: ${{ steps.vars.outputs.tag_name }}
+
+      - run: |
+          if [ 'true' == ${{ steps.checkTag.outputs.exists }} ]; then
+            echo "Tag exists!"
+            exit 1
+          fi
