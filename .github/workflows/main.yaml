@@ -118,14 +118,14 @@ jobs:
         with:
           name: app-elfs
           path: rust/app/output/*.elf
-          if-no-files-are-found: error
+          if-no-files-found: error
 
       - name: Upload installers
         uses: actions/upload-artifact@v2
         with:
           name: app-installers
           path: rust/app/pkg/*.sh
-          if-no-files-are-found: error
+          if-no-files-found: error
 
   build_ledger_legacy:
     needs: configure
@@ -198,3 +198,13 @@ jobs:
         run: |
           export PATH=~/.cargo/bin:$PATH
           make zemu_test
+
+      - name: Tar Zemu snapshots
+        run: tar -cvf snapshots_tmp.tar ./zemu/snapshots-tmp
+      - name: Upload tmp snapshots
+        uses: actions/upload-artifact@v2
+        with:
+          name: snapshots-tmp
+          path: snapshots_tmp.tar
+          #we don't need these snapshots for very long
+          retention-days: 3
