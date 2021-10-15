@@ -14,7 +14,7 @@ jobs:
         with:
           repo-token : ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.pull_request.head.sha }}
-          check-name: "build_ledger"
+          check-name: "test_zemu"
           allowed-conclusions: success
 
   check_app_version:
@@ -29,7 +29,6 @@ jobs:
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: main.yaml
-          workflow_conclusion: in_progress
           pr: ${{ github.event.pull_request.number }}
           name: app-installers
           path: rust/app/pkg
