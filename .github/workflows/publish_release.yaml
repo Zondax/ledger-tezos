@@ -19,7 +19,6 @@ jobs:
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: main.yaml
-          workflow_conclusion: success
           commit: ${{ github.event.push.head.sha }}
           name: app-installers
           path: rust/app/pkg

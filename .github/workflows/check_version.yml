@@ -6,10 +6,17 @@ on:
       - main
 
 jobs:
-  wait_for_build:
+  wait_for_workflow:
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for build workflow to succeed
+      - name: Wait for build ledger step to succeed
+        uses: lewagon/wait-on-check-action@v1.1.1
+        with:
+          repo-token : ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: "build_ledger"
+          allowed-conclusions: success
+      - name: Wait for Zemu tests to succeed
         uses: lewagon/wait-on-check-action@v1.1.1
         with:
           repo-token : ${{ secrets.GITHUB_TOKEN }}
@@ -18,7 +25,7 @@ jobs:
           allowed-conclusions: success
 
   check_app_version:
-    needs: wait_for_build
+    needs: wait_for_workflow
     runs-on: ubuntu-latest
     steps:
       - name: Install python dependencies
