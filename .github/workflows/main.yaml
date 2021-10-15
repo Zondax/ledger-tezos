@@ -145,7 +145,7 @@ jobs:
         with:
           name: legacy-app-elfs
           path: legacy/output/*.elf
-          if-no-files-are-found: error
+          if-no-files-found: error
           # we only need to keep these for the tests later
           # but otherwise they are unnecessary
           retention-days: 1
@@ -158,12 +158,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-
-      - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v1
-        with:
-          path: ./rust/app/.cargo
-          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
 
       - name: Download app elfs
         uses: actions/download-artifact@v2
@@ -179,17 +173,14 @@ jobs:
 
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
 
-      - name: Install rust
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
       - name: Install node
         uses: actions/setup-node@v2
         with:
           node-version: '14.17.0'
+
       - name: Install yarn
         run: npm install -g yarn
+
       - name: Build/Install build js deps
         run: |
           export PATH=~/.cargo/bin:$PATH
@@ -200,8 +191,10 @@ jobs:
           make zemu_test
 
       - name: Tar Zemu snapshots
+        if: always()
         run: tar -cvf snapshots_tmp.tar ./zemu/snapshots-tmp
       - name: Upload tmp snapshots
+        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: snapshots-tmp

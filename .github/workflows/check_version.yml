@@ -29,7 +29,6 @@ jobs:
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: main.yaml
-          workflow_conclusion: success
           pr: ${{ github.event.pull_request.number }}
           name: app-installers
           path: rust/app/pkg
