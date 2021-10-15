@@ -112,11 +112,13 @@ jobs:
           make clean
           make build
 
-      - name: Cache rust elf files
+      - name: Cache binary output
         uses: actions/cache@v1
         with:
-          path: ./rust/app/output
-          key: ${{ runner.os }}-${{ github.run_id }}-rust
+          path: |
+            ./rust/app/output
+            ./rust/app/pkg/*.sh
+          key: ${{ runner.os }}-${{ github.run_id }}-bin
 
   build_ledger_legacy:
     needs: configure
@@ -149,17 +151,20 @@ jobs:
         with:
           path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-      - name: Restore rust build from cache
+
+      - name: Restore app elf files from cache
         uses: actions/cache@v1
         with:
-          path:  ./rust/app/output
-          key: ${{ runner.os }}-${{ github.run_id }}-rust
+          path: ./rust/app/output
+          key: ${{ runner.os }}-${{ github.run_id }}-bin
+
       - name: Restore legacy build from cache
         uses: actions/cache@v1
         with:
           path: ./legacy/output
           key: ${{ runner.os }}-${{ github.run_id }}-legacy
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
+
       - name: Install rust
         run: |
           sudo apt-get update
@@ -202,27 +207,29 @@ jobs:
         with:
           path: ./rust/app/.cargo
           key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-      - name: Restore rust build from cache
+
+      - name: Restore package files from cache
         uses: actions/cache@v1
         with:
-          path: ./rust/app/output
-          key: ${{ runner.os }}-${{ github.run_id }}-rust
-      - name: Copy baking artifacts
-        run: |
-          pip install ledgerblue
-          mv rust/app/pkg/installer_s.sh rust/app/pkg/installer_baking_s.sh
+          path: ./rust/app/pkg
+          key: ${{ runner.os }}-${{ github.run_id }}-bin
+
+      - name: Install python dependencies
+        run: pip install ledgerblue
+
       - name: Set tag name var
         id: vars
-        run: echo ::set-output name=tag_name::$(./rust/app/pkg/installer_baking_s.sh version)
-      - name: Create or Update Release
+        run: echo ::set-output name=tag_name::$(./rust/app/pkg/installer_s.sh version)
+
+      - name: Create release
         id: create_release
         uses: softprops/action-gh-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            ./rust/app/pkg/installer_baking_s.sh
-            ./rust/app/pkg/installer_s.sh
+            ./rust/app/pkg/*
+            !./rust/app/pkg/.gitkeep
           tag_name: ${{ steps.vars.outputs.tag_name }}
           draft: false
           prerelease: false
