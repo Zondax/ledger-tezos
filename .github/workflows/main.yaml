@@ -90,6 +90,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
+
       - name: Cache/restore Cargo dependencies
         uses: actions/cache@v1
         with:
@@ -112,11 +113,19 @@ jobs:
           make clean
           make build
 
-      - name: Cache rust elf files
-        uses: actions/cache@v1
+      - name: Upload elfs
+        uses: actions/upload-artifact@v2
         with:
-          path: ./rust/app/output
-          key: ${{ runner.os }}-${{ github.run_id }}-rust
+          name: app-elfs
+          path: rust/app/output/*.elf
+          if-no-files-found: error
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v2
+        with:
+          name: app-installers
+          path: rust/app/pkg/*.sh
+          if-no-files-found: error
 
   build_ledger_legacy:
     needs: configure
@@ -130,11 +139,16 @@ jobs:
       - name: Build Nano S apps
         run: |
           make build_legacy
-      - name: Cache legacy elf files
-        uses: actions/cache@v1
+
+      - name: Upload legacy elfs
+        uses: actions/upload-artifact@v2
         with:
-          path: ./legacy/output
-          key: ${{ runner.os }}-${{ github.run_id }}-legacy
+          name: legacy-app-elfs
+          path: legacy/output/*.elf
+          if-no-files-found: error
+          # we only need to keep these for the tests later
+          # but otherwise they are unnecessary
+          retention-days: 1
 
   test_zemu:
     needs: [ build_ledger, build_ledger_legacy ]
@@ -144,33 +158,29 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v1
+
+      - name: Download app elfs
+        uses: actions/download-artifact@v2
         with:
-          path: ./rust/app/.cargo
-          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-      - name: Restore rust build from cache
-        uses: actions/cache@v1
+          name: app-elfs
+          path: rust/app/output
+
+      - name: Download legacy app elfs
+        uses: actions/download-artifact@v2
         with:
-          path:  ./rust/app/output
-          key: ${{ runner.os }}-${{ github.run_id }}-rust
-      - name: Restore legacy build from cache
-        uses: actions/cache@v1
-        with:
-          path: ./legacy/output
-          key: ${{ runner.os }}-${{ github.run_id }}-legacy
+          name: legacy-app-elfs
+          path: legacy/output
+
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
-      - name: Install rust
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
+
       - name: Install node
         uses: actions/setup-node@v2
         with:
           node-version: '14.17.0'
+
       - name: Install yarn
         run: npm install -g yarn
+
       - name: Build/Install build js deps
         run: |
           export PATH=~/.cargo/bin:$PATH
@@ -180,49 +190,14 @@ jobs:
           export PATH=~/.cargo/bin:$PATH
           make zemu_test
 
-
-  build_package:
-    needs: [ configure, checks, build, build-baking, test_zemu, build_ledger ]
-    if: ${{ github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
-    container:
-      image: zondax/builder-bolos:latest
-      options: --user ${{ needs.configure.outputs.uid_gid }}
-    env:
-      BOLOS_SDK: ${{ github.workspace }}/deps/nanos-secure-sdk
-      BOLOS_ENV: /opt/bolos
-      HOME: /home/zondax_circle
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Tar Zemu snapshots
+        if: always()
+        run: tar -cvf snapshots_tmp.tar ./zemu/snapshots-tmp
+      - name: Upload tmp snapshots
+        if: always()
+        uses: actions/upload-artifact@v2
         with:
-          submodules: true
-      - name: Cache/restore Cargo dependencies
-        uses: actions/cache@v1
-        with:
-          path: ./rust/app/.cargo
-          key: ${{ runner.os }}-${{ hashFiles('./rust/Cargo.lock') }}
-      - name: Restore rust build from cache
-        uses: actions/cache@v1
-        with:
-          path: ./rust/app/output
-          key: ${{ runner.os }}-${{ github.run_id }}-rust
-      - name: Copy baking artifacts
-        run: |
-          pip install ledgerblue
-          mv rust/app/pkg/installer_s.sh rust/app/pkg/installer_baking_s.sh
-      - name: Set tag name var
-        id: vars
-        run: echo ::set-output name=tag_name::$(./rust/app/pkg/installer_baking_s.sh version)
-      - name: Create or Update Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          files: |
-            ./rust/app/pkg/installer_baking_s.sh
-            ./rust/app/pkg/installer_s.sh
-          tag_name: ${{ steps.vars.outputs.tag_name }}
-          draft: false
-          prerelease: false
+          name: snapshots-tmp
+          path: snapshots_tmp.tar
+          #we don't need these snapshots for very long
+          retention-days: 3

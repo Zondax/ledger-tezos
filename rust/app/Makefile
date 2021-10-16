@@ -55,8 +55,8 @@ COIN=XTZ
 endif
 
 APPVERSION_M=0
-APPVERSION_N=0
-APPVERSION_P=4
+APPVERSION_N=1
+APPVERSION_P=0
 
 $(info COIN  = [$(COIN)])
 ifeq ($(COIN),XTZ)
@@ -95,6 +95,7 @@ endif
 ifdef BAKING
 RUST_FEATURES=--features="baking"
 OUTPUT_ELF:=$(subst .elf,_baking.elf,$(OUTPUT_ELF))
+OUTPUT_INSTALLER:=$(subst installer,installer_baking,$(OUTPUT_INSTALLER))
 BAKING=true
 else
 RUST_FEATURES=--features="wallet"
@@ -109,6 +110,7 @@ $(info BAKING = [$(BAKING)])
 $(info TARGET_NAME  = [$(TARGET_NAME)])
 $(info ICONNAME  = [$(ICONNAME)])
 $(info OUTPUT_ELF = [$(OUTPUT_ELF)])
+$(info OUTPUT_INSTALLR = [$(OUTPUT_INSTALLER)])
 
 ifndef ICONNAME
 $(error ICONNAME is not set)
@@ -242,3 +244,7 @@ dep/%.d: %.c Makefile
 .PHONY: listvariants
 listvariants:
 	@echo VARIANTS COIN XTZ
+
+.PHONY: version
+version:
+	@echo "v$(APPVERSION)" > app.version
