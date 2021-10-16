@@ -129,6 +129,8 @@ jobs:
 
   build_ledger_legacy:
     needs: configure
+    #if we skip the zemu tests we have no reason to build the legacy app
+    if: ${{! contains(toJSON(github.event.commits.*.message), '[skip-zemu]')}}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -152,6 +154,7 @@ jobs:
 
   test_zemu:
     needs: [ build_ledger, build_ledger_legacy ]
+    if: ${{! contains(toJSON(github.event.commits.*.message), '[skip-zemu]')}}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
