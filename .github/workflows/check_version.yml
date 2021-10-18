@@ -51,6 +51,8 @@ jobs:
         with:
           tag: ${{ needs.get_version.outputs.version }}
 
+      - run: echo ${{ steps.checkTag.outputs.exists }}
+
       - name: Tag exists
-        if: steps.checkTag.output.exists == 'true'
+        if: ${{ steps.checkTag.outputs.exists == 'true' }}
         run: exit 1

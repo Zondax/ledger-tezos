@@ -33,7 +33,7 @@ use crate::{errors::catch, Error as SysError};
 /// assert_eq!(&[0; 1024], &**MEMORY);
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(transparent)]
+#[repr(align(64))]
 pub struct NVM<const N: usize>([u8; N]);
 
 #[derive(Debug, Clone, Copy)]

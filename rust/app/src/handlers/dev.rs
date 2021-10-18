@@ -24,3 +24,6 @@ pub use echo::Echo;
 
 mod blind_sign;
 pub use blind_sign::BlindSign;
+
+mod debug;
+pub use debug::Debug;
