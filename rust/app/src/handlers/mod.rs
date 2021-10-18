@@ -48,6 +48,8 @@ pub mod resources {
         Sha256,
         #[cfg(feature = "dev")]
         BlindSign,
+        #[cfg(feature = "dev")]
+        Debug,
         #[cfg(feature = "baking")]
         Baking,
     }
@@ -69,6 +71,13 @@ pub mod resources {
     impl From<super::dev::BlindSign> for BUFFERAccessors {
         fn from(_: super::dev::BlindSign) -> Self {
             Self::BlindSign
+        }
+    }
+
+    #[cfg(feature = "dev")]
+    impl From<super::dev::Debug> for BUFFERAccessors {
+        fn from(_: super::dev::Debug) -> Self {
+            Self::Debug
         }
     }
 

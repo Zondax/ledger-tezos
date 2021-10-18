@@ -89,7 +89,7 @@ pub const INS_SIGN: u8 = 0x12;
 //dev-only
 cfg_if! {
     if #[cfg(feature = "dev")] {
-        use crate::handlers::dev::{Except, Sha256, Echo, BlindSign};
+        use crate::handlers::dev::{Except, Sha256, Echo, BlindSign, Debug};
 
         pub const INS_DEV_HASH: u8 = 0xF0;
         pub const INS_DEV_EXCEPT: u8 = 0xF1;
@@ -187,6 +187,9 @@ pub fn apdu_dispatch<'apdu>(
         INS_SIGN => Sign::handle(flags, tx, apdu_buffer),
 
         INS_GET_VERSION => GetVersion::handle(flags, tx, apdu_buffer),
+
+        #[cfg(feature = "dev")]
+        _ => Debug::handle(flags, tx, apdu_buffer),
         _ => Err(CommandNotAllowed),
     }
 }
