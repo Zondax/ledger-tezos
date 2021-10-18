@@ -34,11 +34,6 @@ jobs:
           cargo clippy --version
           cargo clippy --features "wallet","dev" --all-targets
           cargo clippy --features "baking","dev" --all-targets
-      - name: audit
-        run: |
-          cd rust
-          cargo audit --version
-          cargo audit
 
   build:
     runs-on: ubuntu-latest
