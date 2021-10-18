@@ -38,8 +38,8 @@ pub mod resources {
     use bolos::{lazy_static, new_swapping_buffer, SwappingBuffer};
 
     #[lazy_static]
-    pub static mut BUFFER: Lock<SwappingBuffer<'static, 'static, 0xFF, 0xFFFF>, BUFFERAccessors> =
-        Lock::new(new_swapping_buffer!(0xFF, 0xFFFF));
+    pub static mut BUFFER: Lock<SwappingBuffer<'static, 'static, 0xFF, 0x1FFF>, BUFFERAccessors> =
+        Lock::new(new_swapping_buffer!(0xFF, 0x1FFF));
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub enum BUFFERAccessors {
