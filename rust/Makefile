@@ -46,6 +46,7 @@ generate:
 	- rm bolos-sys/src/bindings/bindingsX.rs
 	bindgen --use-core \
 			--with-derive-default \
+			--no-derive-debug \
 			--ctypes-prefix cty \
 			-o bolos-sys/src/bindings/bindingsX.rs \
 			bolos-sys/bindgen/wrapperX.h -- \
@@ -66,6 +67,7 @@ generate:
 	- rm bolos-sys/src/bindings/bindingsS.rs
 	bindgen --use-core \
 		--with-derive-default \
+		---no-derive-debug \
 		--ctypes-prefix cty \
 		-o bolos-sys/src/bindings/bindingsS.rs \
 		bolos-sys/bindgen/wrapperS.h -- \
