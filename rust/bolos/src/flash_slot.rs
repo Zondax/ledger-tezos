@@ -24,14 +24,13 @@ pub const SLOT_SIZE: usize = PAGE_SIZE - COUNTER_SIZE - CRC_SIZE;
 
 pub const ZEROED_STORAGE: [u8; PAGE_SIZE] = Slot::zeroed().as_storage();
 
-#[derive(Debug)]
 pub(self) struct Slot<'nvm> {
     pub counter: u64,
     payload: &'nvm [u8; SLOT_SIZE],
     crc: u32,
 }
 
-#[derive(Debug)]
+#[cfg_attr(any(feature = "derive-debug", test), derive(Debug))]
 enum SlotError {
     Crc { expected: u32, found: u32 },
 }
@@ -137,13 +136,14 @@ impl<'nvm> Slot<'nvm> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 #[repr(transparent)]
 pub struct NVMWearSlot {
     storage: NVM<64>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
+#[cfg_attr(any(feature = "derive-debug", test), derive(Debug))]
 pub enum WearError {
     Crc { expected: u32, found: u32 },
     NVMWrite,
@@ -167,10 +167,10 @@ impl NVMWearSlot {
         //Safety: this is ok because the memory layout is the same, since PIC is transparent
         // as well as NVMWearSlot
         unsafe {
-            storage
-                .cast::<PIC<[NVMWearSlot; ARRAY_SIZE]>>()
-                .as_mut()
-                .unwrap()
+            match storage.cast::<PIC<[NVMWearSlot; ARRAY_SIZE]>>().as_mut() {
+                Some(ptr) => ptr, //impossible to fail, the source is a reference
+                None => core::hint::unreachable_unchecked(),
+            }
         }
     }
 
@@ -203,7 +203,6 @@ impl NVMWearSlot {
     }
 }
 
-#[derive(Debug)]
 pub struct Wear<'s, const SLOTS: usize> {
     slots: &'s mut PIC<[NVMWearSlot; SLOTS]>,
     idx: u64,

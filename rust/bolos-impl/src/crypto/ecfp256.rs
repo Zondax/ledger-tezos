@@ -18,7 +18,7 @@ use zeroize::{Zeroize, Zeroizing};
 use super::{bip32::BIP32Path, Curve, Mode};
 use crate::{errors::Error, hash::HasherId, raw::cx_ecfp_private_key_t};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct PublicKey {
     curve: Curve,
     len: usize,

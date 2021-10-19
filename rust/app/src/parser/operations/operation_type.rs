@@ -17,7 +17,6 @@ use super::*;
 
 use core::ptr::addr_of_mut;
 
-#[derive(Debug)]
 #[repr(u8)] //IMPORTANT
             //see OperationType comment
 enum OperationTypeKind {
@@ -40,7 +39,7 @@ struct TransferVariant<'b>(OperationTypeKind, Transfer<'b>);
 struct DelegationVariant<'b>(OperationTypeKind, Delegation<'b>);
 
 #[repr(C)]
-#[derive(Debug)]
+
 struct EndorsementVariant(OperationTypeKind, Endorsement);
 
 #[repr(C)]
@@ -64,7 +63,7 @@ struct ActivateAccountVariant<'b>(OperationTypeKind, ActivateAccount<'b>);
 #[repr(C)]
 struct FailingNoopVariant<'b>(OperationTypeKind, FailingNoop<'b>);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 //ABSOLUTELY IMPORTANT, DO NOT CHANGE THIS
 #[repr(u8)]
 // else, run all unit tests many times + fuzzer and find an alternative way

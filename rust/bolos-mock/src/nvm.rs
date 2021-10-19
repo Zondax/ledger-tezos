@@ -32,11 +32,11 @@ use crate::Error as SysError;
 /// let _: &PIC<NVM<1024>> = &MEMORY;
 /// assert_eq!(&[0; 1024], &**MEMORY);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct NVM<const N: usize>([u8; N]);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum NVMError {
     Overflow { max: usize, got: usize },
     Internal(SysError),

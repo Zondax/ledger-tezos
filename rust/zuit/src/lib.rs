@@ -21,7 +21,7 @@
 
 use zemu_sys::Viewable;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Page<const T: usize, const M: usize> {
     pub title: [u8; T],
     pub message: [u8; M],

@@ -21,7 +21,7 @@ use nom::{
     IResult,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Fitness<'b> {
     fitness: &'b [u8],
@@ -36,7 +36,7 @@ impl<'b> Fitness<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
 pub struct Fitnesses<'b> {
     source: &'b [u8],
     //number of bytes read
@@ -112,7 +112,7 @@ impl<'b> Fitnesses<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
 pub struct FullBlockHeader<'b> {
     level: i32,
@@ -220,7 +220,7 @@ impl<'b> FullBlockHeader<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
 pub struct DoubleBakingEvidence<'b> {
     first_header: FullBlockHeader<'b>,

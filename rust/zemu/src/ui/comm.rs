@@ -13,7 +13,8 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "derive-debug", derive(Debug))]
 pub enum ViewError {
     Unknown,
     NoData,

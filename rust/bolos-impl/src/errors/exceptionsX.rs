@@ -16,7 +16,7 @@
 use crate::raw::exception_t;
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone, Copy)]
+#[derive( Clone, Copy)]
 pub enum SyscallError {
     Exception,
     InvalidParameter,

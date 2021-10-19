@@ -2,7 +2,7 @@
 use nom::error::ErrorKind;
 
 #[repr(u32)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 /// ParserError is the counterpart of
 /// the parse_error_t in c,
 /// we redeclare it here, just for interpolation

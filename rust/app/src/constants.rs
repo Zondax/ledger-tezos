@@ -15,7 +15,7 @@
 ********************************************************************************/
 // Based on ISO7816
 #[repr(u16)]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(PartialEq, Eq)]
 pub enum ApduError {
     ExecutionError = 0x6400,
     WrongLength = 0x6700,
@@ -34,7 +34,6 @@ pub enum ApduError {
     Busy = 0x9001,
 }
 
-#[derive(Debug)]
 pub enum ConvertApduError {
     Length { expected: usize, found: usize },
     Unknown(u16),

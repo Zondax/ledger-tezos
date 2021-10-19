@@ -19,7 +19,7 @@ use super::{
 };
 use std::prelude::v1::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 enum BufferState {
     WritingToRam(usize),
     WritingToFlash(usize),

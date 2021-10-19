@@ -27,7 +27,7 @@ use crate::{
     dispatcher::ApduHandler,
     handlers::handle_ui_message,
     sys::{self, Error as SysError},
-    utils::ApduBufferRead,
+    utils::{ApduBufferRead, ApduPanic},
 };
 
 pub struct GetAddress;
@@ -100,7 +100,7 @@ impl ApduHandler for GetAddress {
     }
 }
 
-#[derive(Default, Clone, Copy, Debug)]
+#[derive(Default, Clone, Copy)]
 pub struct Addr {
     prefix: [u8; 3],
     hash: [u8; 20],
@@ -133,7 +133,7 @@ impl Addr {
             //this is okay because while out is unitialized
             // the "hash" is just an array of bytes, and all configurations are valid
             // but we don't read anyways
-            let hash = addr_of_mut!((*out).hash).as_mut().unwrap();
+            let hash = addr_of_mut!((*out).hash).as_mut().apdu_unwrap();
             pubkey.hash(hash)?;
         }
         sys::zemu_log_stack("Addr::new after hash\x00");
@@ -144,7 +144,7 @@ impl Addr {
             // in a sense that no matter the value of `prefix` it's valid
             addr_of_mut!((*out).prefix)
                 .as_mut()
-                .unwrap()
+                .apdu_unwrap()
                 .copy_from_slice(pubkey.curve().to_hash_prefix());
         }
 
@@ -152,13 +152,13 @@ impl Addr {
         unsafe {
             super::sha256x2(
                 &[
-                    &addr_of!((*out).prefix).as_ref().unwrap()[..], //this has been initialized
-                    &addr_of!((*out).hash).as_ref().unwrap()[..],   //this has also been initialized
+                    &addr_of!((*out).prefix).as_ref().apdu_unwrap()[..], //this has been initialized
+                    &addr_of!((*out).hash).as_ref().apdu_unwrap()[..], //this has also been initialized
                 ],
                 //same as when we wrote into prefix and hash
                 // the data is always valid, even when uninitialized
                 // and the pointer comes from a proper reference
-                addr_of_mut!((*out).checksum).as_mut().unwrap(),
+                addr_of_mut!((*out).checksum).as_mut().apdu_unwrap(),
             )?;
         }
 
@@ -183,7 +183,7 @@ impl Addr {
         //the expect is ok since we know all the sizes
         let len = bs58::encode(input)
             .into(&mut out[..])
-            .expect("encoded in base58 is not of the right length");
+            .apdu_expect("encoded in base58 is not of the right length");
 
         (len, out)
     }

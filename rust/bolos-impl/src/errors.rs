@@ -79,7 +79,10 @@ mod exceptions {
         }
 
         //result will be set either way so we can unwrap here
-        return result.unwrap();
+        return match result {
+            Some(r) => r,
+            None => unsafe { core::hint::unreachable_unchecked() },
+        };
     }
 
     pub fn throw_raw(exception: u32) -> ! {

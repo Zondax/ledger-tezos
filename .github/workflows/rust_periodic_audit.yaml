@@ -14,5 +14,6 @@ jobs:
 
       - name: Run audit
         uses: actions-rs/audit-check@v1
+        working-directory: ./rust
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

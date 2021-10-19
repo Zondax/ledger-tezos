@@ -53,7 +53,7 @@ pub trait DisplayableItem {
 }
 
 //legacy app stored in a uint64 always, we have `read_as`
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Zarith<'b> {
     bytes: &'b [u8],
     is_negative: Option<bool>,
@@ -222,7 +222,7 @@ fn boolean(input: &[u8]) -> IResult<&[u8], bool, ParserError> {
 
 // Previously called magic byte
 #[repr(u8)]
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Clone, PartialEq, Copy)]
 pub enum Preemble {
     ///Data is expected to be a block
     Block = 0x01,

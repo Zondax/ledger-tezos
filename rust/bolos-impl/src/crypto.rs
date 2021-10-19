@@ -35,7 +35,7 @@ use crate::raw::{
     cx_curve_e_CX_CURVE_Stark256,
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Curve {
     None,
 
@@ -202,7 +202,7 @@ impl Curve {
 use crate::raw::HDW_SLIP21;
 use crate::raw::{HDW_ED25519_SLIP10, HDW_NORMAL};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Mode {
     BIP32,
     Ed25519Slip10,

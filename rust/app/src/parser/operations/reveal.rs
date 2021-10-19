@@ -23,7 +23,7 @@ use crate::{
     parser::{public_key, public_key_hash, DisplayableItem, Zarith},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, property::Property)]
+#[derive(Clone, Copy, PartialEq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Reveal<'b> {
     source: (Curve, &'b [u8; 20]),

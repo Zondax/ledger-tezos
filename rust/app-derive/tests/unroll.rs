@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 //! Test the unroll macro
-use std::path::PathBuf;
+use std::{cmp::Ordering, path::PathBuf};
 
 use arrayref::array_ref;
 
@@ -31,12 +31,41 @@ unroll!("../app/vendor/BakersRegistryCoreUnfilteredData.json");
 /// This structs represents the expected schematic of the baker dat
 ///
 /// Here it's used to read data more easily for the tests
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct KnownBaker {
     #[serde(alias = "bakerName")]
     name: String,
     #[serde(alias = "bakerAccount")]
     addr: String,
+}
+
+#[test]
+fn sorted_deduped() {
+    let mut copy = Vec::from(KNOWN_BAKERS);
+    copy.dedup();
+    copy.sort_by(
+        |(prefix_a, hash_a, _), (prefix_b, hash_b, _)| match prefix_a.cmp(prefix_b) {
+            Ordering::Equal => hash_a.cmp(hash_b),
+            ord => ord,
+        },
+    );
+
+    assert_eq!(&copy[..], KNOWN_BAKERS);
+}
+#[test]
+fn binary_search() {
+    let (sample_prefix, sample_hash, _) = KNOWN_BAKERS[6];
+
+    let idx = KNOWN_BAKERS
+        .binary_search_by(
+            |&(probe_prefix, probe_hash, _)| match probe_prefix.cmp(sample_prefix) {
+                Ordering::Equal => probe_hash.cmp(sample_hash),
+                ord => ord,
+            },
+        )
+        .expect("couldn't find from list");
+
+    assert_eq!(idx, 6)
 }
 
 #[test]

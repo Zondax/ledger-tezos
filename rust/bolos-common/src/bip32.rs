@@ -14,13 +14,15 @@
 *  limitations under the License.
 ********************************************************************************/
 /// Struct representing a BIP32 derivation path, with up to LEN components
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(any(feature = "derive-debug", test), derive(Debug))]
 pub struct BIP32Path<const LEN: usize> {
     len: u8,
     components: [u32; LEN],
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
+#[cfg_attr(any(feature = "derive-debug", test), derive(Debug))]
 pub enum BIP32PathError {
     //tried to derive a path with 0 components
     ZeroLength,

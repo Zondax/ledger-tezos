@@ -19,7 +19,7 @@ use crate::Error;
 
 use super::{bip32::BIP32Path, Curve, Mode};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct PublicKey {
     curve: Curve,
     len: usize,

@@ -22,7 +22,7 @@ use crate::{
     parser::DisplayableItem,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
 #[property(mut(disable), get(public), set(disable))]
 pub struct FailingNoop<'b> {
     arbitrary: &'b [u8],

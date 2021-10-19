@@ -17,7 +17,7 @@ pub use bolos_common::bip32;
 
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Curve {
     Secp256K1,
     Secp256R1,
@@ -63,7 +63,7 @@ impl Curve {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Mode {
     BIP32,
     Ed25519Slip10,

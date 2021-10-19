@@ -13,7 +13,10 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use core::ops::{Deref, DerefMut};
+use core::{
+    hint::unreachable_unchecked,
+    ops::{Deref, DerefMut},
+};
 
 //https://github.com/LedgerHQ/ledger-nanos-sdk/blob/master/src/lib.rs#L179
 /// This struct is to be used when dealing with code memory spaces
@@ -43,7 +46,7 @@ use core::ops::{Deref, DerefMut};
 ///
 /// An API exists for putting the "fettiness" back, see [Pointee](core::ptr::Pointee),
 /// but it's currently unstable
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct PIC<T> {
     data: T,
@@ -88,7 +91,13 @@ impl<'a, T> PIC<&'a T> {
             if #[cfg(bolos_sdk)] {
                 let ptr = unsafe { super::raw::pic(self.data as *const T as _) as *const T };
 
-                unsafe { ptr.as_ref().unwrap() } //we know it can't be null
+                unsafe {
+                    match ptr.as_ref() {
+                        //we know it can't be null
+                        Some(r) => r,
+                        None => unreachable_unchecked(),
+                    }
+                }
             } else {
                 self.data
             }
@@ -102,7 +111,13 @@ impl<'a, T> PIC<&'a mut T> {
             if #[cfg(bolos_sdk)] {
                 let ptr = unsafe { super::raw::pic(self.data as *const T as _) as *mut T };
 
-                unsafe { ptr.as_mut().unwrap() } //we know it can't be null
+                unsafe {
+                    match ptr.as_mut() {
+                        //we know it can't be null
+                        Some(r) => r,
+                        None => unreachable_unchecked(),
+                    }
+                }
             } else {
                 self.data
             }
@@ -118,9 +133,11 @@ impl<'a> PIC<&'a str> {
                 let data = PIC::new(self.data.as_bytes()).into_inner();
 
                 //if this is not utf8 then it's invalid memory
-                let s = core::str::from_utf8(data).expect("picced string was garbage");
+                match core::str::from_utf8(data) {
+                    Ok(s) => s,
+                    Err(_) => panic!("picced string was garbage")
+                }
 
-                s
             } else {
                 self.data
             }
