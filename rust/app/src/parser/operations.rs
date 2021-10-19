@@ -214,6 +214,7 @@ pub use seed_nonce_revelation::SeedNonceRevelation;
 pub use transfer::Transfer;
 
 #[derive(Clone, Copy)]
+#[cfg_attr(test, derive(Debug))]
 pub enum AnonymousOp<'b> {
     DoubleEndorsementEvidence(DoubleEndorsementEvidence<'b>),
     SeedNonceRevelation(SeedNonceRevelation<'b>),
@@ -269,6 +270,7 @@ impl<'b> AnonymousOp<'b> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum ContractID<'b> {
     Implicit(Curve, &'b [u8; 20]),
     Originated(&'b [u8; 20]),

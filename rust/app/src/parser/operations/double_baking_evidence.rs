@@ -37,6 +37,7 @@ impl<'b> Fitness<'b> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 pub struct Fitnesses<'b> {
     source: &'b [u8],
     //number of bytes read
@@ -113,6 +114,7 @@ impl<'b> Fitnesses<'b> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct FullBlockHeader<'b> {
     level: i32,
@@ -221,6 +223,7 @@ impl<'b> FullBlockHeader<'b> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct DoubleBakingEvidence<'b> {
     first_header: FullBlockHeader<'b>,

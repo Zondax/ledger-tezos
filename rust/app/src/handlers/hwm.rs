@@ -141,6 +141,7 @@ impl HWM {
 }
 
 #[derive(PartialEq, Clone)]
+#[cfg_attr(test, derive(Debug))]
 pub struct WaterMark {
     pub level: u32,
     pub endorsement: bool,

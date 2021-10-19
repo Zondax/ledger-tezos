@@ -48,6 +48,7 @@ static mut BAKINGPATH: WearLeveller =
     new_flash_slot!(N_PAGES_BAKINGPATH).apdu_expect("NVM might be corrupted");
 
 #[derive(PartialEq, Clone)]
+#[cfg_attr(test, derive(Debug))]
 /// Utility struct to store and read BIP32Path and Curve from NVM slots
 ///
 /// # Codec

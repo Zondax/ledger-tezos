@@ -24,6 +24,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Script<'b> {
     code: &'b [u8],
@@ -46,6 +47,7 @@ impl<'b> Script<'b> {
 }
 
 #[derive(Clone, Copy, PartialEq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Origination<'b> {
     source: (Curve, &'b [u8; 20]),

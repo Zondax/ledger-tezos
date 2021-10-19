@@ -28,6 +28,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Endorsement {
     level: i32,
@@ -107,6 +108,7 @@ impl Endorsement {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct EndorsementWithSlot<'b> {
     branch: &'b [u8; 32],
@@ -256,6 +258,7 @@ impl<'b> EndorsementWithSlot<'b> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct DoubleEndorsementEvidence<'b> {
     first_branch: &'b [u8; 32],

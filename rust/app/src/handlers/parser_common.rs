@@ -9,6 +9,7 @@ use nom::error::ErrorKind;
 /// purposes
 
 //TODO: make this CamelCase
+#[cfg_attr(test, derive(Debug))]
 pub enum ParserError {
     // Generic errors
     parser_no_data,

@@ -31,6 +31,7 @@ use crate::{
 const PROPOSAL_BYTES_LEN: usize = 32;
 
 #[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Proposals<'b> {
     source: (Curve, &'b [u8; 20]),

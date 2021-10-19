@@ -26,6 +26,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct ActivateAccount<'b> {
     public_key_hash: (Curve, &'b [u8; 20]),

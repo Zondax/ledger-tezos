@@ -20,6 +20,7 @@ pub struct Lock<T, A> {
     lock: Option<A>,
 }
 
+#[cfg_attr(test, derive(Debug))]
 pub enum LockError {
     Busy,
     NotLocked,

@@ -67,6 +67,7 @@ struct FailingNoopVariant<'b>(OperationTypeKind, FailingNoop<'b>);
 //ABSOLUTELY IMPORTANT, DO NOT CHANGE THIS
 #[repr(u8)]
 // else, run all unit tests many times + fuzzer and find an alternative way
+#[cfg_attr(test, derive(Debug))]
 pub enum OperationType<'b> {
     Transfer(Transfer<'b>),
     Delegation(Delegation<'b>),

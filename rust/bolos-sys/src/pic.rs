@@ -92,7 +92,7 @@ impl<'a, T> PIC<&'a T> {
                     match ptr.as_ref() {
                         //we know it can't be null
                         Some(r) => r,
-                        None => unreachable_unchecked(),
+                        None => core::hint::unreachable_unchecked(),
                     }
                 }
             } else {
@@ -112,7 +112,7 @@ impl<'a, T> PIC<&'a mut T> {
                     match ptr.as_mut() {
                         //we know it can't be null
                         Some(r) => r,
-                        None => unreachable_unchecked(),
+                        None => core::hint::unreachable_unchecked(),
                     }
                 }
             } else {
