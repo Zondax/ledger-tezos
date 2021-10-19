@@ -13,10 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use core::{
-    hint::unreachable_unchecked,
-    ops::{Deref, DerefMut},
-};
+use core::ops::{Deref, DerefMut};
 
 //https://github.com/LedgerHQ/ledger-nanos-sdk/blob/master/src/lib.rs#L179
 /// This struct is to be used when dealing with code memory spaces

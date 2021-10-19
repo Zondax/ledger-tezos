@@ -4,6 +4,10 @@ on:
     #run at hour 0 minute 0 every day of every month of every year
     - cron: '0 0 * * *'
 
+defaults:
+  run:
+    working-directory: rust
+
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -14,6 +18,5 @@ jobs:
 
       - name: Run audit
         uses: actions-rs/audit-check@v1
-        working-directory: ./rust
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

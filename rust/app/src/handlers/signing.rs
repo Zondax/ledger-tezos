@@ -34,7 +34,7 @@ use crate::{
         DisplayableItem, Preemble,
     },
     sys,
-    utils::{ApduBufferRead, ApduPanic, Uploader},
+    utils::{ApduBufferRead, Uploader},
 };
 
 #[bolos::lazy_static]

@@ -36,21 +36,27 @@ struct KnownBaker {
 }
 
 ///This struct is the baker data decoded (for the address) and ready to be used for code generation
-#[derive(PartialEq, Eq, Ord)]
+#[derive(PartialEq, Eq)]
 struct ReducedBaker {
     prefix: [u8; 3],
     hash: [u8; 20],
     name: String,
 }
 
-impl PartialOrd for ReducedBaker {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+impl Ord for ReducedBaker {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         use std::cmp::Ordering;
 
         match self.prefix.cmp(&other.prefix) {
-            Ordering::Equal => Some(self.hash.cmp(&other.hash)),
-            ord => return Some(ord),
+            Ordering::Equal => self.hash.cmp(&other.hash),
+            ord => ord,
         }
+    }
+}
+
+impl PartialOrd for ReducedBaker {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
