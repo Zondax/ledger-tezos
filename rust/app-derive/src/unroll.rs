@@ -134,13 +134,15 @@ pub fn unroll(input: TokenStream) -> TokenStream {
             zemu_log_stack("baker_lookup\x00");
 
             let out_idx = KNOWN_BAKERS
-                .binary_search_by(
-                    |&(probe_prefix, probe_hash, _)|
-                        match probe_prefix.cmp(prefix) {
-                            ::core::cmp::Ordering::Equal => probe_hash.cmp(hash),
-                            ord => ord,
-                        },
-                )
+                .binary_search_by(|&(probe_prefix, probe_hash, _)| {
+                    let probe_prefix = PIC::new(probe_prefix).into_inner();
+                    let probe_hash = PIC::new(probe_hash).into_inner();
+
+                    match probe_prefix.cmp(prefix) {
+                        ::core::cmp::Ordering::Equal => probe_hash.cmp(hash),
+                        ord => ord,
+                    }
+                })
                 .map_err(|_| BakerNotFound)?;
 
             match KNOWN_BAKERS.get(out_idx) {

@@ -40,7 +40,11 @@ impl GetAddress {
         path: &sys::crypto::bip32::BIP32Path<B>,
     ) -> Result<crypto::PublicKey, SysError> {
         sys::zemu_log_stack("GetAddres::new_key\x00");
-        let mut pkey = curve.to_secret(path).into_public()?;
+        let mut pkey = MaybeUninit::uninit();
+        curve.to_secret(path).into_public_into(&mut pkey)?;
+
+        //safe since it's initialized
+        let mut pkey = unsafe { pkey.assume_init() };
         pkey.compress().map(|_| pkey)
     }
 
