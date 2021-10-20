@@ -13,7 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use core::mem::MaybeUninit;
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 use std::convert::TryFrom;
 
 use crate::{
@@ -167,6 +167,15 @@ impl<const B: usize> SecretKey<B> {
 
     pub fn into_public(self) -> Result<PublicKey, Error> {
         self.0.public().map(PublicKey)
+    }
+
+    #[inline(never)]
+    pub fn into_public_into(self, out: &mut MaybeUninit<PublicKey>) -> Result<(), Error> {
+        let inner_pk: &mut MaybeUninit<_> =
+            //this is safe because the pointer is valid
+            unsafe { &mut *addr_of_mut!((*out.as_mut_ptr()).0).cast() };
+
+        self.0.public_into(inner_pk)
     }
 
     pub fn curve(&self) -> Curve {

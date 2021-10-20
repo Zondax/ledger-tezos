@@ -52,7 +52,12 @@ impl GetAddress {
         out: &mut MaybeUninit<Addr>,
     ) -> Result<(), SysError> {
         sys::zemu_log_stack("GetAddres::new_addr_into\x00");
-        let mut pkey = curve.to_secret(path).into_public()?;
+
+        let mut pkey = MaybeUninit::uninit();
+        curve.to_secret(path).into_public_into(&mut pkey)?;
+
+        //safe because we initialized it above
+        let mut pkey = unsafe { pkey.assume_init() };
         pkey.compress()?;
 
         Addr::new_into(&pkey, out)

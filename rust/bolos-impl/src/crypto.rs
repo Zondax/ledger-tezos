@@ -251,12 +251,12 @@ mod bindings {
         mode: Mode,
         curve: Curve,
         path: &BIP32Path<B>,
-    ) -> Result<[u8; 64], Error> {
+        out: &mut [u8; 64],
+    ) -> Result<(), Error> {
         let curve: u8 = curve.into();
         let mode: u8 = mode.into();
 
-        let mut out = [0; 64];
-        let out_p = &mut out[0] as *mut u8;
+        let out_p = out.as_mut().as_mut_ptr();
         let (components, path_len) = {
             let components = path.components();
             (components.as_ptr(), components.len() as u32)
@@ -298,7 +298,7 @@ mod bindings {
             }
         }
 
-        Ok(out)
+        Ok(())
     }
 }
 
