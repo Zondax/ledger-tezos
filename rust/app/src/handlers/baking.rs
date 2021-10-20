@@ -36,7 +36,7 @@ use crate::{
         DisplayableItem, Preemble,
     },
     sys::{flash_slot::Wear, new_flash_slot},
-    utils::{ApduBufferRead, Uploader},
+    utils::{ApduBufferRead, ApduPanic, Uploader},
 };
 
 const N_PAGES_BAKINGPATH: usize = 1;
@@ -45,9 +45,10 @@ type WearLeveller = Wear<'static, N_PAGES_BAKINGPATH>;
 
 #[bolos::lazy_static]
 static mut BAKINGPATH: WearLeveller =
-    new_flash_slot!(N_PAGES_BAKINGPATH).expect("NVM might be corrupted");
+    new_flash_slot!(N_PAGES_BAKINGPATH).apdu_expect("NVM might be corrupted");
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Clone)]
+#[cfg_attr(test, derive(Debug))]
 /// Utility struct to store and read BIP32Path and Curve from NVM slots
 ///
 /// # Codec
@@ -520,7 +521,7 @@ mod tests {
 
         let addr = bs58::decode(KNOWN_BAKER_ADDR)
             .into_vec()
-            .expect("unable to decode known baker addr base58");
+            .apdu_expect("unable to decode known baker addr base58");
         let hash = array_ref!(&addr[3..], 0, 20);
 
         let mut input = hex::decode(PARTIAL_INPUT_HEX).expect("invalid input hex");

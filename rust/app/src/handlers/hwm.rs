@@ -16,6 +16,7 @@
 use crate::{
     constants::{tzprefix::NET, ApduError as Error},
     sys::{flash_slot::Wear, new_flash_slot},
+    utils::ApduPanic,
 };
 
 use super::sha256x2;
@@ -33,13 +34,13 @@ pub const MAINNET_CHAIN_ID: u32 = 0x7A06A770;
 //TODO: how about other chains?
 
 #[bolos::lazy_static]
-static mut MAIN: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
+static mut MAIN: WearLeveller = new_flash_slot!(N_PAGES).apdu_expect("NVM might be corrupted");
 
 #[bolos::lazy_static]
-static mut TEST: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
+static mut TEST: WearLeveller = new_flash_slot!(N_PAGES).apdu_expect("NVM might be corrupted");
 
 #[bolos::lazy_static]
-static mut CHAIN_ID: WearLeveller = new_flash_slot!(N_PAGES).expect("NVM might be corrupted");
+static mut CHAIN_ID: WearLeveller = new_flash_slot!(N_PAGES).apdu_expect("NVM might be corrupted");
 
 pub struct HWM;
 
@@ -139,7 +140,8 @@ impl HWM {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Clone)]
+#[cfg_attr(test, derive(Debug))]
 pub struct WaterMark {
     pub level: u32,
     pub endorsement: bool,
@@ -186,7 +188,7 @@ impl WaterMark {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum ChainID {
     Any,
     Mainnet,
@@ -254,7 +256,7 @@ impl ChainID {
         let mut out = [0; Self::BASE58_LEN];
         let len = bs58::encode(input)
             .into(&mut out[..])
-            .expect("encoded in base58 is not of the right lenght");
+            .apdu_expect("encoded in base58 is not of the right lenght");
 
         Ok((len, out))
     }

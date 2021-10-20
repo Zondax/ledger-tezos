@@ -1,4 +1,3 @@
-use core::mem::MaybeUninit;
 /*******************************************************************************
 *   (c) 2021 Zondax GmbH
 *
@@ -14,16 +13,18 @@ use core::mem::MaybeUninit;
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use core::{mem::MaybeUninit, ptr::addr_of_mut};
 use std::convert::TryFrom;
 
 use crate::{
     constants::{EDWARDS_SIGN_BUFFER_MIN_LENGTH, SECP256_SIGN_BUFFER_MIN_LENGTH},
     sys,
+    utils::ApduPanic,
 };
 use bolos::hash::{Blake2b, Sha256};
 use sys::{crypto::bip32::BIP32Path, errors::Error, hash::Hasher};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct PublicKey(pub(crate) sys::crypto::ecfp256::PublicKey);
 
 impl PublicKey {
@@ -71,7 +72,7 @@ impl PublicKey {
         //this unwrap is ok because the curve
         // can only be initialized by the library and not the user
 
-        self.0.curve().try_into().unwrap()
+        self.0.curve().try_into().apdu_unwrap()
     }
 }
 
@@ -81,7 +82,8 @@ impl AsRef<[u8]> for PublicKey {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum Curve {
     Ed25519,
     Secp256K1,
@@ -167,12 +169,21 @@ impl<const B: usize> SecretKey<B> {
         self.0.public().map(PublicKey)
     }
 
+    #[inline(never)]
+    pub fn into_public_into(self, out: &mut MaybeUninit<PublicKey>) -> Result<(), Error> {
+        let inner_pk: &mut MaybeUninit<_> =
+            //this is safe because the pointer is valid
+            unsafe { &mut *addr_of_mut!((*out.as_mut_ptr()).0).cast() };
+
+        self.0.public_into(inner_pk)
+    }
+
     pub fn curve(&self) -> Curve {
         use std::convert::TryInto;
         //this unwrap is ok because the curve
         // can only be initialized by the library and not the user
 
-        self.0.curve().try_into().unwrap()
+        self.0.curve().try_into().apdu_unwrap()
     }
 
     pub fn sign(&self, data: &[u8], out: &mut [u8]) -> Result<usize, SignError> {

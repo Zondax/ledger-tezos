@@ -27,7 +27,8 @@ use crate::{
     parser::DisplayableItem,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Endorsement {
     level: i32,
@@ -106,7 +107,8 @@ impl Endorsement {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct EndorsementWithSlot<'b> {
     branch: &'b [u8; 32],
@@ -255,7 +257,8 @@ impl<'b> EndorsementWithSlot<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct DoubleEndorsementEvidence<'b> {
     first_branch: &'b [u8; 32],

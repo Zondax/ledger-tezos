@@ -19,7 +19,8 @@ use crate::handlers::parser_common::ParserError;
 
 const SEED_NONCE_BYTES_LEN: usize = 32;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct SeedNonceRevelation<'b> {
     level: i32,

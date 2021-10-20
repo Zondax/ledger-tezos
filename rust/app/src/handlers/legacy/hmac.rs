@@ -37,7 +37,7 @@ impl ApduHandler for LegacyHMAC {
         let curve = Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;
 
         let cdata = buffer.payload().map_err(|_| Error::DataInvalid)?;
-        if cdata.len() < 1 {
+        if cdata.is_empty() {
             return Err(Error::WrongLength);
         }
 

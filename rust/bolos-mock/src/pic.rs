@@ -33,7 +33,7 @@ use std::ops::{Deref, DerefMut};
 /// let _: &PIC<[u8; 1024]> = &BUFFER;
 /// assert_eq!(&[0; 1024], &*BUFFER);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct PIC<T> {
     data: T,

@@ -23,7 +23,8 @@ use crate::{
     parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Script<'b> {
     code: &'b [u8],
@@ -45,7 +46,8 @@ impl<'b> Script<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, property::Property)]
+#[derive(Clone, Copy, PartialEq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Origination<'b> {
     source: (Curve, &'b [u8; 20]),

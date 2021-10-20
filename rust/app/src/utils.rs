@@ -105,3 +105,50 @@ mod maybe_null_terminated_to_string {
 
 #[cfg(test)]
 pub use maybe_null_terminated_to_string::MaybeNullTerminatedToString;
+
+pub trait ApduPanic: Sized {
+    type Item;
+
+    fn apdu_unwrap(self) -> Self::Item;
+
+    fn apdu_expect(self, s: &str) -> Self::Item;
+}
+
+impl<T, E> ApduPanic for Result<T, E> {
+    type Item = T;
+
+    #[inline]
+    fn apdu_unwrap(self) -> Self::Item {
+        match self {
+            Ok(t) => t,
+            Err(_) => panic!(),
+        }
+    }
+
+    #[inline]
+    fn apdu_expect(self, _: &str) -> Self::Item {
+        match self {
+            Ok(t) => t,
+            Err(_) => panic!(),
+        }
+    }
+}
+impl<T> ApduPanic for Option<T> {
+    type Item = T;
+
+    #[inline]
+    fn apdu_unwrap(self) -> Self::Item {
+        match self {
+            Some(t) => t,
+            None => panic!(),
+        }
+    }
+
+    #[inline]
+    fn apdu_expect(self, _: &str) -> Self::Item {
+        match self {
+            Some(t) => t,
+            None => panic!(),
+        }
+    }
+}

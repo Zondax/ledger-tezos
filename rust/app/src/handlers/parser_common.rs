@@ -2,13 +2,14 @@
 use nom::error::ErrorKind;
 
 #[repr(u32)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 /// ParserError is the counterpart of
 /// the parse_error_t in c,
 /// we redeclare it here, just for interpolation
 /// purposes
 
 //TODO: make this CamelCase
+#[cfg_attr(test, derive(Debug))]
 pub enum ParserError {
     // Generic errors
     parser_no_data,

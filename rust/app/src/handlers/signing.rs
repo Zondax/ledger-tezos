@@ -15,6 +15,8 @@
 ********************************************************************************/
 use {std::convert::TryFrom, std::mem::MaybeUninit};
 
+use core::hint::unreachable_unchecked;
+
 use bolos::{
     crypto::bip32::BIP32Path,
     hash::{Blake2b, Hasher},
@@ -170,7 +172,12 @@ impl SignUI {
             let op = op.as_mut_ptr();
             //safe because the pointer is valid and we have initialized this
             // also, we are the only ones with access at this point
-            let op_ref = unsafe { op.as_mut().unwrap() };
+            let op_ref = unsafe {
+                match op.as_mut() {
+                    Some(ptr) => ptr,
+                    None => unreachable_unchecked(),
+                }
+            };
             let n = op_ref.ui_items() as u8;
 
             if n > item_idx {

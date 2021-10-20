@@ -14,6 +14,8 @@
 *  limitations under the License.
 ********************************************************************************/
 
+use core::hint::unreachable_unchecked;
+
 use cfg_if::cfg_if;
 
 use crate::constants::ApduError;
@@ -27,7 +29,7 @@ use crate::handlers::legacy::public_key::{LegacyGetPublic, LegacyPromptAddress};
 use crate::handlers::legacy::signing::{LegacySign, LegacySignWithHash};
 use crate::handlers::legacy::version::{LegacyGetVersion, LegacyGit};
 
-use crate::utils::ApduBufferRead;
+use crate::utils::{ApduBufferRead, ApduPanic};
 
 pub const CLA: u8 = 0x80;
 
@@ -199,15 +201,21 @@ pub fn handle_apdu(flags: &mut u32, tx: &mut u32, rx: u32, apdu_buffer: &mut [u8
 
     //construct reader
     let status_word = match ApduBufferRead::new(apdu_buffer, rx) {
-        Ok(reader) => apdu_dispatch(flags, tx, reader)
+        Ok(reader) => match apdu_dispatch(flags, tx, reader)
             .and(Err::<(), _>(ApduError::Success))
             .map_err(|e| e as u16)
-            .unwrap_err(),
+        {
+            Err(e) => e,
+            Ok(_) => unsafe { unreachable_unchecked() },
+        },
         Err(_) => ApduError::WrongLength as u16,
     };
 
     let txu = *tx as usize;
-    apdu_buffer[txu..txu + 2].copy_from_slice(&status_word.to_be_bytes()[..]);
+    apdu_buffer
+        .get_mut(txu..txu + 2)
+        .apdu_unwrap()
+        .copy_from_slice(status_word.to_be_bytes().as_ref());
 
     *tx += 2;
 }

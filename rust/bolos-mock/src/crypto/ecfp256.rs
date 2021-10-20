@@ -14,12 +14,13 @@
 *  limitations under the License.
 ********************************************************************************/
 use bolos_common::hash::HasherId;
+use core::mem::MaybeUninit;
 
 use crate::Error;
 
 use super::{bip32::BIP32Path, Curve, Mode};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct PublicKey {
     curve: Curve,
     len: usize,
@@ -146,6 +147,14 @@ impl<const B: usize> SecretKey<B> {
             data,
             len,
         })
+    }
+
+    pub fn public_into(&self, out: &mut MaybeUninit<PublicKey>) -> Result<(), Error> {
+        let pk = self.public()?;
+
+        *out = MaybeUninit::new(pk);
+
+        Ok(())
     }
 
     pub fn sign<H>(&self, data: &[u8], out: &mut [u8]) -> Result<usize, Error>

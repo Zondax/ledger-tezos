@@ -35,7 +35,7 @@ use crate::raw::{
     cx_curve_e_CX_CURVE_Stark256,
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Curve {
     None,
 
@@ -202,7 +202,7 @@ impl Curve {
 use crate::raw::HDW_SLIP21;
 use crate::raw::{HDW_ED25519_SLIP10, HDW_NORMAL};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Mode {
     BIP32,
     Ed25519Slip10,
@@ -251,12 +251,12 @@ mod bindings {
         mode: Mode,
         curve: Curve,
         path: &BIP32Path<B>,
-    ) -> Result<[u8; 64], Error> {
+        out: &mut [u8; 64],
+    ) -> Result<(), Error> {
         let curve: u8 = curve.into();
         let mode: u8 = mode.into();
 
-        let mut out = [0; 64];
-        let out_p = &mut out[0] as *mut u8;
+        let out_p = out.as_mut().as_mut_ptr();
         let (components, path_len) = {
             let components = path.components();
             (components.as_ptr(), components.len() as u32)
@@ -298,7 +298,7 @@ mod bindings {
             }
         }
 
-        Ok(out)
+        Ok(())
     }
 }
 

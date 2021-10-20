@@ -26,7 +26,7 @@ use core::mem::MaybeUninit;
 
 use super::{public_key_hash, DisplayableItem};
 
-#[derive(Debug, Clone, Copy, property::Property)]
+#[derive(Clone, Copy, property::Property)]
 #[property(get(public), mut(public), set(disable))]
 pub struct Operation<'b> {
     #[property(get(disable), mut(disable))]
@@ -91,7 +91,7 @@ impl<'b> Operation<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct EncodedOperations<'b> {
     source: &'b [u8],
     //number of bytes read
@@ -213,7 +213,8 @@ pub use reveal::Reveal;
 pub use seed_nonce_revelation::SeedNonceRevelation;
 pub use transfer::Transfer;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
+#[cfg_attr(test, derive(Debug))]
 pub enum AnonymousOp<'b> {
     DoubleEndorsementEvidence(DoubleEndorsementEvidence<'b>),
     SeedNonceRevelation(SeedNonceRevelation<'b>),
@@ -268,7 +269,8 @@ impl<'b> AnonymousOp<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum ContractID<'b> {
     Implicit(Curve, &'b [u8; 20]),
     Originated(&'b [u8; 20]),

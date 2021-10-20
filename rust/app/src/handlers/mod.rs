@@ -41,7 +41,7 @@ pub mod resources {
     pub static mut BUFFER: Lock<SwappingBuffer<'static, 'static, 0xFF, 0x1FFF>, BUFFERAccessors> =
         Lock::new(new_swapping_buffer!(0xFF, 0x1FFF));
 
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    #[derive(Clone, Copy, PartialEq, Eq)]
     pub enum BUFFERAccessors {
         Sign,
         #[cfg(feature = "dev")]

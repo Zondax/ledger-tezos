@@ -27,7 +27,7 @@ use arrayref::{array_ref, array_refs};
 use serde::{Deserialize, Serialize};
 
 /// This structs represents the expected schematic of the baker data
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct KnownBaker {
     #[serde(alias = "bakerName")]
     name: String,
@@ -36,10 +36,28 @@ struct KnownBaker {
 }
 
 ///This struct is the baker data decoded (for the address) and ready to be used for code generation
+#[derive(PartialEq, Eq)]
 struct ReducedBaker {
-    name: String,
     prefix: [u8; 3],
     hash: [u8; 20],
+    name: String,
+}
+
+impl Ord for ReducedBaker {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        use std::cmp::Ordering;
+
+        match self.prefix.cmp(&other.prefix) {
+            Ordering::Equal => self.hash.cmp(&other.hash),
+            ord => ord,
+        }
+    }
+}
+
+impl PartialOrd for ReducedBaker {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl TryFrom<KnownBaker> for ReducedBaker {
@@ -66,7 +84,7 @@ pub fn unroll(input: TokenStream) -> TokenStream {
         Ok(data) => data,
     };
 
-    let arms = data.into_iter().map(|ReducedBaker { name, prefix, hash }| {
+    let elems = data.into_iter().map(|ReducedBaker { name, prefix, hash }| {
         let name = name.as_str();
         let prefix = ExprArray {
             attrs: vec![],
@@ -98,24 +116,39 @@ pub fn unroll(input: TokenStream) -> TokenStream {
         };
 
         quote! {
-            (&#prefix, &#hash) => #name
+            (&#prefix, &#hash, #name)
         }
     });
 
     let out = quote! {
-        #[derive(Debug)]
+
+        #[cfg_attr(test, derive(Debug))]
         pub struct BakerNotFound;
+
+        pub const KNOWN_BAKERS: &[(&'static [u8], &'static [u8], &'static str)] = &[
+            #(#elems, )*
+        ];
 
         #[inline(never)]
         pub fn baker_lookup(prefix: &[u8; 3], hash: &[u8; 20]) -> Result<&'static str, BakerNotFound> {
             zemu_log_stack("baker_lookup\x00");
 
-            let out = match (prefix, hash) {
-                #(#arms ,)*
-                _ => return Err(BakerNotFound),
-            };
+            let out_idx = KNOWN_BAKERS
+                .binary_search_by(|&(probe_prefix, probe_hash, _)| {
+                    let probe_prefix = PIC::new(probe_prefix).into_inner();
+                    let probe_hash = PIC::new(probe_hash).into_inner();
 
-            Ok(PIC::new(out).into_inner())
+                    match probe_prefix.cmp(prefix) {
+                        ::core::cmp::Ordering::Equal => probe_hash.cmp(hash),
+                        ord => ord,
+                    }
+                })
+                .map_err(|_| BakerNotFound)?;
+
+            match KNOWN_BAKERS.get(out_idx) {
+                Some((_, _, name)) => Ok(PIC::new(name).into_inner()),
+                None => unsafe { core::hint::unreachable_unchecked() }
+            }
         }
 
     };
@@ -159,6 +192,11 @@ fn retrieve_data(path: impl AsRef<Path>, path_span: Span) -> Result<Vec<ReducedB
                         path_span,
                         format!("Entry #{}'s address was not valid base58; err={:?}", i, e),
                     )
+                })
+                .map(|mut v| {
+                    v.dedup();
+                    v.sort();
+                    v
                 })
             }
             Err(err) => Err(Error::new(

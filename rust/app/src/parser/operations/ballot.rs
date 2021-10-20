@@ -35,7 +35,8 @@ use core::{
 
 const PROPOSAL_BYTES_LEN: usize = 32;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(test, derive(Debug))]
 #[repr(u8)]
 pub enum Vote {
     Yay,
@@ -56,7 +57,8 @@ impl TryFrom<u8> for Vote {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Ballot<'b> {
     source: (Curve, &'b [u8; 20]),

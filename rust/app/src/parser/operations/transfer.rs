@@ -29,7 +29,8 @@ use crate::{
 
 use super::ContractID;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum Entrypoint<'b> {
     Default,
     Root,
@@ -79,7 +80,8 @@ impl<'b> core::fmt::Display for Entrypoint<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, property::Property)]
+#[derive(Clone, Copy, PartialEq, Eq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Parameters<'b> {
     entrypoint: Entrypoint<'b>,
@@ -106,7 +108,8 @@ impl<'b> Parameters<'b> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, property::Property)]
+#[derive(Clone, Copy, PartialEq, property::Property)]
+#[cfg_attr(test, derive(Debug))]
 #[property(mut(disable), get(public), set(disable))]
 pub struct Transfer<'b> {
     source: (Curve, &'b [u8; 20]),
