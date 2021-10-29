@@ -141,7 +141,7 @@ impl Viewable for AuthorizeUI {
 
         //get public key
         let mut pk = MaybeUninit::uninit();
-        if let Err(_) = GetAddress::new_key_into(self.curve, &self.path, &mut pk) {
+        if GetAddress::new_key_into(self.curve, &self.path, &mut pk).is_err() {
             return (0, Error::ExecutionError as _);
         }
 

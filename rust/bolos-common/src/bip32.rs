@@ -112,7 +112,6 @@ impl<const LEN: usize> BIP32Path<LEN> {
 
 #[cfg(any(test, feature = "std"))]
 impl<const LEN: usize> BIP32Path<LEN> {
-
     /// Serialize a BIP32Path to a vector, ready to be used on [read](Self::read)
     pub fn serialize(&self) -> std::vec::Vec<u8> {
         let mut v = std::vec::Vec::with_capacity(1 + 4 * self.len as usize);

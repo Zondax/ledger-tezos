@@ -151,6 +151,7 @@ impl Addr {
     pub const BASE58_LEN: usize = 37;
 
     #[inline(never)]
+    #[allow(dead_code)]
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         sys::zemu_log_stack("Addr::new\x00");
 
@@ -228,6 +229,7 @@ impl Addr {
         (len, out)
     }
 
+    #[allow(dead_code)]
     pub fn into_ui(self, pkey: crypto::PublicKey, with_addr: bool) -> AddrUI {
         AddrUI {
             addr: self,

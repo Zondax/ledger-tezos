@@ -179,8 +179,8 @@ impl Viewable for SetupUI {
     fn accept(&mut self, out: &mut [u8]) -> (usize, u16) {
         //get public key
         let mut pk = MaybeUninit::uninit();
-        if let Err(_) =  GetAddress::new_key_into(self.curve, &self.path, &mut pk) {
-            return (0, Error::ExecutionError as _)
+        if GetAddress::new_key_into(self.curve, &self.path, &mut pk).is_err() {
+            return (0, Error::ExecutionError as _);
         }
 
         //store path & curve for key in memory
