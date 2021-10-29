@@ -96,7 +96,7 @@ impl<const B: usize> SecretKey<B> {
         // let's zeroize the sk_data right away before we return
         sk_data.zeroize();
 
-        Ok(())
+        sk_r
     }
 
     #[inline(never)]

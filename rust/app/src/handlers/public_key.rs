@@ -35,17 +35,18 @@ pub struct GetAddress;
 impl GetAddress {
     /// Retrieve the public key with the given curve and bip32 path
     #[inline(never)]
-    pub fn new_key<const B: usize>(
+    pub fn new_key_into<const B: usize>(
         curve: crypto::Curve,
         path: &sys::crypto::bip32::BIP32Path<B>,
-    ) -> Result<crypto::PublicKey, SysError> {
+        out: &mut MaybeUninit<crypto::PublicKey>,
+    ) -> Result<(), SysError> {
         sys::zemu_log_stack("GetAddres::new_key\x00");
-        let mut pkey = MaybeUninit::uninit();
-        curve.to_secret(path).into_public_into(&mut pkey)?;
+        curve.to_secret(path).into_public_into(out)?;
 
-        //safe since it's initialized
-        let mut pkey = unsafe { pkey.assume_init() };
-        pkey.compress().map(|_| pkey)
+        //this is safe because it's initialized
+        // also unwrapping is fine because the ptr is valid
+        let pkey = unsafe { out.as_mut_ptr().as_mut().apdu_unwrap() };
+        pkey.compress()
     }
 
     /// Retrieve the addr with the given curve and bip32 path
@@ -86,11 +87,41 @@ impl ApduHandler for GetAddress {
         let bip32_path =
             sys::crypto::bip32::BIP32Path::<6>::read(cdata).map_err(|_| Error::DataInvalid)?;
 
-        let key = Self::new_key(curve, &bip32_path).map_err(|_| Error::ExecutionError)?;
+        let mut ui = MaybeUninit::<AddrUI>::uninit();
 
-        let mut ui = Addr::new(&key)
-            .map_err(|_| Error::DataInvalid)?
-            .into_ui(key, true);
+        //initialize public key
+        {
+            //get ui *mut
+            let ui = ui.as_mut_ptr();
+            //get `pkey` *mut,
+            // cast to MaybeUninit *mut
+            //SAFE: `as_mut` it to &mut MaybeUninit (safe because it's MaybeUninit)
+            // unwrap the option as it's guarantee valid pointer
+            let key =
+                unsafe { addr_of_mut!((*ui).pkey).cast::<MaybeUninit<_>>().as_mut() }.apdu_unwrap();
+            Self::new_key_into(curve, &bip32_path, key).map_err(|_| Error::ExecutionError)?;
+        }
+
+        //initialize address
+        {
+            let ui = ui.as_mut_ptr();
+
+            //get &mut MaybeUninit<Addr>
+            let addr =
+                unsafe { addr_of_mut!((*ui).addr).cast::<MaybeUninit<_>>().as_mut() }.apdu_unwrap();
+
+            //get _initialized_ key
+            //SAFE: pkey is valid pointer and INITIALIZED in the block above
+            let key = unsafe { addr_of!((*ui).pkey).as_ref() }.apdu_unwrap();
+
+            Addr::new_into(&key, addr).map_err(|_| Error::DataInvalid)?;
+        }
+
+        //safe because pointers are all valid, initialize with_addr
+        unsafe { addr_of_mut!((*ui.as_mut_ptr()).with_addr).write(true) }
+
+        //safe because it's all initialized now
+        let mut ui = unsafe { ui.assume_init() };
 
         if req_confirmation {
             unsafe { ui.show(flags) }.map_err(|_| Error::ExecutionError)
@@ -120,6 +151,7 @@ impl Addr {
     pub const BASE58_LEN: usize = 37;
 
     #[inline(never)]
+    #[allow(dead_code)]
     pub fn new(pubkey: &crypto::PublicKey) -> Result<Self, SysError> {
         sys::zemu_log_stack("Addr::new\x00");
 
@@ -197,6 +229,7 @@ impl Addr {
         (len, out)
     }
 
+    #[allow(dead_code)]
     pub fn into_ui(self, pkey: crypto::PublicKey, with_addr: bool) -> AddrUI {
         AddrUI {
             addr: self,
@@ -220,11 +253,11 @@ impl Addr {
 pub struct AddrUI {
     //this is here to faciliate the UI,
     // it would otherwise be redundant with the pkey
-    addr: Addr,
-    pkey: crypto::PublicKey,
+    pub addr: Addr,
+    pub pkey: crypto::PublicKey,
 
     /// indicates whether to write `add` to out or not
-    with_addr: bool,
+    pub with_addr: bool,
 }
 
 impl Viewable for AddrUI {
@@ -354,5 +387,23 @@ mod tests {
         assert_eq!(tx as usize, 1 + 32 + 2); //32 bytes for ed25519
 
         // FIXME: Complete the test
+    }
+
+    #[test]
+    fn freeze_with_tezos_client() {
+        const PAYLOAD: &[u8] = &[
+            0x80, 0x02, 0x00, 0x00, 0x09, 0x02, 0x80, 0x00, 0x00, 0x2c, 0x80, 0x00, 0x06, 0xc1,
+        ];
+
+        let mut flags = 0u32;
+        let mut tx = 0u32;
+        let rx = 5;
+        let mut buffer = [0u8; 260];
+        buffer[..PAYLOAD.len()].copy_from_slice(PAYLOAD);
+
+        handle_apdu(&mut flags, &mut tx, rx, &mut buffer);
+
+        assert_error_code!(tx, buffer, ApduError::Success);
+        assert_eq!(tx as usize, 1 + 32 + 2);
     }
 }

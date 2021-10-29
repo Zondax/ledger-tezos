@@ -253,6 +253,7 @@ mod bindings {
         path: &BIP32Path<B>,
         out: &mut [u8; 64],
     ) -> Result<(), Error> {
+        zemu_sys::zemu_log_stack("os_perso_derive_node_with_seed_key\x00");
         let curve: u8 = curve.into();
         let mode: u8 = mode.into();
 
