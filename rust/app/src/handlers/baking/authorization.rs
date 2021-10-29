@@ -13,6 +13,8 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+use std::mem::MaybeUninit;
+
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
@@ -138,10 +140,10 @@ impl Viewable for AuthorizeUI {
         sys::zemu_log_stack("AuthorizeUI::render_item\x00");
 
         //get public key
-        let pk = match GetAddress::new_key(self.curve, &self.path) {
-            Ok(pk) => pk,
-            Err(_) => return (0, Error::ExecutionError as _),
-        };
+        let mut pk = MaybeUninit::uninit();
+        if let Err(_) = GetAddress::new_key_into(self.curve, &self.path, &mut pk) {
+            return (0, Error::ExecutionError as _);
+        }
 
         //store in memory
         if Baking::store_baking_key(self.curve, self.path).is_err() {
@@ -154,6 +156,8 @@ impl Viewable for AuthorizeUI {
         }
 
         //write to out
+        // SAFE because initialized
+        let pk = unsafe { pk.assume_init() };
         let key = pk.as_ref();
         let len = key.len();
         out[0] = len as u8;

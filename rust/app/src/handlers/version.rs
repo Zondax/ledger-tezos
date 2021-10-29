@@ -14,13 +14,12 @@
 *  limitations under the License.
 ********************************************************************************/
 use crate::constants::ApduError;
-use crate::constants::ApduError::InsNotSupported;
-use crate::dispatcher::{ApduHandler, INS_GET_VERSION};
+use crate::dispatcher::ApduHandler;
 use crate::utils::ApduBufferRead;
 
-pub const VERSION_MAJOR: u8 = 1;
-pub const VERSION_MINOR: u8 = 2;
-pub const VERSION_PATCH: u8 = 3;
+pub const VERSION_MAJOR: u8 = 3;
+pub const VERSION_MINOR: u8 = 0;
+pub const VERSION_PATCH: u8 = 0;
 
 pub struct GetVersion {}
 
@@ -36,10 +35,6 @@ impl ApduHandler for GetVersion {
         tx: &mut u32,
         apdu_buffer: ApduBufferRead<'apdu>,
     ) -> Result<(), ApduError> {
-        if apdu_buffer.ins() != INS_GET_VERSION {
-            return Err(InsNotSupported);
-        }
-
         *tx = 0;
 
         let apdu_buffer = apdu_buffer.write();

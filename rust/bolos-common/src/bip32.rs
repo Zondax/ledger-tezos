@@ -16,6 +16,7 @@
 /// Struct representing a BIP32 derivation path, with up to LEN components
 #[derive(PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(any(feature = "derive-debug", test), derive(Debug))]
+#[repr(align(4))]
 pub struct BIP32Path<const LEN: usize> {
     len: u8,
     components: [u32; LEN],
@@ -33,6 +34,29 @@ pub enum BIP32PathError {
 }
 
 impl<const LEN: usize> BIP32Path<LEN> {
+    /// Construct a BIP32Path from a list of components
+    pub fn new(components: impl IntoIterator<Item = u32>) -> Result<Self, BIP32PathError> {
+        let mut len = 0;
+        let mut components_array = [0; LEN];
+
+        for (i, c) in components.into_iter().enumerate() {
+            if i > LEN {
+                return Err(BIP32PathError::TooMuchData);
+            }
+            components_array[i] = c;
+            len = 1 + i;
+        }
+
+        if len == 0 {
+            return Err(BIP32PathError::ZeroLength);
+        }
+
+        Ok(Self {
+            len: len as u8,
+            components: components_array,
+        })
+    }
+
     ///Attempt to read a BIP32 Path from the provided input bytes
     pub fn read(input: &[u8]) -> Result<Self, BIP32PathError> {
         if input.is_empty() {
@@ -88,28 +112,8 @@ impl<const LEN: usize> BIP32Path<LEN> {
 
 #[cfg(any(test, feature = "std"))]
 impl<const LEN: usize> BIP32Path<LEN> {
-    pub fn new(components: impl IntoIterator<Item = u32>) -> Result<Self, BIP32PathError> {
-        let mut len = 0;
-        let mut components_array = [0; LEN];
 
-        for (i, c) in components.into_iter().enumerate() {
-            if i > LEN {
-                return Err(BIP32PathError::TooMuchData);
-            }
-            components_array[i] = c;
-            len = 1 + i;
-        }
-
-        if len == 0 {
-            return Err(BIP32PathError::ZeroLength);
-        }
-
-        Ok(Self {
-            len: len as u8,
-            components: components_array,
-        })
-    }
-
+    /// Serialize a BIP32Path to a vector, ready to be used on [read](Self::read)
     pub fn serialize(&self) -> std::vec::Vec<u8> {
         let mut v = std::vec::Vec::with_capacity(1 + 4 * self.len as usize);
         v.push(self.len);
