@@ -104,47 +104,53 @@ describe.each(models)('Standard [%s]; legacy', function (m) {
 })
 
 describe.each(models)('Standard [%s] - pubkey', function (m) {
-  test.each(cartesianProduct(curves, [true, false]))('get pubkey and addr %s, %s', async function (curve, show) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new TezosApp(sim.getTransport())
-      const resp = await app.getAddressAndPubKey(APP_DERIVATION, curve)
+  test.each(cartesianProduct(curves, [APP_DERIVATION, "m/44'/1729'"]))(
+    'get pubkey and addr %s, %s',
+    async function (curve, derivation_path) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({ ...defaultOptions, model: m.name })
+        const app = new TezosApp(sim.getTransport())
+        const resp = await app.getAddressAndPubKey(derivation_path, curve)
 
-      console.log(resp, m.name)
+        console.log(resp, m.name)
 
-      expect(resp.returnCode).toEqual(0x9000)
-      expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('publicKey')
-      expect(resp).toHaveProperty('address')
-      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
-      expect(resp.address).toContain('tz')
-    } finally {
-      await sim.close()
-    }
-  })
+        expect(resp.returnCode).toEqual(0x9000)
+        expect(resp.errorMessage).toEqual('No errors')
+        expect(resp).toHaveProperty('publicKey')
+        expect(resp).toHaveProperty('address')
+        expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+        expect(resp.address).toContain('tz')
+      } finally {
+        await sim.close()
+      }
+    },
+  )
 })
 
-describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
-  test.each(cartesianProduct(curves, [true, false]))('get pubkey and compute addr %s, %s', async function (curve, show) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new TezosApp(sim.getTransport())
-      const resp = await app.legacyGetPubKey(APP_DERIVATION, curve)
+describe.each([models[0]])('Standard [%s]; legacy - ZZZ pubkey', function (m) {
+  test.each(cartesianProduct(curves, ["m/44'/1729'"]))(
+    'get pubkey and compute addr %s, %s',
+    async function (curve, derivation_path) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({ ...defaultOptions, model: m.name })
+        const app = new TezosApp(sim.getTransport())
+        const resp = await app.legacyGetPubKey(derivation_path, curve)
 
-      console.log(resp, m.name)
+        console.log(resp, m.name)
 
-      expect(resp.returnCode).toEqual(0x9000)
-      expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('publicKey')
-      expect(resp).toHaveProperty('address')
-      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
-      expect(resp.address).toContain('tz')
-    } finally {
-      await sim.close()
-    }
-  })
+        expect(resp.returnCode).toEqual(0x9000)
+        expect(resp.errorMessage).toEqual('No errors')
+        expect(resp).toHaveProperty('publicKey')
+        expect(resp).toHaveProperty('address')
+        expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+        expect(resp.address).toContain('tz')
+      } finally {
+        await sim.close()
+      }
+    },
+  )
 })
 
 const SIGN_TEST_DATA = cartesianProduct(curves, [{ name: 'transfer', nav: { s: [13, 0], x: [11, 0] }, op: SAMPLE_TRANSACTION }])
