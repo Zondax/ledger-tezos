@@ -264,22 +264,7 @@ mod bindings {
         };
 
         cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe {
-                    crate::raw::os_perso_derive_node_bip32_seed_key(
-                        mode as _,
-                        curve as _,
-                        components as *const _,
-                        path_len as _,
-                        out_p as *mut _,
-                        std::ptr::null_mut(),
-                        std::ptr::null_mut(),
-                        0
-                    );
-                };
-
-                catch(might_throw)?;
-            } else if #[cfg(nanos)] {
+            if #[cfg(any(nanos, nanox))] {
                 let might_throw = || unsafe {
                     crate::raw::os_perso_derive_node_with_seed_key(
                         mode as _,

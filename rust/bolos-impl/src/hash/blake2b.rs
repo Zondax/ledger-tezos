@@ -48,13 +48,7 @@ impl<const S: usize> Blake2b<S> {
 
     fn init_state(state: *mut cx_blake2b_t) -> Result<(), Error> {
         cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe {
-                    crate::raw::cx_blake2b_init(state, (S * 8) as u32);
-                };
-
-                catch(might_throw)?;
-            } else if #[cfg(nanos)] {
+            if #[cfg(any(nanos, nanox))] {
                 let r = unsafe {
                     crate::raw::cx_blake2b_init_no_throw(
                         state,

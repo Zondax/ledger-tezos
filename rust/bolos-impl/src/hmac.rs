@@ -45,20 +45,7 @@ pub(self) fn cx_hmac(
     let mode = reinit | write_out as u8 as u32;
 
     cfg_if! {
-        if #[cfg(nanox)] {
-            let might_throw = || unsafe { crate::raw::cx_hmac(
-                hmac as *mut _,
-                mode as _,
-                input.as_ptr() as *const _,
-                input.len() as u32 as _,
-                out as *mut _,
-                out_len as _,
-            )};
-
-            catch(might_throw)?;
-            Ok(())
-
-        } else if #[cfg(nanos)] {
+        if #[cfg(any(nanox, nanos))] {
             match unsafe { crate::raw::cx_hmac_no_throw(
                 hmac as *mut _,
                 mode as _,

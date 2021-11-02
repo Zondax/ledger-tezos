@@ -45,13 +45,7 @@ impl Sha512 {
 
     fn init_state(state: *mut cx_sha512_t) -> Result<(), Error> {
         cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe {
-                    crate::raw::cx_sha512_init(state as *mut _);
-                };
-
-                catch(might_throw)?;
-            } else if #[cfg(nanos)] {
+            if #[cfg(any(nanos, nanox))] {
                 match unsafe { crate::raw::cx_sha512_init_no_throw(
                     state as *mut _
                 )} {
