@@ -13,6 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+#![allow(unused_imports)]
 
 use crate::{
     errors::catch,
@@ -64,7 +65,7 @@ impl Sha256HMAC {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("hmac sha256 init called in non-bolos")
+                unimplemented!("hmac sha256 init called in non-bolos")
             }
         }
 

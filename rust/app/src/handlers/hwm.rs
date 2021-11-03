@@ -31,7 +31,6 @@ pub const ALL_HWM_LEN: usize = 12;
 // Mainnet Chain ID: NetXdQprcVkpaWU
 // types.h:61,0
 pub const MAINNET_CHAIN_ID: u32 = 0x7A06A770;
-//TODO: how about other chains?
 
 #[bolos::lazy_static]
 static mut MAIN: WearLeveller = new_flash_slot!(N_PAGES).apdu_expect("NVM might be corrupted");

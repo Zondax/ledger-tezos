@@ -86,7 +86,7 @@ impl std::convert::TryFrom<u16> for ApduError {
         }
     }
 }
-// FIXME: Convert this to ApduHeader struct
+
 pub const APDU_INDEX_CLA: usize = 0;
 pub const APDU_INDEX_INS: usize = 1;
 pub const APDU_INDEX_P1: usize = 2;

@@ -59,7 +59,7 @@ impl Sha512 {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("sha512init called in non-bolos")
+                unimplemented!("sha512init called in non-bolos")
             }
         }
 

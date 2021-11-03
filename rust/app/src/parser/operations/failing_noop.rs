@@ -101,9 +101,7 @@ impl<'a> DisplayableItem for FailingNoop<'a> {
 
 #[cfg(test)]
 impl<'b> FailingNoop<'b> {
-    pub fn is(&self, _json: &serde_json::Map<std::string::String, serde_json::Value>) {
-        //TODO: verify arbitrary
-    }
+    pub fn is(&self, _json: &serde_json::Map<std::string::String, serde_json::Value>) {}
 }
 
 #[cfg(test)]

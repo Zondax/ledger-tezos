@@ -605,7 +605,6 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
           break
 
         case Curve.Secp256R1:
-          // FIXME: add later
           // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
           // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
           break

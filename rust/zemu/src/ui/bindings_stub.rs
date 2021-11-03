@@ -39,19 +39,19 @@ pub type viewfunc_getItem_t = ::core::option::Option<
 pub type viewfunc_accept_t = ::core::option::Option<unsafe extern "C" fn()>;
 
 pub fn view_init() {
-    todo!("view_init stub")
+    unimplemented!("view_init stub")
 }
 
 pub fn view_idle_show(item_idx: u8, statusString: *mut cty::c_char) {
-    todo!("view_idle_show stub")
+    unimplemented!("view_idle_show stub")
 }
 
 pub fn view_message_show(title: *mut cty::c_char, message: *mut cty::c_char) {
-    todo!("view_message_show stub")
+    unimplemented!("view_message_show stub")
 }
 
 pub fn view_error_show() {
-    todo!("view_error_show stub")
+    unimplemented!("view_error_show stub")
 }
 
 pub fn view_review_init(
@@ -59,9 +59,9 @@ pub fn view_review_init(
     viewfuncGetNumItems: viewfunc_getNumItems_t,
     viewfuncAccept: viewfunc_accept_t,
 ) {
-    todo!("view_review_init stub")
+    unimplemented!("view_review_init stub")
 }
 
 pub fn view_review_show() {
-    todo!("view_review_show stub")
+    unimplemented!("view_review_show stub")
 }

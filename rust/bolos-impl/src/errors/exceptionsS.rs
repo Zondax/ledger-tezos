@@ -16,7 +16,6 @@
 use crate::raw::{cx_err_t, exception_t};
 //use std::convert::{TryFrom, Infallible};
 
-//TODO: map exceptions from `errors.h`
 #[derive( Clone, Copy)]
 pub enum SyscallError {
     Code(exception_t),
@@ -42,7 +41,6 @@ impl Into<exception_t> for SyscallError {
     }
 }
 
-//TODO: map errors from `cx_errors.h`
 #[derive( Clone, Copy)]
 pub enum CXError {
     Code(cx_err_t),

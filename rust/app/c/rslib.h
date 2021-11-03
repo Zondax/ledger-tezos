@@ -11,8 +11,6 @@ rs_handle_apdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx, con
 
 /////////////
 
-// FIXME: Refactor these two
-
 void view_init();
 
 void zemu_log_stack(char *ctx);
