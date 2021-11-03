@@ -38,7 +38,7 @@ impl ApduHandler for GetVersion {
 
         let apdu_buffer = apdu_buffer.write();
         apdu_buffer[0] = 0; //Debug mode
-        // Version
+                            // Version
         apdu_buffer[1] = VERSION_MAJOR;
         apdu_buffer[2] = VERSION_MINOR;
         apdu_buffer[3] = VERSION_PATCH;

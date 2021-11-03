@@ -327,8 +327,7 @@ impl<'b> DoubleEndorsementEvidence<'b> {
 
 #[cfg(test)]
 impl<'b> DoubleEndorsementEvidence<'b> {
-    pub fn is(&self, _json: &serde_json::Map<std::string::String, serde_json::Value>) {
-    }
+    pub fn is(&self, _json: &serde_json::Map<std::string::String, serde_json::Value>) {}
 }
 
 #[cfg(test)]
