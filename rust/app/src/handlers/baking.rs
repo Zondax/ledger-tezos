@@ -538,7 +538,7 @@ mod tests {
 
         let produced_ui = driver.out_ui();
         let delegation_item = produced_ui
-            .into_iter()
+            .iter()
             .find(|item_pages| {
                 item_pages
                     .iter()

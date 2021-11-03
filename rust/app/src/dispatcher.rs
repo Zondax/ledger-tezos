@@ -190,6 +190,7 @@ pub fn apdu_dispatch<'apdu>(
 
         #[cfg(feature = "dev")]
         _ => Debug::handle(flags, tx, apdu_buffer),
+        #[allow(unreachable_patterns)] //not unrechable for all feature configurations
         _ => Err(CommandNotAllowed),
     }
 }

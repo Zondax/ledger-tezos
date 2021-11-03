@@ -152,7 +152,7 @@ mod tests {
         buffer[..3].copy_from_slice(&[CLA, INS_LEGACY_HMAC, 0]);
         let offset = prepare_buffer::<4>(&mut buffer, &[44, 1729, 0, 0], Curve::Ed25519);
 
-        buffer[offset..offset + HMAC_MSG.len()].copy_from_slice(&HMAC_MSG[..]);
+        buffer[offset..offset + HMAC_MSG.len()].copy_from_slice(HMAC_MSG);
 
         handle_apdu(&mut flags, &mut tx, rx, &mut buffer);
 
