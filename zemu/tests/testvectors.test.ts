@@ -74,7 +74,6 @@ describe.each(cartesianProduct(models, curves))('Test Vectors', function (m, cur
           break
 
         case Curve.Secp256R1:
-          // FIXME: add later
           // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
           // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
           break
@@ -136,7 +135,6 @@ describe.each(cartesianProduct(models, curves))('Sample Operations', function (m
           break
 
         case Curve.Secp256R1:
-          // FIXME: add later
           // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
           // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
           break

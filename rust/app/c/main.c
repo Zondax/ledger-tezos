@@ -103,7 +103,7 @@ int main(void) {
     // exit critical section
     __asm volatile("cpsie i");
     os_boot();
-    view_init();  // TODO: Move this to rust?
+    view_init();
 
     volatile uint8_t app_init_done = 0;
     volatile uint32_t rx = 0, tx = 0, flags = 0;
@@ -115,10 +115,9 @@ int main(void) {
         {
             TRY
             {
-                // TODO: Move this to rust?
                 if (!app_init_done) {
                     io_app_init();
-                    view_idle_show(0, NULL);        // TODO: Move this to rust?
+                    view_idle_show(0, NULL);
                     app_init_done = 1;
                     check_canary();
                 }

@@ -194,7 +194,6 @@ describe.each(models)('Standard [%s]; sign operation', function (m) {
           break
 
         case Curve.Secp256R1:
-          // FIXME: add later
           // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
           // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
           break
@@ -248,7 +247,6 @@ describe.each(models)('Standard [%s]; legacy - sign op with hash', function (m) 
           break
 
         case Curve.Secp256R1:
-          // FIXME: add later
           // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
           // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
           break

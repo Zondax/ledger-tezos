@@ -302,8 +302,6 @@ impl<'b> Origination<'b> {
                 assert_eq!(&parsed[..len], expected.as_bytes())
             }
         }
-
-        //TODO: verify script
     }
 }
 

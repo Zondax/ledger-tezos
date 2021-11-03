@@ -19,12 +19,11 @@ use crate::utils::ApduBufferRead;
 
 pub const VERSION_MAJOR: u8 = 3;
 pub const VERSION_MINOR: u8 = 0;
-pub const VERSION_PATCH: u8 = 0;
+pub const VERSION_PATCH: u8 = 2;
 
 pub struct GetVersion {}
 
 pub fn get_target_id() -> Result<u32, ApduError> {
-    // FIXME: return target id here. Move to bolos
     Ok(0u32)
 }
 
@@ -38,12 +37,12 @@ impl ApduHandler for GetVersion {
         *tx = 0;
 
         let apdu_buffer = apdu_buffer.write();
-        apdu_buffer[0] = 0; // FIXME: Debug mode enabled?
+        apdu_buffer[0] = 0; //Debug mode
                             // Version
         apdu_buffer[1] = VERSION_MAJOR;
         apdu_buffer[2] = VERSION_MINOR;
         apdu_buffer[3] = VERSION_PATCH;
-        apdu_buffer[4] = 0; // FIXME: Is UX allowed?
+        apdu_buffer[4] = 0; //UX allowed
 
         // target id
         let target_id_slice = get_target_id()?.to_be_bytes();

@@ -13,6 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+#![allow(unused_imports)]
 
 use crate::errors::{catch, Error};
 pub(self) use crate::raw::{cx_hmac_t, CX_NO_REINIT};
@@ -71,7 +72,7 @@ pub(self) fn cx_hmac(
                 err => Err(err.into())
             }
         } else {
-            todo!("cx_hmac called in not bolos")
+            unimplemented!("cx_hmac called in not bolos")
         }
     }
 }

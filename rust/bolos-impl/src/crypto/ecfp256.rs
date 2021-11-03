@@ -136,7 +136,6 @@ impl<const B: usize> SecretKey<B> {
         let crv = self.curve;
         if crv.is_weirstrass() {
             let (parity, size) = bindings::cx_ecdsa_sign::<H, B>(self, data, out)?;
-            //FIXME: if this is part of generic crate, this should not be here as it is non-standard!
             if parity {
                 out[0] |= 0x01;
             }
@@ -153,6 +152,8 @@ impl<const B: usize> SecretKey<B> {
 }
 
 mod bindings {
+    #![allow(unused_imports)]
+
     use super::{Curve, Error, HasherId, SecretKey};
     use crate::{
         errors::catch,
@@ -186,11 +187,12 @@ mod bindings {
                     err => Err(err.into())
                 }
             } else {
-                todo!("edwards_compress_point called in non-bolos");
+                unimplemented!("edwards_compress_point called in non-bolos");
             }
         }
     }
 
+    #[allow(dead_code)]
     pub fn cx_ecfp_init_private_key(
         curve: Curve,
         sk_data: Option<&[u8]>,
@@ -240,7 +242,7 @@ mod bindings {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("init ecfp_private_key called in non-bolos");
+                unimplemented!("init ecfp_private_key called in non-bolos");
             }
         }
 
@@ -293,7 +295,7 @@ mod bindings {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("generate_ecfp_keypair called in non-bolos");
+                unimplemented!("generate_ecfp_keypair called in non-bolos");
             }
         }
 
@@ -361,7 +363,7 @@ mod bindings {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("cx_ecdsa_sign called in not bolos")
+                unimplemented!("cx_ecdsa_sign called in not bolos")
             }
         }
 
@@ -427,7 +429,7 @@ mod bindings {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("cx_eddsa_sign called in not bolos")
+                unimplemented!("cx_eddsa_sign called in not bolos")
             }
         }
 

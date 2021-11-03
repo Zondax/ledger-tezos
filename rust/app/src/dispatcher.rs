@@ -33,7 +33,6 @@ use crate::utils::{ApduBufferRead, ApduPanic};
 
 pub const CLA: u8 = 0x80;
 
-//TODO: refactor in an enum
 cfg_if! {
     if #[cfg(feature = "baking")] {
         //baking-only legacy instructions
@@ -174,7 +173,6 @@ pub fn apdu_dispatch<'apdu>(
     }
 
     //common instructions
-    // FIXME: Unify using the trait
     match ins {
         INS_LEGACY_GET_VERSION => LegacyGetVersion::handle(flags, tx, apdu_buffer),
 
@@ -192,6 +190,7 @@ pub fn apdu_dispatch<'apdu>(
 
         #[cfg(feature = "dev")]
         _ => Debug::handle(flags, tx, apdu_buffer),
+        #[allow(unreachable_patterns)] //not unrechable for all feature configurations
         _ => Err(CommandNotAllowed),
     }
 }

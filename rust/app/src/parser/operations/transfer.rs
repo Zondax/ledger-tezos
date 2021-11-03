@@ -246,7 +246,6 @@ impl<'b> Transfer<'b> {
 
 impl<'a> DisplayableItem for Transfer<'a> {
     fn num_items(&self) -> usize {
-        //TODO: account for entrypoint if present
         1 + 8
     }
 
@@ -327,8 +326,6 @@ impl<'a> DisplayableItem for Transfer<'a> {
                 match self.parameters {
                     Some(params) => {
                         use bolos::hash::{Hasher, Sha256};
-
-                        //TODO: display entrypoint
 
                         //Display sha256 of michelson code
                         let sha =
@@ -460,8 +457,6 @@ impl<'b> Transfer<'b> {
                         panic!("expected entrypoint: {}, parsed: {}", expected, parsed)
                     }
                 }
-
-                //TODO: verify michelson code (parameters.value)
             }
         }
     }

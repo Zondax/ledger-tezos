@@ -186,7 +186,7 @@ impl<'b> EndorsementWithSlot<'b> {
 impl<'b> DisplayableItem for EndorsementWithSlot<'b> {
     fn num_items(&self) -> usize {
         1 + 2 + self.endorsement.num_items()
-        //TODO: show signature
+        //signature
         // + 1
     }
 
@@ -228,7 +228,7 @@ impl<'b> DisplayableItem for EndorsementWithSlot<'b> {
 
                 handle_ui_message(itoa(self.slot, &mut mex), message, page)
             }
-            //TODO: Signature
+            //Signature
             // 3 => {}
             n => self.endorsement.render_item(n - 3, title, message, page),
         }
@@ -252,8 +252,6 @@ impl<'b> EndorsementWithSlot<'b> {
         assert_eq!(self.slot, expected as u16);
 
         self.endorsement.is(json)
-
-        //TODO: verify signature
     }
 }
 
@@ -329,9 +327,7 @@ impl<'b> DoubleEndorsementEvidence<'b> {
 
 #[cfg(test)]
 impl<'b> DoubleEndorsementEvidence<'b> {
-    pub fn is(&self, _json: &serde_json::Map<std::string::String, serde_json::Value>) {
-        //TODO
-    }
+    pub fn is(&self, _json: &serde_json::Map<std::string::String, serde_json::Value>) {}
 }
 
 #[cfg(test)]
@@ -385,7 +381,5 @@ mod tests {
     }
 
     #[test]
-    fn double_endorsement_evidence() {
-        //TODO
-    }
+    fn double_endorsement_evidence() {}
 }

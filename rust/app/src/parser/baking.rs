@@ -28,7 +28,7 @@ use super::DisplayableItem;
 pub struct EndorsementData<'b> {
     pub chain_id: u32,
     pub branch: &'b [u8; 32],
-    pub tag: u8, //TODO: what to do with this??
+    pub tag: u8,
     pub level: u32,
 }
 
@@ -115,7 +115,7 @@ impl<'b> DisplayableItem for EndorsementData<'b> {
 pub struct BlockData {
     pub chain_id: u32,
     pub level: u32,
-    pub proto: u8, //FIXME: what to do with this byte?
+    pub proto: u8,
 }
 
 impl BlockData {
