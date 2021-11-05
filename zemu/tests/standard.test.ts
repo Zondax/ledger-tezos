@@ -19,7 +19,7 @@ import { APP_DERIVATION, cartesianProduct, curves, defaultOptions, models } from
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import * as secp256k1 from 'noble-secp256k1'
 
-import { SAMPLE_TRANSACTION } from './tezos'
+import { SAMPLE_TRANSACTION, KNOWN_DELEGATE } from './tezos'
 
 const ed25519 = require('ed25519-supercop')
 
@@ -153,7 +153,17 @@ describe.each([models[0]])('Standard [%s]; legacy - pubkey', function (m) {
   )
 })
 
-const SIGN_TEST_DATA = cartesianProduct(curves, [{ name: 'transfer', nav: { s: [13, 0], x: [11, 0] }, op: SAMPLE_TRANSACTION }])
+const SIGN_TEST_DATA = cartesianProduct(curves,
+                                        [{
+                                          name: 'transfer',
+                                          nav: { s: [13, 0], x: [11, 0] },
+                                          op: SAMPLE_TRANSACTION
+                                        },
+                                         {
+                                          name: 'known baker',
+                                          nav: { s: [10, 0], x: [10, 0] },
+                                          op: KNOWN_DELEGATE
+                                        }])
 const MICHELSON_SIGN_TEST_DATA = cartesianProduct(curves, [{ name: 'blind-hello', nav: { s: [2, 0], x: [3, 0] }, op: Buffer.from("hello@zondax.ch") }])
 
 describe.each(models)('Standard [%s]; sign', function (m) {

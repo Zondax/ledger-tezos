@@ -40,6 +40,10 @@ export type TestVector = {
   operation: ForgeOperationsParams
 }
 
+const knownBakers = [
+  "tz1eY5Aqa1kXDFoiebL28emyXFoneAoVg1zh",
+];
+
 async function generate_vector(n: number): Promise<TestVector> {
   //start emulator
   const m = models[0]
@@ -80,20 +84,11 @@ async function generate_vector(n: number): Promise<TestVector> {
 
     const counterNum = (parseInt(counter || '0', 10) + 1 + n);
 
-    let delegation_type = "Delegation";
-    let delegation_str = addresses.ed;
-    let delegate: string | undefined = addresses.ed;
-    if (n % 3 == 0) {
-      delegation_str = addresses.p256
-      delegate = addresses.p256
-    } else if (n % 2 == 0) {
-      delegation_str = addresses.k1
-      delegate = addresses.k1
-    } else if (n % 5 == 0) {
-      delegation_type = "Delegation Withdrawal"
-      delegation_str = "<REVOKED>"
-      delegate = undefined
-    }
+    const delegationSet = [...knownBakers, addresses.ed, addresses.p256, addresses.k1, undefined];
+
+    const delegate = delegationSet[n % delegationSet.length];
+    const delegation_str = delegate ? delegate : "<REVOKED>";
+    const delegation_type = delegate ? "Delegation" : "Delegation Withdrawal";
 
     //prepare operation
     const op: ForgeOperationsParams = {

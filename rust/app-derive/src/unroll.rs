@@ -146,7 +146,7 @@ pub fn unroll(input: TokenStream) -> TokenStream {
                 .map_err(|_| BakerNotFound)?;
 
             match KNOWN_BAKERS.get(out_idx) {
-                Some((_, _, name)) => Ok(PIC::new(name).into_inner()),
+                Some((_, _, name)) => Ok(PIC::new(*name).into_inner()),
                 None => unsafe { core::hint::unreachable_unchecked() }
             }
         }
