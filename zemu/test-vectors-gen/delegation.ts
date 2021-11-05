@@ -40,9 +40,7 @@ export type TestVector = {
   operation: ForgeOperationsParams
 }
 
-const knownBakers = [
-  "tz1eY5Aqa1kXDFoiebL28emyXFoneAoVg1zh",
-];
+const knownBakers = [{ addr: 'tz1eY5Aqa1kXDFoiebL28emyXFoneAoVg1zh', name: 'Obsidian' }]
 
 async function generate_vector(n: number): Promise<TestVector> {
   //start emulator
@@ -74,7 +72,7 @@ async function generate_vector(n: number): Promise<TestVector> {
     })
 
     // estimate fees of operation (alternatively can be set manually)
-    const estimate = await Tezos.estimate.registerDelegate();
+    const estimate = await Tezos.estimate.registerDelegate()
 
     const source = await Tezos.signer.publicKeyHash()
 
@@ -82,13 +80,18 @@ async function generate_vector(n: number): Promise<TestVector> {
     //branch is the block block hash we want to submit this transaction to
     const { hash } = await Tezos.rpc.getBlockHeader()
 
-    const counterNum = (parseInt(counter || '0', 10) + 1 + n);
+    const counterNum = parseInt(counter || '0', 10) + 1 + n
 
-    const delegationSet = [...knownBakers, addresses.ed, addresses.p256, addresses.k1, undefined];
+    const delegationSet = [
+      ...knownBakers,
+      { addr: addresses.ed, name: addresses.ed },
+      { addr: addresses.p256, name: addresses.p256 },
+      { addr: addresses.k1, name: addresses.k1 },
+      { addr: undefined, name: '<REVOKED>' },
+    ]
 
-    const delegate = delegationSet[n % delegationSet.length];
-    const delegation_str = delegate ? delegate : "<REVOKED>";
-    const delegation_type = delegate ? "Delegation" : "Delegation Withdrawal";
+    const delegate = delegationSet[n % delegationSet.length]
+    const delegation_type = delegate.addr ? 'Delegation' : 'Delegation Withdrawal'
 
     //prepare operation
     const op: ForgeOperationsParams = {
@@ -96,7 +99,7 @@ async function generate_vector(n: number): Promise<TestVector> {
       contents: [
         {
           kind: OpKind.DELEGATION,
-          delegate,
+          delegate: delegate.addr,
           fee: estimate.suggestedFeeMutez.toString(),
           gas_limit: estimate.gasLimit.toString(),
           storage_limit: estimate.storageLimit.toString(),
@@ -121,7 +124,7 @@ async function generate_vector(n: number): Promise<TestVector> {
         { idx: 0, key: 'Operation', val: ledger_fmt(hash) }, //page 0
         { idx: 1, key: 'Type', val: ledger_fmt(delegation_type) }, //page 0
         { idx: 2, key: 'Source', val: ledger_fmt(source) },
-        { idx: 3, key: 'Delegation', val: ledger_fmt(delegation_str) },
+        { idx: 3, key: 'Delegation', val: ledger_fmt(delegate.name) },
         { idx: 4, key: 'Fee', val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },
         { idx: 5, key: 'Gas Limit', val: ledger_fmt(estimate.gasLimit.toString()) },
         { idx: 6, key: 'Storage Limit', val: ledger_fmt(estimate.storageLimit.toString()) },

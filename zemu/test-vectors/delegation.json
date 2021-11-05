@@ -1,9 +1,9 @@
 [
     {
         "name": "Simple Delegation #0",
-        "blob": "cac8a86c3b07ebd0f8f9a137ec9fa21494d21be16006b40dc809f0e23c5f74f66e009a6090844356d979899622d85ba1602740fcaa848c03b4f50ecc0800ff00cf49f66b9ea137e11818f2a78b4b6fc9895b4e50",
+        "blob": "7f93e6e4cdd8fcfc41a1bbc72a073eab2557dcebcc3f99ac9ac8f394a36ddc7f6e009a6090844356d979899622d85ba1602740fcaa848c03b4f50ecc0800ff00cf49f66b9ea137e11818f2a78b4b6fc9895b4e50",
         "operation": {
-            "branch": "BMFbBAjUPk6PXRGpyWfxEMgsaq3XgohCxhqbHTAHqh45HW7D7az",
+            "branch": "BLgU8wofErCJhsWbE1zrc9CBdz3DcqFzYKCHQHB93kKS2bRh3n7",
             "contents": [
                 {
                     "kind": "delegation",
@@ -21,7 +21,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BMFbBAjUPk6PXRGpyWfxEMgsaq3XgohCxhqbHTAHqh45HW7D7az"
+                    "BLgU8wofErCJhsWbE1zrc9CBdz3DcqFzYKCHQHB93kKS2bRh3n7"
                 ]
             },
             {
@@ -42,7 +42,7 @@
                 "idx": 3,
                 "key": "Delegation",
                 "val": [
-                    "tz1eY5Aqa1kXDFoiebL28emyXFoneAoVg1zh"
+                    "Obsidian"
                 ]
             },
             {
@@ -77,9 +77,9 @@
     },
     {
         "name": "Simple Delegation #1",
-        "blob": "cac8a86c3b07ebd0f8f9a137ec9fa21494d21be16006b40dc809f0e23c5f74f66e009a6090844356d979899622d85ba1602740fcaa848c03b5f50ecc0800ff00c860be673ae47ec549f9b5a01a8ccb657be75b6a",
+        "blob": "7f93e6e4cdd8fcfc41a1bbc72a073eab2557dcebcc3f99ac9ac8f394a36ddc7f6e009a6090844356d979899622d85ba1602740fcaa848c03b5f50ecc0800ff00c860be673ae47ec549f9b5a01a8ccb657be75b6a",
         "operation": {
-            "branch": "BMFbBAjUPk6PXRGpyWfxEMgsaq3XgohCxhqbHTAHqh45HW7D7az",
+            "branch": "BLgU8wofErCJhsWbE1zrc9CBdz3DcqFzYKCHQHB93kKS2bRh3n7",
             "contents": [
                 {
                     "kind": "delegation",
@@ -97,7 +97,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BMFbBAjUPk6PXRGpyWfxEMgsaq3XgohCxhqbHTAHqh45HW7D7az"
+                    "BLgU8wofErCJhsWbE1zrc9CBdz3DcqFzYKCHQHB93kKS2bRh3n7"
                 ]
             },
             {
@@ -153,9 +153,9 @@
     },
     {
         "name": "Simple Delegation #2",
-        "blob": "5b3d26117266f5efae9a7e384f6f666c949c776e8db11f647ce6a0cf5df0c5a66e009a6090844356d979899622d85ba1602740fcaa848c03b6f50ecc0800ff02792d0b9d857f711e03998bd0a2f219c053704bae",
+        "blob": "1ff678288bbbf8a6b3261e5d1e06decb682739236b32adfc456b048c6e6297d16e009a6090844356d979899622d85ba1602740fcaa848c03b6f50ecc0800ff02792d0b9d857f711e03998bd0a2f219c053704bae",
         "operation": {
-            "branch": "BLQTuj7FwUdbumeFBzDYyeVFdq61Dhucysbuf5LrGR2reR8QyiQ",
+            "branch": "BKxMnHsYeHWFhrTpeqar6ykTEj5FL1FP4oi4Zcr3naoVCHXpSE3",
             "contents": [
                 {
                     "kind": "delegation",
@@ -173,7 +173,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BLQTuj7FwUdbumeFBzDYyeVFdq61Dhucysbuf5LrGR2reR8QyiQ"
+                    "BKxMnHsYeHWFhrTpeqar6ykTEj5FL1FP4oi4Zcr3naoVCHXpSE3"
                 ]
             },
             {
@@ -229,9 +229,9 @@
     },
     {
         "name": "Simple Delegation #3",
-        "blob": "5b3d26117266f5efae9a7e384f6f666c949c776e8db11f647ce6a0cf5df0c5a66e009a6090844356d979899622d85ba1602740fcaa848c03b7f50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "blob": "5a2fed20a3f0ef73a34fd65d7849c71cdfd6ce74fa3a9cc3fababad25985aa856e009a6090844356d979899622d85ba1602740fcaa848c03b7f50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
         "operation": {
-            "branch": "BLQTuj7FwUdbumeFBzDYyeVFdq61Dhucysbuf5LrGR2reR8QyiQ",
+            "branch": "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq",
             "contents": [
                 {
                     "kind": "delegation",
@@ -249,7 +249,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BLQTuj7FwUdbumeFBzDYyeVFdq61Dhucysbuf5LrGR2reR8QyiQ"
+                    "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq"
                 ]
             },
             {
@@ -305,9 +305,9 @@
     },
     {
         "name": "Simple Delegation #4",
-        "blob": "5b3d26117266f5efae9a7e384f6f666c949c776e8db11f647ce6a0cf5df0c5a66e009a6090844356d979899622d85ba1602740fcaa848c03b8f50ecc080000",
+        "blob": "5a2fed20a3f0ef73a34fd65d7849c71cdfd6ce74fa3a9cc3fababad25985aa856e009a6090844356d979899622d85ba1602740fcaa848c03b8f50ecc080000",
         "operation": {
-            "branch": "BLQTuj7FwUdbumeFBzDYyeVFdq61Dhucysbuf5LrGR2reR8QyiQ",
+            "branch": "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq",
             "contents": [
                 {
                     "kind": "delegation",
@@ -324,7 +324,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BLQTuj7FwUdbumeFBzDYyeVFdq61Dhucysbuf5LrGR2reR8QyiQ"
+                    "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq"
                 ]
             },
             {
@@ -380,9 +380,9 @@
     },
     {
         "name": "Simple Delegation #5",
-        "blob": "c57012089f880a0e1b8cf9825dda197ef1c9aa8c4568f3a258768149405178366e009a6090844356d979899622d85ba1602740fcaa848c03b9f50ecc0800ff00cf49f66b9ea137e11818f2a78b4b6fc9895b4e50",
+        "blob": "5a2fed20a3f0ef73a34fd65d7849c71cdfd6ce74fa3a9cc3fababad25985aa856e009a6090844356d979899622d85ba1602740fcaa848c03b9f50ecc0800ff00cf49f66b9ea137e11818f2a78b4b6fc9895b4e50",
         "operation": {
-            "branch": "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2",
+            "branch": "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq",
             "contents": [
                 {
                     "kind": "delegation",
@@ -400,7 +400,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2"
+                    "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq"
                 ]
             },
             {
@@ -421,7 +421,7 @@
                 "idx": 3,
                 "key": "Delegation",
                 "val": [
-                    "tz1eY5Aqa1kXDFoiebL28emyXFoneAoVg1zh"
+                    "Obsidian"
                 ]
             },
             {
@@ -456,9 +456,9 @@
     },
     {
         "name": "Simple Delegation #6",
-        "blob": "c57012089f880a0e1b8cf9825dda197ef1c9aa8c4568f3a258768149405178366e009a6090844356d979899622d85ba1602740fcaa848c03baf50ecc0800ff00c860be673ae47ec549f9b5a01a8ccb657be75b6a",
+        "blob": "5a2fed20a3f0ef73a34fd65d7849c71cdfd6ce74fa3a9cc3fababad25985aa856e009a6090844356d979899622d85ba1602740fcaa848c03baf50ecc0800ff00c860be673ae47ec549f9b5a01a8ccb657be75b6a",
         "operation": {
-            "branch": "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2",
+            "branch": "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq",
             "contents": [
                 {
                     "kind": "delegation",
@@ -476,7 +476,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2"
+                    "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq"
                 ]
             },
             {
@@ -532,9 +532,9 @@
     },
     {
         "name": "Simple Delegation #7",
-        "blob": "c57012089f880a0e1b8cf9825dda197ef1c9aa8c4568f3a258768149405178366e009a6090844356d979899622d85ba1602740fcaa848c03bbf50ecc0800ff02792d0b9d857f711e03998bd0a2f219c053704bae",
+        "blob": "5a2fed20a3f0ef73a34fd65d7849c71cdfd6ce74fa3a9cc3fababad25985aa856e009a6090844356d979899622d85ba1602740fcaa848c03bbf50ecc0800ff02792d0b9d857f711e03998bd0a2f219c053704bae",
         "operation": {
-            "branch": "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2",
+            "branch": "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq",
             "contents": [
                 {
                     "kind": "delegation",
@@ -552,7 +552,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2"
+                    "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq"
                 ]
             },
             {
@@ -608,9 +608,9 @@
     },
     {
         "name": "Simple Delegation #8",
-        "blob": "c57012089f880a0e1b8cf9825dda197ef1c9aa8c4568f3a258768149405178366e009a6090844356d979899622d85ba1602740fcaa848c03bcf50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
+        "blob": "5a2fed20a3f0ef73a34fd65d7849c71cdfd6ce74fa3a9cc3fababad25985aa856e009a6090844356d979899622d85ba1602740fcaa848c03bcf50ecc0800ff01011b2295c8d30e31f5d231f26e551a63a81fd2b7",
         "operation": {
-            "branch": "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2",
+            "branch": "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq",
             "contents": [
                 {
                     "kind": "delegation",
@@ -628,7 +628,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2"
+                    "BLQ13g1WYAYx23NtzkKTv4GiKqBxGTriW3nTur2iWSuHvedoivq"
                 ]
             },
             {
@@ -684,9 +684,9 @@
     },
     {
         "name": "Simple Delegation #9",
-        "blob": "c57012089f880a0e1b8cf9825dda197ef1c9aa8c4568f3a258768149405178366e009a6090844356d979899622d85ba1602740fcaa848c03bdf50ecc080000",
+        "blob": "1f04cb0d1f6e71d4ea1f7512e5fbba7fe13e3170b35491ae82ae66d1317987496e009a6090844356d979899622d85ba1602740fcaa848c03bdf50ecc080000",
         "operation": {
-            "branch": "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2",
+            "branch": "BKwwfevpavQtvBwq5k2epMppnxsfMxuLYKnBEbNynudM7dffh4Q",
             "contents": [
                 {
                     "kind": "delegation",
@@ -703,7 +703,7 @@
                 "idx": 0,
                 "key": "Operation",
                 "val": [
-                    "BMDEcqB6R5VLYCCgPGdjyQQC9XQLL94RtSn8QNpm4LkhNZC2iR2"
+                    "BKwwfevpavQtvBwq5k2epMppnxsfMxuLYKnBEbNynudM7dffh4Q"
                 ]
             },
             {
