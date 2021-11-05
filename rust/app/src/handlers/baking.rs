@@ -197,7 +197,7 @@ impl Baking {
         digest: [u8; 32],
         out: &mut [u8],
     ) -> Result<usize, Error> {
-        let hw = HWM::read()?;
+        let hw = HWM::read().map_err(|_| Error::ExecutionError)?;
 
         let (_, endorsement) =
             EndorsementData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
@@ -235,7 +235,7 @@ impl Baking {
         digest: [u8; 32],
         out: &mut [u8],
     ) -> Result<usize, Error> {
-        let hw = HWM::read()?;
+        let hw = HWM::read().map_err(|_| Error::ExecutionError)?;
 
         let (_, blockdata) = BlockData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
 

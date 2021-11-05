@@ -19,7 +19,9 @@
 //! * Legacy Handler
 
 use crate::{
-    constants::ApduError as Error, dispatcher::ApduHandler, handlers::hwm::HWM,
+    constants::ApduError as Error,
+    dispatcher::ApduHandler,
+    handlers::hwm::{WearError, HWM},
     utils::ApduBufferRead,
 };
 
@@ -61,7 +63,11 @@ impl ApduHandler for LegacyQueryMainHWM {
     ) -> Result<(), Error> {
         *tx = 0;
 
-        let hwm = HWM::hwm()?;
+        let hwm = match HWM::hwm() {
+            Ok(hwm) => hwm,
+            Err(WearError::Uninitialized) => HWM::hwm_default(),
+            Err(_) => return Err(Error::ExecutionError),
+        };
         let len = hwm.len();
 
         let buffer = buffer.write();
@@ -85,7 +91,11 @@ impl ApduHandler for LegacyQueryAllHWM {
     ) -> Result<(), Error> {
         *tx = 0;
 
-        let hwm = HWM::all_hwm()?;
+        let hwm = match HWM::all_hwm() {
+            Ok(hwm) => hwm,
+            Err(WearError::Uninitialized) => HWM::all_hwm_default(),
+            Err(_) => return Err(Error::ExecutionError),
+        };
         let len = hwm.len();
 
         let buffer = buffer.write();
@@ -151,7 +161,7 @@ mod tests {
 
     #[test]
     #[serial(hwm)]
-    fn apdu_get_hwm() {
+    fn apdu_legacy_get_hwm() {
         let mut flags = 0;
         let mut tx = 0;
         let rx = 5;
@@ -176,23 +186,28 @@ mod tests {
 
     #[test]
     #[serial(hwm)]
-    fn apdu_get_hwm_no_write() {
+    fn apdu_legacy_get_hwm_no_write() {
         let mut flags = 0;
         let mut tx = 0;
         let rx = 5;
         let mut buffer = [0; 260];
 
+        let len = MAIN_HWM_LEN;
+
         //reset state (problematic with other tests)
         HWM::format().expect("couldn't format");
 
         let err = HWM::hwm().expect_err("succeed retrieving hwm");
-        assert_eq!(err, ApduError::ExecutionError);
+        assert_eq!(err, WearError::Uninitialized);
 
         buffer[..rx].copy_from_slice(&[CLA, INS_LEGACY_QUERY_MAIN_HWM, 0, 0, 0]);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
 
-        assert_error_code!(tx, buffer, ApduError::ExecutionError);
-        assert_eq!(tx as usize, 2);
+        let hwm = HWM::hwm_default();
+
+        assert_error_code!(tx, buffer, ApduError::Success);
+        assert_eq!(tx as usize, 2 + len);
+        assert_eq!(&buffer[..len], &hwm[..])
     }
 
     #[test]
