@@ -19,7 +19,7 @@ use crate::utils::ApduBufferRead;
 
 pub const VERSION_MAJOR: u8 = 3;
 pub const VERSION_MINOR: u8 = 0;
-pub const VERSION_PATCH: u8 = 2;
+pub const VERSION_PATCH: u8 = 3;
 
 pub struct GetVersion {}
 
