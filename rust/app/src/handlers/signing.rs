@@ -34,7 +34,7 @@ use crate::{
         DisplayableItem, Preemble,
     },
     sys,
-    utils::{ApduBufferRead, Uploader},
+    utils::{ApduBufferRead, ApduPanic, Uploader},
 };
 
 #[bolos::lazy_static]
@@ -255,12 +255,12 @@ impl Viewable for SignUI {
         match self.parsed {
             None => match item_n {
                 0 => {
-                    let title_content = pic_str!(b"Sign Michelson Hash");
+                    let title_content = pic_str!(b"Sign Michelson");
                     title[..title_content.len()].copy_from_slice(title_content);
 
                     let mut hex_buf = [0; Sign::SIGN_HASH_SIZE * 2];
                     //this is impossible that will error since the sizes are all checked
-                    hex::encode_to_slice(self.hash, &mut hex_buf).unwrap();
+                    hex::encode_to_slice(self.hash, &mut hex_buf).apdu_unwrap();
 
                     handle_ui_message(&hex_buf[..], message, page)
                 }
