@@ -54,9 +54,7 @@ ifndef COIN
 COIN=XTZ
 endif
 
-APPVERSION_M=3
-APPVERSION_N=0
-APPVERSION_P=3
+include $(CURDIR)/Makefile.version
 
 $(info COIN  = [$(COIN)])
 ifeq ($(COIN),XTZ)

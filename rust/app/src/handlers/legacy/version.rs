@@ -15,7 +15,7 @@
 ********************************************************************************/
 use crate::constants::ApduError;
 use crate::dispatcher::{ApduHandler, INS_LEGACY_GET_VERSION, INS_LEGACY_GIT};
-use crate::handlers::version::{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
+use crate::handlers::version::{APPVERSION_M, APPVERSION_N, APPVERSION_P};
 use crate::utils::ApduBufferRead;
 use crate::{constants::ApduError::InsNotSupported, utils::BAKING};
 
@@ -45,9 +45,9 @@ impl ApduHandler for LegacyGetVersion {
         let apdu_buffer = apdu_buffer.write();
         // https://github.com/obsidiansystems/ledger-app-tezos/blob/58797b2f9606c5a30dd1ccc9e5b9962e45e10356/src/apdu.c#L24
         apdu_buffer[0] = BAKING as _;
-        apdu_buffer[1] = VERSION_MAJOR;
-        apdu_buffer[2] = VERSION_MINOR;
-        apdu_buffer[3] = VERSION_PATCH;
+        apdu_buffer[1] = APPVERSION_M;
+        apdu_buffer[2] = APPVERSION_N;
+        apdu_buffer[3] = APPVERSION_P;
         *tx = 4;
 
         Ok(())
@@ -87,7 +87,7 @@ mod tests {
     use crate::assert_error_code;
     use crate::constants::ApduError::Success;
     use crate::dispatcher::{handle_apdu, CLA, INS_LEGACY_GET_VERSION, INS_LEGACY_GIT};
-    use crate::handlers::version::{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
+    use crate::handlers::version::{APPVERSION_M, APPVERSION_N, APPVERSION_P};
     use crate::utils::BAKING;
     use std::convert::TryInto;
 
@@ -110,9 +110,9 @@ mod tests {
         assert_error_code!(*tx, buffer, Success);
 
         assert_eq!(buffer[0], BAKING as u8);
-        assert_eq!(buffer[1], VERSION_MAJOR);
-        assert_eq!(buffer[2], VERSION_MINOR);
-        assert_eq!(buffer[3], VERSION_PATCH);
+        assert_eq!(buffer[1], APPVERSION_M);
+        assert_eq!(buffer[2], APPVERSION_N);
+        assert_eq!(buffer[3], APPVERSION_P);
     }
 
     #[test]
