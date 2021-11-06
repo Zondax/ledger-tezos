@@ -472,7 +472,7 @@ export default class TezosApp {
       const errorCodeData = response.slice(-2)
       const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
-      const main = response.slice(0, -2).readInt32BE()
+      const main = response.slice(0, -2).readUInt32BE()
 
       return {
         returnCode,
@@ -489,9 +489,9 @@ export default class TezosApp {
       const errorCodeData = response.slice(-2)
       const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
-      const main = response.slice(0, 4).readInt32BE()
-      const test = response.slice(4, 8).readInt32BE()
-      const chain_id = response.slice(8, -2).readInt32BE()
+      const main = response.slice(0, 4).readUInt32BE()
+      const test = response.slice(4, 8).readUInt32BE()
+      const chain_id = response.slice(8, -2).readUInt32BE()
 
       return {
         returnCode,
