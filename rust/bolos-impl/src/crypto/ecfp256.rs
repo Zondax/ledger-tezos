@@ -172,9 +172,7 @@ mod bindings {
     use super::{Curve, Error, HasherId, SecretKey};
     use crate::{
         errors::catch,
-        raw::{
-            cx_ecfp_private_key_t, cx_ecfp_public_key_t
-        },
+        raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t},
     };
     use core::mem::MaybeUninit;
     use zeroize::{Zeroize, Zeroizing};

@@ -17,7 +17,7 @@ use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
     dispatcher::ApduHandler,
-    handlers::baking::{AuthorizeBaking, DeAuthorizeBaking, QueryAuthKey},
+    handlers::baking::{AuthorizeBaking, DeAuthorizeBaking, QueryAuthKey, QueryAuthKeyWithCurve},
     utils::ApduBufferRead,
 };
 
@@ -104,7 +104,7 @@ impl ApduHandler for LegacyQueryAuthKeyWithCurve {
     ) -> Result<(), Error> {
         let req_confirmation = buffer.p1() >= 1;
 
-        *tx = QueryAuthKey::query(req_confirmation, buffer.write(), flags)?;
+        *tx = QueryAuthKeyWithCurve::query(req_confirmation, buffer.write(), flags)?;
 
         Ok(())
     }
