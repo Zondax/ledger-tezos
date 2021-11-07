@@ -36,3 +36,22 @@ mod unroll;
 pub fn unroll(input: TokenStream) -> TokenStream {
     unroll::unroll(input)
 }
+
+mod version;
+#[proc_macro]
+/// Reads the file located at the provided input path extracts the version variables from it.
+///
+/// The expected contents of the file is a list of definitions of the format
+/// `NAME=VALUE`
+///
+/// Each value is parsed and saved as an `u8`, and each definition will
+/// be made available in the macro call site with the provided name.
+///
+/// # Note
+///
+/// The provided path will be made relative to the `CARGO_MANIFEST_DIR` of the invoking crate.
+///
+/// In other words, the provided input path will have the current crate's root directory prepended
+pub fn version(input: TokenStream) -> TokenStream {
+    version::version(input)
+}

@@ -13,7 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use std::mem::MaybeUninit;
+use std::{mem::MaybeUninit, ptr::addr_of_mut};
 
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
@@ -26,7 +26,7 @@ use crate::{
         public_key::{Addr, GetAddress},
     },
     sys::crypto::bip32::BIP32Path,
-    utils::ApduBufferRead,
+    utils::{ApduBufferRead, ApduPanic},
 };
 use zemu_sys::{Show, ViewError, Viewable};
 
@@ -45,8 +45,16 @@ impl LegacySetup {
         chain_id: u32,
         flags: &mut u32,
     ) -> Result<u32, Error> {
-        let ui = SetupUI::new(curve, path, main_hwm, test_hwm, chain_id)?;
-        unsafe { ui.show(flags).map_err(|_| Error::ExecutionError).map(|_| 0) }
+        let mut ui = MaybeUninit::uninit();
+
+        SetupUI::new_into(curve, path, main_hwm, test_hwm, chain_id, &mut ui)?;
+
+        unsafe {
+            ui.assume_init() //safe since we initialized it above
+                .show(flags)
+                .map_err(|_| Error::ExecutionError)
+                .map(|_| 0)
+        }
     }
 }
 
@@ -94,25 +102,38 @@ struct SetupUI {
 
 impl SetupUI {
     #[inline(never)]
-    pub fn new(
+    pub fn new_into(
         curve: Curve,
         path: BIP32Path<BIP32_MAX_LENGTH>,
         main_hwm: u32,
         test_hwm: u32,
         chain_id: u32,
-    ) -> Result<Self, Error> {
-        let mut addr = core::mem::MaybeUninit::uninit();
-        GetAddress::new_addr_into(curve, &path, &mut addr).map_err(|_| Error::ExecutionError)?;
+        out: &mut MaybeUninit<Self>,
+    ) -> Result<(), Error> {
+        crate::sys::zemu_log_stack("SetupUI::new\x00");
 
-        Ok(Self {
-            curve,
-            path,
-            //this is safe because it's initialized above
-            addr: unsafe { addr.assume_init() },
-            main_hwm,
-            test_hwm,
-            chain_id: chain_id.into(),
-        })
+        let out = out.as_mut_ptr();
+        {
+            //get `addr` *mut,
+            // cast to MaybeUninit *mut
+            //SAFE: `as_mut` it to &mut MaybeUninit (safe because it's MaybeUninit)
+            // unwrap the option as it's guarantee valid pointer
+            let addr = unsafe { addr_of_mut!((*out).addr).cast::<MaybeUninit<_>>().as_mut() }
+                .apdu_unwrap();
+
+            GetAddress::new_addr_into(curve, &path, addr).map_err(|_| Error::ExecutionError)?;
+        }
+
+        //actually safe since we are only writing and all pointers are valid
+        unsafe {
+            addr_of_mut!((*out).curve).write(curve);
+            addr_of_mut!((*out).path).write(path);
+            addr_of_mut!((*out).main_hwm).write(main_hwm);
+            addr_of_mut!((*out).test_hwm).write(test_hwm);
+            addr_of_mut!((*out).chain_id).write(chain_id.into());
+        }
+
+        Ok(())
     }
 }
 
