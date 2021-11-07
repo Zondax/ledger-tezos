@@ -211,7 +211,7 @@ impl WaterMark {
 
 impl Default for WaterMark {
     fn default() -> Self {
-        Self::reset(0)
+        Self::reset(u32::MAX)
     }
 }
 

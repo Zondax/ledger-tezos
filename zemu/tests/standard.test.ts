@@ -161,10 +161,15 @@ const SIGN_TEST_DATA = cartesianProduct(curves,
                                         },
                                          {
                                           name: 'known baker',
-                                          nav: { s: [10, 0], x: [10, 0] },
+                                          nav: { s: [10, 0], x: [9, 0] },
                                           op: KNOWN_DELEGATE
                                         }])
-const MICHELSON_SIGN_TEST_DATA = cartesianProduct(curves, [{ name: 'blind-hello', nav: { s: [2, 0], x: [3, 0] }, op: Buffer.from("hello@zondax.ch") }])
+const MICHELSON_SIGN_TEST_DATA = cartesianProduct(curves,
+                                                  [{
+                                                    name: 'blind-hello',
+                                                    nav: { s: [2, 0], x: [3, 0] },
+                                                    op: Buffer.from("hello@zondax.ch")
+                                                  }])
 
 describe.each(models)('Standard [%s]; sign', function (m) {
   test.each(SIGN_TEST_DATA)('sign operation', async function (curve, data) {
@@ -182,7 +187,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
 
       const resp = await respReq
 
-      console.log(resp, m.name)
+      console.log(resp, m.name, data.name, curve)
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
@@ -233,7 +238,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
 
       const resp = await respReq
 
-      console.log(resp, m.name)
+      console.log(resp, m.name, data.name, curve)
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
@@ -286,7 +291,7 @@ describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
 
       const resp = await respReq
 
-      console.log(resp, m.name)
+      console.log(resp, m.name, data.name, curve)
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
@@ -337,7 +342,7 @@ describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
 
       const resp = await respReq
 
-      console.log(resp, m.name)
+      console.log(resp, m.name, data.name, curve)
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
