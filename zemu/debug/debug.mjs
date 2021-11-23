@@ -34,7 +34,7 @@ async function debugScenario1(sim, app) {
 
 async function callTestFunction(sim, app) {
 
-  let response = await app.sign(APP_DERIVATION, 3, Buffer.from("francesco@zondax.ch"));
+  let response = await app.signMichelson(APP_DERIVATION, 3, Buffer.from("support.tezos@zondax.ch"));
 
   console.log(response);
 }
