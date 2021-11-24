@@ -25,7 +25,6 @@ DOCKER_LEGACY_APP_SRC=/project/legacy
 DOCKER_LEGACY_APP_BIN=$(DOCKER_LEGACY_APP_SRC)/bin/app.elf
 
 ifeq ($(BOLOS_SDK),)
-	# TODO: use earthly here
 	include $(CURDIR)/rust/app/refactor/dockerized_build.mk
 
 build:
@@ -58,7 +57,7 @@ test_vectors:
 		yarn test-vectors-generate proposals && \
 		yarn test-vectors-generate endorsement && \
 		yarn test-vectors-generate seed && \
-    	yarn test-vectors-generate activation && \
+		yarn test-vectors-generate activation && \
 		yarn test-vectors-generate origination
 	$(MAKE) -C rust test_vectors
 .PHONY: test_vectors

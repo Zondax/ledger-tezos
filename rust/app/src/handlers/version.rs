@@ -17,14 +17,11 @@ use crate::constants::ApduError;
 use crate::dispatcher::ApduHandler;
 use crate::utils::ApduBufferRead;
 
-pub const VERSION_MAJOR: u8 = 3;
-pub const VERSION_MINOR: u8 = 0;
-pub const VERSION_PATCH: u8 = 0;
+ledger_tezos_derive::version!("Makefile.version");
 
 pub struct GetVersion {}
 
 pub fn get_target_id() -> Result<u32, ApduError> {
-    // FIXME: return target id here. Move to bolos
     Ok(0u32)
 }
 
@@ -38,12 +35,12 @@ impl ApduHandler for GetVersion {
         *tx = 0;
 
         let apdu_buffer = apdu_buffer.write();
-        apdu_buffer[0] = 0; // FIXME: Debug mode enabled?
+        apdu_buffer[0] = 0; //Debug mode
                             // Version
-        apdu_buffer[1] = VERSION_MAJOR;
-        apdu_buffer[2] = VERSION_MINOR;
-        apdu_buffer[3] = VERSION_PATCH;
-        apdu_buffer[4] = 0; // FIXME: Is UX allowed?
+        apdu_buffer[1] = APPVERSION_M;
+        apdu_buffer[2] = APPVERSION_N;
+        apdu_buffer[3] = APPVERSION_P;
+        apdu_buffer[4] = 0; //UX allowed
 
         // target id
         let target_id_slice = get_target_id()?.to_be_bytes();
@@ -56,10 +53,10 @@ impl ApduHandler for GetVersion {
 
 #[cfg(test)]
 mod tests {
+    use super::{APPVERSION_M, APPVERSION_N, APPVERSION_P};
     use crate::assert_error_code;
     use crate::constants::ApduError::Success;
     use crate::dispatcher::{handle_apdu, CLA, INS_GET_VERSION};
-    use crate::handlers::version::{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
     use std::convert::TryInto;
 
     #[test]
@@ -80,8 +77,8 @@ mod tests {
         assert_eq!(*tx, 1 + 4 + 4 + 2);
         assert_error_code!(*tx, buffer, Success);
 
-        assert_eq!(buffer[1], VERSION_MAJOR);
-        assert_eq!(buffer[2], VERSION_MINOR);
-        assert_eq!(buffer[3], VERSION_PATCH);
+        assert_eq!(buffer[1], APPVERSION_M);
+        assert_eq!(buffer[2], APPVERSION_N);
+        assert_eq!(buffer[3], APPVERSION_P);
     }
 }

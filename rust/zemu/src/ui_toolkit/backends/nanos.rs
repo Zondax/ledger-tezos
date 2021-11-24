@@ -102,7 +102,6 @@ impl UIBackend<KEY_SIZE> for NanoSBackend {
     }
 
     fn show_idle(&mut self, item_idx: usize, status: Option<&[u8]>) {
-        //FIXME: MENU_MAIN_APP_LINE2
         let status = status.unwrap_or(&pic_str!(b"DO NOT USE")[..]);
 
         let len = core::cmp::min(self.key.len(), status.len());

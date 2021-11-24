@@ -40,7 +40,7 @@ impl ApduHandler for LegacyGetPublic {
     ) -> Result<(), Error> {
         *tx = 0;
 
-        //TODO: require_hid ?
+        //require_hid ?
         // see: https://github.com/Zondax/ledger-tezos/issues/35
 
         let curve = crypto::Curve::try_from(buffer.p2()).map_err(|_| Error::InvalidP1P2)?;

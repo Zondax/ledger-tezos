@@ -57,7 +57,7 @@ pub(self) fn cx_hash(
                 err => Err(err.into())
             }
         } else {
-            todo!("cx_hash called in not bolos")
+            unimplemented!("cx_hash called in not bolos")
         }
     }
 }

@@ -8,7 +8,6 @@ use nom::error::ErrorKind;
 /// we redeclare it here, just for interpolation
 /// purposes
 
-//TODO: make this CamelCase
 #[cfg_attr(test, derive(Debug))]
 pub enum ParserError {
     // Generic errors

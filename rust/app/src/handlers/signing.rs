@@ -34,7 +34,7 @@ use crate::{
         DisplayableItem, Preemble,
     },
     sys,
-    utils::{ApduBufferRead, Uploader},
+    utils::{ApduBufferRead, ApduPanic, Uploader},
 };
 
 #[bolos::lazy_static]
@@ -255,12 +255,12 @@ impl Viewable for SignUI {
         match self.parsed {
             None => match item_n {
                 0 => {
-                    let title_content = pic_str!(b"Sign Michelson Hash");
+                    let title_content = pic_str!(b"Sign Michelson");
                     title[..title_content.len()].copy_from_slice(title_content);
 
                     let mut hex_buf = [0; Sign::SIGN_HASH_SIZE * 2];
                     //this is impossible that will error since the sizes are all checked
-                    hex::encode_to_slice(self.hash, &mut hex_buf).unwrap();
+                    hex::encode_to_slice(self.hash, &mut hex_buf).apdu_unwrap();
 
                     handle_ui_message(&hex_buf[..], message, page)
                 }
@@ -388,7 +388,7 @@ mod tests {
     #[ignore]
     #[serial(ui)]
     fn apdu_blind_sign() {
-        const MSG: [u8; 18] = *b"franceco@zondax.ch";
+        const MSG: &[u8] = b"support.tezos@zondax.ch";
 
         let mut flags = 0;
         let mut tx = 0;
@@ -407,14 +407,14 @@ mod tests {
         buffer[2] = ZPacketType::Last.into();
         buffer[3] = 0;
         buffer[4] = MSG.len() as u8;
-        buffer[5..5 + MSG.len()].copy_from_slice(&MSG[..]);
+        buffer[5..5 + MSG.len()].copy_from_slice(MSG);
 
         set_out(&mut buffer);
         handle_apdu(&mut flags, &mut tx, 5 + MSG.len() as u32, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
         let out_hash = &buffer[..32];
-        let expected = Blake2b::<32>::digest(&MSG).unwrap();
+        let expected = Blake2b::<32>::digest(MSG).unwrap();
         assert_eq!(&expected, out_hash);
     }
 }

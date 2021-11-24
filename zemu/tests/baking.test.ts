@@ -326,7 +326,11 @@ describe.each(models)('Standard baking [%s]; legacy - setup', function (m) {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
-      const respReq = app.legacySetup(APP_DERIVATION, curve, 42, 10, 0xbeef)
+      const MAIN_HWM = 643302;
+      const TEST_HWM = 42;
+      const CHAIN_ID = 0xf5f466ab;
+
+      const respReq = app.legacySetup(APP_DERIVATION, curve, MAIN_HWM, TEST_HWM, CHAIN_ID)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-setup-${curve}`, [6, 0])
@@ -343,11 +347,11 @@ describe.each(models)('Standard baking [%s]; legacy - setup', function (m) {
       console.log(hwmCheck, m.name)
       expect(hwmCheck.returnCode).toEqual(0x9000)
 
-      expect(hwmCheck.main).toEqual(42)
+      expect(hwmCheck.main).toEqual(MAIN_HWM)
       expect(hwmCheck).toHaveProperty('test')
-      expect(hwmCheck.test).toEqual(10)
+      expect(hwmCheck.test).toEqual(TEST_HWM)
       expect(hwmCheck).toHaveProperty('chain_id')
-      expect(hwmCheck.chain_id).toEqual(0xbeef)
+      expect(hwmCheck.chain_id).toEqual(CHAIN_ID)
     } finally {
       await sim.close()
     }
@@ -605,7 +609,6 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
           break
 
         case Curve.Secp256R1:
-          // FIXME: add later
           // sig = sepc256k1.importsignature(resp.signature) // From DER to RS?
           // signatureOK = secp256r1.verify(resp.hash, sigRS, resp_addr.publicKey);
           break

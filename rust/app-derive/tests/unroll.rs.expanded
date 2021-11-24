@@ -1022,15 +1022,17 @@ pub const KNOWN_BAKERS: &[(&'static [u8], &'static [u8], &'static str)] = &[
 pub fn baker_lookup(prefix: &[u8; 3], hash: &[u8; 20]) -> Result<&'static str, BakerNotFound> {
     zemu_log_stack("baker_lookup\x00");
     let out_idx = KNOWN_BAKERS
-        .binary_search_by(
-            |&(probe_prefix, probe_hash, _)| match probe_prefix.cmp(prefix) {
+        .binary_search_by(|&(probe_prefix, probe_hash, _)| {
+            let probe_prefix = PIC::new(probe_prefix).into_inner();
+            let probe_hash = PIC::new(probe_hash).into_inner();
+            match probe_prefix.cmp(prefix) {
                 ::core::cmp::Ordering::Equal => probe_hash.cmp(hash),
                 ord => ord,
-            },
-        )
+            }
+        })
         .map_err(|_| BakerNotFound)?;
     match KNOWN_BAKERS.get(out_idx) {
-        Some((_, _, name)) => Ok(PIC::new(name).into_inner()),
+        Some((_, _, name)) => Ok(PIC::new(*name).into_inner()),
         None => unsafe { core::hint::unreachable_unchecked() },
     }
 }

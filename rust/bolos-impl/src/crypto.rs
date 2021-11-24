@@ -15,8 +15,6 @@
 ********************************************************************************/
 //! Module containing all crypto primitives and utilities
 //! for rust ledger apps
-//!
-//! TODO: move utilities to separate crate
 
 use std::convert::TryFrom;
 
@@ -280,7 +278,7 @@ mod bindings {
 
                 catch(might_throw)?;
             } else {
-                todo!("os derive called in non-bolos")
+                unimplemented!("os derive called in non-bolos")
             }
         }
 

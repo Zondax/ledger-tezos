@@ -61,7 +61,7 @@ impl<const S: usize> Blake2b<S> {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("blake2b init called in non bolos")
+                unimplemented!("blake2b init called in non bolos")
             }
         }
 

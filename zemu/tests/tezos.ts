@@ -29,3 +29,7 @@ export const SAMPLE_BALLOT = SAMPLE_OPERATIONS[2]
 export const SAMPLE_REVEAL = SAMPLE_OPERATIONS[1]
 export const SAMPLE_PROPOSALS = SAMPLE_OPERATIONS[5]
 export const SAMPLE_ORIGINATION = SAMPLE_OPERATIONS[20]
+
+export const TEST_VECTOR_DELEGATION: { name: string, operation: any, blob: string }[] = JSON.parse(readFileSync(dataPath + '/../../test-vectors/delegation.json', 'utf-8'))
+
+export const KNOWN_DELEGATE = TEST_VECTOR_DELEGATION[0]

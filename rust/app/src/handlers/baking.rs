@@ -141,7 +141,6 @@ impl Baking {
             unsafe { BAKINGPATH.read() }.map_err(|_| Error::ApduCodeConditionsNotSatisfied)?;
         //path seems to be initialized so we can return it
         //check if it is a good path
-        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
         let nvm_bip = Bip32PathAndCurve::try_from_bytes(current_path)?
             .ok_or(Error::ApduCodeConditionsNotSatisfied)?;
 
@@ -176,7 +175,6 @@ impl Baking {
 
         //path seems to be initialized so we can return it
         //check if it is a good path
-        //TODO: otherwise return an error and show that on screen (corrupted NVM??)
         let bip32_nvm = match Bip32PathAndCurve::try_from_bytes(current_path) {
             Ok(Some(bip)) => bip,
             Ok(None) => return Err(Error::ApduCodeConditionsNotSatisfied as _),
@@ -199,13 +197,12 @@ impl Baking {
         digest: [u8; 32],
         out: &mut [u8],
     ) -> Result<usize, Error> {
-        let hw = HWM::read()?;
+        let hw = HWM::read().map_err(|_| Error::ExecutionError)?;
 
         let (_, endorsement) =
             EndorsementData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
         if !endorsement.validate_with_watermark(&hw) {
             return Err(Error::DataInvalid);
-            //TODO: show endorsement data on screen
         }
 
         HWM::write(WaterMark {
@@ -238,7 +235,7 @@ impl Baking {
         digest: [u8; 32],
         out: &mut [u8],
     ) -> Result<usize, Error> {
-        let hw = HWM::read()?;
+        let hw = HWM::read().map_err(|_| Error::ExecutionError)?;
 
         let (_, blockdata) = BlockData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
 
@@ -295,7 +292,7 @@ impl Baking {
                 Ok((BakingTransactionType::Delegation(deleg), operation.branch()))
             }
             OperationType::Reveal(reveal) => {
-                //TODO: what checks do we need here?
+                //what checks do we need here?
                 Ok((BakingTransactionType::Reveal(reveal), operation.branch()))
             }
             _ => Err(Error::CommandNotAllowed),
@@ -541,7 +538,7 @@ mod tests {
 
         let produced_ui = driver.out_ui();
         let delegation_item = produced_ui
-            .into_iter()
+            .iter()
             .find(|item_pages| {
                 item_pages
                     .iter()

@@ -16,23 +16,23 @@
 use zeroize::{Zeroize, Zeroizing};
 
 use super::{bip32::BIP32Path, Curve, Mode};
-use crate::{errors::Error, hash::HasherId, raw::cx_ecfp_private_key_t};
+use crate::{
+    errors::Error,
+    hash::HasherId,
+    raw::{cx_ecfp_private_key_t, cx_ecfp_public_key_t},
+};
 
 use core::{mem::MaybeUninit, ptr::addr_of_mut};
 
 #[derive(Clone, Copy)]
-pub struct PublicKey {
-    curve: Curve,
-    len: usize,
-    w: [u8; 65],
-}
+pub struct PublicKey(cx_ecfp_public_key_t);
 
 impl PublicKey {
     pub fn compress(&mut self) -> Result<(), Error> {
-        match self.curve {
+        match self.curve() {
             Curve::Ed25519 => {
-                let comp_len = cx_edward_compress_point(self.curve, &mut self.w[..])?;
-                self.len = comp_len;
+                let comp_len = cx_edward_compress_point(Curve::Ed25519, &mut self.0.W[..])?;
+                self.0.W_len = comp_len as _;
 
                 Ok(())
             }
@@ -41,17 +41,24 @@ impl PublicKey {
     }
 
     pub fn curve(&self) -> Curve {
-        self.curve
+        use core::convert::TryFrom;
+
+        match Curve::try_from(self.0.curve as u8) {
+            Ok(c) => c,
+            //SAFE: we checked the curve already
+            // nobody else can write this legally
+            Err(_) => unsafe { core::hint::unreachable_unchecked() },
+        }
     }
 
     pub fn len(&self) -> usize {
-        self.len
+        self.0.W_len as usize
     }
 }
 
 impl AsRef<[u8]> for PublicKey {
     fn as_ref(&self) -> &[u8] {
-        &self.w[..self.len]
+        &self.0.W[..self.0.W_len as usize]
     }
 }
 
@@ -112,17 +119,25 @@ impl<const B: usize> SecretKey<B> {
     #[inline(never)]
     pub fn public_into(&self, out: &mut MaybeUninit<PublicKey>) -> Result<(), Error> {
         zemu_sys::zemu_log_stack("SecretKey::public_into\x00");
+
+        let pk = {
+            let out = out.as_mut_ptr();
+
+            unsafe {
+                //retrive the inner section and cast it as MaybeUninit
+                match addr_of_mut!((*out).0).cast::<MaybeUninit<_>>().as_mut() {
+                    Some(ptr) => ptr,
+                    None => core::hint::unreachable_unchecked(), //pointer is guaranteed valid
+                }
+            }
+        };
+
+        let mut sk = MaybeUninit::uninit();
         //get keypair with the generated secret key
         // discard secret key as it's not necessary anymore
-        let (_, pk) = cx_ecfp_generate_pair(Some(self), self.curve)?;
-
-        let out = out.as_mut_ptr();
-        //the ptr is good and there's no uninit reads
-        unsafe {
-            addr_of_mut!((*out).curve).write(self.curve);
-            addr_of_mut!((*out).len).write(pk.W_len as usize);
-            addr_of_mut!((*out).w).write(pk.W);
-        }
+        cx_ecfp_generate_pair_into(Some(self), self.curve, &mut sk, pk)?;
+        //SAFE: sk is initialized
+        unsafe { sk.assume_init() }.zeroize();
 
         Ok(())
     }
@@ -136,7 +151,6 @@ impl<const B: usize> SecretKey<B> {
         let crv = self.curve;
         if crv.is_weirstrass() {
             let (parity, size) = bindings::cx_ecdsa_sign::<H, B>(self, data, out)?;
-            //FIXME: if this is part of generic crate, this should not be here as it is non-standard!
             if parity {
                 out[0] |= 0x01;
             }
@@ -153,6 +167,8 @@ impl<const B: usize> SecretKey<B> {
 }
 
 mod bindings {
+    #![allow(unused_imports)]
+
     use super::{Curve, Error, HasherId, SecretKey};
     use crate::{
         errors::catch,
@@ -175,11 +191,12 @@ mod bindings {
                     err => Err(err.into())
                 }
             } else {
-                todo!("edwards_compress_point called in non-bolos");
+                unimplemented!("edwards_compress_point called in non-bolos");
             }
         }
     }
 
+    #[allow(dead_code)]
     pub fn cx_ecfp_init_private_key(
         curve: Curve,
         sk_data: Option<&[u8]>,
@@ -218,54 +235,54 @@ mod bindings {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("init ecfp_private_key called in non-bolos");
+                unimplemented!("init ecfp_private_key called in non-bolos");
             }
         }
 
         Ok(())
     }
 
-    pub fn cx_ecfp_generate_pair<const B: usize>(
+    pub fn cx_ecfp_generate_pair_into<const B: usize>(
         sk: Option<&SecretKey<B>>,
         curve: Curve,
-    ) -> Result<(Zeroizing<cx_ecfp_private_key_t>, cx_ecfp_public_key_t), Error> {
+        out_sk: &mut MaybeUninit<cx_ecfp_private_key_t>,
+        out_pk: &mut MaybeUninit<cx_ecfp_public_key_t>,
+    ) -> Result<(), Error> {
         zemu_sys::zemu_log_stack("cx_ecfp_generate_pair\x00");
         let curve: u8 = curve.into();
 
-        let mut raw_sk = MaybeUninit::zeroed();
-        let mut pk = MaybeUninit::zeroed();
-
         let keep = match sk {
             Some(sk) => {
-                sk.generate_into(&mut raw_sk)?;
+                sk.generate_into(out_sk)?;
                 true
             }
             None => {
                 //no need to write in `raw_sk`,
                 // since the function below will override everything
-                // also all 0s is a valid initialization
                 false
             }
         };
+
+        let raw_sk = out_sk.as_mut_ptr();
+        let pk = out_pk.as_mut_ptr();
 
         cfg_if! {
             if #[cfg(any(nanos, nanox))] {
                 match unsafe { crate::raw::cx_ecfp_generate_pair_no_throw(
                     curve as _,
-                    pk.as_mut_ptr(),
-                    raw_sk.as_mut_ptr(),
+                    pk,
+                    raw_sk,
                     keep,
                 )} {
                     0 => (),
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("generate_ecfp_keypair called in non-bolos");
+                unimplemented!("generate_ecfp_keypair called in non-bolos");
             }
         }
 
-        //safe because they are both initialized and good pointers
-        Ok(unsafe { (Zeroizing::new(raw_sk.assume_init()), pk.assume_init()) })
+        Ok(())
     }
 
     //first item says if Y is odd when computing k.G
@@ -286,7 +303,7 @@ mod bindings {
         let crv = sk.curve;
 
         let mut raw_sk = sk.generate()?;
-        let raw_sk: &mut cx_ecfp_private_key_t = &mut raw_sk;
+        let raw_sk: *mut cx_ecfp_private_key_t = &mut *raw_sk;
         let raw_sk = raw_sk as *const _;
 
         let (data, data_len) = (data.as_ptr(), data.len() as u32);
@@ -315,7 +332,7 @@ mod bindings {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("cx_ecdsa_sign called in not bolos")
+                unimplemented!("cx_ecdsa_sign called in not bolos")
             }
         }
 
@@ -332,7 +349,7 @@ mod bindings {
         let crv = sk.curve;
 
         let mut raw_sk = sk.generate()?;
-        let raw_sk: &mut cx_ecfp_private_key_t = &mut raw_sk;
+        let raw_sk: *mut cx_ecfp_private_key_t = &mut *raw_sk;
         let raw_sk = raw_sk as *const _;
 
         let (data, data_len) = (data.as_ptr(), data.len() as u32);
@@ -366,7 +383,7 @@ mod bindings {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("cx_eddsa_sign called in not bolos")
+                unimplemented!("cx_eddsa_sign called in not bolos")
             }
         }
 

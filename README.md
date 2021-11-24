@@ -67,11 +67,7 @@ then run:
   libssl-dev libgmp-dev autoconf libtool
    ```
 
-> TODO: Explain we need to install Rust for unit testing (rust for Arm is included in the docker container)
-
 - Install `node > v14.0`. We typically recommend using `n` or `nvm`
-
-> TODO: We need to move to poetry
 
 - You will need python 3 and then run
     - `make deps`
@@ -130,8 +126,6 @@ To run a single specific test:
 > At the moment, the recommendation is to run from the IDE. Remember to run `make` if you change the app.
 
 ## How to debug a ledger app?
-
-> TODO: Move all this explaination to Zemu and link there.. (this will avoid duplication and obsolete information)
 
 You can use vscode or clion to debug the app. We recommend using CLion but we provide a vscode (unsupported) configuration too.
 

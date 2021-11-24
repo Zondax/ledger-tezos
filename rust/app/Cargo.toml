@@ -1,5 +1,5 @@
 [package]
-authors = ["Zondax GmbH <hello@zondax.ch>"]
+authors = ["Zondax GmbH <support.tezos@zondax.ch>"]
 name = "rslib"
 version = "0.1.0"
 edition = "2018"
@@ -46,3 +46,4 @@ hex = "0.4.3"
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 zuit = { path = "../zuit" }
+bolos = { path = "../bolos", features = ["derive-debug"] }

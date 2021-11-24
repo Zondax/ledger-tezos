@@ -53,7 +53,7 @@ impl Sha256 {
                     err => return Err(err.into()),
                 }
             } else {
-                todo!("sha256 init called in non-bolos")
+                unimplemented!("sha256 init called in non-bolos")
             }
         }
 

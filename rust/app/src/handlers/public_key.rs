@@ -51,6 +51,7 @@ impl GetAddress {
 
     /// Retrieve the addr with the given curve and bip32 path
     #[inline(never)]
+    #[allow(dead_code)]
     pub fn new_addr_into<const B: usize>(
         curve: crypto::Curve,
         path: &sys::crypto::bip32::BIP32Path<B>,
@@ -344,7 +345,6 @@ mod tests {
 
     #[test]
     fn check_bs58() {
-        //TODO: use mocked hashing instead
         let addr = Addr::from_parts(
             [0x6, 0xa1, 0x9f],
             [
@@ -385,8 +385,6 @@ mod tests {
 
         assert_error_code!(tx, buffer, ApduError::Success);
         assert_eq!(tx as usize, 1 + 32 + 2); //32 bytes for ed25519
-
-        // FIXME: Complete the test
     }
 
     #[test]

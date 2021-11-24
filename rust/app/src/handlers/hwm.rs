@@ -19,6 +19,8 @@ use crate::{
     utils::ApduPanic,
 };
 
+pub use crate::sys::flash_slot::WearError;
+
 use super::sha256x2;
 
 const N_PAGES: usize = 8;
@@ -31,7 +33,6 @@ pub const ALL_HWM_LEN: usize = 12;
 // Mainnet Chain ID: NetXdQprcVkpaWU
 // types.h:61,0
 pub const MAINNET_CHAIN_ID: u32 = 0x7A06A770;
-//TODO: how about other chains?
 
 #[bolos::lazy_static]
 static mut MAIN: WearLeveller = new_flash_slot!(N_PAGES).apdu_expect("NVM might be corrupted");
@@ -67,12 +68,15 @@ impl HWM {
     }
 
     //apdu_baking.c:74,0
-    pub fn hwm() -> Result<[u8; MAIN_HWM_LEN], Error> {
-        let wm: WaterMark = unsafe { MAIN.read() }
-            .map_err(|_| Error::ExecutionError)?
-            .into();
+    pub fn hwm() -> Result<[u8; MAIN_HWM_LEN], WearError> {
+        let wm: WaterMark = unsafe { MAIN.read() }?.into();
 
         Ok(wm.level.to_be_bytes())
+    }
+
+    /// Meant to be used for the legacy API
+    pub fn hwm_default() -> [u8; MAIN_HWM_LEN] {
+        WaterMark::default().level.to_be_bytes()
     }
 
     pub fn set_chain_id(id: u32) -> Result<(), Error> {
@@ -82,24 +86,28 @@ impl HWM {
         unsafe { CHAIN_ID.write(data) }.map_err(|_| Error::ExecutionError)
     }
 
-    pub fn chain_id() -> Result<u32, Error> {
-        let data = unsafe { CHAIN_ID.read() }.map_err(|_| Error::ExecutionError)?;
+    pub fn chain_id() -> Result<u32, WearError> {
+        let data = unsafe { CHAIN_ID.read() }?;
 
         let data = arrayref::array_ref!(data, 0, 4);
 
         Ok(u32::from_be_bytes(*data))
     }
 
+    /// Meant to be used with legacy API
+    // why not use MAINNET_CHAIN_ID directly?
+    // until we find the actual value returned by default by the legacy app
+    // or a good equivalent, then we can just chainge it here
+    pub fn chain_id_default() -> u32 {
+        MAINNET_CHAIN_ID
+    }
+
     //apdu_baking.c:66,0
-    pub fn all_hwm() -> Result<[u8; ALL_HWM_LEN], Error> {
-        let main_wm: WaterMark = unsafe { MAIN.read() }
-            .map_err(|_| Error::ExecutionError)?
-            .into();
+    pub fn all_hwm() -> Result<[u8; ALL_HWM_LEN], WearError> {
+        let main_wm: WaterMark = unsafe { MAIN.read() }?.into();
         let main_wm = main_wm.level.to_be_bytes();
 
-        let test_wm: WaterMark = unsafe { TEST.read() }
-            .map_err(|_| Error::ExecutionError)?
-            .into();
+        let test_wm: WaterMark = unsafe { TEST.read() }?.into();
         let test_wm = test_wm.level.to_be_bytes();
 
         let chain_id = Self::chain_id()?;
@@ -110,6 +118,21 @@ impl HWM {
         out[8..].copy_from_slice(&chain_id.to_be_bytes()[..]);
 
         Ok(out)
+    }
+
+    /// Meant to be used with legacy API
+    pub fn all_hwm_default() -> [u8; ALL_HWM_LEN] {
+        let main_wm = WaterMark::default().level.to_be_bytes();
+        let test_wm = WaterMark::default().level.to_be_bytes();
+
+        let chain_id = Self::chain_id_default();
+
+        let mut out = [0; 12];
+        out[..4].copy_from_slice(&main_wm[..]);
+        out[4..8].copy_from_slice(&test_wm[..]);
+        out[8..].copy_from_slice(&chain_id.to_be_bytes()[..]);
+
+        out
     }
 
     #[allow(dead_code)]
@@ -132,10 +155,8 @@ impl HWM {
         unsafe { TEST.write(data) }.map_err(|_| Error::ExecutionError)
     }
 
-    pub fn read() -> Result<WaterMark, Error> {
-        let main_wm: WaterMark = unsafe { MAIN.read() }
-            .map_err(|_| Error::ExecutionError)?
-            .into();
+    pub fn read() -> Result<WaterMark, WearError> {
+        let main_wm: WaterMark = unsafe { MAIN.read() }?.into();
         Ok(main_wm)
     }
 }
@@ -185,6 +206,12 @@ impl WaterMark {
     #[inline(never)]
     pub fn is_valid_blocklevel(level: u32) -> bool {
         level.leading_zeros() > 0
+    }
+}
+
+impl Default for WaterMark {
+    fn default() -> Self {
+        Self::reset(u32::MAX)
     }
 }
 
