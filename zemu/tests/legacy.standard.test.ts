@@ -16,11 +16,12 @@
 
 import Zemu, { DeviceModel } from '@zondax/zemu'
 import TezosApp from '@zondax/ledger-tezos'
-import { APP_DERIVATION, curves, defaultOptions } from './common'
+import { APP_DERIVATION, curves, defaultOptions as dO } from './common'
 
 const Resolve = require('path').resolve
 const APP_PATH_LEGACY_S = Resolve('../legacy/output/app_s.elf')
 
+const defaultOptions = { ...dO, startText: "ready" }
 const models: DeviceModel[] = [{ name: 'nanos', prefix: 'LWS', path: APP_PATH_LEGACY_S }]
 
 describe.each(models)('Legacy wallet [%s]', function (m) {
@@ -88,7 +89,7 @@ describe.each(models)('Legacy standard [%s] - pubkey', function (m) {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
-      let resp = await app.legacyGetPubKey(APP_DERIVATION, curve)
+      const resp = await app.legacyGetPubKey(APP_DERIVATION, curve)
 
       console.log(resp, m.name)
 
