@@ -38,8 +38,8 @@ prep_generate:
 	@echo -e 'docker run --rm \
 	-v /tmp/bolos:/shared \
 	DOCKER_IMAGE \
-	cp -r /opt/bolos/gcc-arm-none-eabi-10-2020-q4-major/arm-none-eabi/include /shared/arm-none-eabi/include'
-	@echo 'You should replace `DOCKER_IMAGE` with the curernt image and also the gcc archive path (after `/opt/bolos` and before `/arm-none-eabi`)'
+	"cp -r /opt/bolos/gcc-arm-none-eabi-10-2020-q4-major/arm-none-eabi/include /shared/arm-none-eabi/include"'
+	@echo 'You should replace `DOCKER_IMAGE` with the current image and also the gcc archive path (after `/opt/bolos` and before `/arm-none-eabi`)'
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 generate:
