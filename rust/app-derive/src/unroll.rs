@@ -125,7 +125,9 @@ pub fn unroll(input: TokenStream) -> TokenStream {
         #[cfg_attr(test, derive(Debug))]
         pub struct BakerNotFound;
 
-        pub const KNOWN_BAKERS: &[(&'static [u8], &'static [u8], &'static str)] = &[
+        type KnownBakersTable<'data> = [(&'data [u8], &'data [u8], &'data str)];
+
+        pub const KNOWN_BAKERS: &KnownBakersTable<'_> = &[
             #(#elems, )*
         ];
 
@@ -133,7 +135,21 @@ pub fn unroll(input: TokenStream) -> TokenStream {
         pub fn baker_lookup(prefix: &[u8; 3], hash: &[u8; 20]) -> Result<&'static str, BakerNotFound> {
             zemu_log_stack("baker_lookup\x00");
 
-            let out_idx = KNOWN_BAKERS
+            let known_bakers: &KnownBakersTable<'_> = {
+                let data = KNOWN_BAKERS;
+                let data_len = data.len();
+
+                let to_pic = data.as_ptr() as usize;
+                let picced = unsafe { PIC::manual(to_pic) } as *const ();
+
+                //cast to same type as `to_pic`
+                let ptr = picced.cast();
+                unsafe {
+                    ::core::slice::from_raw_parts(ptr, data_len)
+                }
+            };
+
+            let out_idx = known_bakers
                 .binary_search_by(|&(probe_prefix, probe_hash, _)| {
                     let probe_prefix = PIC::new(probe_prefix).into_inner();
                     let probe_hash = PIC::new(probe_hash).into_inner();
@@ -145,7 +161,7 @@ pub fn unroll(input: TokenStream) -> TokenStream {
                 })
                 .map_err(|_| BakerNotFound)?;
 
-            match KNOWN_BAKERS.get(out_idx) {
+            match known_bakers.get(out_idx) {
                 Some((_, _, name)) => Ok(PIC::new(*name).into_inner()),
                 None => unsafe { core::hint::unreachable_unchecked() }
             }
