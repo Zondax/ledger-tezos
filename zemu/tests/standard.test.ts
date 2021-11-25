@@ -128,7 +128,7 @@ describe.each(models)('Standard [%s] - pubkey', function (m) {
   )
 })
 
-describe.each([models[0]])('Standard [%s]; legacy - pubkey', function (m) {
+describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
   test.each(cartesianProduct(curves, ["m/44'/1729'"]))(
     'get pubkey and compute addr %s, %s',
     async function (curve, derivation_path) {
