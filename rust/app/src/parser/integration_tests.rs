@@ -57,7 +57,7 @@ struct JsonOperation {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-struct ExpectedPage {
+pub struct ExpectedPage {
     idx: usize,
 
     #[serde(alias = "key")]
@@ -93,7 +93,7 @@ fn test_sample(
         .unwrap_or_else(|e| panic!("sample {} couldn't be parsed; err: {:?}", name, e));
 
     if let Some(ui) = ui {
-        verify_ui(name, parsed, ui)
+        verify_ui(name, parsed, ui);
     }
 
     let (len, branch_bs58) = parsed.get_base58_branch().unwrap_or_else(|e| {
@@ -413,7 +413,11 @@ fn verify_operation<'b>(
     }
 }
 
-fn verify_ui(sample_name: &str, op: Operation<'static>, ui: Vec<ExpectedPage>) {
+pub fn verify_ui(
+    sample_name: &str,
+    op: Operation<'static>,
+    ui: Vec<ExpectedPage>,
+) -> Vec<Vec<zuit::Page<18, 4096>>> {
     let mut driver = MockDriver::<_, 18, 4096>::new(op.to_sign_ui());
 
     println!("Checking UI for sample {:?}...", sample_name);
@@ -474,4 +478,6 @@ fn verify_ui(sample_name: &str, op: Operation<'static>, ui: Vec<ExpectedPage>) {
             )
         }
     }
+
+    return produced_ui.to_owned();
 }

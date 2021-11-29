@@ -9,9 +9,7 @@ const Resolve = require('path').resolve
 
 import { APP_DERIVATION, defaultOptions } from '../tests/common'
 
-import { ledger_fmt } from './common'
-
-const MUTEZ_MULT = 1_000_000
+import { ledger_fmt, MUTEZ_MULT, RPC_ADDR } from './common'
 
 async function getAddress(app: TezosApp, curve: Curve): Promise<string> {
   const response = await app.getAddressAndPubKey(APP_DERIVATION, curve)
@@ -59,7 +57,7 @@ async function generate_vector(n: number): Promise<TestVector> {
     //check that we have enough balance
 
     //get taquito toolkit and set ledger signer
-    const Tezos = new TezosToolkit('https://granadanet.tezos.dev.zondax.net')
+    const Tezos = new TezosToolkit(RPC_ADDR)
 
     //slice to skip "m/" which is not wanted by taquito
     //false so prompt is optional

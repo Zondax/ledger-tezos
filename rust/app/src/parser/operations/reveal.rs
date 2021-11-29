@@ -19,7 +19,10 @@ use zemu_sys::ViewError;
 
 use crate::{
     crypto::Curve,
-    handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr, sha256x2},
+    handlers::{
+        handle_ui_message, intstr_to_fpstr_inplace, parser_common::ParserError, public_key::Addr,
+        sha256x2,
+    },
     parser::{public_key, public_key_hash, DisplayableItem, Zarith},
 };
 
@@ -114,7 +117,7 @@ impl<'b> DisplayableItem for Reveal<'b> {
         use bolos::{pic_str, PIC};
         use lexical_core::{write as itoa, Number};
 
-        let mut zarith_buf = [0; usize::FORMATTED_SIZE_DECIMAL];
+        let mut zarith_buf = [0; usize::FORMATTED_SIZE_DECIMAL + 2]; //+2 for decimal formatting
 
         match item_n {
             //Homepage
@@ -150,7 +153,12 @@ impl<'b> DisplayableItem for Reveal<'b> {
 
                 let (_, fee) = self.fee().read_as::<usize>().ok_or(ViewError::Unknown)?;
 
-                handle_ui_message(itoa(fee, &mut zarith_buf), message, page)
+                itoa(fee, &mut zarith_buf);
+                handle_ui_message(
+                    intstr_to_fpstr_inplace(&mut zarith_buf, 6).map_err(|_| ViewError::Unknown)?,
+                    message,
+                    page,
+                )
             }
             //gas_limit
             4 => {

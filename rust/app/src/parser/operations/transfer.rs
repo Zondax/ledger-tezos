@@ -23,7 +23,9 @@ use zemu_sys::ViewError;
 
 use crate::{
     crypto::Curve,
-    handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr},
+    handlers::{
+        handle_ui_message, intstr_to_fpstr_inplace, parser_common::ParserError, public_key::Addr,
+    },
     parser::{boolean, public_key_hash, DisplayableItem, Zarith},
 };
 
@@ -260,7 +262,7 @@ impl<'a> DisplayableItem for Transfer<'a> {
         use bolos::{pic_str, PIC};
         use lexical_core::{write as itoa, Number};
 
-        let mut zarith_buf = [0; usize::FORMATTED_SIZE_DECIMAL];
+        let mut zarith_buf = [0; usize::FORMATTED_SIZE_DECIMAL + 2]; //+ 2 for point and extra 0 in front
 
         match item_n {
             //home
@@ -307,7 +309,12 @@ impl<'a> DisplayableItem for Transfer<'a> {
 
                 let (_, amount) = self.amount().read_as::<usize>().ok_or(ViewError::Unknown)?;
 
-                handle_ui_message(itoa(amount, &mut zarith_buf), message, page)
+                itoa(amount, &mut zarith_buf);
+                handle_ui_message(
+                    intstr_to_fpstr_inplace(&mut zarith_buf, 6).map_err(|_| ViewError::Unknown)?,
+                    message,
+                    page,
+                )
             }
             //fee
             4 => {
@@ -316,7 +323,12 @@ impl<'a> DisplayableItem for Transfer<'a> {
 
                 let (_, fee) = self.fee().read_as::<usize>().ok_or(ViewError::Unknown)?;
 
-                handle_ui_message(itoa(fee, &mut zarith_buf), message, page)
+                itoa(fee, &mut zarith_buf);
+                handle_ui_message(
+                    intstr_to_fpstr_inplace(&mut zarith_buf, 6).map_err(|_| ViewError::Unknown)?,
+                    message,
+                    page,
+                )
             }
             //has_parameters
             5 => {
