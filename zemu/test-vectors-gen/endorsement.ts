@@ -9,9 +9,7 @@ const Resolve = require('path').resolve
 
 import { APP_DERIVATION, defaultOptions } from '../tests/common'
 
-import { ledger_fmt } from './common'
-
-const MUTEZ_MULT = 1_000_000
+import { ledger_fmt, RPC_ADDR, MUTEZ_MULT } from './common'
 
 async function getAddress(app: TezosApp, curve: Curve): Promise<string> {
   const response = await app.getAddressAndPubKey(APP_DERIVATION, curve)
@@ -59,7 +57,7 @@ async function generate_vector(n: number): Promise<TestVector> {
     //check that we have enough balance
 
     //get taquito toolkit and set ledger signer
-    const Tezos = new TezosToolkit('https://granadanet.tezos.dev.zondax.net')
+    const Tezos = new TezosToolkit(RPC_ADDR)
 
     //slice to skip "m/" which is not wanted by taquito
     //false so prompt is optional
@@ -75,7 +73,7 @@ async function generate_vector(n: number): Promise<TestVector> {
     //branch is the block block hash we want to submit this transaction to
     const { hash } = await Tezos.rpc.getBlockHeader()
 
-    const counterNum = (parseInt(counter || '0', 10) + 1 + n);
+    const counterNum = parseInt(counter || '0', 10) + 1 + n
 
     //prepare operation
     const op: ForgeOperationsParams = {
@@ -101,7 +99,7 @@ async function generate_vector(n: number): Promise<TestVector> {
       operation: op,
       output: [
         { idx: 0, key: 'Operation', val: ledger_fmt(hash) }, //page 0
-        { idx: 1, key: 'Type', val: ledger_fmt("Endorsement") }, //page 0
+        { idx: 1, key: 'Type', val: ledger_fmt('Endorsement') }, //page 0
         { idx: 2, key: 'Level', val: ledger_fmt(n.toString()) },
       ],
     }

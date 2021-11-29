@@ -27,6 +27,39 @@ pub struct Page<const T: usize, const M: usize> {
     pub message: [u8; M],
 }
 
+pub fn strlen(s: &[u8]) -> usize {
+    let mut count = 0;
+    while let Some(&c) = s.get(count) {
+        if c == 0 {
+            return count;
+        }
+        count += 1;
+    }
+
+    s.len()
+}
+
+impl<const T: usize, const M: usize> std::fmt::Debug for Page<T, M> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let title = {
+            let len = strlen(&self.title[..]);
+
+            std::str::from_utf8(&self.title[..len]).unwrap()
+        };
+
+        let message = {
+            let len = strlen(&self.message[..]);
+
+            std::str::from_utf8(&self.message[..len]).unwrap()
+        };
+
+        f.debug_struct("Page")
+            .field("title", &title)
+            .field("message", &message)
+            .finish()
+    }
+}
+
 impl<const T: usize, const M: usize> Default for Page<T, M> {
     fn default() -> Self {
         Self {
