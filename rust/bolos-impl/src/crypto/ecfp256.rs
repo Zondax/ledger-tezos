@@ -181,18 +181,7 @@ mod bindings {
         let curve: u8 = curve.into();
 
         cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe {
-                    crate::raw::cx_edward_compress_point(
-                        curve as _,
-                        p.as_mut_ptr() as *mut _,
-                        p.len() as u32 as _,
-                    );
-                };
-
-                catch(might_throw)?;
-                Ok(33)
-            } else if #[cfg(nanos)] {
+            if #[cfg(any(nanos, nanox))] {
                 match unsafe { crate::raw::cx_edwards_compress_point_no_throw(
                     curve as _,
                     p.as_mut_ptr() as *mut _,
@@ -235,18 +224,7 @@ mod bindings {
         let out = out.as_mut_ptr();
 
         cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe {
-                    crate::raw::cx_ecfp_init_private_key(
-                        curve as _,
-                        sk_data as *const _,
-                        32 as _,
-                        out,
-                    );
-                };
-
-                catch(might_throw)?;
-            } else if #[cfg(nanos)] {
+            if #[cfg(any(nanos, nanox))] {
                 match unsafe { crate::raw::cx_ecfp_init_private_key_no_throw(
                     curve as _,
                     sk_data as *const _,
@@ -289,18 +267,7 @@ mod bindings {
         let pk = out_pk.as_mut_ptr();
 
         cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe {
-                    crate::raw::cx_ecfp_generate_pair(
-                        curve as _,
-                        pk,
-                        raw_sk,
-                        keep as u8 as _,
-                    );
-                };
-
-                catch(might_throw)?;
-            } else if #[cfg(nanos)] {
+            if #[cfg(any(nanos, nanox))] {
                 match unsafe { crate::raw::cx_ecfp_generate_pair_no_throw(
                     curve as _,
                     pk,
@@ -350,20 +317,7 @@ mod bindings {
         let mut info = 0;
 
         cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe { crate::raw::cx_ecdsa_sign(
-                    raw_sk,
-                    CX_RND_RFC6979 as _,
-                    id as _,
-                    data,
-                    data_len as _,
-                    sig,
-                    sig_len as _,
-                    &mut info as *mut u32 as *mut _,
-                )};
-
-                sig_len = catch(might_throw)? as u32;
-            } else if #[cfg(nanos)] {
+            if #[cfg(any(nanos, nanox))] {
                 match unsafe { crate::raw::cx_ecdsa_sign_no_throw(
                     raw_sk,
                     CX_RND_RFC6979,
@@ -407,22 +361,7 @@ mod bindings {
         } as u32;
 
         cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe { crate::raw::cx_eddsa_sign(
-                    raw_sk,
-                    0 as _,
-                    id as _,
-                    data,
-                    data_len as _,
-                    std::ptr::null(),
-                    0,
-                    sig,
-                    sig_len as _,
-                    std::ptr::null_mut(),
-                )};
-
-                sig_len = catch(might_throw)? as u32;
-            } else if #[cfg(nanos)] {
+            if #[cfg(any(nanos, nanox))] {
                 match unsafe { crate::raw::cx_eddsa_sign_no_throw(
                     raw_sk,
                     id as _,

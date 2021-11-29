@@ -16,11 +16,12 @@
 
 import Zemu, { DeviceModel } from '@zondax/zemu'
 import TezosApp from '@zondax/ledger-tezos'
-import { APP_DERIVATION, curves, defaultOptions } from './common'
+import { APP_DERIVATION, curves, defaultOptions as dO } from './common'
 
 const Resolve = require('path').resolve
 const APP_PATH_LEGACY_S = Resolve('../legacy/output/app_s_baking.elf')
 
+const defaultOptions = { ...dO, startText: "ready" }
 const models: DeviceModel[] = [{ name: 'nanos', prefix: 'LBS', path: APP_PATH_LEGACY_S }]
 
 describe.each(models)('Legacy baking [%s]', function (m) {

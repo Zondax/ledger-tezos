@@ -386,4 +386,4 @@ mod tests {
 }
 
 #[cfg(test)]
-mod integration_tests;
+pub mod integration_tests;

@@ -9,9 +9,7 @@ const Resolve = require('path').resolve
 
 import { APP_DERIVATION, defaultOptions } from '../tests/common'
 
-import { ledger_fmt } from './common'
-
-const MUTEZ_MULT = 1_000_000
+import { ledger_fmt, ledger_fmt_currency, RPC_ADDR } from './common'
 
 async function getAddress(app: TezosApp, curve: Curve): Promise<string> {
   const response = await app.getAddressAndPubKey(APP_DERIVATION, curve)
@@ -59,7 +57,7 @@ async function generate_vector(n: number): Promise<TestVector> {
     //check that we have enough balance
 
     //get taquito toolkit and set ledger signer
-    const Tezos = new TezosToolkit('https://granadanet.tezos.dev.zondax.net')
+    const Tezos = new TezosToolkit(RPC_ADDR)
 
     let derivation_type = DerivationType.ED25519;
     if (n % 3 == 0) {
@@ -121,7 +119,7 @@ async function generate_vector(n: number): Promise<TestVector> {
         { idx: 1, key: 'Type', val: ledger_fmt("Revelation") }, //page 0
         { idx: 2, key: 'Source', val: ledger_fmt(source) },
         { idx: 3, key: 'Public Key', val: ledger_fmt(pk) },
-        { idx: 4, key: 'Fee', val: ledger_fmt(estimate.suggestedFeeMutez.toString()) },
+        { idx: 4, key: 'Fee', val: ledger_fmt_currency(estimate.suggestedFeeMutez.toString()) },
         { idx: 5, key: 'Gas Limit', val: ledger_fmt(estimate.gasLimit.toString()) },
         { idx: 6, key: 'Storage Limit', val: ledger_fmt(estimate.storageLimit.toString()) },
         { idx: 7, key: 'Counter', val: ledger_fmt(counterNum.toString()) },
