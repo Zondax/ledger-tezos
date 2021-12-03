@@ -69,6 +69,9 @@ then run:
 
 - Install `node > v14.0`. We typically recommend using `n` or `nvm`
 
+- For running unit tests you need to install a valid `rust` toolchain.
+  We normally use stable 1.53 for this project
+
 - You will need python 3 and then run
     - `make deps`
 
@@ -114,6 +117,7 @@ To build the app there are a couple of choices:
     ```bash
     make rust_test
     ```
+    ** Requires a rust toolchain available **
 
 - Running device emulation+integration tests!!
 
@@ -130,7 +134,7 @@ To build the app there are a couple of choices:
   make test_all
   ```
   
-  This will initially run tests unit and integration tests, then install Zemu for you,
+  This will initially run unit and integration tests (needs `rust` installed!), then install Zemu for you,
   clean the app's build files in case there's anything, proceed to build both application types
   and finally run the Zemu test suite.
 
