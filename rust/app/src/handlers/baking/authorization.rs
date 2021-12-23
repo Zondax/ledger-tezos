@@ -150,10 +150,8 @@ impl Viewable for AuthorizeUI {
             return (0, Error::ExecutionError as _);
         }
 
-        //reset watermark
-        if HWM::reset(0).is_err() {
-            return (0, Error::Busy as _);
-        }
+        //do not reset watermark
+        // see https://github.com/Zondax/ledger-tezos/issues/181
 
         //write to out
         // SAFE because initialized
@@ -250,9 +248,8 @@ impl Viewable for DeAuthorizeUI {
     }
 
     fn accept(&mut self, _: &mut [u8]) -> (usize, u16) {
-        if HWM::reset(0).is_err() {
-            return (0, Error::ExecutionError as _);
-        }
+        //do not reset watermark
+        // see https://github.com/Zondax/ledger-tezos/issues/181
 
         if Baking::remove_baking_key().is_err() {
             return (0, Error::ExecutionError as _);
