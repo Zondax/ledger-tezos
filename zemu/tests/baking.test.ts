@@ -400,6 +400,9 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
+
       const authReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.clickRight()
@@ -428,6 +431,9 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
 
       const authReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
@@ -458,6 +464,9 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
 
       const respReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
@@ -505,6 +514,9 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
 
       const authReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
@@ -566,6 +578,9 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
 
       const authReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
