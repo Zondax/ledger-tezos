@@ -42,6 +42,8 @@ import {
   processErrorResponse,
 } from './common'
 
+import { blake2b } from 'hash-wasm'
+
 export { LedgerError, Curve }
 export * from './types'
 
@@ -397,9 +399,7 @@ export default class TezosApp {
     }, processErrorResponse)
   }
 
-  sig_hash(msg: Buffer, msg_type: 'blocklevel' | 'endorsement' | 'operation' | 'michelson'): Buffer {
-    const blake2 = require('blake2')
-
+  async sig_hash(msg: Buffer, msg_type: 'blocklevel' | 'endorsement' | 'operation' | 'michelson'): Promise<Buffer> {
     let magic_byte
     switch (msg_type) {
       case 'blocklevel':
@@ -419,7 +419,9 @@ export default class TezosApp {
     }
     msg = Buffer.concat([Buffer.from([magic_byte]), msg])
 
-    return blake2.createHash('blake2b', { digestLength: 32 }).update(msg).digest()
+    const hexHash = await blake2b(msg, 32 * 8);
+
+    return Buffer.from(hexHash, 'hex');
   }
 
   //--------------------- LEGACY INSTRUCTIONS
@@ -512,12 +514,12 @@ export default class TezosApp {
     data.writeUInt32BE(test_level, 8)
     data = Buffer.concat([data, serializedPath])
 
-    return this.transport.send(CLA, LEGACY_INS.SETUP, 0, curve, data).then(response => {
+    return this.transport.send(CLA, LEGACY_INS.SETUP, 0, curve, data).then(async (response) => {
       const errorCodeData = response.slice(-2)
       const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
       const publicKey = response.slice(0, -2)
-      const address = this.publicKeyToAddress(publicKey, curve)
+      const address = await this.publicKeyToAddress(publicKey, curve)
 
       return {
         returnCode,
@@ -530,7 +532,7 @@ export default class TezosApp {
 
   async legacyHMAC(path: string, curve: Curve, message: Buffer): Promise<ResponseHMAC> {
     const serializedPath = serializePath(path)
-    return this.transport.send(CLA, LEGACY_INS.HMAC, 0, curve, Buffer.concat([serializedPath, message])).then(response => {
+    return this.transport.send(CLA, LEGACY_INS.HMAC, 0, curve, Buffer.concat([serializedPath, message])).then(async (response) => {
       const errorCodeData = response.slice(-2)
       const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
@@ -546,12 +548,12 @@ export default class TezosApp {
 
   async legacyGetPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
     const serializedPath = serializePath(path)
-    return this.transport.send(CLA, LEGACY_INS.PUBLIC_KEY, P1_VALUES.ONLY_RETRIEVE, curve, serializedPath).then(response => {
+    return this.transport.send(CLA, LEGACY_INS.PUBLIC_KEY, P1_VALUES.ONLY_RETRIEVE, curve, serializedPath).then(async (response) => {
       const errorCodeData = response.slice(-2)
       const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
       const publicKey = response.slice(0, -2)
-      const address = this.publicKeyToAddress(publicKey, curve)
+      const address = await this.publicKeyToAddress(publicKey, curve)
 
       return {
         returnCode,
@@ -564,12 +566,12 @@ export default class TezosApp {
 
   async legacyPromptPubKey(path: string, curve: Curve): Promise<ResponseAddress> {
     const serializedPath = serializePath(path)
-    return this.transport.send(CLA, LEGACY_INS.PROMPT_PUBLIC_KEY, 0, curve, serializedPath).then(response => {
+    return this.transport.send(CLA, LEGACY_INS.PROMPT_PUBLIC_KEY, 0, curve, serializedPath).then(async (response) => {
       const errorCodeData = response.slice(-2)
       const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError
 
       const publicKey = response.slice(0, -2)
-      const address = this.publicKeyToAddress(publicKey, curve)
+      const address = await this.publicKeyToAddress(publicKey, curve)
 
       return {
         returnCode,
@@ -580,7 +582,7 @@ export default class TezosApp {
     }, processErrorResponse)
   }
 
-  publicKeyToAddress(key: Buffer, curve: Curve): string {
+  async publicKeyToAddress(key: Buffer, curve: Curve): Promise<string> {
     let prefix
 
     switch (curve) {
@@ -617,8 +619,8 @@ export default class TezosApp {
         break
     }
 
-    const blake2 = require('blake2')
-    const hash = blake2.createHash('blake2b', { digestLength: 20 }).update(key).digest()
+    const hexHash = await blake2b(key, 20 * 8)
+    const hash = Buffer.from(hexHash, 'hex');
 
     const checksum = sha256x2(Buffer.concat([prefix, hash])).slice(0, 4)
 

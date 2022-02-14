@@ -190,7 +190,7 @@ describe.each(models)('Standard baking [%s] - pubkey', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('publicKey')
       expect(resp).toHaveProperty('address')
-      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+      expect(resp.address).toEqual(await app.publicKeyToAddress(resp.publicKey, curve))
       expect(resp.address).toContain('tz')
     } finally {
       await sim.close()
@@ -229,7 +229,7 @@ describe.each(models)('Standard baking [%s]; legacy - pubkey', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('publicKey')
       expect(resp).toHaveProperty('address')
-      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+      expect(resp.address).toEqual(await app.publicKeyToAddress(resp.publicKey, curve))
       expect(resp.address).toContain('tz')
     } finally {
       await sim.close()
@@ -543,7 +543,7 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
@@ -607,7 +607,7 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 

@@ -119,7 +119,7 @@ describe.each(models)('Standard [%s] - pubkey', function (m) {
         expect(resp.errorMessage).toEqual('No errors')
         expect(resp).toHaveProperty('publicKey')
         expect(resp).toHaveProperty('address')
-        expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+        expect(resp.address).toEqual(await app.publicKeyToAddress(resp.publicKey, curve))
         expect(resp.address).toContain('tz')
       } finally {
         await sim.close()
@@ -144,7 +144,7 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
         expect(resp.errorMessage).toEqual('No errors')
         expect(resp).toHaveProperty('publicKey')
         expect(resp).toHaveProperty('address')
-        expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+        expect(resp.address).toEqual(await app.publicKeyToAddress(resp.publicKey, curve))
         expect(resp.address).toContain('tz')
       } finally {
         await sim.close()
@@ -193,7 +193,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
@@ -244,7 +244,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'michelson'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'michelson'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
@@ -297,7 +297,7 @@ describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
@@ -348,7 +348,7 @@ describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'michelson'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'michelson'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
