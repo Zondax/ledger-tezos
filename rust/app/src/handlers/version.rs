@@ -21,10 +21,6 @@ ledger_tezos_derive::version!("Makefile.version");
 
 pub struct GetVersion {}
 
-pub fn get_target_id() -> Result<u32, ApduError> {
-    Ok(0u32)
-}
-
 impl ApduHandler for GetVersion {
     #[inline(never)]
     fn handle<'apdu>(
@@ -43,7 +39,7 @@ impl ApduHandler for GetVersion {
         apdu_buffer[4] = 0; //UX allowed
 
         // target id
-        let target_id_slice = get_target_id()?.to_be_bytes();
+        let target_id_slice = sys::TARGET_ID.to_be_bytes();
         apdu_buffer[5..9].clone_from_slice(&target_id_slice);
         *tx = 9;
 
