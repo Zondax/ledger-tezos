@@ -16,7 +16,7 @@
 use super::UIBackend;
 use crate::{
     ui::{manual_vtable::RefMutDynViewable, ViewError, Viewable},
-    ui_toolkit::Zui,
+    ui_toolkit::ZUI,
 };
 use bolos_derive::pic_str;
 use bolos_sys::pic::PIC;
@@ -28,7 +28,7 @@ pub const MESSAGE_SIZE: usize = 4095 + 1;
 const INCLUDE_ACTIONS_COUNT: usize = 0;
 
 #[bolos_derive::lazy_static]
-pub static mut RUST_ZUI: Zui<NanoSPBackend, KEY_SIZE> = Zui::new();
+pub static mut RUST_ZUI: ZUI<NanoSPBackend, KEY_SIZE> = ZUI::new();
 
 #[bolos_derive::lazy_static(cbindgen)]
 static mut BACKEND: NanoSPBackend = NanoSPBackend::default();
@@ -57,7 +57,7 @@ impl Default for NanoSPBackend {
 }
 
 impl NanoSPBackend {
-    pub fn review_loop_start(&mut self, ui: &mut Zui<Self, KEY_SIZE>) {
+    pub fn review_loop_start(&mut self, ui: &mut ZUI<Self, KEY_SIZE>) {
         if self.flow_inside_loop {
             //coming from right
 
@@ -83,7 +83,7 @@ impl NanoSPBackend {
         }
     }
 
-    pub fn review_loop_end(&mut self, ui: &mut Zui<Self, KEY_SIZE>) {
+    pub fn review_loop_end(&mut self, ui: &mut ZUI<Self, KEY_SIZE>) {
         if self.flow_inside_loop {
             //coming from left
             ui.paging_increase();
@@ -163,7 +163,7 @@ impl UIBackend<KEY_SIZE> for NanoSPBackend {
         panic!("capability not supported on nanosp yet?")
     }
 
-    fn show_review(ui: &mut Zui<Self, KEY_SIZE>) {
+    fn show_review(ui: &mut ZUI<Self, KEY_SIZE>) {
         //reset ui struct
         ui.paging_init();
         //not sure why this is here but ok
@@ -179,7 +179,7 @@ impl UIBackend<KEY_SIZE> for NanoSPBackend {
         }
     }
 
-    fn update_review(ui: &mut Zui<Self, KEY_SIZE>) {
+    fn update_review(ui: &mut ZUI<Self, KEY_SIZE>) {
         match ui.review_update_data() {
             Ok(_) | Err(ViewError::NoData) => {}
             Err(_) => {

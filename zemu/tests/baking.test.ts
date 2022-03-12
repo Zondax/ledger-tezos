@@ -26,10 +26,12 @@ const ed25519 = require('ed25519-supercop')
 const Resolve = require('path').resolve
 const APP_PATH_S = Resolve('../rust/app/output/app_s_baking.elf')
 const APP_PATH_X = Resolve('../rust/app/output/app_x_baking.elf')
+const APP_PATH_SP = Resolve('../rust/app/output/app_sp_baking.elf')
 
 const models: DeviceModel[] = [
   { name: 'nanos', prefix: 'BS', path: APP_PATH_S },
   { name: 'nanox', prefix: 'BX', path: APP_PATH_X },
+  { name: 'nanosp', prefix: 'BSP', path: APP_PATH_SP },
 ]
 
 describe.each(models)('Standard baking [%s]', function (m) {
@@ -504,8 +506,8 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
 })
 
 const SIGN_TEST_DATA = cartesianProduct(curves, [
-  { name: 'delegation', nav: { s: [11, 0], x: [9, 0] }, op: SAMPLE_DELEGATION },
-  { name: 'reveal', nav: { s: [11, 0], x: [10, 0] }, op: SAMPLE_REVEAL },
+  { name: 'delegation', nav: { s: [11, 0], x: [9, 0], sp: [9, 0] }, op: SAMPLE_DELEGATION },
+  { name: 'reveal', nav: { s: [11, 0], x: [10, 0], sp: [10, 0] }, op: SAMPLE_REVEAL },
 ])
 
 describe.each(models)('Standard baking [%s] - sign operation', function (m) {
@@ -532,7 +534,7 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 200000)
 
-      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      const navigation = m.name == 'nanox' ? data.nav.x : m.name == "nanosp" ? data.nav.sp : data.nav.s;
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${data.name}-${curve}`, navigation)
 
       const resp = await respReq
@@ -596,7 +598,7 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      const navigation = m.name == 'nanox' ? data.nav.x : m.name == "nanosp" ? data.nav.sp : data.nav.s;
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${data.name}-${curve}`, navigation)
 
       const resp = await respReq
