@@ -67,9 +67,7 @@ else ifeq ($(COIN),XTZ_baker)
 else
 define error_message
 
-
 COIN value not supported: [$(COIN)]
-
 
 endef
 $(error "$(error_message)")
@@ -96,7 +94,8 @@ ifeq ($(TARGET_NAME),TARGET_NANOS2)
 ICONNAME:=$(CURDIR)/nanox_icon.gif
 OUTPUT_ELF ?= $(CURDIR)/output/app_sp.elf
 OUTPUT_INSTALLER:= $(CURDIR)/pkg/installer_sp.sh
-RUST_TARGET := thumbv8m.main-none-eabi
+# RUST_TARGET := thumbv8m.main-none-eabi
+RUST_TARGET := thumbv6m-none-eabi
 endif
 
 ifdef BAKING

@@ -39,7 +39,7 @@ impl ApduHandler for GetVersion {
         apdu_buffer[4] = 0; //UX allowed
 
         // target id
-        let target_id_slice = sys::TARGET_ID.to_be_bytes();
+        let target_id_slice = crate::sys::TARGET_ID.to_be_bytes();
         apdu_buffer[5..9].clone_from_slice(&target_id_slice);
         *tx = 9;
 
