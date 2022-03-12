@@ -45,7 +45,7 @@ impl Sha256 {
 
     fn init_state(state: *mut cx_sha256_t) -> Result<(), Error> {
         cfg_if! {
-            if #[cfg(any(nanos, nanox))] {
+            if #[cfg(bolos_sdk)] {
                 match unsafe { crate::raw::cx_sha256_init_no_throw(
                     state as *mut _
                 )} {

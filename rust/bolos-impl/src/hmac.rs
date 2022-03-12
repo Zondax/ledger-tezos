@@ -46,7 +46,7 @@ pub(self) fn cx_hmac(
     let mode = reinit | write_out as u8 as u32;
 
     cfg_if! {
-        if #[cfg(any(nanox, nanos))] {
+        if #[cfg(bolos_sdk)] {
             match unsafe { crate::raw::cx_hmac_no_throw(
                 hmac as *mut _,
                 mode as _,
