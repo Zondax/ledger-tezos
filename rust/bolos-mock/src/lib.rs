@@ -27,6 +27,8 @@ pub fn exit_app(status: u8) -> ! {
     panic!("exiting app: {}", status);
 }
 
+pub const TARGET_ID: u32 = 0;
+
 pub mod pic;
 pub use pic::PIC;
 

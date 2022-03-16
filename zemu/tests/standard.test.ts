@@ -37,7 +37,7 @@ describe.each(models)('Standard', function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 5, -5])
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 4, -5])
     } finally {
       await sim.close()
     }
@@ -156,18 +156,18 @@ describe.each(models)('Standard [%s]; legacy - pubkey', function (m) {
 const SIGN_TEST_DATA = cartesianProduct(curves,
                                         [{
                                           name: 'transfer',
-                                          nav: { s: [13, 0], x: [11, 0] },
+                                          nav: { s: [13, 0], x: [11, 0], sp: [11, 0] },
                                           op: SAMPLE_TRANSACTION
                                         },
                                          {
                                           name: 'known baker',
-                                          nav: { s: [10, 0], x: [9, 0] },
+                                          nav: { s: [10, 0], x: [9, 0], sp : [9, 0] },
                                           op: KNOWN_DELEGATE
                                         }])
 const MICHELSON_SIGN_TEST_DATA = cartesianProduct(curves,
                                                   [{
                                                     name: 'blind-hello',
-                                                    nav: { s: [2, 0], x: [3, 0] },
+                                                    nav: { s: [2, 0], x: [3, 0], sp: [3, 0] },
                                                     op: Buffer.from("hello@zondax.ch")
                                                   }])
 
@@ -182,7 +182,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      const navigation = m.name == 'nanox' ? data.nav.x : m.name == "nanosp" ? data.nav.sp : data.nav.s;
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${data.name}-${curve}`, navigation)
 
       const resp = await respReq
@@ -233,7 +233,7 @@ describe.each(models)('Standard [%s]; sign', function (m) {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      const navigation = m.name == 'nanox' ? data.nav.x : m.name == "nanosp" ? data.nav.sp : data.nav.s;
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${data.name}-${curve}`, navigation)
 
       const resp = await respReq
@@ -286,7 +286,7 @@ describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      const navigation = m.name == 'nanox' ? data.nav.x : m.name == "nanosp" ? data.nav.sp : data.nav.s;
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${data.name}-${curve}`, navigation)
 
       const resp = await respReq
@@ -337,7 +337,7 @@ describe.each(models)('Standard [%s]; legacy - sign with hash', function (m) {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      const navigation = m.name == 'nanox' ? data.nav.x : m.name == "nanosp" ? data.nav.sp : data.nav.s;
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${data.name}-${curve}`, navigation)
 
       const resp = await respReq

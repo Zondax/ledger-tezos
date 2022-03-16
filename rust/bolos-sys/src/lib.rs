@@ -38,9 +38,14 @@ pub mod raw {
             include!("./bindings/bindingsS.rs");
         } else if #[cfg(nanox)] {
             include!("./bindings/bindingsX.rs");
+        } else if #[cfg(nanosplus)] {
+            include!("./bindings/bindingsSP.rs");
         }
     }
 }
+
+#[cfg(bolos_sdk)]
+pub use raw::TARGET_ID;
 
 /// Wrapper for 'halt'
 /// Resets the device
