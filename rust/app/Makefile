@@ -73,7 +73,7 @@ endef
 $(error "$(error_message)")
 endif
 
-APP_LOAD_PARAMS = --appFlags 0x200 --delete $(COMMON_LOAD_PARAMS) --path ${APPPATH} --path "44'/1'"
+APP_LOAD_PARAMS = --delete $(COMMON_LOAD_PARAMS) --path ${APPPATH} --path "44'/1'"
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
 APP_STACK_SIZE:=3072
@@ -81,6 +81,7 @@ ICONNAME:=$(CURDIR)/nanos_icon.gif
 OUTPUT_ELF ?= $(CURDIR)/output/app_s.elf
 OUTPUT_INSTALLER := $(CURDIR)/pkg/installer_s.sh
 RUST_TARGET := thumbv6m-none-eabi
+APP_LOAD_PARAMS += --appFlags 0x200
 endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
@@ -88,6 +89,7 @@ ICONNAME:=$(CURDIR)/nanox_icon.gif
 OUTPUT_ELF ?= $(CURDIR)/output/app_x.elf
 OUTPUT_INSTALLER:= $(CURDIR)/pkg/installer_x.sh
 RUST_TARGET := thumbv6m-none-eabi
+APP_LOAD_PARAMS += --appFlags 0x200
 endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOS2)
@@ -96,6 +98,7 @@ OUTPUT_ELF ?= $(CURDIR)/output/app_sp.elf
 OUTPUT_INSTALLER:= $(CURDIR)/pkg/installer_sp.sh
 # RUST_TARGET := thumbv8m.main-none-eabi
 RUST_TARGET := thumbv6m-none-eabi
+APP_LOAD_PARAMS += --appFlags 0x000
 endif
 
 ifdef BAKING
