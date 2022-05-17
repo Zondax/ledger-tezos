@@ -83,8 +83,29 @@ generate:
 		--config zemu/cbindgen_s.toml \
 		--crate zemu-sys \
 		--output zemu/include/zemu_ui_s.h
+else ifeq ($(TARGET_NAME),TARGET_NANOS2)
+generate:
+	- rm bolos-sys/src/bindings/bindingsSP.rs
+	bindgen --use-core \
+			--with-derive-default \
+			--no-derive-debug \
+			--ctypes-prefix cty \
+			-o bolos-sys/src/bindings/bindingsSP.rs \
+			bolos-sys/bindgen/wrapperSP.h -- \
+			-I$(BOLOS_SDK)/include \
+			-I$(BOLOS_SDK)/lib_ux/include \
+			-I$(BOLOS_SDK)/lib_cxng/include \
+			-I/tmp/bolos/arm-none-eabi/include \
+			-Ibolos-sys/bindgen/include \
+			-target thumbv8m.main-none-eabi \
+			-mcpu=cortex-m35p -mthumb
+	- rm zemu/include/zemu_ui_sp.h
+	RUSTUP_TOOLCHAIN=nightly cbindgen \
+		--config zemu/cbindgen_sp.toml \
+		--crate zemu-sys \
+		--output zemu/include/zemu_ui_sp.h
 else
 generate:
-	$(error invalid TARGET_NAME (not TARGET_NANOS or TARGET_NANOX))
+	$(error invalid TARGET_NAME (not TARGET_NANOS or TARGET_NANOX or TARGET_NANOS2))
 	$(error TARGET_NAME = [$(TARGET_NAME)])
 endif

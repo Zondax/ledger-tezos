@@ -26,10 +26,12 @@ const ed25519 = require('ed25519-supercop')
 const Resolve = require('path').resolve
 const APP_PATH_S = Resolve('../rust/app/output/app_s_baking.elf')
 const APP_PATH_X = Resolve('../rust/app/output/app_x_baking.elf')
+const APP_PATH_SP = Resolve('../rust/app/output/app_sp_baking.elf')
 
 const models: DeviceModel[] = [
   { name: 'nanos', prefix: 'BS', path: APP_PATH_S },
   { name: 'nanox', prefix: 'BX', path: APP_PATH_X },
+  { name: 'nanosp', prefix: 'BSP', path: APP_PATH_SP },
 ]
 
 describe.each(models)('Standard baking [%s]', function (m) {
@@ -46,7 +48,7 @@ describe.each(models)('Standard baking [%s]', function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 5, -5])
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 4, -5])
     } finally {
       await sim.close()
     }
@@ -190,7 +192,7 @@ describe.each(models)('Standard baking [%s] - pubkey', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('publicKey')
       expect(resp).toHaveProperty('address')
-      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+      expect(resp.address).toEqual(await app.publicKeyToAddress(resp.publicKey, curve))
       expect(resp.address).toContain('tz')
     } finally {
       await sim.close()
@@ -229,7 +231,7 @@ describe.each(models)('Standard baking [%s]; legacy - pubkey', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('publicKey')
       expect(resp).toHaveProperty('address')
-      expect(resp.address).toEqual(app.publicKeyToAddress(resp.publicKey, curve))
+      expect(resp.address).toEqual(await app.publicKeyToAddress(resp.publicKey, curve))
       expect(resp.address).toContain('tz')
     } finally {
       await sim.close()
@@ -400,6 +402,9 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
+
       const authReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.clickRight()
@@ -428,6 +433,9 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
 
       const authReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
@@ -458,6 +466,9 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
 
       const respReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
@@ -495,8 +506,8 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
 })
 
 const SIGN_TEST_DATA = cartesianProduct(curves, [
-  { name: 'delegation', nav: { s: [11, 0], x: [9, 0] }, op: SAMPLE_DELEGATION },
-  { name: 'reveal', nav: { s: [11, 0], x: [10, 0] }, op: SAMPLE_REVEAL },
+  { name: 'delegation', nav: { s: [11, 0], x: [9, 0], sp: [9, 0] }, op: SAMPLE_DELEGATION },
+  { name: 'reveal', nav: { s: [11, 0], x: [10, 0], sp: [10, 0] }, op: SAMPLE_REVEAL },
 ])
 
 describe.each(models)('Standard baking [%s] - sign operation', function (m) {
@@ -505,6 +516,9 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
 
       const authReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
@@ -520,7 +534,7 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 200000)
 
-      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      const navigation = m.name == 'nanox' ? data.nav.x : m.name == "nanosp" ? data.nav.sp : data.nav.s;
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-sign-${data.name}-${curve}`, navigation)
 
       const resp = await respReq
@@ -531,7 +545,7 @@ describe.each(models)('Standard baking [%s] - sign operation', function (m) {
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
@@ -567,6 +581,9 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new TezosApp(sim.getTransport())
 
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
+
       const authReq = app.authorizeBaking(APP_DERIVATION, curve)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.clickRight()
@@ -581,7 +598,7 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
-      const navigation = m.name == 'nanox' ? data.nav.x : data.nav.s
+      const navigation = m.name == 'nanox' ? data.nav.x : m.name == "nanosp" ? data.nav.sp : data.nav.s;
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-legacy-sign-with-hash-${data.name}-${curve}`, navigation)
 
       const resp = await respReq
@@ -592,7 +609,7 @@ describe.each(models)('Standard baking [%s]; legacy - sign op with hash', functi
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 

@@ -107,6 +107,14 @@ jobs:
           source $HOME/.cargo/env
           make clean
           make build
+      - name: Build Nano SP apps
+        shell: bash -l {0}
+        env:
+          BOLOS_SDK: ${{ github.workspace }}/deps/nanosplus-secure-sdk
+        run: |
+          source $HOME/.cargo/env
+          make clean
+          make build
 
       - name: Upload elfs
         uses: actions/upload-artifact@v2

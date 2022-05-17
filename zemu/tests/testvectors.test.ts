@@ -57,7 +57,7 @@ describe.each(cartesianProduct(models, curves))('Test Vectors', function (m, cur
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 
@@ -118,7 +118,7 @@ describe.each(cartesianProduct(models, curves))('Sample Operations', function (m
       expect(resp.errorMessage).toEqual('No errors')
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
-      expect(resp.hash).toEqual(app.sig_hash(msg, 'operation'))
+      expect(resp.hash).toEqual(await app.sig_hash(msg, 'operation'))
 
       const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION, curve)
 

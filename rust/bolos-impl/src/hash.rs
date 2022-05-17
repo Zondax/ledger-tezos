@@ -44,7 +44,7 @@ pub(self) fn cx_hash(
     };
 
     cfg_if! {
-        if #[cfg(any(nanos, nanox))] {
+        if #[cfg(bolos_sdk)] {
             match unsafe { crate::raw::cx_hash_no_throw(
                 hash as *mut _,
                 write_out as u8 as _,

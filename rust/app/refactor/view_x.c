@@ -27,7 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#if defined(TARGET_NANOX)
+#if defined(TARGET_NANOX) || defined(TARGET_NANOS2)
 
 void rs_h_expert_toggle();
 void rs_h_expert_update();
@@ -42,8 +42,6 @@ void rs_h_reject(unsigned int);
 #include "ux.h"
 ux_state_t G_ux;
 bolos_ux_params_t G_ux_params;
-uint8_t flow_inside_loop;
-
 
 UX_STEP_NOCB(ux_idle_flow_1_step, pbb, { &C_icon_app, MENU_MAIN_APP_LINE1, BACKEND_LAZY.key,});
 UX_STEP_CB_INIT(ux_idle_flow_2_step, bn,  rs_h_expert_update(), rs_h_expert_toggle(), { "Expert mode:", BACKEND_LAZY.message, });

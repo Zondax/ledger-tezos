@@ -262,7 +262,7 @@ mod bindings {
         };
 
         cfg_if! {
-            if #[cfg(any(nanos, nanox))] {
+            if #[cfg(bolos_sdk)] {
                 let might_throw = || unsafe {
                     crate::raw::os_perso_derive_node_with_seed_key(
                         mode as _,
