@@ -43,8 +43,8 @@ void rs_h_reject(unsigned int);
 ux_state_t G_ux;
 bolos_ux_params_t G_ux_params;
 
-UX_STEP_NOCB(ux_idle_flow_1_step, pbb, { &C_icon_app, MENU_MAIN_APP_LINE1, BACKEND_LAZY.key,});
-UX_STEP_CB_INIT(ux_idle_flow_2_step, bn,  rs_h_expert_update(), rs_h_expert_toggle(), { "Expert mode:", BACKEND_LAZY.message, });
+UX_STEP_NOCB(ux_idle_flow_1_step, pbb, { &C_icon_app, MENU_MAIN_APP_LINE1, (const char *) BACKEND_LAZY.key,});
+UX_STEP_CB_INIT(ux_idle_flow_2_step, bn,  rs_h_expert_update(), rs_h_expert_toggle(), { "Expert mode:", (const char *) BACKEND_LAZY.message, });
 UX_STEP_NOCB(ux_idle_flow_3_step, bn, { APPVERSION_LINE1, APPVERSION_LINE2, });
 UX_STEP_NOCB(ux_idle_flow_4_step, bn, { "Developed by:", "Zondax.ch", });
 UX_STEP_NOCB(ux_idle_flow_5_step, bn, { "License:", "Apache 2.0", });
@@ -62,7 +62,7 @@ const ux_flow_step_t *const ux_idle_flow [] = {
 
 ///////////
 
-UX_STEP_NOCB(ux_error_flow_1_step, bnnn_paging, { .title = BACKEND_LAZY.key, .text = BACKEND_LAZY.message, });
+UX_STEP_NOCB(ux_error_flow_1_step, bnnn_paging, { .title = (const char *) BACKEND_LAZY.key, .text = (const char *) BACKEND_LAZY.message, });
 UX_STEP_VALID(ux_error_flow_2_step, pb, rs_h_error_accept(0), { &C_icon_validate_14, "Ok"});
 
 UX_FLOW(
@@ -75,7 +75,7 @@ UX_FLOW(
 
 UX_FLOW_DEF_NOCB(ux_review_flow_1_review_title, pbb, { &C_icon_app, "Please", "review",});
 UX_STEP_INIT(ux_review_flow_2_start_step, NULL, NULL, { rs_h_review_loop_start(); });
-UX_STEP_NOCB_INIT(ux_review_flow_2_step, bnnn_paging, { rs_h_review_loop_inside(); }, { .title = BACKEND_LAZY.key, .text = BACKEND_LAZY.message, });
+UX_STEP_NOCB_INIT(ux_review_flow_2_step, bnnn_paging, { rs_h_review_loop_inside(); }, { .title = (const char *) BACKEND_LAZY.key, .text = (const char *) BACKEND_LAZY.message, });
 UX_STEP_INIT(ux_review_flow_2_end_step, NULL, NULL, { rs_h_review_loop_end(); });
 UX_STEP_VALID(ux_review_flow_3_step, pb, rs_h_approve(0), { &C_icon_validate_14, APPROVE_LABEL });
 UX_STEP_VALID(ux_review_flow_4_step, pb, rs_h_reject(0), { &C_icon_crossmark, REJECT_LABEL });
