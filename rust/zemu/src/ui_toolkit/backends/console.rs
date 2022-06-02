@@ -19,6 +19,8 @@ use crate::{
     ui_toolkit::ZUI,
 };
 
+use bolos_sys::pic::PIC;
+
 use arrayvec::ArrayString;
 
 const KEY_SIZE: usize = 64;

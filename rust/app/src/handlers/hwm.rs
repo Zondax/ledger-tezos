@@ -15,7 +15,7 @@
 ********************************************************************************/
 use crate::{
     constants::{tzprefix::NET, ApduError as Error},
-    sys::{flash_slot::Wear, new_flash_slot},
+    sys::{flash_slot::Wear, new_flash_slot, pic::PIC},
     utils::ApduPanic,
 };
 

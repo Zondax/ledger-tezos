@@ -95,7 +95,13 @@ fn produce_custom_ty(
                    // same considerations as `get`:
                    // aligned, non-null, initialized by above call
                    // guaranteed single-threaded access
-                   unsafe { #static_name.as_mut_ptr().as_mut().unwrap() }
+                   unsafe {
+                       PIC::new(&mut #static_name)
+                           .into_inner()
+                           .as_mut_ptr()
+                           .as_mut()
+                           .unwrap()
+                   }
                }
             }
 
@@ -130,7 +136,7 @@ fn produce_custom_ty(
             use super::*;
             use ::core::mem::MaybeUninit;
 
-            static mut UNINITIALIZED: MaybeUninit<u8> = MaybeUninit::uninit();
+            static mut UNINITIALIZED_SENTINEL: PIC<u8> = PIC::new(0);
 
             #cbindgen_attrs
             #cbindgen_vis static mut #static_name: MaybeUninit<#ty> = MaybeUninit::uninit();
@@ -153,8 +159,7 @@ fn produce_custom_ty(
                     //SAFETY:
                     // single-threaded code guarantees no data races when accessing
                     // global variables.
-                    // Furthermore, u8 can't be uninitialized as any value is valid.
-                    let initialized_ptr = unsafe { UNINITIALIZED.as_mut_ptr() };
+                    let initialized_ptr: *mut _ = unsafe { &mut *UNINITIALIZED_SENTINEL };
 
                     //SAFETY:
                     // ptr comes from rust so guaranteed to be aligned and not null,
@@ -164,7 +169,12 @@ fn produce_custom_ty(
                     if initialized_val != 1u8 {
                         //SAFETY:
                         // single threaded access, non-null, aligned
-                        unsafe { #static_name.as_mut_ptr().write(__initialize()); };
+                        unsafe {
+                            PIC::new(&mut #static_name)
+                                .into_inner()
+                                .as_mut_ptr()
+                                .write(__initialize())
+                        };
 
                         //SAFETY: see above when reading `initialized_val`
                         unsafe { initialized_ptr.write(1u8); }
@@ -179,7 +189,13 @@ fn produce_custom_ty(
                     // code is single-threaed so no data races,
                     // furthermore the pointer is guaranteed to be non-null, aligned
                     // and initialized by the `init` call above
-                    unsafe { #static_name.as_ptr().as_ref().unwrap() }
+                    unsafe {
+                        PIC::new(& #static_name)
+                            .into_inner()
+                            .as_ptr()
+                            .as_ref()
+                            .unwrap()
+                    }
                 }
             }
 

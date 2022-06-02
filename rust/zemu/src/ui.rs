@@ -13,8 +13,12 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use bolos_sys::raw::{
-    io_exchange, G_io_apdu_buffer as APDU_BUFFER, CHANNEL_APDU, IO_ASYNCH_REPLY, IO_RETURN_AFTER_TX,
+use bolos_sys::{
+    pic::PIC,
+    raw::{
+        io_exchange, G_io_apdu_buffer as APDU_BUFFER, CHANNEL_APDU, IO_ASYNCH_REPLY,
+        IO_RETURN_AFTER_TX,
+    },
 };
 
 mod comm;
