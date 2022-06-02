@@ -1,5 +1,5 @@
 [package]
-authors = ["Zondax GmbH <hello@zondax.ch>"]
+authors = ["Zondax GmbH <support.tezos@zondax.ch>"]
 name = "rslib"
 version = "0.1.0"
 edition = "2018"
@@ -34,7 +34,7 @@ property = "0.3.3"
 lexical-core = { version = "0.7", features = ["libm"], default-features = false }
 bytemuck = { version = "1" }
 
-[target.thumbv6m-none-eabi.dev-dependencies]
+[target.'cfg(all(target_arch = "arm", target_os = "none"))'.dependencies]
 panic-halt = "0.2.0"
 
 [dev-dependencies]

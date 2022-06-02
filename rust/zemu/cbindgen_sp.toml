@@ -1,0 +1,13 @@
+language = "C"
+
+pragma_once = true
+
+[parse.expand]
+crates = ["zemu-sys"]
+features = ["cbindgen_sp"]
+
+[defines]
+nanosplus = "TARGET_NANOS2"
+
+[export]
+include = ["NanoSPBackend", "BACKEND_LAZY"]

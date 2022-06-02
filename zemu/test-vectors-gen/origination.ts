@@ -10,9 +10,7 @@ const createHash = require('crypto').createHash
 
 import { APP_DERIVATION, defaultOptions } from '../tests/common'
 
-import { ledger_fmt } from './common'
-
-const MUTEZ_MULT = 1_000_000
+import { ledger_fmt, ledger_fmt_currency, MUTEZ_MULT, RPC_ADDR } from './common'
 
 async function getAddress(app: TezosApp, curve: Curve): Promise<string> {
   const response = await app.getAddressAndPubKey(APP_DERIVATION, curve)
@@ -60,7 +58,7 @@ async function generate_vector(n: number): Promise<TestVector> {
     //check that we have enough balance
 
     //get taquito toolkit and set ledger signer
-    const Tezos = new TezosToolkit('https://granadanet.tezos.dev.zondax.net')
+    const Tezos = new TezosToolkit(RPC_ADDR)
 
     //slice to skip "m/" which is not wanted by taquito
     //false so prompt is optional
@@ -159,9 +157,9 @@ async function generate_vector(n: number): Promise<TestVector> {
         { idx: 0, key: 'Operation', val: ledger_fmt(hash) }, //page 0
         { idx: 1, key: 'Type', val: ledger_fmt('Origination') }, //page 0
         { idx: 2, key: 'Source', val: ledger_fmt(source) },
-        { idx: 3, key: 'Balance', val: ledger_fmt(n.toString()) },
+        { idx: 3, key: 'Balance', val: ledger_fmt_currency(n.toString()) },
         { idx: 4, key: 'Delegate', val: ledger_fmt(delegation_str) },
-        { idx: 5, key: 'Fee', val: ledger_fmt('10000') },
+        { idx: 5, key: 'Fee', val: ledger_fmt_currency('10000') },
         { idx: 6, key: 'Code', val: ledger_fmt(forgedCodeHash.toString('hex')) },
         { idx: 7, key: 'Storage', val: ledger_fmt(forgedStorageHash.toString('hex')) },
         { idx: 8, key: 'Gas Limit', val: ledger_fmt('10') },

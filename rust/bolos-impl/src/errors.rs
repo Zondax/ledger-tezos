@@ -21,6 +21,8 @@ mod exceptions {
             include!("errors/exceptionsX.rs");
         } else if #[cfg(nanos)] {
             include!("errors/exceptionsS.rs");
+        } else if #[cfg(nanosplus)] {
+            include!("errors/exceptionsSP.rs");
         }
     }
 

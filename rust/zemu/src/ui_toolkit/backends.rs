@@ -74,6 +74,9 @@ cfg_if::cfg_if! {
     } else if #[cfg(any(nanox, feature = "cbindgen_x"))] {
         mod nanox;
         pub use nanox::{NanoXBackend, RUST_ZUI};
+    } else if #[cfg(any(nanosplus, feature = "cbindgen_sp"))] {
+        mod nanosplus;
+        pub use nanosplus::{NanoSPBackend, RUST_ZUI};
     } else {
         mod console;
         pub use console::{ConsoleBackend, RUST_ZUI};

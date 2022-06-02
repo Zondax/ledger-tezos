@@ -44,20 +44,7 @@ pub(self) fn cx_hash(
     };
 
     cfg_if! {
-        if #[cfg(nanox)] {
-            let might_throw = || unsafe { crate::raw::cx_hash(
-                hash as *mut _,
-                write_out as u8 as _,
-                input.as_ptr() as *const _,
-                input.len() as u32 as _,
-                out as *mut _,
-                out_len as _,
-            )};
-
-            catch(might_throw)?;
-            Ok(())
-
-        } else if #[cfg(nanos)] {
+        if #[cfg(bolos_sdk)] {
             match unsafe { crate::raw::cx_hash_no_throw(
                 hash as *mut _,
                 write_out as u8 as _,

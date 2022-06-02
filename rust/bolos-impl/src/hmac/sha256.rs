@@ -46,16 +46,7 @@ impl Sha256HMAC {
 
     fn init_state(state: *mut cx_hmac_sha256_t, key: &[u8]) -> Result<(), Error> {
         cfg_if! {
-            if #[cfg(nanox)] {
-                let might_throw = || unsafe { crate::raw::cx_hmac_sha256_init(
-                    state as *mut _,
-                    key.as_ptr() as *const _,
-                    key.len() as u32 as _);
-                };
-
-                catch(might_throw)?;
-            } else if #[cfg(nanos)] {
-
+            if #[cfg(bolos_sdk)] {
                 match unsafe { crate::raw::cx_hmac_sha256_init_no_throw(
                     state as *mut _,
                     key.as_ptr() as *const _,

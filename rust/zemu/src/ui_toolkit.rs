@@ -210,19 +210,21 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
             page_idx,
         );
 
+        let ascii_range = PIC::new(&(32..=0x7F)).into_inner();
+
         //asciify
         // this section makes the unsafe above safe!
         message_bytes
             .iter_mut()
             .take_while(|&&mut c| c != 0)
-            .filter(|&&mut c| !(32..=0x7F).contains(&c))
+            .filter(|&&mut c| !ascii_range.contains(&c))
             .for_each(|c| {
                 *c = b'.';
             });
         key_bytes
             .iter_mut()
             .take_while(|&&mut c| c != 0)
-            .filter(|&&mut c| !(32..=0x7F).contains(&c))
+            .filter(|&&mut c| !ascii_range.contains(&c))
             .for_each(|c| {
                 *c = b'.';
             });

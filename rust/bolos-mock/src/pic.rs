@@ -57,6 +57,14 @@ impl<T> PIC<T> {
     }
 }
 
+impl PIC<()> {
+    /// # Safety
+    /// Always safe, noop.
+    pub unsafe fn manual(val: usize) -> usize {
+        val
+    }
+}
+
 impl<T> Deref for PIC<T> {
     type Target = T;
 

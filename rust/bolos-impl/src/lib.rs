@@ -49,6 +49,8 @@ pub mod crypto;
 pub mod hash;
 pub mod hmac;
 
+pub use bolos_sys::TARGET_ID;
+
 /// Provides a macro to register a panic handler with this crate
 mod panic {
     #[macro_export]

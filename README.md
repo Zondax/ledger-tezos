@@ -69,35 +69,74 @@ then run:
 
 - Install `node > v14.0`. We typically recommend using `n` or `nvm`
 
+- For running unit tests you need to install a valid `rust` toolchain.
+  We normally use stable 1.53 for this project
+
 - You will need python 3 and then run
     - `make deps`
 
-- This project requires Ledger firmware 1.6.1
+- This project requires Ledger firmware 2.0.0 
     - The current repository keeps track of Ledger's SDK but it is possible to override it by changing the git submodule.
 
 ## How to build ?
 
-- Building the app itself
+To build the app there are a couple of choices:
 
-    If you installed the what is described above, just run:
-    ```bash
+- Only wallet app
+
+    ``` sh
     make
     ```
+    - Normally used for testing on a device
 
+- Only baking app
+
+    ``` sh
+    BAKING=tezos_baking make
+    ```
+
+- Both app types
+
+    ``` sh
+    make build
+    ```
+    - Used for test suite but also for releases
+
+- Both _legacy_ app types
+- 
+    ``` sh
+    make build_legacy
+    ```
+    - Useful for running the entire test suite
+    
 ## Running tests
 
 - Running rust tests (x64)
 
-    If you installed the what is described above, just run:
+    If you just wish to run the rust unit and integration tests, just run:
     ```bash
     make rust_test
     ```
+    ** Requires a rust toolchain available **
 
 - Running device emulation+integration tests!!
 
    ```bash
     Use Zemu! Explained below!
     ```
+
+- Running everything
+  
+  If you don't want to bother typing all those make commands by hand, you can skip them all!
+  
+  The only command you have to type is:
+  ```sh
+  make test_all
+  ```
+  
+  This will initially run unit and integration tests (needs `rust` installed!), then install Zemu for you,
+  clean the app's build files in case there's anything, proceed to build both application types
+  and finally run the Zemu test suite.
 
 ## How to test with Zemu?
 
@@ -115,7 +154,7 @@ Let's go! First install everything:
 make zemu_install
 ```
 
-Then you can run JS tests:
+Then you can run our Typescript based tests:
 
 ```bash
 make zemu_test
@@ -123,7 +162,14 @@ make zemu_test
 
 To run a single specific test:
 
-> At the moment, the recommendation is to run from the IDE. Remember to run `make` if you change the app.
+> At the moment, the recommendation is to run from the IDE. Remember to run `make build` if you change the app.
+
+``` sh
+cd zemu
+yarn test -t 'test name'
+```
+
+This will run just the test maching the name provided
 
 ## How to debug a ledger app?
 
@@ -172,7 +218,7 @@ There are a few things to take into account when enabling Ledger App debugging:
     make zemu_debug
     ```
 
-    The emulator will launch and immediately stop. You should see a black window
+    The emulator will launch and immediately stop. You should see a light blue window
 
 4. Configure Clion debugger
 
@@ -243,7 +289,7 @@ The Makefile will build the firmware in a docker container and leave the binary 
 
 - Build
 
-   ```
+   ```sh
    make                # Builds the app
    ```
 
@@ -252,8 +298,8 @@ The Makefile will build the firmware in a docker container and leave the binary 
    The following command will upload the application to the ledger:
 
    _Warning: The application will be deleted before uploading._
-   ```
-   make load          # Builds and loads the app to the device
+   ```sh
+   make load          # Loads the built app to the device
    ```
 
 ## APDU Specifications

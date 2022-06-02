@@ -12,6 +12,5 @@
 
 #include "cx.h"
 #include "wrapper.h"
-#include "core_sc000.h"
 
 #endif // WRAPPERS_H_

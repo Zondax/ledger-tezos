@@ -13,57 +13,18 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use crate::raw::exception_t;
-use std::convert::TryFrom;
+use crate::raw::{cx_err_t, exception_t};
+//use std::convert::{TryFrom, Infallible};
 
+//TODO: map exceptions from `errors.h`
 #[derive( Clone, Copy)]
 pub enum SyscallError {
-    Exception,
-    InvalidParameter,
-    Overflow,
-    Security,
-    InvalidCrc,
-    InvalidChecksum,
-    InvalidCounter,
-    NotSupported,
-    InvalidState,
-    Timeout,
-    PIC,
-    Appexit,
-    IoOverflow,
-    IoHeader,
-    IoState,
-    IoReset,
-    CXPort,
-    System,
-    NotEnoughSpace,
+    Code(exception_t),
 }
 
-impl TryFrom<exception_t> for SyscallError {
-    type Error = ();
-
-    fn try_from(e: exception_t) -> Result<SyscallError, ()> {
-        match e {
-            1 => Ok(Self::Exception),
-            2 => Ok(Self::InvalidParameter),
-            3 => Ok(Self::Overflow),
-            4 => Ok(Self::Security),
-            5 => Ok(Self::InvalidCrc),
-            6 => Ok(Self::InvalidChecksum),
-            7 => Ok(Self::InvalidCounter),
-            8 => Ok(Self::NotSupported),
-            9 => Ok(Self::InvalidState),
-            10 => Ok(Self::Timeout),
-            11 => Ok(Self::PIC),
-            12 => Ok(Self::Appexit),
-            13 => Ok(Self::IoOverflow),
-            14 => Ok(Self::IoHeader),
-            15 => Ok(Self::IoState),
-            16 => Ok(Self::CXPort),
-            17 => Ok(Self::System),
-            18 => Ok(Self::NotEnoughSpace),
-            _ => Err(()),
-        }
+impl From<exception_t> for SyscallError {
+    fn from(e: exception_t) -> Self {
+        Self::Code(e)
     }
 }
 
@@ -76,44 +37,108 @@ impl Into<()> for SyscallError {
 impl Into<exception_t> for SyscallError {
     fn into(self) -> exception_t {
         match self {
-            SyscallError::Exception => 1,
-            SyscallError::InvalidParameter => 2,
-            SyscallError::Overflow => 3,
-            SyscallError::Security => 4,
-            SyscallError::InvalidCrc => 5,
-            SyscallError::InvalidChecksum => 6,
-            SyscallError::InvalidCounter => 7,
-            SyscallError::NotSupported => 8,
-            SyscallError::InvalidState => 9,
-            SyscallError::Timeout => 10,
-            SyscallError::PIC => 11,
-            SyscallError::Appexit => 12,
-            SyscallError::IoOverflow => 13,
-            SyscallError::IoHeader => 14,
-            SyscallError::IoState => 15,
-            SyscallError::IoReset => 16,
-            SyscallError::CXPort => 17,
-            SyscallError::System => 18,
-            SyscallError::NotEnoughSpace => 19,
+            Self::Code(e) => e,
         }
     }
 }
 
-impl Into<u32> for SyscallError {
-    fn into(self) -> u32 {
-        let u: u16 = self.into();
-        u as u32
+//TODO: map errors from `cx_errors.h`
+#[derive( Clone, Copy)]
+pub enum CXError {
+    Code(cx_err_t),
+}
+
+/*
+#[derive( Clone, Copy)]
+pub enum CXError {
+    Carry,
+    Locked,
+    Unlocked,
+    NotLocked,
+    NotUnlocked,
+    InternalError,
+    InvalidParameterSize,
+    InvalidParameterValue,
+    InvalidParamenter,
+    NotInvertible,
+    Overflow,
+    MemoryFull,
+    NoResidue,
+}
+*/
+
+impl From<cx_err_t> for CXError {
+    fn from(e: cx_err_t) -> Self {
+        Self::Code(e)
     }
 }
 
-pub type Error = SyscallError;
+impl Into<()> for CXError {
+    fn into(self) -> () {
+        ()
+    }
+}
+
+impl Into<cx_err_t> for CXError {
+    fn into(self) -> cx_err_t {
+        match self {
+            Self::Code(e) => e,
+        }
+    }
+}
+
+#[derive( Clone, Copy)]
+pub enum Error {
+    Syscall(SyscallError),
+    Cx(CXError),
+}
+
+impl From<SyscallError> for Error {
+    fn from(f: SyscallError) -> Self {
+        Self::Syscall(f)
+    }
+}
+
+impl From<CXError> for Error {
+    fn from(f: CXError) -> Self {
+        Self::Cx(f)
+    }
+}
+
+impl From<u16> for Error {
+    fn from(f: u16) -> Self {
+        SyscallError::from(f).into()
+    }
+}
+
+impl From<u32> for Error {
+    fn from(raw: u32) -> Self {
+        //if we can convert to u16 and back it means the top u16 is empty
+        if raw == (raw as u16) as u32 {
+            SyscallError::from(raw as u16).into()
+        } else {
+            CXError::from(raw).into()
+        }
+    }
+}
+
+impl Into<u32> for Error {
+    fn into(self) -> u32 {
+        match self {
+            Self::Cx(cx) => cx.into(),
+            Self::Syscall(sys) => {
+                let u: u16 = sys.into();
+                u as u32
+            },
+        }
+    }
+}
+
 
 pub fn catch<T, F>(syscall: F) -> Result<T, Error>
 where
     F: FnOnce() -> T,
 {
-    match catch_raw(syscall) {
-        Ok(t) => Ok(t),
-        Err(raw) => Err(Error::try_from(raw as u16).unwrap_or(Error::Exception)),
-    }
+    let t = catch_raw(syscall)?;
+    Ok(t)
 }

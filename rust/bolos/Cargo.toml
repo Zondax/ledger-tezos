@@ -18,8 +18,8 @@ no-std-compat = { version = "0.4" }
 #wear levelling
 crc = { version = "1.8.1", optional = true, default-features = false }
 
-[target.thumbv6m-none-eabi.dependencies]
+[target.'cfg(all(target_arch = "arm", target_os = "none"))'.dependencies]
 bolos-impl = { version = "0.1", path = "../bolos-impl" }
 
-[target.'cfg(any(unix, windows))'.dependencies]
+[target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dependencies]
 bolos-mock = { version = "0.1", path = "../bolos-mock" }
