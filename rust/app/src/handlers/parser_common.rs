@@ -54,6 +54,8 @@ pub enum ParserError {
     UnimplementedOperation,
     InvalidBallotVote,
     ProposalsLengthInvalid,
+    InvalidEndorsementType,
+    InvalidProtocolVersion,
 }
 
 impl From<ErrorKind> for ParserError {

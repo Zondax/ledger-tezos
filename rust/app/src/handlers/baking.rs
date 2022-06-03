@@ -206,11 +206,7 @@ impl Baking {
             return Err(Error::DataInvalid);
         }
 
-        HWM::write(WaterMark {
-            level: endorsement.level,
-            endorsement: true,
-        })
-        .map_err(|_| Error::ExecutionError)?;
+        HWM::write(endorsement.derive_watermark()).map_err(|_| Error::ExecutionError)?;
 
         let (sz, sig) = Self::sign(&digest)?;
 
@@ -244,11 +240,7 @@ impl Baking {
             return Err(Error::DataInvalid);
         }
 
-        HWM::write(WaterMark {
-            level: blockdata.level,
-            endorsement: false,
-        })
-        .map_err(|_| Error::ExecutionError)?;
+        HWM::write(blockdata.derive_watermark()).map_err(|_| Error::ExecutionError)?;
 
         let (sz, sig) = Self::sign(&digest)?;
 
@@ -335,10 +327,12 @@ impl Baking {
 
         //endorses and bakes are automatically signed without any review
         match preemble {
-            Preemble::Endorsement => {
+            Preemble::TenderbakePreendorsement
+            | Preemble::TenderbakeEndorsement
+            | Preemble::Endorsement => {
                 Self::handle_endorsement(rem, send_hash, digest, out).map(|n| n as u32)
             }
-            Preemble::Block => {
+            Preemble::TenderbakeBlock | Preemble::Block => {
                 Self::handle_blockdata(rem, send_hash, digest, out).map(|n| n as u32)
             }
             Preemble::Operation => Self::handle_delegation(rem, send_hash, digest, flags),
@@ -489,19 +483,62 @@ mod tests {
     }
 
     #[test]
-    fn test_endorsement_data() {
-        let mut v = std::vec::Vec::with_capacity(1 + 4 + 32);
+    fn test_emmy_endorsement_data() {
+        let mut v = std::vec::Vec::with_capacity(1 + 4 + 32 + 1 + 4);
         v.push(0x00); //invalid preemble
         v.extend_from_slice(&1_u32.to_be_bytes());
         v.extend_from_slice(&[0u8; 32]);
-        v.push(0x05);
+        v.push(0x00); //emmy endorsement (without slot)
         v.extend_from_slice(&15_u32.to_be_bytes());
 
         let (_, endorsement) = EndorsementData::from_bytes(&v[1..]).unwrap();
-        assert_eq!(endorsement.chain_id, 1);
-        assert_eq!(endorsement.branch, &[0u8; 32]);
-        assert_eq!(endorsement.tag, 5);
-        assert_eq!(endorsement.level, 15);
+        assert!(!endorsement.is_tenderbake());
+        assert_eq!(endorsement.chain_id(), 1);
+        assert_eq!(endorsement.branch(), &[0u8; 32]);
+        assert_eq!(endorsement.level(), 15);
+        assert_eq!(endorsement.endorsement_type(), b"Endorsement\x00");
+    }
+
+    #[test]
+    fn test_tenderbake_preendorsement_data() {
+        let mut v = std::vec::Vec::with_capacity(1 + 4 + 32 + 1 + 2 + 4 + 4 + 32);
+        v.push(0x00); //invalid preemble
+        v.extend_from_slice(&1_u32.to_be_bytes());
+        v.extend_from_slice(&[0u8; 32]);
+        v.push(20); //tenderbake preendorsement
+        v.extend_from_slice(&0_u16.to_be_bytes()); //slot
+        v.extend_from_slice(&15_u32.to_be_bytes()); //level
+        v.extend_from_slice(&42_u32.to_be_bytes()); //round
+        v.extend_from_slice(&[0u8; 32]); //block payload hash
+
+        let (_, endorsement) = EndorsementData::from_bytes(&v[1..]).unwrap();
+        assert!(endorsement.is_tenderbake());
+        assert_eq!(endorsement.chain_id(), 1);
+        assert_eq!(endorsement.branch(), &[0u8; 32]);
+        assert_eq!(endorsement.level(), 15);
+        assert_eq!(endorsement.round(), Some(42));
+        assert_eq!(endorsement.endorsement_type(), b"Preendorsement\x00");
+    }
+
+    #[test]
+    fn test_tenderbake_endorsement_data() {
+        let mut v = std::vec::Vec::with_capacity(1 + 4 + 32 + 1 + 2 + 4 + 4 + 32);
+        v.push(0x00); //invalid preemble
+        v.extend_from_slice(&1_u32.to_be_bytes());
+        v.extend_from_slice(&[0u8; 32]);
+        v.push(21); //tenderbake endorsement
+        v.extend_from_slice(&0_u16.to_be_bytes()); //slot
+        v.extend_from_slice(&15_u32.to_be_bytes()); //level
+        v.extend_from_slice(&42_u32.to_be_bytes()); //round
+        v.extend_from_slice(&[0u8; 32]); //block payload hash
+
+        let (_, endorsement) = EndorsementData::from_bytes(&v[1..]).unwrap();
+        assert!(endorsement.is_tenderbake());
+        assert_eq!(endorsement.chain_id(), 1);
+        assert_eq!(endorsement.branch(), &[0u8; 32]);
+        assert_eq!(endorsement.level(), 15);
+        assert_eq!(endorsement.round(), Some(42));
+        assert_eq!(endorsement.endorsement_type(), b"Endorsement\x00");
     }
 
     #[test]
