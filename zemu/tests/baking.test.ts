@@ -378,20 +378,53 @@ describe.each(models)('Standard baking [%s]; legacy - hmac', function (m) {
   })
 })
 
-function get_endorsement_info(chain_id: number, branch: Buffer, tag: number, level: number): Buffer {
+function get_endorsement_info(chain_id: number, branch: Buffer, level: number, type: 'emmy' | 'endorsement' | 'preendorsement', round?: number): Buffer {
   const result = Buffer.alloc(41)
   result.writeUInt32BE(chain_id, 0)
   branch.copy(result, 4)
-  result.writeUInt8(tag, 36)
-  result.writeUInt32BE(level, 37)
+
+  switch (type) {
+    case 'emmy':
+      result.writeUInt32BE(0, 36) //tag
+      result.writeUInt32BE(level, 37)
+      return result;
+    case 'preendorsement':
+      result.writeUInt32BE(20, 36) //tag
+      break;
+    case 'endorsement':
+      result.writeUInt32BE(21, 36) //tag
+      break;
+    default:
+      throw new Error("invalid endorsement type")
+  }
+
+  result.writeUInt16BE(0, 37) //slot
+  result.writeUInt32BE(level, 41);
+  result.writeUInt32BE(round!, 45);
+  Buffer.alloc(32, 0).copy(result, 49); //block_payload_hash
+
   return result
 }
 
-function get_blocklevel_info(chain_id: number, level: number, proto: number): Buffer {
+function get_blocklevel_info(chain_id: number, level: number, round?: number): Buffer {
   const result = Buffer.alloc(9)
   result.writeUInt32BE(chain_id, 0)
   result.writeUInt32BE(level, 4)
-  result.writeUInt8(proto, 8)
+  result.writeUInt8(42, 8)
+  Buffer.alloc(32, 0).copy(result, 9) //predecessor
+  result.writeBigUint64BE(BigInt(0), 41);
+  result.writeUInt8(0, 42);
+  Buffer.alloc(32, 0).copy(result, 43) //validation_pass
+
+  let fitness;
+  if (round) {
+    fitness = Buffer.alloc(5, 2) //tenderbake protocol
+    fitness.writeUInt32BE(round!, 1)
+  } else {
+    fitness = Buffer.alloc(1, 2) //emmy protocol 5 to 11
+  };
+  fitness.copy(result, 55)
+
   return result
 }
 
@@ -416,7 +449,7 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const baker_blob = get_endorsement_info(0, Buffer.alloc(32), 5, 2)
+      const baker_blob = get_endorsement_info(0, Buffer.alloc(32), 2, 'emmy')
       const respSig = await app.signBaker(APP_DERIVATION, curve, baker_blob, 'endorsement')
 
       console.log(respSig, m.name)
@@ -448,7 +481,7 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const baker_blob = get_blocklevel_info(0, 123456, 1)
+      const baker_blob = get_blocklevel_info(0, 123456)
 
       const respSig = await app.signBaker(APP_DERIVATION, curve, baker_blob, 'blocklevel')
 
@@ -481,24 +514,148 @@ describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function
       console.log(resp, m.name)
       expect(resp.returnCode).toEqual(0x9000)
 
-      const baker_blob = get_blocklevel_info(0, 5, 1)
+      const baker_blob = get_blocklevel_info(0, 5)
 
       const sig = await app.signBaker(APP_DERIVATION, curve, baker_blob, 'blocklevel')
       console.log(sig, m.name)
       expect(sig.returnCode).toEqual(0x9000)
 
       //this should fail as the level is equal to previously signed!!
-      const baker_blob2 = get_blocklevel_info(0, 5, 1)
+      const baker_blob2 = get_blocklevel_info(0, 5)
 
       const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2, 'blocklevel')
       console.log(sig2, m.name)
       expect(sig2.returnCode).not.toEqual(0x9000)
 
       //this should success as the level is equal to previously signed but is endorsement!!
-      const baker_blob3 = get_endorsement_info(0, Buffer.alloc(32), 5, 5)
+      const baker_blob3 = get_endorsement_info(0, Buffer.alloc(32), 5, 'emmy')
 
       const sig3 = await app.signBaker(APP_DERIVATION, curve, baker_blob3, 'endorsement')
       expect(sig3.returnCode).toEqual(0x9000)
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
+describe.each(models)('Standard tenderbake baking [%s] - endorsement, blocklevel', function (m) {
+  test.each(curves)('Sign endorsement [%s]', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
+
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await authReq
+
+      console.log(resp, m.name)
+      expect(resp.returnCode).toEqual(0x9000)
+
+      const baker_blob = get_endorsement_info(0, Buffer.alloc(32), 2, 'endorsement', 0)
+      const respSig = await app.signBaker(APP_DERIVATION, curve, baker_blob, 'endorsement')
+
+      console.log(respSig, m.name)
+
+      expect(respSig.returnCode).toEqual(0x9000)
+      expect(respSig.errorMessage).toEqual('No errors')
+    } finally {
+      await sim.close()
+    }
+  })
+
+  test.each(curves)('Sign blocklevel [%s]', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
+
+      const authReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await authReq
+
+      console.log(resp, m.name)
+      expect(resp.returnCode).toEqual(0x9000)
+
+      const baker_blob = get_blocklevel_info(0, 123456, 0)
+
+      const respSig = await app.signBaker(APP_DERIVATION, curve, baker_blob, 'blocklevel')
+
+      console.log(respSig, m.name)
+
+      expect(respSig.returnCode).toEqual(0x9000)
+      expect(respSig.errorMessage).toEqual('No errors')
+    } finally {
+      await sim.close()
+    }
+  })
+
+  test.each(curves)('Sign blocklevel then endorse [%s]', async function (curve) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new TezosApp(sim.getTransport())
+
+      //reset watermark to 0 so we can read from the application
+      await app.legacyResetHighWatermark(0)
+
+      const respReq = app.authorizeBaking(APP_DERIVATION, curve)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+      const resp = await respReq
+
+      console.log(resp, m.name)
+      expect(resp.returnCode).toEqual(0x9000)
+
+      const baker_blob = get_blocklevel_info(0, 5, 0)
+
+      const sig = await app.signBaker(APP_DERIVATION, curve, baker_blob, 'blocklevel')
+      console.log(sig, m.name)
+      expect(sig.returnCode).toEqual(0x9000)
+
+      //this should fail as the level is equal to previously signed!!
+      const baker_blob2 = get_blocklevel_info(0, 5, 0)
+
+      const sig2 = await app.signBaker(APP_DERIVATION, curve, baker_blob2, 'blocklevel')
+      console.log(sig2, m.name)
+      expect(sig2.returnCode).not.toEqual(0x9000)
+
+      //this should succeed as the level is equal but round is higher!!
+      const baker_blob3 = get_blocklevel_info(0, 5, 1)
+
+      const sig3 = await app.signBaker(APP_DERIVATION, curve, baker_blob3, 'blocklevel')
+      console.log(sig3, m.name)
+      expect(sig3.returnCode).toEqual(0x9000)
+
+      //this should succeed as the level is equal to previously signed but is endorsement!!
+      const baker_blob4 = get_endorsement_info(0, Buffer.alloc(32), 5, 'preendorsement', 1)
+
+      const sig4 = await app.signBaker(APP_DERIVATION, curve, baker_blob4, 'endorsement')
+      expect(sig4.returnCode).toEqual(0x9000)
+
+      //this should also succeed as the level and round is equal
+      // to previously signed but is endorsement!!
+      const baker_blob5 = get_endorsement_info(0, Buffer.alloc(32), 5, 'endorsement', 1)
+
+      const sig5 = await app.signBaker(APP_DERIVATION, curve, baker_blob5, 'endorsement')
+      expect(sig5.returnCode).toEqual(0x9000)
     } finally {
       await sim.close()
     }
