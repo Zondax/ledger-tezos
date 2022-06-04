@@ -379,53 +379,59 @@ describe.each(models)('Standard baking [%s]; legacy - hmac', function (m) {
 })
 
 function get_endorsement_info(chain_id: number, branch: Buffer, level: number, type: 'emmy' | 'endorsement' | 'preendorsement', round?: number): Buffer {
-  const result = Buffer.alloc(41)
-  result.writeUInt32BE(chain_id, 0)
-  branch.copy(result, 4)
+  const result = Buffer.alloc(100) //should be enough for what we are writing
+  let offset = 0;
+
+  offset = result.writeUInt32BE(chain_id, offset)
+  offset = branch.copy(result, offset)
 
   switch (type) {
     case 'emmy':
-      result.writeUInt32BE(0, 36) //tag
-      result.writeUInt32BE(level, 37)
+      offset = result.writeUInt32BE(0, offset) //tag
+      offset = result.writeUInt32BE(level, offset)
       return result;
     case 'preendorsement':
-      result.writeUInt32BE(20, 36) //tag
+      offset = result.writeUInt32BE(20, offset) //tag
       break;
     case 'endorsement':
-      result.writeUInt32BE(21, 36) //tag
+      offset = result.writeUInt32BE(21, offset) //tag
       break;
     default:
       throw new Error("invalid endorsement type")
   }
 
-  result.writeUInt16BE(0, 37) //slot
-  result.writeUInt32BE(level, 41);
-  result.writeUInt32BE(round!, 45);
-  Buffer.alloc(32, 0).copy(result, 49); //block_payload_hash
+  offset = result.writeUInt16BE(0, offset) //slot
+  offset = result.writeUInt32BE(level, offset);
+  offset = result.writeUInt32BE(round!, offset);
+  offset = Buffer.alloc(32, 0).copy(result, offset); //block_payload_hash
 
-  return result
+  return result.subarray(0, offset)
 }
 
 function get_blocklevel_info(chain_id: number, level: number, round?: number): Buffer {
-  const result = Buffer.alloc(9)
-  result.writeUInt32BE(chain_id, 0)
-  result.writeUInt32BE(level, 4)
-  result.writeUInt8(42, 8)
-  Buffer.alloc(32, 0).copy(result, 9) //predecessor
-  result.writeBigUint64BE(BigInt(0), 41);
-  result.writeUInt8(0, 42);
-  Buffer.alloc(32, 0).copy(result, 43) //validation_pass
+  const result = Buffer.allocUnsafe(100); //should be enough for what we are writing
+  let offset = 0;
+
+  offset = result.writeUInt32BE(chain_id, offset)
+  offset = result.writeUInt32BE(level, offset)
+  offset = result.writeUInt8(42, offset)
+  offset = Buffer.alloc(32, 0).copy(result, offset) //predecessor
+  offset = result.writeBigUint64BE(BigInt(0), offset);
+  offset = result.writeUInt8(0, offset);
+  offset = Buffer.alloc(32, 0).copy(result, offset) //validation_pass
 
   let fitness;
   if (round) {
-    fitness = Buffer.alloc(5, 2) //tenderbake protocol
+    //write tenderbake protocol (2)
+    //and allocate 4 more bytes for the round
+    fitness = Buffer.alloc(5, 2)
     fitness.writeUInt32BE(round!, 1)
   } else {
     fitness = Buffer.alloc(1, 2) //emmy protocol 5 to 11
   };
-  fitness.copy(result, 55)
+  offset = fitness.copy(result, offset)
 
-  return result
+  return result.subarray(0, offset)
 }
 
 describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function (m) {
