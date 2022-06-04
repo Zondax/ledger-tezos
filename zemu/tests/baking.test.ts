@@ -17,6 +17,7 @@
 import Zemu, { DeviceModel } from '@zondax/zemu'
 import TezosApp, { Curve } from '@zondax/ledger-tezos'
 import { APP_DERIVATION, cartesianProduct, curves, defaultOptions } from './common'
+import { get_endorsement_info, get_blocklevel_info } from './baking_utils'
 import * as secp256k1 from 'noble-secp256k1'
 
 import { SAMPLE_DELEGATION, SAMPLE_REVEAL } from './tezos'
@@ -377,62 +378,6 @@ describe.each(models)('Standard baking [%s]; legacy - hmac', function (m) {
     }
   })
 })
-
-function get_endorsement_info(chain_id: number, branch: Buffer, level: number, type: 'emmy' | 'endorsement' | 'preendorsement', round?: number): Buffer {
-  const result = Buffer.alloc(100) //should be enough for what we are writing
-  let offset = 0;
-
-  offset = result.writeUInt32BE(chain_id, offset)
-  offset = branch.copy(result, offset)
-
-  switch (type) {
-    case 'emmy':
-      offset = result.writeUInt32BE(0, offset) //tag
-      offset = result.writeUInt32BE(level, offset)
-      return result;
-    case 'preendorsement':
-      offset = result.writeUInt32BE(20, offset) //tag
-      break;
-    case 'endorsement':
-      offset = result.writeUInt32BE(21, offset) //tag
-      break;
-    default:
-      throw new Error("invalid endorsement type")
-  }
-
-  offset = result.writeUInt16BE(0, offset) //slot
-  offset = result.writeUInt32BE(level, offset);
-  offset = result.writeUInt32BE(round!, offset);
-  offset = Buffer.alloc(32, 0).copy(result, offset); //block_payload_hash
-
-  return result.subarray(0, offset)
-}
-
-function get_blocklevel_info(chain_id: number, level: number, round?: number): Buffer {
-  const result = Buffer.allocUnsafe(100); //should be enough for what we are writing
-  let offset = 0;
-
-  offset = result.writeUInt32BE(chain_id, offset)
-  offset = result.writeUInt32BE(level, offset)
-  offset = result.writeUInt8(42, offset)
-  offset = Buffer.alloc(32, 0).copy(result, offset) //predecessor
-  offset = result.writeBigUint64BE(BigInt(0), offset);
-  offset = result.writeUInt8(0, offset);
-  offset = Buffer.alloc(32, 0).copy(result, offset) //validation_pass
-
-  let fitness;
-  if (round) {
-    //write tenderbake protocol (2)
-    //and allocate 4 more bytes for the round
-    fitness = Buffer.alloc(5, 2)
-    fitness.writeUInt32BE(round!, 1)
-  } else {
-    fitness = Buffer.alloc(1, 2) //emmy protocol 5 to 11
-  };
-  offset = fitness.copy(result, offset)
-
-  return result.subarray(0, offset)
-}
 
 describe.each(models)('Standard baking [%s] - endorsement, blocklevel', function (m) {
   test.each(curves)('Sign endorsement [%s]', async function (curve) {

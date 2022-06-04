@@ -29,7 +29,7 @@ use crate::{
     dispatcher::ApduHandler,
     handlers::{hwm::HWM, signing::Sign},
     parser::{
-        baking::{BlockData, EndorsementData},
+        baking::{BlockData, EndorsementData, EndorsementType, Fitness, TenderbakeEndorsement},
         operations::{Delegation, Reveal},
         DisplayableItem, Preemble,
     },
@@ -191,6 +191,7 @@ impl Baking {
     #[inline(never)]
     fn handle_endorsement(
         input: &'static [u8],
+        preemble: Preemble,
         send_hash: bool,
         digest: [u8; 32],
         out: &mut [u8],
@@ -199,8 +200,29 @@ impl Baking {
 
         let (_, endorsement) =
             EndorsementData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
-        if !endorsement.validate_with_watermark(&hw) {
-            return Err(Error::DataInvalid);
+
+        //parsed endorsement should match preemble
+        match (preemble, &endorsement) {
+            (
+                Preemble::TenderbakeEndorsement,
+                EndorsementData::Tenderbake(TenderbakeEndorsement {
+                    ty: EndorsementType::Endorsement,
+                    ..
+                }),
+            )
+            | (
+                Preemble::TenderbakePreendorsement,
+                EndorsementData::Tenderbake(TenderbakeEndorsement {
+                    ty: EndorsementType::PreEndorsement,
+                    ..
+                }),
+            )
+            | (Preemble::Endorsement, EndorsementData::Emmy(_)) => {
+                if !endorsement.validate_with_watermark(&hw) {
+                    return Err(Error::DataInvalid);
+                }
+            }
+            _ => return Err(Error::DataInvalid),
         }
 
         HWM::write(endorsement.derive_watermark()).map_err(|_| Error::ExecutionError)?;
@@ -225,6 +247,7 @@ impl Baking {
     #[inline(never)]
     fn handle_blockdata(
         input: &'static [u8],
+        preemble: Preemble,
         send_hash: bool,
         digest: [u8; 32],
         out: &mut [u8],
@@ -233,8 +256,15 @@ impl Baking {
 
         let (_, blockdata) = BlockData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
 
-        if !blockdata.validate_with_watermark(&hw) {
-            return Err(Error::DataInvalid);
+        //preemble should back block fitness
+        match (preemble, &blockdata.fitness) {
+            (Preemble::Block, Fitness::Emmy(_))
+            | (Preemble::TenderbakeBlock, Fitness::Tenderbake(_)) => {
+                if !blockdata.validate_with_watermark(&hw) {
+                    return Err(Error::DataInvalid);
+                }
+            }
+            _ => return Err(Error::DataInvalid),
         }
 
         HWM::write(blockdata.derive_watermark()).map_err(|_| Error::ExecutionError)?;
@@ -327,10 +357,10 @@ impl Baking {
             Preemble::TenderbakePreendorsement
             | Preemble::TenderbakeEndorsement
             | Preemble::Endorsement => {
-                Self::handle_endorsement(rem, send_hash, digest, out).map(|n| n as u32)
+                Self::handle_endorsement(rem, preemble, send_hash, digest, out).map(|n| n as u32)
             }
             Preemble::TenderbakeBlock | Preemble::Block => {
-                Self::handle_blockdata(rem, send_hash, digest, out).map(|n| n as u32)
+                Self::handle_blockdata(rem, preemble, send_hash, digest, out).map(|n| n as u32)
             }
             Preemble::Operation => Self::handle_delegation(rem, send_hash, digest, flags),
             _ => Err(Error::CommandNotAllowed),
@@ -482,7 +512,7 @@ mod tests {
     #[test]
     fn test_emmy_endorsement_data() {
         let mut v = std::vec::Vec::with_capacity(1 + 4 + 32 + 1 + 4);
-        v.push(0x00); //invalid preemble
+        v.push(Preemble::Endorsement as _);
         v.extend_from_slice(&1_u32.to_be_bytes());
         v.extend_from_slice(&[0u8; 32]);
         v.push(0x00); //emmy endorsement (without slot)
@@ -499,7 +529,7 @@ mod tests {
     #[test]
     fn test_tenderbake_preendorsement_data() {
         let mut v = std::vec::Vec::with_capacity(1 + 4 + 32 + 1 + 2 + 4 + 4 + 32);
-        v.push(0x00); //invalid preemble
+        v.push(Preemble::TenderbakePreendorsement as _);
         v.extend_from_slice(&1_u32.to_be_bytes());
         v.extend_from_slice(&[0u8; 32]);
         v.push(20); //tenderbake preendorsement
@@ -520,7 +550,7 @@ mod tests {
     #[test]
     fn test_tenderbake_endorsement_data() {
         let mut v = std::vec::Vec::with_capacity(1 + 4 + 32 + 1 + 2 + 4 + 4 + 32);
-        v.push(0x00); //invalid preemble
+        v.push(Preemble::TenderbakeEndorsement as _);
         v.extend_from_slice(&1_u32.to_be_bytes());
         v.extend_from_slice(&[0u8; 32]);
         v.push(21); //tenderbake endorsement

@@ -69,8 +69,8 @@ pub struct EmmyFitness<'b> {
 }
 
 impl<'b> EmmyFitness<'b> {
-    const PROTOCOL_VERSION_EMMY_ZERO_TO_FOUR: u8 = 1;
-    const PROTOCOL_VERSION_EMMY_FIVE_TO_ELEVEN: u8 = 2;
+    const PROTOCOL_VERSION_EMMY_ZERO_TO_FOUR: u8 = 0;
+    const PROTOCOL_VERSION_EMMY_FIVE_TO_ELEVEN: u8 = 1;
 
     #[inline(never)]
     pub fn from_bytes(bytes: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
