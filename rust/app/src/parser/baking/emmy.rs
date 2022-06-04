@@ -13,19 +13,15 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-use bolos::{pic_str, PIC};
+
 use nom::{
     branch::alt,
     bytes::complete::{tag, take},
     number::complete::be_u32,
     IResult,
 };
-use zemu_sys::ViewError;
 
-use crate::{
-    handlers::{handle_ui_message, hwm::WaterMark, parser_common::ParserError},
-    parser::DisplayableItem,
-};
+use crate::handlers::{hwm::WaterMark, parser_common::ParserError};
 
 pub struct EmmyEndorsement<'b> {
     pub chain_id: u32,
@@ -84,5 +80,9 @@ impl<'b> EmmyFitness<'b> {
         ))(bytes)?;
 
         Ok((rem, Self { fitness: rem }))
+    }
+
+    pub fn fitness(&self) -> &[u8] {
+        self.fitness
     }
 }

@@ -162,7 +162,7 @@ mod tests {
         handle_apdu(&mut flags, &mut tx, 5, &mut buffer);
         assert_error_code!(tx, buffer, Error::Success);
 
-        let expected = Sha256::digest(&MSG);
+        let expected = Sha256::digest(MSG);
         let digest = &buffer[..tx as usize - 2];
         assert_eq!(digest, expected.as_slice());
     }

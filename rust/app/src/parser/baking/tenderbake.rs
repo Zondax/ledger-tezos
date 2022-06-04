@@ -138,4 +138,8 @@ impl<'b> TenderbakeFitness<'b> {
             },
         ))
     }
+
+    pub fn fitness(&self) -> &[u8] {
+        self.fitness
+    }
 }

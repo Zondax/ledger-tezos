@@ -150,8 +150,7 @@ impl<'a> DisplayableItem for Delegation<'a> {
 
                 match self.delegate {
                     Some((crv, hash)) => {
-                        match baker_lookup(arrayref::array_ref!(crv.to_hash_prefix(), 0, 3), &hash)
-                        {
+                        match baker_lookup(arrayref::array_ref!(crv.to_hash_prefix(), 0, 3), hash) {
                             Ok(name) => handle_ui_message(name.as_bytes(), message, page),
                             Err(_) => {
                                 let addr =

@@ -43,6 +43,7 @@ static mut TEST: WearLeveller = new_flash_slot!(N_PAGES).apdu_expect("NVM might 
 #[bolos::lazy_static]
 static mut CHAIN_ID: WearLeveller = new_flash_slot!(N_PAGES).apdu_expect("NVM might be corrupted");
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct HWM;
 
 impl HWM {
@@ -221,7 +222,6 @@ impl From<&[u8; 52]> for WaterMark {
                 array.copy_from_slice(&from[read..read + 4]);
                 u32::from_be_bytes(array)
             };
-            read += 4;
 
             this = Self::Tenderbake {
                 level,
@@ -264,7 +264,7 @@ impl From<WaterMark> for [u8; 52] {
             } => {
                 out[write] = WaterMark::SERIALIZED_EMMY_TAG;
                 write += 1;
-                write += serialize_data(&mut out[write..], level, had_endorsement);
+                serialize_data(&mut out[write..], level, had_endorsement);
             }
             WaterMark::Tenderbake {
                 level,
@@ -276,7 +276,7 @@ impl From<WaterMark> for [u8; 52] {
                 write += 1;
 
                 write += serialize_data(&mut out[write..], level, had_endorsement);
-                write += serialize_data(&mut out[write..], round, had_preendorsement);
+                serialize_data(&mut out[write..], round, had_preendorsement);
             }
         }
 

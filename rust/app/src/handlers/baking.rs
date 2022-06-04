@@ -27,10 +27,7 @@ use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
     dispatcher::ApduHandler,
-    handlers::{
-        hwm::{WaterMark, HWM},
-        signing::Sign,
-    },
+    handlers::{hwm::HWM, signing::Sign},
     parser::{
         baking::{BlockData, EndorsementData},
         operations::{Delegation, Reveal},
@@ -374,7 +371,7 @@ impl Viewable for BakingSignUI {
         crate::sys::zemu_log_stack("Baking::render_item\x00");
         if let 0 = item_n {
             use crate::parser::operations::Operation;
-            use bolos::{pic_str, PIC};
+            use bolos::pic_str;
 
             let title_content = pic_str!(b"Operation");
             title[..title_content.len()].copy_from_slice(title_content);

@@ -130,7 +130,7 @@ fn test_sample(
                 let json_op = &contents[n_ops];
 
                 //verify the parsed one
-                verify_operation(op, &json_op, &name, n_ops);
+                verify_operation(op, json_op, name, n_ops);
                 n_ops += 1;
             }
         }
@@ -479,5 +479,5 @@ pub fn verify_ui(
         }
     }
 
-    return produced_ui.to_owned();
+    produced_ui.to_owned()
 }

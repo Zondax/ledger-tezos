@@ -26,6 +26,7 @@ mod backends;
 use backends::UIBackend;
 pub use backends::RUST_ZUI;
 
+#[allow(clippy::upper_case_acronyms)]
 #[repr(C)]
 pub struct ZUI<B: UIBackend<KS> + 'static, const KS: usize> {
     item_idx: usize,
@@ -319,7 +320,7 @@ impl<B: UIBackend<KS>, const KS: usize> ZUI<B, KS> {
     fn format_key_with_page(&mut self) {
         if self.page_count > 1 {
             let key = self.backend.key_buf();
-            let key_len = strlen(&key[..]).unwrap_or_else(|_| key.len());
+            let key_len = strlen(&key[..]).unwrap_or(key.len());
 
             if key_len < KS {
                 let mut tmp = ArrayString::from_byte_string(key).expect("key was not utf8");

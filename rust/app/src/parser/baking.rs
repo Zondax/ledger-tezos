@@ -287,7 +287,7 @@ impl<'b> EndorsementData<'b> {
 
 impl<'b> DisplayableItem for EndorsementData<'b> {
     fn num_items(&self) -> usize {
-        1 + 3 + (1 * self.is_tenderbake() as usize)
+        1 + 3 + self.is_tenderbake() as usize
     }
 
     #[inline(never)]
