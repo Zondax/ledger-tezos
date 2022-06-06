@@ -75,8 +75,10 @@ all:
 	@$(MAKE) clean_build
 	@$(MAKE) buildS
 	@$(MAKE) clean_build
+ifndef BAKING
 	@$(MAKE) buildX
 	@$(MAKE) clean_build
+endif
 	@$(MAKE) buildSP
 
 .PHONY: check_python

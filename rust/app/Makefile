@@ -102,6 +102,9 @@ APP_LOAD_PARAMS += --appFlags 0x000
 endif
 
 ifdef BAKING
+ifeq ($(TARGET_NAME),TARGET_NANOX)
+	$(error "Baking is not supported with a Nano X device")
+endif
 RUST_FEATURES=--features="baking"
 OUTPUT_ELF:=$(subst .elf,_baking.elf,$(OUTPUT_ELF))
 OUTPUT_INSTALLER:=$(subst installer,installer_baking,$(OUTPUT_INSTALLER))

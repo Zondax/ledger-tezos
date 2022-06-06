@@ -26,12 +26,12 @@ const ed25519 = require('ed25519-supercop')
 
 const Resolve = require('path').resolve
 const APP_PATH_S = Resolve('../rust/app/output/app_s_baking.elf')
-const APP_PATH_X = Resolve('../rust/app/output/app_x_baking.elf')
+// const APP_PATH_X = Resolve('../rust/app/output/app_x_baking.elf')
 const APP_PATH_SP = Resolve('../rust/app/output/app_sp_baking.elf')
 
 const models: DeviceModel[] = [
   { name: 'nanos', prefix: 'BS', path: APP_PATH_S },
-  { name: 'nanox', prefix: 'BX', path: APP_PATH_X },
+  // { name: 'nanox', prefix: 'BX', path: APP_PATH_X },
   { name: 'nanosp', prefix: 'BSP', path: APP_PATH_SP },
 ]
 
