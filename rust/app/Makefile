@@ -103,7 +103,7 @@ endif
 
 ifdef BAKING
 ifeq ($(TARGET_NAME),TARGET_NANOX)
-	$(error "Baking is not supported with a Nano X device")
+$(error "Baking is not supported with a Nano X device")
 endif
 RUST_FEATURES=--features="baking"
 OUTPUT_ELF:=$(subst .elf,_baking.elf,$(OUTPUT_ELF))
