@@ -114,7 +114,7 @@ jobs:
         run: |
           source $HOME/.cargo/env
           make clean
-          make build
+          make #build #avoid guilding baking app
 
       - name: Upload elfs
         uses: actions/upload-artifact@v2
