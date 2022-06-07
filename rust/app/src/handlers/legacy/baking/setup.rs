@@ -210,12 +210,12 @@ impl Viewable for SetupUI {
         }
 
         //set watermaks and chain id
-        let main = WaterMark::reset(self.main_hwm);
+        let main = WaterMark::reset(self.main_hwm, false);
         if HWM::write(main).is_err() {
             return (0, Error::Busy as _);
         }
 
-        let test = WaterMark::reset(self.test_hwm);
+        let test = WaterMark::reset(self.test_hwm, false);
         if HWM::write_test(test).is_err() {
             return (0, Error::Busy as _);
         }

@@ -106,7 +106,7 @@ jobs:
         run: |
           source $HOME/.cargo/env
           make clean
-          make build
+          make #build #avoid building baking app for X
       - name: Build Nano SP apps
         shell: bash -l {0}
         env:

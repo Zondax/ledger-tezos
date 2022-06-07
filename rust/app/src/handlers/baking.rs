@@ -20,18 +20,16 @@ use zemu_sys::{Show, ViewError, Viewable};
 use bolos::{
     crypto::bip32::BIP32Path,
     hash::{Blake2b, Hasher},
+    pic::PIC,
 };
 
 use crate::{
     constants::{ApduError as Error, BIP32_MAX_LENGTH},
     crypto::Curve,
     dispatcher::ApduHandler,
-    handlers::{
-        hwm::{WaterMark, HWM},
-        signing::Sign,
-    },
+    handlers::{hwm::HWM, signing::Sign},
     parser::{
-        baking::{BlockData, EndorsementData},
+        baking::{BlockData, EndorsementData, EndorsementType, Fitness, TenderbakeEndorsement},
         operations::{Delegation, Reveal},
         DisplayableItem, Preemble,
     },
@@ -193,6 +191,7 @@ impl Baking {
     #[inline(never)]
     fn handle_endorsement(
         input: &'static [u8],
+        preemble: Preemble,
         send_hash: bool,
         digest: [u8; 32],
         out: &mut [u8],
@@ -201,15 +200,32 @@ impl Baking {
 
         let (_, endorsement) =
             EndorsementData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
-        if !endorsement.validate_with_watermark(&hw) {
-            return Err(Error::DataInvalid);
+
+        //parsed endorsement should match preemble
+        match (preemble, &endorsement) {
+            (
+                Preemble::TenderbakeEndorsement,
+                EndorsementData::Tenderbake(TenderbakeEndorsement {
+                    ty: EndorsementType::Endorsement,
+                    ..
+                }),
+            )
+            | (
+                Preemble::TenderbakePreendorsement,
+                EndorsementData::Tenderbake(TenderbakeEndorsement {
+                    ty: EndorsementType::PreEndorsement,
+                    ..
+                }),
+            )
+            | (Preemble::Endorsement, EndorsementData::Emmy(_)) => {
+                if !endorsement.validate_with_watermark(&hw) {
+                    return Err(Error::DataInvalid);
+                }
+            }
+            _ => return Err(Error::DataInvalid),
         }
 
-        HWM::write(WaterMark {
-            level: endorsement.level,
-            endorsement: true,
-        })
-        .map_err(|_| Error::ExecutionError)?;
+        HWM::write(endorsement.derive_watermark()).map_err(|_| Error::ExecutionError)?;
 
         let (sz, sig) = Self::sign(&digest)?;
 
@@ -231,6 +247,7 @@ impl Baking {
     #[inline(never)]
     fn handle_blockdata(
         input: &'static [u8],
+        preemble: Preemble,
         send_hash: bool,
         digest: [u8; 32],
         out: &mut [u8],
@@ -239,15 +256,18 @@ impl Baking {
 
         let (_, blockdata) = BlockData::from_bytes(input).map_err(|_| Error::DataInvalid)?;
 
-        if !blockdata.validate_with_watermark(&hw) {
-            return Err(Error::DataInvalid);
+        //preemble should back block fitness
+        match (preemble, &blockdata.fitness) {
+            (Preemble::Block, Fitness::Emmy(_))
+            | (Preemble::TenderbakeBlock, Fitness::Tenderbake(_)) => {
+                if !blockdata.validate_with_watermark(&hw) {
+                    return Err(Error::DataInvalid);
+                }
+            }
+            _ => return Err(Error::DataInvalid),
         }
 
-        HWM::write(WaterMark {
-            level: blockdata.level,
-            endorsement: false,
-        })
-        .map_err(|_| Error::ExecutionError)?;
+        HWM::write(blockdata.derive_watermark()).map_err(|_| Error::ExecutionError)?;
 
         let (sz, sig) = Self::sign(&digest)?;
 
@@ -334,11 +354,13 @@ impl Baking {
 
         //endorses and bakes are automatically signed without any review
         match preemble {
-            Preemble::Endorsement => {
-                Self::handle_endorsement(rem, send_hash, digest, out).map(|n| n as u32)
+            Preemble::TenderbakePreendorsement
+            | Preemble::TenderbakeEndorsement
+            | Preemble::Endorsement => {
+                Self::handle_endorsement(rem, preemble, send_hash, digest, out).map(|n| n as u32)
             }
-            Preemble::Block => {
-                Self::handle_blockdata(rem, send_hash, digest, out).map(|n| n as u32)
+            Preemble::TenderbakeBlock | Preemble::Block => {
+                Self::handle_blockdata(rem, preemble, send_hash, digest, out).map(|n| n as u32)
             }
             Preemble::Operation => Self::handle_delegation(rem, send_hash, digest, flags),
             _ => Err(Error::CommandNotAllowed),
@@ -379,7 +401,7 @@ impl Viewable for BakingSignUI {
         crate::sys::zemu_log_stack("Baking::render_item\x00");
         if let 0 = item_n {
             use crate::parser::operations::Operation;
-            use bolos::{pic_str, PIC};
+            use bolos::pic_str;
 
             let title_content = pic_str!(b"Operation");
             title[..title_content.len()].copy_from_slice(title_content);
@@ -488,19 +510,62 @@ mod tests {
     }
 
     #[test]
-    fn test_endorsement_data() {
-        let mut v = std::vec::Vec::with_capacity(1 + 4 + 32);
-        v.push(0x00); //invalid preemble
+    fn test_emmy_endorsement_data() {
+        let mut v = std::vec::Vec::with_capacity(1 + 4 + 32 + 1 + 4);
+        v.push(Preemble::Endorsement as _);
         v.extend_from_slice(&1_u32.to_be_bytes());
         v.extend_from_slice(&[0u8; 32]);
-        v.push(0x05);
+        v.push(0x00); //emmy endorsement (without slot)
         v.extend_from_slice(&15_u32.to_be_bytes());
 
         let (_, endorsement) = EndorsementData::from_bytes(&v[1..]).unwrap();
-        assert_eq!(endorsement.chain_id, 1);
-        assert_eq!(endorsement.branch, &[0u8; 32]);
-        assert_eq!(endorsement.tag, 5);
-        assert_eq!(endorsement.level, 15);
+        assert!(!endorsement.is_tenderbake());
+        assert_eq!(endorsement.chain_id(), 1);
+        assert_eq!(endorsement.branch(), &[0u8; 32]);
+        assert_eq!(endorsement.level(), 15);
+        assert_eq!(endorsement.endorsement_type(), b"Endorsement\x00");
+    }
+
+    #[test]
+    fn test_tenderbake_preendorsement_data() {
+        let mut v = std::vec::Vec::with_capacity(1 + 4 + 32 + 1 + 2 + 4 + 4 + 32);
+        v.push(Preemble::TenderbakePreendorsement as _);
+        v.extend_from_slice(&1_u32.to_be_bytes());
+        v.extend_from_slice(&[0u8; 32]);
+        v.push(20); //tenderbake preendorsement
+        v.extend_from_slice(&0_u16.to_be_bytes()); //slot
+        v.extend_from_slice(&15_u32.to_be_bytes()); //level
+        v.extend_from_slice(&42_u32.to_be_bytes()); //round
+        v.extend_from_slice(&[0u8; 32]); //block payload hash
+
+        let (_, endorsement) = EndorsementData::from_bytes(&v[1..]).unwrap();
+        assert!(endorsement.is_tenderbake());
+        assert_eq!(endorsement.chain_id(), 1);
+        assert_eq!(endorsement.branch(), &[0u8; 32]);
+        assert_eq!(endorsement.level(), 15);
+        assert_eq!(endorsement.round(), Some(42));
+        assert_eq!(endorsement.endorsement_type(), b"Preendorsement\x00");
+    }
+
+    #[test]
+    fn test_tenderbake_endorsement_data() {
+        let mut v = std::vec::Vec::with_capacity(1 + 4 + 32 + 1 + 2 + 4 + 4 + 32);
+        v.push(Preemble::TenderbakeEndorsement as _);
+        v.extend_from_slice(&1_u32.to_be_bytes());
+        v.extend_from_slice(&[0u8; 32]);
+        v.push(21); //tenderbake endorsement
+        v.extend_from_slice(&0_u16.to_be_bytes()); //slot
+        v.extend_from_slice(&15_u32.to_be_bytes()); //level
+        v.extend_from_slice(&42_u32.to_be_bytes()); //round
+        v.extend_from_slice(&[0u8; 32]); //block payload hash
+
+        let (_, endorsement) = EndorsementData::from_bytes(&v[1..]).unwrap();
+        assert!(endorsement.is_tenderbake());
+        assert_eq!(endorsement.chain_id(), 1);
+        assert_eq!(endorsement.branch(), &[0u8; 32]);
+        assert_eq!(endorsement.level(), 15);
+        assert_eq!(endorsement.round(), Some(42));
+        assert_eq!(endorsement.endorsement_type(), b"Endorsement\x00");
     }
 
     #[test]

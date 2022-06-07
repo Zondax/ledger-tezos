@@ -18,6 +18,7 @@ use std::convert::TryFrom;
 use bolos::{
     crypto::bip32::BIP32Path,
     hash::{Blake2b, Hasher},
+    pic::PIC,
 };
 use zemu_sys::{Show, ViewError, Viewable};
 

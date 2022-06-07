@@ -321,14 +321,38 @@ export default class TezosApp {
     let magic_byte
     switch (message_type) {
       case 'blocklevel':
-        magic_byte = 1
+        const block_protocol_version_offset = 4 + 4 + 1 + 32 + 8 + 1 + 32 + 4 + 4;
+        switch (message[block_protocol_version_offset]) {
+          case 0:
+          case 1:
+            //emmy block
+            magic_byte = 0x01;
+            break;
+          case 2:
+            //tenderbake block
+            magic_byte = 0x11
+            break;
+          default:
+            throw "unknown block protocol version"
+        }
         break
       case 'endorsement':
-        magic_byte = 2
-        break
+        const endorsement_tag = message[4 + 32];
+        switch (endorsement_tag) {
+          case 20:
+            magic_byte = 0x12 //pre endorsement
+            break;
+          case 21:
+            magic_byte = 0x13 //endorsement
+            break;
+          default:
+            magic_byte = 0x02 //emmy endorsement
+            break;
+        }
+        break;
       case 'delegation':
         magic_byte = 3
-        break
+        break;
       default:
         throw 'Invalid message type'
     }

@@ -29,6 +29,7 @@ use crate::{
 
 use core::convert::TryFrom;
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct HMAC;
 
 //apdu_hmac.c:23

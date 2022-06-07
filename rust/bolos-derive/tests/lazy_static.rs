@@ -14,6 +14,7 @@
 *  limitations under the License.
 
 *******************************************************************************/
+use bolos::pic::PIC;
 use bolos_derive::*;
 
 #[lazy_static]
