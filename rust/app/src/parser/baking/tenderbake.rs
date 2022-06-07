@@ -116,6 +116,8 @@ impl<'b> TenderbakeEndorsement<'b> {
     }
 }
 
+#[derive(Clone)]
+#[cfg_attr(test, derive(Debug))]
 pub struct TenderbakeFitness<'b> {
     fitness: &'b [u8],
     pub round: u32,

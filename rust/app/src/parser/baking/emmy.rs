@@ -64,7 +64,10 @@ impl<'b> EmmyEndorsement<'b> {
     }
 }
 
+#[derive(Clone)]
+#[cfg_attr(test, derive(Debug))]
 pub struct EmmyFitness<'b> {
+    proto: u8,
     fitness: &'b [u8],
 }
 
@@ -74,12 +77,22 @@ impl<'b> EmmyFitness<'b> {
 
     #[inline(never)]
     pub fn from_bytes(bytes: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
-        let (rem, _proto) = alt((
+        let (rem, proto) = alt((
             tag(&[Self::PROTOCOL_VERSION_EMMY_ZERO_TO_FOUR]),
             tag(&[Self::PROTOCOL_VERSION_EMMY_FIVE_TO_ELEVEN]),
         ))(bytes)?;
 
-        Ok((rem, Self { fitness: rem }))
+        Ok((
+            rem,
+            Self {
+                proto: proto[0],
+                fitness: rem,
+            },
+        ))
+    }
+
+    pub fn protocol_version(&self) -> u8 {
+        self.proto
     }
 
     pub fn fitness(&self) -> &[u8] {
