@@ -321,7 +321,7 @@ export default class TezosApp {
     let magic_byte
     switch (message_type) {
       case 'blocklevel':
-        const block_protocol_version_offset = 4 + 4 + 1 + 32 + 8 + 1 + 32 + 4;
+        const block_protocol_version_offset = 4 + 4 + 1 + 32 + 8 + 1 + 32 + 4 + 4;
         switch (message[block_protocol_version_offset]) {
           case 0:
           case 1:

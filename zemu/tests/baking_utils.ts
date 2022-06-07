@@ -50,6 +50,7 @@ export function get_blocklevel_info(chain_id: number, level: number, round?: num
     fitness = Buffer.alloc(1, 1) //emmy protocol 5 to 11
   };
   offset = result.writeUInt32BE(fitness.length, offset);
+  offset = offset + Buffer.alloc(4, 0).copy(result, offset) //fitness padding
   offset = offset + fitness.copy(result, offset)
 
   return result.subarray(0, offset)
