@@ -105,7 +105,7 @@ mod tests {
     use crate::{
         assert_error_code,
         dispatcher::{handle_apdu, CLA},
-        sys::set_out,
+        sys::get_out,
     };
     use std::convert::TryInto;
 
@@ -127,8 +127,9 @@ mod tests {
         buffer[4] = 34;
         buffer[5..5 + 34].copy_from_slice(&MSG[..34]);
 
-        set_out(&mut buffer);
         handle_apdu(&mut flags, &mut tx, 5 + 34, &mut buffer);
-        assert_error_code!(tx, buffer, Error::Success);
+        let (_, out) = get_out().expect("mock UI used");
+
+        assert_error_code!(tx, out, Error::Success);
     }
 }

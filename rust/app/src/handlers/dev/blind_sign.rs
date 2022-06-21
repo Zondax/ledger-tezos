@@ -215,7 +215,7 @@ mod tests {
         assert_error_code,
         dispatcher::{handle_apdu, CLA, INS_SIGN},
         handlers::ZPacketType,
-        sys::set_out,
+        sys::get_out,
     };
     use std::convert::TryInto;
 
@@ -259,11 +259,12 @@ mod tests {
         buffer[4] = MSG.len() as u8;
         buffer[5..5 + MSG.len()].copy_from_slice(MSG);
 
-        set_out(&mut buffer);
         handle_apdu(&mut flags, &mut tx, 5 + MSG.len() as u32, &mut buffer);
-        assert_error_code!(tx, buffer, Error::Success);
+        let (_, out) = get_out().expect("UI mock not used");
 
-        let out_hash = &buffer[..32];
+        assert_error_code!(tx, out, Error::Success);
+
+        let out_hash = &out[..32];
         let expected = Blake2b::<32>::digest(MSG).unwrap();
         assert_eq!(&expected, out_hash);
     }
