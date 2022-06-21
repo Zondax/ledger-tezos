@@ -247,7 +247,7 @@ mod tests {
     use crate::{
         assert_error_code,
         dispatcher::{handle_apdu, CLA, INS_LEGACY_SETUP},
-        sys::set_out,
+        sys::get_out,
         utils::MaybeNullTerminatedToString,
     };
 
@@ -295,12 +295,12 @@ mod tests {
         buffer[rx..rx + path_v.len()].copy_from_slice(&path_v); //BIP32
         rx += path_v.len();
 
-        set_out(&mut buffer);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
+        let (_, out) = get_out().expect("UI mock used");
 
-        assert_error_code!(tx, buffer, Error::Success);
+        assert_error_code!(tx, out, Error::Success);
 
-        let pk_len = buffer[0] as usize;
+        let pk_len = out[0] as usize;
         assert_eq!(tx as usize, 1 + pk_len + 2);
 
         match Baking::read_baking_key() {

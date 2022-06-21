@@ -20,22 +20,57 @@ pub use comm::*;
 #[path = "ui/manual_vtable.rs"]
 pub(crate) mod manual_vtable;
 
-static mut OUT: Option<&mut [u8]> = None;
+const UI_OUT_SIZE: usize = 260;
 
-pub fn set_out(buf: &mut [u8]) {
-    unsafe {
-        let buf: &'static mut [u8] = core::mem::transmute(buf);
-        OUT.replace(buf);
+static mut OUT: MockUIHandler<UI_OUT_SIZE> = MockUIHandler::new();
+
+struct MockUIHandler<const SIZE: usize> {
+    data: [u8; SIZE],
+    written_size: usize,
+}
+
+impl<const SIZE: usize> MockUIHandler<SIZE> {
+    const INIT_DATA: [u8; SIZE] = [0; SIZE];
+
+    pub const fn new() -> Self {
+        Self {
+            data: Self::INIT_DATA,
+            written_size: 0,
+        }
     }
+
+    pub fn flush(&mut self) -> Option<(usize, [u8; SIZE])> {
+        if self.written_size != 0 {
+            let MockUIHandler { data, written_size } = core::mem::replace(self, Self::new());
+            Some((written_size, data))
+        } else {
+            None
+        }
+    }
+
+    pub fn as_mut(&mut self) -> &mut [u8; SIZE] {
+        &mut self.data
+    }
+
+    pub fn set_written(&mut self, n: usize) {
+        self.written_size = n;
+    }
+}
+
+pub fn get_out() -> Option<(usize, [u8; UI_OUT_SIZE])> {
+    unsafe { OUT.flush() }
 }
 
 impl<T: Viewable + Sized> Show for T {
     unsafe fn show(mut self, _: &mut u32) -> Result<(), ShowTooBig> {
-        let out = OUT.as_mut().expect("UI MOCK LAYER NOT INITIALIZED");
+        let out = OUT.as_mut();
 
-        self.accept(out);
+        let (len, code) = self.accept(out);
 
-        OUT.take();
+        //write the code to the out buffer manually as
+        // it won't be written here but in the apdu buffer otherwise
+        out[len..][..2].copy_from_slice(&code.to_be_bytes());
+        OUT.set_written(len + 2);
 
         Ok(())
     }
