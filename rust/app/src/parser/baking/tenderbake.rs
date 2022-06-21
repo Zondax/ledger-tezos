@@ -128,8 +128,11 @@ impl<'b> TenderbakeFitness<'b> {
 
     #[inline(never)]
     pub fn from_bytes(bytes: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
-        let (rem, _proto) = tag(&[Self::PROTOCOL_VERSION_TENDERBAKE])(bytes)?;
+        //TODO: figure out what this field is
+        let (rem, _pad) = take(4usize)(bytes)?;
+        let (rem, _proto) = tag(&[Self::PROTOCOL_VERSION_TENDERBAKE])(rem)?;
 
+        //the round is in the last 4 bytes
         let (_, round) = be_u32(&rem[rem.len() - 4..])?;
 
         Ok((

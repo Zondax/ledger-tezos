@@ -595,7 +595,7 @@ describe.each(models)('Standard tenderbake baking [%s] - endorsement, blocklevel
       console.log(sig3, m.name)
       expect(sig3.returnCode).toEqual(0x9000)
 
-      //this should succeed as the level is equal to previously signed but is endorsement!!
+      //this should succeed as the level is equal to previously signed but is preendorsement!!
       const baker_blob4 = get_endorsement_info(0, Buffer.alloc(32), 5, 'preendorsement', 1)
 
       const sig4 = await app.signBaker(APP_DERIVATION, curve, baker_blob4, 'endorsement')

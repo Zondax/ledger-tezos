@@ -77,10 +77,13 @@ impl<'b> EmmyFitness<'b> {
 
     #[inline(never)]
     pub fn from_bytes(bytes: &'b [u8]) -> IResult<&[u8], Self, ParserError> {
+        //TODO: figure out what this field is
+        let (rem, _pad) = take(4usize)(bytes)?;
+
         let (rem, proto) = alt((
             tag(&[Self::PROTOCOL_VERSION_EMMY_ZERO_TO_FOUR]),
             tag(&[Self::PROTOCOL_VERSION_EMMY_FIVE_TO_ELEVEN]),
-        ))(bytes)?;
+        ))(rem)?;
 
         Ok((
             rem,
