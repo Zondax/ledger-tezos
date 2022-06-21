@@ -24,6 +24,8 @@ pub mod dispatcher;
 mod handlers;
 mod sys;
 
+pub use handlers::ZPacketType as PacketType;
+
 pub mod parser;
 
 #[cfg(not(fuzzing))]
@@ -32,7 +34,7 @@ sys::panic_handler! {}
 #[macro_use]
 mod utils;
 
-mod crypto;
+pub mod crypto;
 
 cfg_if::cfg_if! {
     if #[cfg(fuzzing)] {

@@ -64,8 +64,6 @@ impl<'b> BlockData<'b> {
         let operation_hash = arrayref::array_ref!(operation_hash, 0, 32);
 
         let (rem, fitness_size) = be_u32(rem)?;
-        //TODO: figure out what this field is
-        let (rem, _pad) = take(4usize)(rem)?;
         let (_, fitness) = take(fitness_size)(rem)?;
 
         let (rem, fitness) = Fitness::from_bytes(fitness)?;
