@@ -30,6 +30,8 @@ use ledger_apdu::APDUAnswer;
 
 pub use ledger_apdu::APDUCommand;
 
+pub use serial_test::serial;
+
 pub fn handle_apdu(flags: &mut u32, tx: &mut u32, rx: u32, apdu_buffer: &mut [u8]) {
     unsafe {
         rs_handle_apdu(

@@ -43,14 +43,17 @@ export function get_blocklevel_info(chain_id: number, level: number, round?: num
   let fitness;
   if (round) {
     //write tenderbake protocol (2)
-    //and allocate 4 more bytes for the round
-    fitness = Buffer.alloc(5, 2)
-    fitness.writeUInt32BE(round!, 1)
+    // allocate 4 padding bytes
+    // and allocate 4 more bytes for the round
+    fitness = Buffer.alloc(9, 2)
+    //write the round after the padding + tag
+    fitness.writeUInt32BE(round!, 5)
   } else {
-    fitness = Buffer.alloc(1, 1) //emmy protocol 5 to 11
+    // allocate 4 padding bytes +
+    // emmy protocol 5 to 11 (0x01)
+    fitness = Buffer.alloc(5, 1) //emmy protocol 5 to 11
   };
   offset = result.writeUInt32BE(fitness.length, offset);
-  offset = offset + Buffer.alloc(4, 0).copy(result, offset) //fitness padding
   offset = offset + fitness.copy(result, offset)
 
   return result.subarray(0, offset)
