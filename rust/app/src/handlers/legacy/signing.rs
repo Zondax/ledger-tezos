@@ -143,8 +143,8 @@ mod tests {
         handlers::LegacyPacketType,
         sys::{
             crypto::{bip32::BIP32Path, Curve},
+            get_out,
             hash::{Blake2b, Hasher},
-            set_out,
         },
     };
     use std::convert::TryInto;
@@ -189,11 +189,11 @@ mod tests {
         buffer[4] = MSG.len() as u8;
         buffer[5..5 + MSG.len()].copy_from_slice(MSG);
 
-        set_out(&mut buffer);
         handle_apdu(&mut flags, &mut tx, 5 + MSG.len() as u32, &mut buffer);
-        assert_error_code!(tx, buffer, Error::Success);
+        let (_, out) = get_out().expect("UI mock used");
+        assert_error_code!(tx, out, Error::Success);
 
-        let out_hash = &buffer[..32];
+        let out_hash = &out[..32];
         let expected = Blake2b::<32>::digest(MSG).unwrap();
         assert_eq!(&expected, out_hash);
     }

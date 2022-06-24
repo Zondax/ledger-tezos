@@ -210,12 +210,12 @@ impl Viewable for SetupUI {
         }
 
         //set watermaks and chain id
-        let main = WaterMark::reset(self.main_hwm);
+        let main = WaterMark::reset(self.main_hwm, false);
         if HWM::write(main).is_err() {
             return (0, Error::Busy as _);
         }
 
-        let test = WaterMark::reset(self.test_hwm);
+        let test = WaterMark::reset(self.test_hwm, false);
         if HWM::write_test(test).is_err() {
             return (0, Error::Busy as _);
         }
@@ -247,7 +247,7 @@ mod tests {
     use crate::{
         assert_error_code,
         dispatcher::{handle_apdu, CLA, INS_LEGACY_SETUP},
-        sys::set_out,
+        sys::get_out,
         utils::MaybeNullTerminatedToString,
     };
 
@@ -295,12 +295,12 @@ mod tests {
         buffer[rx..rx + path_v.len()].copy_from_slice(&path_v); //BIP32
         rx += path_v.len();
 
-        set_out(&mut buffer);
         handle_apdu(&mut flags, &mut tx, rx as u32, &mut buffer);
+        let (_, out) = get_out().expect("UI mock used");
 
-        assert_error_code!(tx, buffer, Error::Success);
+        assert_error_code!(tx, out, Error::Success);
 
-        let pk_len = buffer[0] as usize;
+        let pk_len = out[0] as usize;
         assert_eq!(tx as usize, 1 + pk_len + 2);
 
         match Baking::read_baking_key() {

@@ -240,6 +240,15 @@ pub enum Preemble {
 
     ///Data is expected to be encoded michelson
     Michelson = 0x05,
+
+    ///Data is expected to be a tenderbake block
+    TenderbakeBlock = 0x11,
+
+    ///Data is epxected to be a tenderbake pre-endorsement
+    TenderbakePreendorsement = 0x12,
+
+    ///Data is expected to be a tenderbake endorsement
+    TenderbakeEndorsement = 0x13,
 }
 
 impl Preemble {
@@ -251,6 +260,9 @@ impl Preemble {
             0x03 => Ok((rem, Self::Operation)),
             0x04 => Ok((rem, Self::TBD)),
             0x05 => Ok((rem, Self::Michelson)),
+            0x11 => Ok((rem, Self::TenderbakeBlock)),
+            0x12 => Ok((rem, Self::TenderbakePreendorsement)),
+            0x13 => Ok((rem, Self::TenderbakeEndorsement)),
             _ => Err(ParserError::parser_unexpected_type.into()),
         }
     }

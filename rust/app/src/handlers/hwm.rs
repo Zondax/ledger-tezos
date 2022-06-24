@@ -15,7 +15,7 @@
 ********************************************************************************/
 use crate::{
     constants::{tzprefix::NET, ApduError as Error},
-    sys::{flash_slot::Wear, new_flash_slot},
+    sys::{flash_slot::Wear, new_flash_slot, pic::PIC},
     utils::ApduPanic,
 };
 
@@ -43,12 +43,13 @@ static mut TEST: WearLeveller = new_flash_slot!(N_PAGES).apdu_expect("NVM might 
 #[bolos::lazy_static]
 static mut CHAIN_ID: WearLeveller = new_flash_slot!(N_PAGES).apdu_expect("NVM might be corrupted");
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct HWM;
 
 impl HWM {
     //apdu_baking.c:39,0
     pub fn reset(level: u32) -> Result<(), Error> {
-        let wm = WaterMark::reset(level);
+        let wm = WaterMark::reset(level, false);
         let data: [u8; 52] = wm.into();
 
         unsafe { MAIN.write(data) }.map_err(|_| Error::ExecutionError)?;
@@ -71,12 +72,12 @@ impl HWM {
     pub fn hwm() -> Result<[u8; MAIN_HWM_LEN], WearError> {
         let wm: WaterMark = unsafe { MAIN.read() }?.into();
 
-        Ok(wm.level.to_be_bytes())
+        Ok(wm.level().to_be_bytes())
     }
 
     /// Meant to be used for the legacy API
     pub fn hwm_default() -> [u8; MAIN_HWM_LEN] {
-        WaterMark::default().level.to_be_bytes()
+        WaterMark::default().level().to_be_bytes()
     }
 
     pub fn set_chain_id(id: u32) -> Result<(), Error> {
@@ -105,10 +106,10 @@ impl HWM {
     //apdu_baking.c:66,0
     pub fn all_hwm() -> Result<[u8; ALL_HWM_LEN], WearError> {
         let main_wm: WaterMark = unsafe { MAIN.read() }?.into();
-        let main_wm = main_wm.level.to_be_bytes();
+        let main_wm = main_wm.level().to_be_bytes();
 
         let test_wm: WaterMark = unsafe { TEST.read() }?.into();
-        let test_wm = test_wm.level.to_be_bytes();
+        let test_wm = test_wm.level().to_be_bytes();
 
         let chain_id = Self::chain_id()?;
 
@@ -122,8 +123,8 @@ impl HWM {
 
     /// Meant to be used with legacy API
     pub fn all_hwm_default() -> [u8; ALL_HWM_LEN] {
-        let main_wm = WaterMark::default().level.to_be_bytes();
-        let test_wm = WaterMark::default().level.to_be_bytes();
+        let main_wm = WaterMark::default().level().to_be_bytes();
+        let test_wm = WaterMark::default().level().to_be_bytes();
 
         let chain_id = Self::chain_id_default();
 
@@ -163,42 +164,140 @@ impl HWM {
 
 #[derive(PartialEq, Clone)]
 #[cfg_attr(test, derive(Debug))]
-pub struct WaterMark {
-    pub level: u32,
-    pub endorsement: bool,
+pub enum WaterMark {
+    Emmy {
+        level: u32,
+        had_endorsement: bool,
+    },
+    Tenderbake {
+        level: u32,
+        had_endorsement: bool,
+        round: u32,
+        had_preendorsement: bool,
+    },
+}
+
+impl WaterMark {
+    const SERIALIZED_EMMY_TAG: u8 = 0;
+    const SERIALIZED_TENDERBAKE_TAG: u8 = 1;
+
+    const SERIALIZED_TAGS: PIC<&'static [u8]> =
+        PIC::new(&[Self::SERIALIZED_EMMY_TAG, Self::SERIALIZED_TENDERBAKE_TAG]);
+
+    pub fn level(&self) -> u32 {
+        match self {
+            WaterMark::Emmy { level, .. } | WaterMark::Tenderbake { level, .. } => *level,
+        }
+    }
 }
 
 impl From<&[u8; 52]> for WaterMark {
     fn from(from: &[u8; 52]) -> Self {
-        let endorsement = from[0] >= 1;
+        let mut this = Self::default();
+        let mut read = 0;
+
+        let ty = from[read];
+        read += 1;
+        //if the serialization is invalid just return a default
+        if !Self::SERIALIZED_TAGS.into_inner().contains(&ty) {
+            return this;
+        }
+
+        let had_endorsement = from[read] >= 1;
+        read += 1;
 
         let level = {
             let mut array = [0; 4];
-            array.copy_from_slice(&from[1..5]);
+            array.copy_from_slice(&from[read..read + 4]);
             u32::from_be_bytes(array)
         };
+        read += 4;
 
-        Self { level, endorsement }
+        if let Self::SERIALIZED_TENDERBAKE_TAG = ty {
+            let had_preendorsement = from[read] >= 1;
+            read += 1;
+
+            let round = {
+                let mut array = [0; 4];
+                array.copy_from_slice(&from[read..read + 4]);
+                u32::from_be_bytes(array)
+            };
+
+            this = Self::Tenderbake {
+                level,
+                round,
+                had_endorsement,
+                had_preendorsement,
+            };
+        } else {
+            this = Self::Emmy {
+                level,
+                had_endorsement,
+            }
+        }
+
+        this
     }
 }
 
 impl From<WaterMark> for [u8; 52] {
     fn from(from: WaterMark) -> Self {
         let mut out = [0; 52];
+        let mut write = 0;
 
-        let level = from.level.to_be_bytes();
-        out[1..5].copy_from_slice(&level[..]);
+        let serialize_data = |out: &mut [u8], level: u32, had_endorsement| -> usize {
+            let mut write = 0;
 
-        out[0] = from.endorsement as _;
+            out[write] = had_endorsement as _;
+            write += 1;
+
+            out[write..write + 4].copy_from_slice(&level.to_be_bytes());
+            write += 4;
+
+            write
+        };
+
+        match from {
+            WaterMark::Emmy {
+                level,
+                had_endorsement,
+            } => {
+                out[write] = WaterMark::SERIALIZED_EMMY_TAG;
+                write += 1;
+                serialize_data(&mut out[write..], level, had_endorsement);
+            }
+            WaterMark::Tenderbake {
+                level,
+                had_endorsement,
+                round,
+                had_preendorsement,
+            } => {
+                out[write] = WaterMark::SERIALIZED_TENDERBAKE_TAG;
+                write += 1;
+
+                write += serialize_data(&mut out[write..], level, had_endorsement);
+                serialize_data(&mut out[write..], round, had_preendorsement);
+            }
+        }
+
         out
     }
 }
 
 impl WaterMark {
-    pub fn reset(level: u32) -> Self {
-        Self {
-            level,
-            endorsement: false,
+    pub fn reset(level: u32, tenderbake: bool) -> Self {
+        if tenderbake {
+            Self::Tenderbake {
+                level,
+                round: 0,
+                had_endorsement: false,
+                had_preendorsement: false,
+            }
+        } else {
+            Self::Emmy {
+                level,
+                had_endorsement: false,
+            }
         }
     }
 
@@ -211,7 +310,7 @@ impl WaterMark {
 
 impl Default for WaterMark {
     fn default() -> Self {
-        Self::reset(u32::MAX)
+        Self::reset(u32::MAX, false)
     }
 }
 
@@ -289,7 +388,7 @@ impl ChainID {
     }
 
     pub fn to_alias(self, out: &mut [u8; ChainID::BASE58_LEN]) -> Result<usize, bolos::Error> {
-        use bolos::{pic_str, PIC};
+        use bolos::pic_str;
 
         match self {
             Self::Any => {

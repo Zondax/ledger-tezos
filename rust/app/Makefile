@@ -27,8 +27,8 @@ all: bin/app.elf
 	@echo "APPNAME=\"${APPNAME}\"" >> $(OUTPUT_INSTALLER)
 	@echo "APPVERSION=\"${APPVERSION}\"" >> $(OUTPUT_INSTALLER)
 	@echo "APPPATH=\""${APPPATH}"\"" >> $(OUTPUT_INSTALLER)
-	@echo "LOAD_PARAMS=\"${COMMON_LOAD_PARAMS}\"" >> $(OUTPUT_INSTALLER)
-	@echo "DELETE_PARAMS=\"${COMMON_DELETE_PARAMS}\"" >> $(OUTPUT_INSTALLER)
+	@echo "LOAD_PARAMS=($$(echo "${APP_LOAD_PARAMS}" | sed -e "s|"${APPNAME}"|\""${APPNAME}"\"|"))" >> $(OUTPUT_INSTALLER)
+	@echo "DELETE_PARAMS=($$(echo "${COMMON_DELETE_PARAMS}" | sed -e "s|"${APPNAME}"|\""${APPNAME}"\"|"))" >> $(OUTPUT_INSTALLER)
 	@echo "APPHEX=\"" >> $(OUTPUT_INSTALLER)
 	@cat $(CURDIR)/bin/app.hex >> $(OUTPUT_INSTALLER)
 	@echo "\"" >> $(OUTPUT_INSTALLER)
@@ -60,7 +60,11 @@ $(info COIN  = [$(COIN)])
 ifeq ($(COIN),XTZ)
 # Main app configuration
 DEFINES += APP_STANDARD
+ifdef BAKING
+APPNAME = "Tezos Baking"
+else
 APPNAME = "Tezos"
+endif
 APPPATH = "44'/1729'"
 
 else ifeq ($(COIN),XTZ_baker)
@@ -73,7 +77,7 @@ endef
 $(error "$(error_message)")
 endif
 
-APP_LOAD_PARAMS = --delete $(COMMON_LOAD_PARAMS) --path ${APPPATH} --path "44'/1'"
+APP_LOAD_PARAMS = $(COMMON_LOAD_PARAMS) --path ${APPPATH} --path "44'/1'"
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
 APP_STACK_SIZE:=3072
@@ -102,10 +106,14 @@ APP_LOAD_PARAMS += --appFlags 0x000
 endif
 
 ifdef BAKING
+ifeq ($(TARGET_NAME),TARGET_NANOX)
+$(error "Baking is not supported with a Nano X device")
+endif
 RUST_FEATURES=--features="baking"
 OUTPUT_ELF:=$(subst .elf,_baking.elf,$(OUTPUT_ELF))
 OUTPUT_INSTALLER:=$(subst installer,installer_baking,$(OUTPUT_INSTALLER))
 BAKING=true
+DEFINES += BAKING
 else
 RUST_FEATURES=--features="wallet"
 BAKING=false

@@ -115,7 +115,7 @@ impl ApduHandler for GetAddress {
             //SAFE: pkey is valid pointer and INITIALIZED in the block above
             let key = unsafe { addr_of!((*ui).pkey).as_ref() }.apdu_unwrap();
 
-            Addr::new_into(&key, addr).map_err(|_| Error::DataInvalid)?;
+            Addr::new_into(key, addr).map_err(|_| Error::DataInvalid)?;
         }
 
         //safe because pointers are all valid, initialize with_addr

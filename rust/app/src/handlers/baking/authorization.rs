@@ -21,7 +21,6 @@ use crate::{
     dispatcher::ApduHandler,
     handlers::{
         handle_ui_message,
-        hwm::HWM,
         public_key::{Addr, GetAddress},
     },
     sys::{self, crypto::bip32::BIP32Path},

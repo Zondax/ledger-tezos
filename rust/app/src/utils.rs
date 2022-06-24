@@ -13,7 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-#![allow(dead_code)]
+#![allow(dead_code, unused_macros)]
 
 #[macro_export]
 #[cfg(test)]
@@ -26,7 +26,6 @@ macro_rules! assert_error_code {
 }
 
 git_testament::git_testament_macros!(git);
-
 pub const GIT_COMMIT_HASH: &str = git_commit_hash!();
 
 pub const BAKING: bool = cfg!(feature = "baking");

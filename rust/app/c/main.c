@@ -36,12 +36,14 @@ unsigned char io_event(unsigned char channel) {
                 UX_DISPLAYED_EVENT();
             break;
 
-        case SEPROXYHAL_TAG_TICKER_EVENT: { //
+        case SEPROXYHAL_TAG_TICKER_EVENT: {
+#ifndef BAKING
             UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
                     if (UX_ALLOWED) {
                         UX_REDISPLAY();
                     }
             });
+#endif
             break;
         }
 

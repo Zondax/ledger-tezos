@@ -287,7 +287,7 @@ pub fn intstr_to_fpstr_inplace(
 
         //same as strlen(s)
         //we know where the string ends
-        num_chars = num_chars - idx;
+        num_chars -= idx;
     } else {
         //if the first digit wasn't found
         // then it's just all 0s
@@ -331,7 +331,7 @@ pub fn intstr_to_fpstr_inplace(
 
     num_chars = strlen(s);
 
-    return Ok(&mut s[..num_chars]);
+    Ok(&mut s[..num_chars])
 }
 
 #[cfg(test)]
@@ -375,7 +375,7 @@ mod tests {
             std::dbg!(
                 "SUITE:",
                 (
-                    core::str::from_utf8(&input).unwrap(),
+                    core::str::from_utf8(input).unwrap(),
                     decimals,
                     expected_output
                 )
