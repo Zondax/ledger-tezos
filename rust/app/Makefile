@@ -113,6 +113,7 @@ RUST_FEATURES=--features="baking"
 OUTPUT_ELF:=$(subst .elf,_baking.elf,$(OUTPUT_ELF))
 OUTPUT_INSTALLER:=$(subst installer,installer_baking,$(OUTPUT_INSTALLER))
 BAKING=true
+DEFINES += BAKING
 else
 RUST_FEATURES=--features="wallet"
 BAKING=false
