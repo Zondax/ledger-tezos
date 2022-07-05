@@ -77,7 +77,8 @@ endef
 $(error "$(error_message)")
 endif
 
-APP_LOAD_PARAMS = $(COMMON_LOAD_PARAMS) --path ${APPPATH} --path "44'/1'"
+APP_LOAD_PARAMS = $(COMMON_LOAD_PARAMS) --path ${APPPATH} --path "44'/1'" \
+					--curve ed25519 --curve secp256k1 --curve secp256r1
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
 APP_STACK_SIZE:=3072
