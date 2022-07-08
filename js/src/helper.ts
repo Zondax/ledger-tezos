@@ -18,9 +18,9 @@ export function serializePath(path: string): Buffer {
     let value = 0
     let child = pathArray[i]
     if (child.endsWith("'")) {
-      value += HARDENED
       child = child.slice(0, -1)
     }
+    value += HARDENED
 
     const childNumber = Number(child)
 
