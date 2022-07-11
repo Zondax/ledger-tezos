@@ -10,15 +10,17 @@
     "Ledger"
   ],
   "scripts": {
+    "try": "node try.mjs",
     "test": "jest --detectOpenHandles --testPathIgnorePatterns='dev.*|testvectors.*'",
     "test_dev": "jest --detectOpenHandles",
     "debug": "node debug/debug.mjs debug",
     "test-vectors-generate": "mkdir test-vectors; ts-node --project ./node.tsconfig.json test-vectors-gen/index.ts"
   },
   "dependencies": {
+    "@ledgerhq/hw-transport-node-hid": "^6.27.1",
     "@types/node": "^16.10.3",
     "@zondax/ledger-tezos": "link:../js",
-    "@zondax/zemu": "^0.30"
+    "@zondax/zemu": "^0.32"
   },
   "devDependencies": {
     "@taquito/ledger-signer": "^10.2.0",
