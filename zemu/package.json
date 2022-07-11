@@ -20,7 +20,7 @@
     "@ledgerhq/hw-transport-node-hid": "^6.27.1",
     "@types/node": "^16.10.3",
     "@zondax/ledger-tezos": "link:../js",
-    "@zondax/zemu": "^0.30"
+    "@zondax/zemu": "^0.32"
   },
   "devDependencies": {
     "@taquito/ledger-signer": "^10.2.0",
