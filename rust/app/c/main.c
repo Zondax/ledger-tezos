@@ -37,12 +37,18 @@ unsigned char io_event(unsigned char channel) {
             break;
 
         case SEPROXYHAL_TAG_TICKER_EVENT: {
-#ifndef BAKING
             UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
                     if (UX_ALLOWED) {
                         UX_REDISPLAY();
                     }
             });
+#ifdef BAKING
+			//even tho we should use this only for prompting the user
+			//for security purposes,
+			//it becomes a way to keep the ledger available
+			//to sign without ever having it lock 
+			//and have the SDK return errors
+			UX_WAKE_UP();
 #endif
             break;
         }
