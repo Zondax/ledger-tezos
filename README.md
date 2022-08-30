@@ -6,14 +6,16 @@
 
 > # This app is still work in progress!
 > # DO NOT USE YET!
->
-> -------------------
->
-> ![zondax](docs/zondax.jpg)
->
->_Please visit our website at [zondax.ch](zondax.ch)_
 
-------------------
+---
+
+![zondax_light](docs/img/zondax_light.png#gh-light-mode-only)
+![zondax_dark](docs/img/zondax_dark.png#gh-dark-mode-only)
+
+_Please visit our website at [zondax.ch](https://www.zondax.ch)_
+
+---
+
 This project contains the Tezos app for Ledger Nano S and X.
 
 - Ledger Nano S/X BOLOS app
