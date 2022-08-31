@@ -24,6 +24,7 @@ use crate::{
         sha256x2,
     },
     parser::{public_key, public_key_hash, DisplayableItem, Zarith},
+    utils::{bs58_encode, ApduPanic},
 };
 
 #[derive(Clone, Copy, PartialEq, property::Property)]
@@ -223,9 +224,8 @@ fn pk_to_base58(
         (4 + bytes.len() + 4, array)
     };
 
-    let len = bs58::encode(&input[..len])
-        .into(&mut out[..])
-        .expect("encoded in base58 is not of the right length");
+    let len = bs58_encode(&input[..len], &mut out[..])
+        .apdu_expect("encoded in base58 is not of the right length");
     Ok(len)
 }
 

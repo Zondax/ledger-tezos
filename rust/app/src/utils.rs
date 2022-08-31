@@ -14,6 +14,7 @@
 *  limitations under the License.
 ********************************************************************************/
 #![allow(dead_code, unused_macros)]
+use bolos::PIC;
 
 #[macro_export]
 #[cfg(test)]
@@ -48,6 +49,52 @@ pub fn strlen(s: &[u8]) -> usize {
     }
 
     panic!("byte slice did not terminate with null byte, s: {:x?}", s)
+}
+
+pub struct OutputBufferTooSmall;
+
+pub fn bs58_encode(
+    input: impl AsRef<[u8]>,
+    output: &mut [u8],
+) -> Result<usize, OutputBufferTooSmall> {
+    const ALPHABET_ENCODE: &[u8; 58] =
+        b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    let table = PIC::new(ALPHABET_ENCODE).into_inner();
+
+    let input = input.as_ref();
+    let mut index = 0;
+
+    for &val in input.iter() {
+        let mut carry = val as usize;
+        for byte in &mut output[..index] {
+            carry += (*byte as usize) << 8;
+            *byte = (carry % 58) as u8;
+            carry /= 58;
+        }
+        while carry > 0 {
+            if index == output.len() {
+                return Err(OutputBufferTooSmall);
+            }
+            output[index] = (carry % 58) as u8;
+            index += 1;
+            carry /= 58;
+        }
+    }
+
+    for _ in input.iter().take_while(|v| **v == 0) {
+        if index == output.len() {
+            return Err(OutputBufferTooSmall);
+        }
+        output[index] = 0;
+        index += 1;
+    }
+
+    for val in &mut output[..index] {
+        *val = table[*val as usize];
+    }
+
+    output.get_mut(..index).apdu_unwrap().reverse();
+    Ok(index)
 }
 
 #[cfg(test)]

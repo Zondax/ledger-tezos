@@ -27,7 +27,7 @@ use crate::{
     dispatcher::ApduHandler,
     handlers::handle_ui_message,
     sys::{self, Error as SysError},
-    utils::{ApduBufferRead, ApduPanic},
+    utils::{bs58_encode, ApduBufferRead, ApduPanic},
 };
 
 pub struct GetAddress;
@@ -223,8 +223,7 @@ impl Addr {
         let mut out = [0; Self::BASE58_LEN];
 
         //the expect is ok since we know all the sizes
-        let len = bs58::encode(input)
-            .into(&mut out[..])
+        let len = bs58_encode(input, &mut out[..])
             .apdu_expect("encoded in base58 is not of the right length");
 
         (len, out)

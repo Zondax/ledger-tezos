@@ -16,7 +16,7 @@
 use crate::{
     constants::{tzprefix::NET, ApduError as Error},
     sys::{flash_slot::Wear, new_flash_slot, pic::PIC},
-    utils::ApduPanic,
+    utils::{bs58_encode, ApduPanic},
 };
 
 pub use crate::sys::flash_slot::WearError;
@@ -380,8 +380,7 @@ impl ChainID {
         };
 
         let mut out = [0; Self::BASE58_LEN];
-        let len = bs58::encode(input)
-            .into(&mut out[..])
+        let len = bs58_encode(input, &mut out[..])
             .apdu_expect("encoded in base58 is not of the right lenght");
 
         Ok((len, out))

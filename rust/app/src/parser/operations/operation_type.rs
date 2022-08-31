@@ -289,9 +289,8 @@ impl<'b> OperationType<'b> {
         };
 
         let mut out = [0; Self::UNKNOWN_OP_HASH_BASE58_LEN];
-        let len = bs58::encode(input)
-            .into(&mut out[..])
-            .expect("encoded in base58 is not of the right length");
+        let len = bs58_encode(input, &mut out[..])
+            .apdu_expect("encoded in base58 is not of the right length");
 
         Ok((len, out))
     }

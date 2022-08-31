@@ -27,7 +27,6 @@ git-testament = { git = "https://github.com/Zondax/git-testament", branch = "fix
 arrayvec = { version = "0.7", default-features = false }
 zeroize = { version = "1", default-features = false }
 nom = { version = "6.2.1", default-features = false }
-bs58 = { version = "0.4.0", default-features = false }
 hex = { version = "0.4", default-features = false }
 arrayref = { version = "0.3.6" }
 property = "0.3.3"

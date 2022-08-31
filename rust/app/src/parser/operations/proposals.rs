@@ -26,6 +26,7 @@ use crate::{
     crypto::Curve,
     handlers::{handle_ui_message, parser_common::ParserError, public_key::Addr, sha256x2},
     parser::{public_key_hash, DisplayableItem},
+    utils::{bs58_encode, ApduPanic},
 };
 
 const PROPOSAL_BYTES_LEN: usize = 32;
@@ -110,9 +111,8 @@ impl<'b> Proposals<'b> {
         };
 
         let mut out = [0; Self::PROPOSAL_BASE58_LEN];
-        let len = bs58::encode(input)
-            .into(&mut out[..])
-            .expect("encoded in base58 is not of the right length");
+        let len = bs58_encode(input, &mut out[..])
+            .apdu_expect("encoded in base58 is not of the right length");
 
         Ok((len, out))
     }

@@ -20,6 +20,7 @@ use crate::{
     constants::tzprefix::{B, KT1, TZ1, TZ2, TZ3},
     crypto::Curve,
     handlers::{parser_common::ParserError, sha256x2},
+    utils::{bs58_encode, ApduPanic},
 };
 
 use core::mem::MaybeUninit;
@@ -83,9 +84,8 @@ impl<'b> Operation<'b> {
         array[2..2 + 32].copy_from_slice(&branch[..]);
         array[2 + 32..].copy_from_slice(&checksum[..]);
 
-        let len = bs58::encode(array)
-            .into(&mut out[..])
-            .expect("encoded in base58 is not of the right length");
+        let len = bs58_encode(array, &mut out[..])
+            .apdu_expect("encoded in base58 is not of the right length");
 
         Ok(len)
     }
@@ -353,9 +353,8 @@ impl<'b> ContractID<'b> {
         };
 
         let mut out = [0; Self::BASE58_LEN];
-        let len = bs58::encode(input)
-            .into(&mut out[..])
-            .expect("encoded in base58 is not the right length");
+        let len = bs58_encode(input, &mut out[..])
+            .apdu_expect("encoded in base58 is not the right length");
 
         Ok((len, out))
     }
