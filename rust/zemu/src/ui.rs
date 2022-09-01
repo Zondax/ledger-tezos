@@ -15,10 +15,7 @@
 ********************************************************************************/
 use bolos_sys::{
     pic::PIC,
-    raw::{
-        io_exchange, G_io_apdu_buffer as APDU_BUFFER, CHANNEL_APDU, IO_ASYNCH_REPLY,
-        IO_RETURN_AFTER_TX,
-    },
+    raw::{io_exchange, CHANNEL_APDU, IO_ASYNCH_REPLY, IO_RETURN_AFTER_TX},
 };
 
 mod comm;
@@ -53,17 +50,22 @@ impl Into<bindings::zxerr_t> for ViewError {
     }
 }
 
+pub(crate) fn apdu_buffer_mut() -> &'static mut [u8] {
+    PIC::new(unsafe { &mut bolos_sys::raw::G_io_apdu_buffer }).into_inner()
+}
+
 fn move_to_global_storage<T: Sized>(item: T) -> Option<&'static mut T> {
     let size = core::mem::size_of::<T>();
     unsafe {
-        let buf_len = APDU_BUFFER.len();
+        let buf = apdu_buffer_mut();
+        let buf_len = buf.len();
         if size > buf_len {
             //if we don't have enough space
             // we can even check for a max size, say 64 bytes
             return None;
         }
 
-        let new_loc_slice = &mut APDU_BUFFER[buf_len - size..];
+        let new_loc_slice = &mut buf[buf_len - size..];
         let new_loc_raw_ptr: *mut u8 = new_loc_slice.as_mut_ptr();
         let new_loc: *mut T = new_loc_raw_ptr.cast();
 
@@ -100,12 +102,10 @@ fn cleanup_ui() {
 }
 
 fn get_current_viewable<'v>() -> Result<(&'v mut RefMutDynViewable, &'v mut [u8]), ViewError> {
-    match unsafe {
-        (
-            CURRENT_VIEWABLE.as_mut(),
-            &mut APDU_BUFFER[..APDU_BUFFER.len() - BUSY_BYTES],
-        )
-    } {
+    let buf = apdu_buffer_mut();
+    let buf_len = buf.len();
+
+    match unsafe { (CURRENT_VIEWABLE.as_mut(), &mut buf[..buf_len - BUSY_BYTES]) } {
         (Some(refmut), buf) => Ok((refmut, buf)),
         _ => Err(ViewError::Unknown),
     }

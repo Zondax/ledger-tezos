@@ -15,7 +15,7 @@
 ********************************************************************************/
 use super::UIBackend;
 use crate::{
-    ui::{manual_vtable::RefMutDynViewable, ViewError, Viewable},
+    ui::{apdu_buffer_mut, manual_vtable::RefMutDynViewable, ViewError, Viewable},
     ui_toolkit::ZUI,
 };
 use bolos_derive::pic_str;
@@ -207,9 +207,10 @@ impl UIBackend<KEY_SIZE> for NanoSPBackend {
     }
 
     fn accept_reject_out(&mut self) -> &mut [u8] {
-        use bolos_sys::raw::G_io_apdu_buffer as APDU_BUFFER;
+        let buf = apdu_buffer_mut();
+        let buf_len = buf.len();
 
-        unsafe { &mut APDU_BUFFER[..APDU_BUFFER.len() - self.viewable_size] }
+        &mut buf[..buf_len - self.viewable_size]
     }
 
     fn accept_reject_end(&mut self, len: usize) {
@@ -225,16 +226,15 @@ impl UIBackend<KEY_SIZE> for NanoSPBackend {
         &mut self,
         viewable: V,
     ) -> Option<RefMutDynViewable> {
-        use bolos_sys::raw::G_io_apdu_buffer as APDU_BUFFER;
-
         let size = core::mem::size_of::<V>();
         unsafe {
-            let buf_len = APDU_BUFFER.len();
+            let buf = apdu_buffer_mut();
+            let buf_len = buf.len();
             if size > buf_len {
                 return None;
             }
 
-            let new_loc_slice = &mut APDU_BUFFER[buf_len - size..];
+            let new_loc_slice = &mut buf[buf_len - size..];
             let new_loc_raw_ptr: *mut u8 = new_loc_slice.as_mut_ptr();
             let new_loc: *mut V = new_loc_raw_ptr.cast();
 
